@@ -216,7 +216,7 @@ test('05 동영상 추가 바텀시트', async ({ page, viewport }, testInfo) =>
   await page.waitForLoadState('networkidle')
   await dismissDraft(page)
 
-  const videoBtn = page.locator('button[title="동영상 추가"], button:has-text("🎬")').first()
+  const videoBtn = page.locator('button[title="동영상 추가"]').first()
   if (await videoBtn.isVisible({ timeout: 3000 })) {
     await videoBtn.click()
     await page.waitForTimeout(600)
@@ -243,6 +243,6 @@ test('05 동영상 추가 바텀시트', async ({ page, viewport }, testInfo) =>
     }
   } else {
     await ss(page, '05-video-btn-not-found', testInfo)
-    console.warn('[WARN] 🎬 버튼을 찾지 못함 — 에디터 클릭 후 툴바 활성화 필요할 수 있음')
+    console.warn('[WARN] 동영상 버튼을 찾지 못함 — 에디터 클릭 후 툴바 활성화 필요할 수 있음')
   }
 })

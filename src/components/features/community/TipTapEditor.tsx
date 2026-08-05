@@ -9,6 +9,8 @@ import Image from '@tiptap/extension-image'
 import Youtube from '@tiptap/extension-youtube'
 import Placeholder from '@tiptap/extension-placeholder'
 import { useState, useCallback, useEffect, useRef } from 'react'
+// TipTap의 Image extension과 이름이 겹치므로 아이콘은 ImageIcon으로 받는다
+import { Image as ImageIcon, Video, Bold, Loader2, AlertTriangle, FileVideo, Youtube as YoutubeIcon, Lightbulb } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024  // 10MB/장
@@ -53,11 +55,8 @@ const VideoExtension = Node.create({
   },
 })
 
-const FONT_SIZES = [
-  { label: '가', size: null,   title: '기본' },
-  { label: '가', size: '22px', title: '크게' },
-  { label: '가', size: '28px', title: '최대' },
-] as const
+// 글자 크기 버튼 목록은 툴바에서 뺐다(2026-08). FontSizeExtension은 그대로 남아 있어서
+// 이미 글자 크기가 지정된 옛 글은 계속 그대로 보인다. 되살릴 때는 git 이력 참고.
 
 // ─── 커서 위치로 스크롤 (iOS/Android 키보드 대응) ───
 // window.scrollBy 직접 호출은 iOS visualViewport 타이밍 충돌로 튐 현상 발생
@@ -553,12 +552,15 @@ export default function TipTapEditor({
       {/* 모바일 bottom = CTA바(76px) + 키보드높이(JS) + safe-area / 데스크탑 top = GNB(64)+WriteHeader(52)=116px */}
       <div
         ref={toolbarRef}
-        className="bg-card pt-1 pb-2 border-t border-border shadow-[0_-2px_8px_rgba(0,0,0,0.06)]"
+        className="bg-card pt-1 pb-2 border-t border-border"
       >
         {selectedMedia && (
           <div className="flex items-center justify-between px-2 py-1 mb-1 bg-primary/5 rounded-xl border border-primary/10">
-            <span className="text-[17px] text-primary-text font-medium">
-              {selectedMedia === 'image' ? '📷 사진이 선택됐어요' : '🎬 영상이 선택됐어요'}
+            <span className="flex items-center gap-1.5 text-[17px] text-primary-text font-medium">
+              {selectedMedia === 'image'
+                ? <ImageIcon className="w-5 h-5 shrink-0" aria-hidden="true" />
+                : <Video className="w-5 h-5 shrink-0" aria-hidden="true" />}
+              {selectedMedia === 'image' ? '사진이 선택됐어요' : '영상이 선택됐어요'}
             </span>
             <button
               type="button"
@@ -571,72 +573,22 @@ export default function TipTapEditor({
             </button>
           </div>
         )}
-        <div className="flex items-center gap-0.5 border border-border rounded-xl bg-card px-2 py-1">
-          {/* 인용구 */}
-          <button
-            type="button"
-            aria-label="인용구"
-            onClick={() => editor.chain().focus().toggleBlockquote().run()}
-            className={cn(
-              'flex items-center justify-center min-h-[52px] min-w-[52px] rounded-xl text-body transition-colors',
-              editor.isActive('blockquote') ? 'bg-primary/10 text-primary-text' : 'text-foreground hover:bg-muted',
-            )}
-          >
-            "
-          </button>
-
-          {/* 굵게 */}
-          <button
-            type="button"
-            aria-label="굵게"
-            onClick={() => editor.chain().focus().toggleBold().run()}
-            className={cn(
-              'flex items-center justify-center min-h-[52px] min-w-[52px] rounded-xl text-body font-bold transition-colors',
-              editor.isActive('bold') ? 'bg-primary/10 text-primary-text' : 'text-foreground hover:bg-muted',
-            )}
-          >
-            B
-          </button>
-
-          <div className="w-px h-6 bg-border mx-1" />
-
-          {/* 글자 크기 */}
-          {FONT_SIZES.map(({ label, size, title }) => {
-            const isActive = size !== null && editor.isActive('textStyle', { fontSize: size })
-            return (
-              <button
-                key={title}
-                type="button"
-                title={title}
-                onClick={() => {
-                  if (size === null) {
-                    editor.chain().focus().unsetMark('textStyle').run()
-                  } else {
-                    editor.chain().focus().setMark('textStyle', { fontSize: size }).run()
-                  }
-                }}
-                className={cn(
-                  'flex items-center justify-center min-h-[52px] min-w-[52px] rounded-xl transition-colors font-medium',
-                  isActive ? 'bg-primary/10 text-primary-text' : 'text-foreground hover:bg-muted',
-                )}
-                style={{ fontSize: size ?? '16px' }}
-              >
-                {label}
-              </button>
-            )
-          })}
-
-          <div className="w-px h-6 bg-border mx-1" />
-
+        {/* 툴바는 사진 / 동영상 / 굵게 3개. 인용·글자 크기는 버튼만 뺐고
+            extension(Blockquote·FontSize)은 남겨둔다 → 옛 글이 그대로 보인다.
+            구분은 테두리 대신 bg-muted — globals.css의 button{border:none}이 이긴다. */}
+        <div className="flex items-center gap-2 px-4 py-1">
           {/* 사진 추가 */}
           <button
             type="button"
             onClick={() => { setMediaError(''); fileInputRef.current?.click() }}
             disabled={isUploadingImage}
             title="사진 추가"
-            className="flex items-center justify-center min-h-[52px] min-w-[52px] rounded-xl text-xl transition-colors text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-1.5 min-h-[52px] px-3 rounded-xl bg-muted text-foreground transition-colors hover:bg-border disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {isUploadingImage ? '⏳' : '📷'}
+            {isUploadingImage
+              ? <Loader2 className="w-5 h-5 shrink-0 animate-spin" aria-hidden="true" />
+              : <ImageIcon className="w-5 h-5 shrink-0" aria-hidden="true" />}
+            <span className="text-caption font-medium whitespace-nowrap">사진</span>
           </button>
 
           {/* 동영상 추가 */}
@@ -645,9 +597,30 @@ export default function TipTapEditor({
             onClick={() => { setMediaError(''); setVideoSheet('picking') }}
             disabled={isUploadingVideo}
             title="동영상 추가"
-            className="flex items-center justify-center min-h-[52px] min-w-[52px] rounded-xl text-xl transition-colors text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-1.5 min-h-[52px] px-3 rounded-xl bg-muted text-foreground transition-colors hover:bg-border disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {isUploadingVideo ? '⏳' : '🎬'}
+            {isUploadingVideo
+              ? <Loader2 className="w-5 h-5 shrink-0 animate-spin" aria-hidden="true" />
+              : <Video className="w-5 h-5 shrink-0" aria-hidden="true" />}
+            <span className="text-caption font-medium whitespace-nowrap">동영상</span>
+          </button>
+
+          {/* 굵게 */}
+          <button
+            type="button"
+            title="굵게"
+            aria-label="굵게"
+            aria-pressed={editor.isActive('bold')}
+            onClick={() => editor.chain().focus().toggleBold().run()}
+            className={cn(
+              'flex items-center justify-center gap-1.5 min-h-[52px] px-3 rounded-xl transition-colors',
+              editor.isActive('bold')
+                ? 'bg-primary/10 text-primary-text'
+                : 'bg-muted text-foreground hover:bg-border',
+            )}
+          >
+            <Bold className="w-5 h-5 shrink-0" aria-hidden="true" />
+            <span className="text-caption font-medium whitespace-nowrap">굵게</span>
           </button>
         </div>
       </div>
@@ -655,7 +628,7 @@ export default function TipTapEditor({
       {/* ── 미디어 에러 토스트 (fixed: 스크롤·키보드 무관하게 항상 화면에 표시) ── */}
       {mediaError && (
         <div className="fixed top-[132px] left-4 right-4 z-[200] flex items-center gap-2 px-4 py-3 rounded-xl bg-destructive text-white shadow-xl">
-          <span className="text-base shrink-0">⚠️</span>
+          <AlertTriangle className="w-5 h-5 shrink-0" aria-hidden="true" />
           <span className="text-[17px] font-medium flex-1">{mediaError}</span>
           <button
             type="button"
@@ -680,9 +653,11 @@ export default function TipTapEditor({
       )}
 
       {/* ── 3. 에디터 본문 ── */}
+      {/* 본문 박스는 얇게(2px→1px). 커서가 들어오면 테두리가 코랄로 바뀌고
+          얇은 링이 생겨서 '지금 여기 쓰는 중'은 그대로 보인다(입력 안정성 유지). */}
       <div
         ref={editorWrapRef}
-        className="border-2 border-border rounded-xl bg-card transition-all focus-within:border-primary focus-within:shadow-[0_0_0_3px_rgba(255,111,97,0.1)]"
+        className="border border-border rounded-xl bg-card transition-all focus-within:border-primary focus-within:shadow-[0_0_0_2px_rgba(255,111,97,0.12)]"
       >
         <EditorContent editor={editor} />
       </div>
@@ -708,7 +683,7 @@ export default function TipTapEditor({
                     onClick={() => videoInputRef.current?.click()}
                     className="w-full flex items-center gap-3 min-h-[52px] px-4 rounded-xl border-2 border-border bg-background text-body font-medium text-foreground text-left transition-colors hover:border-primary/40 hover:bg-primary/5"
                   >
-                    <span className="text-2xl">🎞</span>
+                    <FileVideo className="w-6 h-6 shrink-0 text-muted-foreground" aria-hidden="true" />
                     <div>
                       <p className="font-bold">내 동영상 올리기</p>
                       <p className="text-[17px] text-muted-foreground">MP4, MOV, WebM · 최대 50MB</p>
@@ -720,7 +695,7 @@ export default function TipTapEditor({
                     onClick={() => setVideoSheet('youtube')}
                     className="w-full flex items-center gap-3 min-h-[52px] px-4 rounded-xl border-2 border-border bg-background text-body font-medium text-foreground text-left transition-colors hover:border-primary/40 hover:bg-primary/5"
                   >
-                    <span className="text-2xl">📺</span>
+                    <YoutubeIcon className="w-6 h-6 shrink-0 text-muted-foreground" aria-hidden="true" />
                     <div>
                       <p className="font-bold">유튜브 링크</p>
                       <p className="text-[17px] text-muted-foreground">유튜브 주소를 붙여넣어 삽입</p>
@@ -738,8 +713,9 @@ export default function TipTapEditor({
             ) : (
               <>
                 <p className="text-body font-bold text-foreground mb-2">유튜브 주소를 붙여넣어 주세요</p>
-                <p className="text-[17px] text-muted-foreground mb-3">
-                  💡 본문에 유튜브 링크를 바로 붙여넣기해도 자동으로 삽입돼요
+                <p className="flex items-start gap-1.5 text-[17px] text-muted-foreground mb-3">
+                  <Lightbulb className="w-5 h-5 shrink-0 mt-0.5" aria-hidden="true" />
+                  본문에 유튜브 링크를 바로 붙여넣기해도 자동으로 삽입돼요
                 </p>
                 <input
                   type="url"
@@ -849,7 +825,7 @@ export default function TipTapEditor({
       {isUploading && (
         <div className="absolute inset-0 bg-card/60 rounded-xl flex items-center justify-center z-10 pointer-events-none">
           <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-4 py-2 shadow-md">
-            <span className="text-lg">⏳</span>
+            <Loader2 className="w-5 h-5 shrink-0 animate-spin text-primary-text" aria-hidden="true" />
             <span className="text-[17px] font-medium text-foreground">
               {isUploadingImage ? '사진 업로드 중' : '동영상 업로드 중'}
               {uploadProgress !== null ? ` ${uploadProgress}%` : '...'}
