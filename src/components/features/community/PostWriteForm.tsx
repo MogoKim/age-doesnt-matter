@@ -219,6 +219,46 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
     return () => vv.removeEventListener('resize', handler)
   }, [])
 
+  // ── 상단바를 키보드 위에 붙들어 둔다 ──
+  // position:fixed의 기준은 layout viewport다. 모바일 브라우저는 키보드가 올라올 때
+  // layout viewport는 그대로 두고 visual viewport만 줄인 뒤 아래로 밀어서(offsetTop)
+  // 커서를 보여준다. 그래서 fixed top-0 헤더는 화면 위로 밀려 나가 안 보이게 된다.
+  // 밀린 만큼(offsetTop) 헤더를 아래로 내려주면 항상 화면 맨 위에 남는다.
+  //
+  // viewport meta의 interactiveWidget으로도 해결되지만 그건 전역 설정이라
+  // 하단 CTA·툴바까지 같이 키보드 위로 올라온다 — 이번 PR 범위 밖이라 쓰지 않는다.
+  //
+  // ref는 콜백 ref다. 임시저장 목록 분기에서 헤더가 다시 마운트돼도 그 자리에서
+  // 마지막 offset을 바로 다시 입힌다(=툴바가 겪은 "effect가 ref보다 먼저 돌아 죽는" 문제 회피).
+  const headerElRef = useRef<HTMLDivElement | null>(null)
+  const headerOffsetRef = useRef(0)
+  const applyHeaderOffset = useCallback((el: HTMLDivElement | null) => {
+    if (el) el.style.transform = `translateY(${headerOffsetRef.current}px)`
+  }, [])
+  const setHeaderEl = useCallback((el: HTMLDivElement | null) => {
+    headerElRef.current = el
+    applyHeaderOffset(el)
+  }, [applyHeaderOffset])
+
+  useEffect(() => {
+    const vv = window.visualViewport
+    // visualViewport가 없는 브라우저는 손대지 않는다 — 지금까지의 fixed top-0 그대로 동작
+    if (!vv) return
+    const update = () => {
+      const next = Math.max(0, Math.round(vv.offsetTop))
+      if (next === headerOffsetRef.current) return
+      headerOffsetRef.current = next
+      applyHeaderOffset(headerElRef.current)
+    }
+    update()
+    vv.addEventListener('resize', update)
+    vv.addEventListener('scroll', update)
+    return () => {
+      vv.removeEventListener('resize', update)
+      vv.removeEventListener('scroll', update)
+    }
+  }, [applyHeaderOffset])
+
   // 글쓰기 퍼널 추적 — 진입 이벤트 (편집 모드 제외).
   // 세션 확정('loading'이 끝난 뒤) 후 한 번만 보낸다. 비회원도 폼에 들어올 수 있게 되면서
   // 이 이벤트에 두 집단이 섞이는데, 마운트 즉시 보내면 회원까지 전부 비회원으로 찍힌다.
@@ -364,7 +404,10 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
 
   // ── 글쓰기 전용 고정 헤더 (GNB 대체) ──
   const writeHeader = (
-    <div className="fixed top-0 left-0 right-0 z-40 bg-card border-b border-border h-[52px] flex items-center justify-between px-4">
+    <div
+      ref={setHeaderEl}
+      className="fixed top-0 left-0 right-0 z-40 bg-card border-b border-border h-[52px] flex items-center justify-between px-4 will-change-transform"
+    >
       <button
         type="button"
         onClick={handleCancel}
