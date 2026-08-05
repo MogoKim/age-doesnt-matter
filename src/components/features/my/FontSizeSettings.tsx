@@ -5,12 +5,14 @@ import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { updateFontSize } from '@/lib/actions/settings'
 import { useFontSize } from '@/components/common/FontSizeProvider'
+import { FONT_SIZE_VALUES, FONT_SIZE_LABELS, FONT_SIZE_BODY_PX } from '@/lib/font-size-labels'
 
-const FONT_SIZES = [
-  { value: 'NORMAL', label: '보통', desc: '본문 18px' },
-  { value: 'LARGE', label: '크게', desc: '본문 20px' },
-  { value: 'XLARGE', label: '아주크게', desc: '본문 24px' },
-] as const
+// 보이는 이름·크기 안내는 font-size-labels 한 곳에서 가져온다 — 화면마다 다르게 부르던 걸 맞췄다.
+const FONT_SIZES = FONT_SIZE_VALUES.map((value) => ({
+  value,
+  label: FONT_SIZE_LABELS[value],
+  desc: `본문 ${FONT_SIZE_BODY_PX[value]}`,
+}))
 
 interface FontSizeSettingsProps {
   currentSize: string
@@ -30,8 +32,7 @@ export default function FontSizeSettings({ currentSize }: FontSizeSettingsProps)
     setSelected(applied)
   }, [applied])
 
-  const PREVIEW_SIZE_MAP: Record<string, string> = { NORMAL: '18px', LARGE: '20px', XLARGE: '24px' }
-  const previewSize = PREVIEW_SIZE_MAP[selected] ?? '18px'
+  const previewSize = FONT_SIZE_BODY_PX[selected as keyof typeof FONT_SIZE_BODY_PX] ?? FONT_SIZE_BODY_PX.NORMAL
 
   // 화면과 다르거나 DB와 다르면 저장 가능 (DB만 어긋난 경우도 정합성을 맞출 수 있게)
   const isDirty = selected !== applied || selected !== currentSize
