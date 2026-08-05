@@ -132,7 +132,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
       setSelectedCategory(local.category)
       setTitle(local.title)
       setContent(local.content)
-      toast('작성하던 글을 불러왔어요 — 확인 후 등록해 주세요', 'info')
+      toast('쓰던 글을 불러왔어요', 'info')
     } else {
       // 없으면 다른 게시판에 작성하던 글이 있는지 본다.
       // 로그인 왕복에서 ?board=…가 떨어져 나가면 폼이 엉뚱한 게시판으로 열리는데,
@@ -504,39 +504,34 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
       )}
 
       {/* 다른 게시판에 작성하던 글 안내 — 로그인 왕복에서 ?board=…가 떨어졌을 때의 안전망.
-          누르기 전에는 아무것도 바꾸지 않는다(게시판이 말없이 바뀌면 엉뚱한 곳에 올라간다). */}
+          누르기 전에는 아무것도 바꾸지 않는다(게시판이 말없이 바뀌면 엉뚱한 곳에 올라간다).
+          카드가 아니라 낮은 안내 바 한 줄. 테두리·그림자 없이 bg-primary/5 한 겹만.
+          글씨가 커져 한 줄에 안 들어가면 버튼이 아래로 접힌다(잘리지 않게 flex-wrap). */}
       {otherBoardDraft && !title && !content && (
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-muted/60 p-4">
-          <p className="text-[17px] text-foreground">
-            <strong className="font-bold">
-              {boards.find((b) => b.slug === otherBoardDraft.board)?.displayName ?? otherBoardDraft.board}
-            </strong>
-            에 작성하던 글이 있어요
-          </p>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              className="min-h-[52px] rounded-xl px-4 text-[17px] font-bold text-primary-text"
-              onClick={() => {
-                setSelectedBoard(otherBoardDraft.board)
-                setSelectedCategory(otherBoardDraft.category)
-                setTitle(otherBoardDraft.title)
-                setContent(otherBoardDraft.content)
-                setOtherBoardDraft(null)
-                toast('작성하던 글을 불러왔어요 — 확인 후 등록해 주세요', 'info')
-              }}
-            >
-              이어서 쓰기
-            </button>
-            <button
-              type="button"
-              aria-label="안내 닫기"
-              className="min-h-[52px] min-w-[52px] text-[17px] text-muted-foreground"
-              onClick={() => setOtherBoardDraft(null)}
-            >
-              ✕
-            </button>
-          </div>
+        <div className="mb-4 flex flex-wrap items-center gap-x-1 gap-y-0.5 rounded-xl bg-primary/5 py-0.5 pl-3 pr-1">
+          <p className="flex-1 whitespace-nowrap text-caption text-foreground">쓰던 글이 있어요</p>
+          <button
+            type="button"
+            className="min-h-[52px] shrink-0 rounded-xl px-2 text-caption font-bold text-primary-text"
+            onClick={() => {
+              setSelectedBoard(otherBoardDraft.board)
+              setSelectedCategory(otherBoardDraft.category)
+              setTitle(otherBoardDraft.title)
+              setContent(otherBoardDraft.content)
+              setOtherBoardDraft(null)
+              toast('쓰던 글을 불러왔어요', 'info')
+            }}
+          >
+            이어서 쓰기
+          </button>
+          <button
+            type="button"
+            aria-label="안내 닫기"
+            className="min-h-[52px] min-w-[52px] shrink-0 text-caption text-muted-foreground"
+            onClick={() => setOtherBoardDraft(null)}
+          >
+            ✕
+          </button>
         </div>
       )}
 
