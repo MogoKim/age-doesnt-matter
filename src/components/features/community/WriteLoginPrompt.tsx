@@ -49,7 +49,7 @@ export default function WriteLoginPrompt({
             <p className="mb-1 text-lg font-bold leading-[1.6] text-foreground">
               작성한 글은 그대로 있어요
             </p>
-            <p className="text-[17px] text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               로그인하면 이어서 등록할 수 있어요
             </p>
           </div>
@@ -64,7 +64,7 @@ export default function WriteLoginPrompt({
 
           <button
             type="button"
-            className="min-h-[52px] cursor-pointer text-[17px] text-muted-foreground transition-colors hover:text-foreground lg:min-h-[44px]"
+            className="min-h-[52px] cursor-pointer text-xs text-muted-foreground transition-colors hover:text-foreground lg:min-h-[44px]"
             onClick={onClose}
           >
             계속 작성하기

@@ -556,7 +556,7 @@ export default function TipTapEditor({
       >
         {selectedMedia && (
           <div className="flex items-center justify-between px-2 py-1 mb-1 bg-primary/5 rounded-xl border border-primary/10">
-            <span className="flex items-center gap-1.5 text-[17px] text-primary-text font-medium">
+            <span className="flex items-center gap-1.5 text-xs text-primary-text font-medium">
               {selectedMedia === 'image'
                 ? <ImageIcon className="w-5 h-5 shrink-0" aria-hidden="true" />
                 : <Video className="w-5 h-5 shrink-0" aria-hidden="true" />}
@@ -567,7 +567,7 @@ export default function TipTapEditor({
               onMouseDown={(e) => e.preventDefault()}
               onClick={handleDeleteSelected}
               disabled={isUploading}
-              className="min-h-[52px] px-4 text-[17px] font-bold text-destructive hover:bg-destructive/10 rounded-xl transition-colors disabled:opacity-40"
+              className="min-h-[52px] px-4 text-xs font-bold text-destructive hover:bg-destructive/10 rounded-xl transition-colors disabled:opacity-40"
             >
               삭제
             </button>
@@ -629,7 +629,7 @@ export default function TipTapEditor({
       {mediaError && (
         <div className="fixed top-[132px] left-4 right-4 z-[200] flex items-center gap-2 px-4 py-3 rounded-xl bg-destructive text-white shadow-xl">
           <AlertTriangle className="w-5 h-5 shrink-0" aria-hidden="true" />
-          <span className="text-[17px] font-medium flex-1">{mediaError}</span>
+          <span className="text-xs font-medium flex-1">{mediaError}</span>
           <button
             type="button"
             onClick={() => setMediaError('')}
@@ -686,7 +686,7 @@ export default function TipTapEditor({
                     <FileVideo className="w-6 h-6 shrink-0 text-muted-foreground" aria-hidden="true" />
                     <div>
                       <p className="font-bold">내 동영상 올리기</p>
-                      <p className="text-[17px] text-muted-foreground">MP4, MOV, WebM · 최대 50MB</p>
+                      <p className="text-xs text-muted-foreground">MP4, MOV, WebM · 최대 50MB</p>
                     </div>
                   </button>
                   {/* 2번: 유튜브 링크 */}
@@ -698,7 +698,7 @@ export default function TipTapEditor({
                     <YoutubeIcon className="w-6 h-6 shrink-0 text-muted-foreground" aria-hidden="true" />
                     <div>
                       <p className="font-bold">유튜브 링크</p>
-                      <p className="text-[17px] text-muted-foreground">유튜브 주소를 붙여넣어 삽입</p>
+                      <p className="text-xs text-muted-foreground">유튜브 주소를 붙여넣어 삽입</p>
                     </div>
                   </button>
                 </div>
@@ -713,7 +713,7 @@ export default function TipTapEditor({
             ) : (
               <>
                 <p className="text-body font-bold text-foreground mb-2">유튜브 주소를 붙여넣어 주세요</p>
-                <p className="flex items-start gap-1.5 text-[17px] text-muted-foreground mb-3">
+                <p className="flex items-start gap-1.5 text-xs text-muted-foreground mb-3">
                   <Lightbulb className="w-5 h-5 shrink-0 mt-0.5" aria-hidden="true" />
                   본문에 유튜브 링크를 바로 붙여넣기해도 자동으로 삽입돼요
                 </p>
@@ -728,7 +728,7 @@ export default function TipTapEditor({
                   }}
                   autoFocus
                 />
-                {youtubeError && <p className="text-[17px] text-destructive mt-1">{youtubeError}</p>}
+                {youtubeError && <p className="text-xs text-destructive mt-1">{youtubeError}</p>}
                 <div className="flex gap-2 mt-3">
                   <button
                     type="button"
@@ -826,7 +826,7 @@ export default function TipTapEditor({
         <div className="absolute inset-0 bg-card/60 rounded-xl flex items-center justify-center z-10 pointer-events-none">
           <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-4 py-2 shadow-md">
             <Loader2 className="w-5 h-5 shrink-0 animate-spin text-primary-text" aria-hidden="true" />
-            <span className="text-[17px] font-medium text-foreground">
+            <span className="text-xs font-medium text-foreground">
               {isUploadingImage ? '사진 업로드 중' : '동영상 업로드 중'}
               {uploadProgress !== null ? ` ${uploadProgress}%` : '...'}
             </span>
