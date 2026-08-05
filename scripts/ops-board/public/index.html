@@ -80,26 +80,50 @@
       }
       .card .stale { color: #fbbf24; font-size: 13px; margin-top: 6px; }
       .empty { color: var(--muted); font-size: 14px; padding: 8px; }
-      /* ── 운영 원장 Beta ── */
-      .ledger-head { margin: 28px 0 10px; padding-top: 18px; border-top: 1px solid #333; }
-      .ledger-head h2 { margin: 0 0 4px; font-size: 17px; }
-      .ledger-head .sub { color: var(--muted); font-size: 13px; }
-      .lcard { background: #1b1b1b; border: 1px solid #333; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
-      .lcard.alert { border-color: #ef4444; background: #2a1616; }
-      .lcard.locked { opacity: .62; }
-      .lcard .ltitle { font-weight: 600; font-size: 14px; margin-bottom: 5px; }
-      .lcard .lmeta { color: var(--muted); font-size: 12px; margin-bottom: 6px; }
-      .lcard .lrow { font-size: 12.5px; line-height: 1.55; }
-      .lcard .lrow b { color: #9ca3af; font-weight: 500; }
-      .lcard .lissue { color: #fca5a5; font-size: 12.5px; margin-top: 6px; font-weight: 600; }
-      .lcard .lock { color: #9ca3af; }
-      .badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 11px; margin-right: 5px; }
-      .badge.p0 { background: #7f1d1d; color: #fecaca; }
-      .badge.p1 { background: #78350f; color: #fed7aa; }
-      .badge.p2 { background: #374151; color: #d1d5db; }
-      .badge.st { background: #1e3a5f; color: #bfdbfe; }
-      details.closed-box { margin-top: 14px; }
-      details.closed-box summary { color: var(--muted); font-size: 13px; cursor: pointer; }
+      /* ── 운영 원장 (compact row) ── */
+      #summary { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+      .sm { flex: 1 1 140px; background: #1b1b1b; border: 1px solid #333; border-radius: 8px;
+            padding: 9px 12px; min-width: 130px; }
+      .sm.hot { border-color: #ef4444; background: #2a1616; }
+      .sm .n { font-size: 22px; font-weight: 700; line-height: 1.1; }
+      .sm .l { font-size: 12px; color: var(--muted); margin-top: 2px; }
+      .sm.hot .n { color: #f87171; }
+
+      .lsec { margin-bottom: 16px; }
+      .lsec > h2 { font-size: 14px; margin: 0 0 7px; font-weight: 600; letter-spacing: .01em; }
+      .lsec > h2 .c { color: #6b7280; font-weight: 400; }
+
+      .row { display: block; background: #1b1b1b; border: 1px solid #2f2f2f;
+             border-left: 3px solid #3f3f46; border-radius: 6px;
+             padding: 9px 12px; margin-bottom: 6px; }
+      .row.alert { border-color: #ef4444; border-left-color: #ef4444; background: #241414; }
+      .row.locked { opacity: .58; }
+      .row .r1 { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; margin-bottom: 4px; }
+      .row .t { font-size: 14px; font-weight: 600; flex: 1 1 240px; min-width: 0;
+                overflow-wrap: anywhere; }
+      .row .r2 { font-size: 12.5px; line-height: 1.5; color: #d4d4d8; overflow-wrap: anywhere; }
+      .row .r2 b { color: #71717a; font-weight: 500; margin-right: 3px; }
+      .row .r3 { font-size: 11.5px; color: var(--muted); margin-top: 4px;
+                 display: flex; gap: 10px; flex-wrap: wrap; }
+      .row .warn { color: #fca5a5; font-weight: 600; }
+
+      .b { display: inline-block; padding: 1px 5px; border-radius: 3px; font-size: 10.5px;
+           font-weight: 600; white-space: nowrap; }
+      .b.p0 { background: #7f1d1d; color: #fecaca; }
+      .b.p1 { background: #78350f; color: #fed7aa; }
+      .b.p2 { background: #3f3f46; color: #d4d4d8; }
+      .b.st { background: #1e3a5f; color: #bfdbfe; font-weight: 500; }
+
+      details#probe-box { margin-top: 22px; padding-top: 14px; border-top: 1px solid #2f2f2f; }
+      details#probe-box > summary { color: var(--muted); font-size: 13px; cursor: pointer;
+                                    padding: 4px 0; }
+      details.closed-box { margin-top: 10px; }
+      details.closed-box > summary { color: #52525b; font-size: 12px; cursor: pointer; }
+
+      @media (max-width: 640px) {
+        .sm { flex: 1 1 100%; }
+        .row .t { flex: 1 1 100%; }
+      }
     </style>
   </head>
   <body>
@@ -107,8 +131,12 @@
       <h1><span class="dot">●</span> 거울 보드 — 우나어 상황실</h1>
       <div id="status">연결 중…</div>
     </header>
-    <main id="board"></main>
+    <div id="summary"></div>
     <section id="ledger"></section>
+    <details id="probe-box">
+      <summary>🔍 probe 보드 (git·CI·HTTP 실측 자동 판정) — 펼치기</summary>
+      <main id="board"></main>
+    </details>
     <script src="/board.js"></script>
   </body>
 </html>

@@ -100,83 +100,97 @@ function start() {
 start()
 
 /* ──────────────────────────────────────────────────────────────────────────
- * 운영 원장(Beta) — merge는 종결이 아니다. 운영검증 PASS만 종결이다.
- * probe SSE와 분리된 /ledger 스냅샷을 60초마다 폴링한다.
+ * 운영 원장 — compact row. 첫 화면의 주인은 probe가 아니라 이쪽이다.
+ * merge는 종결이 아니다. 배포도 종결이 아니다. 운영검증 PASS만 종결이다.
  * ────────────────────────────────────────────────────────────────────────── */
-var LEDGER_COLUMNS = ['절대누락금지', '배포완료-적용확인만', '지금가능', '백로그']
-var LEDGER_LABEL = {
-  '절대누락금지': '🔴 절대 누락 없이 확인할 것',
-  '배포완료-적용확인만': '① 배포 완료, 적용 확인만 남음',
-  '지금가능': '② 지금 바로 할 수 있음',
-  '백로그': '③ 백로그 — 고객 임팩트/리텐션 순',
+var L_ORDER = ['절대누락금지', '배포완료-적용확인만', '지금가능', '백로그']
+var L_HEAD = {
+  '절대누락금지': '🔴 절대 누락 금지',
+  '배포완료-적용확인만': '⏳ 배포 완료, 적용 확인만 남음',
+  '지금가능': '▶ 지금 바로 할 수 있음',
+  '백로그': '📌 백로그 — 고객 임팩트/리텐션 순',
 }
-/* 이 세션의 workstream. 다른 owner는 잠금 표시(읽기 전용처럼 보이게) */
+var L_SUM = {
+  '절대누락금지': '🔴 절대누락',
+  '배포완료-적용확인만': '⏳ 운영검증 대기',
+  '지금가능': '▶ 지금 가능',
+  '백로그': '📌 백로그',
+}
+/* 이 세션의 workstream. 다른 owner 항목은 흐리게(읽기 전용처럼) */
 var MY_STREAM = 'claude-ops'
 
-function ledgerCard(e) {
+function whenLabel(it) {
+  var w = it.trigger || it.due
+  if (!w) return ''
+  return String(w).replace('T', ' ').replace(/\+09:00$/, '').slice(0, 16)
+}
+
+function ledgerRow(e) {
   var it = e.item
-  var hasErr = e.issues.some(function (i) { return i.level === 'error' })
+  var bad = e.overdue || e.issues.some(function (i) { return i.level === 'error' })
   var locked = it.owner_session !== MY_STREAM && it.owner_session !== 'unassigned'
-  var cls = 'lcard' + (hasErr || e.overdue ? ' alert' : '') + (locked ? ' locked' : '')
-  var when = it.trigger || it.due
-  var parts = []
-  parts.push('<div class="ltitle">' + (locked ? '<span class="lock">🔒 </span>' : '') + escapeHtml(it.title) + '</div>')
-  parts.push('<div class="lmeta">'
-    + '<span class="badge ' + escapeHtml(String(it.priority).toLowerCase()) + '">' + escapeHtml(it.priority) + '</span>'
-    + '<span class="badge st">' + escapeHtml(it.status) + '</span>'
-    + escapeHtml(it.owner_session)
-    + (when ? ' · ⏰ ' + escapeHtml(when) : '')
-    + '</div>')
-  parts.push('<div class="lrow"><b>다음:</b> ' + escapeHtml(it.next_action || '(없음)') + '</div>')
-  parts.push('<div class="lrow"><b>종결조건:</b> ' + escapeHtml(it.close_condition || '(없음)') + '</div>')
-  if (it.pass_criteria) parts.push('<div class="lrow"><b>PASS:</b> ' + escapeHtml(it.pass_criteria) + '</div>')
-  for (var i = 0; i < e.issues.length; i++) {
-    parts.push('<div class="lissue">⚠ ' + escapeHtml(e.issues[i].message) + '</div>')
-  }
   var el = document.createElement('div')
-  el.className = cls
-  el.innerHTML = parts.join('')
+  el.className = 'row' + (bad ? ' alert' : '') + (locked ? ' locked' : '')
+
+  var when = whenLabel(it)
+  var goal = it.pass_criteria || it.close_condition || ''
+  var warns = e.issues.map(function (i) { return i.message }).join(' · ')
+
+  el.innerHTML =
+    '<div class="r1">' +
+      '<span class="b ' + escapeHtml(String(it.priority).toLowerCase()) + '">' + escapeHtml(it.priority) + '</span>' +
+      '<span class="b st">' + escapeHtml(it.status) + '</span>' +
+      '<span class="t">' + (locked ? '🔒 ' : '') + escapeHtml(it.title) + '</span>' +
+    '</div>' +
+    '<div class="r2"><b>다음</b>' + escapeHtml(it.next_action || '(없음)') + '</div>' +
+    '<div class="r2"><b>종결</b>' + escapeHtml(goal || '(없음)') + '</div>' +
+    '<div class="r3">' +
+      '<span>' + escapeHtml(it.owner_session) + '</span>' +
+      (when ? '<span>⏰ ' + escapeHtml(when) + '</span>' : '') +
+      (warns ? '<span class="warn">⚠ ' + escapeHtml(warns) + '</span>' : '') +
+    '</div>'
   return el
+}
+
+function renderSummary(state) {
+  var box = document.getElementById('summary')
+  if (!box) return
+  box.innerHTML = ''
+  for (var i = 0; i < L_ORDER.length; i++) {
+    var col = L_ORDER[i]
+    var n = state.counts[col] || 0
+    var d = document.createElement('div')
+    d.className = 'sm' + (col === '절대누락금지' && n > 0 ? ' hot' : '')
+    d.innerHTML = '<div class="n">' + n + '</div><div class="l">' + L_SUM[col] + '</div>'
+    box.appendChild(d)
+  }
 }
 
 function renderLedger(state) {
   var root = document.getElementById('ledger')
   if (!root) return
+  renderSummary(state)
   root.innerHTML = ''
-
-  var head = document.createElement('div')
-  head.className = 'ledger-head'
-  head.innerHTML = '<h2>운영 원장 (Beta)</h2><div class="sub">'
-    + 'merge는 종결이 아니다 · 배포도 종결이 아니다 · <b>운영검증 PASS만 종결</b>'
-    + ' — 항목 ' + state.items.length + '건'
-    + (state.errorCount ? ' · <span style="color:#fca5a5">필수 누락 ' + state.errorCount + '건</span>' : '')
-    + (state.updated ? ' · 갱신 ' + escapeHtml(state.updated) : '')
-    + '</div>'
-  root.appendChild(head)
 
   var open = state.items.filter(function (e) { return e.item.status !== 'verified_closed' })
   var closed = state.items.filter(function (e) { return e.item.status === 'verified_closed' })
 
-  for (var c = 0; c < LEDGER_COLUMNS.length; c++) {
-    var col = LEDGER_COLUMNS[c]
+  for (var c = 0; c < L_ORDER.length; c++) {
+    var col = L_ORDER[c]
     var items = open.filter(function (e) { return e.column === col })
-    var box = document.createElement('div')
-    box.className = 'col'
-    box.innerHTML = '<h3>' + LEDGER_LABEL[col] + ' <span style="color:#666">(' + items.length + ')</span></h3>'
-    if (!items.length) {
-      var em = document.createElement('div'); em.className = 'empty'; em.textContent = '없음'
-      box.appendChild(em)
-    } else {
-      for (var i = 0; i < items.length; i++) box.appendChild(ledgerCard(items[i]))
-    }
-    root.appendChild(box)
+    if (!items.length) continue                       // 빈 섹션은 공간을 차지하지 않는다
+    var sec = document.createElement('section')
+    sec.className = 'lsec'
+    sec.innerHTML = '<h2>' + L_HEAD[col] + ' <span class="c">' + items.length + '</span></h2>'
+    for (var i = 0; i < items.length; i++) sec.appendChild(ledgerRow(items[i]))
+    root.appendChild(sec)
   }
 
   if (closed.length) {
     var d = document.createElement('details')
     d.className = 'closed-box'
-    d.innerHTML = '<summary>✅ 검증 완료 종결 ' + closed.length + '건 (접힘)</summary>'
-    for (var k = 0; k < closed.length; k++) d.appendChild(ledgerCard(closed[k]))
+    d.innerHTML = '<summary>✅ 검증 완료 종결 ' + closed.length + '건</summary>'
+    for (var k = 0; k < closed.length; k++) d.appendChild(ledgerRow(closed[k]))
     root.appendChild(d)
   }
 }
