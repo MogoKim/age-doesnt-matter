@@ -516,7 +516,7 @@ test('글쓰기 — 카테고리 BottomSheet + 제목 maxLength', async ({ page 
   await dismissDraft(page)
   await ss(page, '12-write-initial', testInfo)
 
-  const catBtn = page.locator('button', { hasText: '카테고리를 선택해주세요' })
+  const catBtn = page.locator('button', { hasText: '주제 고르기 (선택)' })
   if (await catBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
     await catBtn.click()
     await page.waitForTimeout(600)
@@ -569,7 +569,7 @@ test('글쓰기 — 완전 입력 후 등록 버튼 활성화 (미제출)', asyn
   await dismissDraft(page)
 
   // 카테고리
-  const catBtn = page.locator('button', { hasText: '카테고리를 선택해주세요' })
+  const catBtn = page.locator('button', { hasText: '주제 고르기 (선택)' })
   if (await catBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
     await catBtn.click()
     await page.waitForTimeout(500)

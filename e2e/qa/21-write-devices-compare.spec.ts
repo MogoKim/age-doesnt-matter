@@ -54,7 +54,7 @@ test('01 초기 레이아웃 + above-the-fold', async ({ page, viewport }, testI
   console.log(`[INFO] 뷰포트: ${vw}×${vh}px`)
 
   // 카테고리 버튼 위치 — 첫 탭 불필요 스크롤 없이 보이는지
-  const categoryBtn = page.locator('button', { hasText: '카테고리를 선택해주세요' })
+  const categoryBtn = page.locator('button', { hasText: '주제 고르기 (선택)' })
   if (await categoryBtn.isVisible({ timeout: 2000 })) {
     const box = await categoryBtn.boundingBox()
     console.log(`[INFO] 카테고리 버튼: top=${box?.y?.toFixed(0)}px h=${box?.height?.toFixed(0)}px — 화면 내: ${(box?.y ?? 0) + (box?.height ?? 0) < vh ? '✅' : '❌ 잘림'}`)
@@ -134,7 +134,7 @@ test('03 카테고리 선택 + 제목 + 본문 입력 흐름', async ({ page, vi
   await dismissDraft(page)
 
   // 카테고리 선택
-  const catBtn = page.locator('button', { hasText: '카테고리를 선택해주세요' })
+  const catBtn = page.locator('button', { hasText: '주제 고르기 (선택)' })
   if (await catBtn.isVisible({ timeout: 2000 })) {
     await catBtn.click()
     await page.waitForTimeout(600)
