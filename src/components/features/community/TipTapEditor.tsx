@@ -9,6 +9,8 @@ import Image from '@tiptap/extension-image'
 import Youtube from '@tiptap/extension-youtube'
 import Placeholder from '@tiptap/extension-placeholder'
 import { useState, useCallback, useEffect, useRef } from 'react'
+// TipTap의 Image extension과 이름이 겹치므로 아이콘은 ImageIcon으로 받는다
+import { Image as ImageIcon, Video, Bold, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024  // 10MB/장
@@ -554,8 +556,11 @@ export default function TipTapEditor({
       >
         {selectedMedia && (
           <div className="flex items-center justify-between px-2 py-1 mb-1 bg-primary/5 rounded-xl border border-primary/10">
-            <span className="text-[17px] text-primary-text font-medium">
-              {selectedMedia === 'image' ? '📷 사진이 선택됐어요' : '🎬 영상이 선택됐어요'}
+            <span className="flex items-center gap-1.5 text-[17px] text-primary-text font-medium">
+              {selectedMedia === 'image'
+                ? <ImageIcon className="w-5 h-5 shrink-0" aria-hidden="true" />
+                : <Video className="w-5 h-5 shrink-0" aria-hidden="true" />}
+              {selectedMedia === 'image' ? '사진이 선택됐어요' : '영상이 선택됐어요'}
             </span>
             <button
               type="button"
@@ -573,8 +578,11 @@ export default function TipTapEditor({
             정작 제일 많이 쓰는 사진·동영상이 오른쪽으로 잘려 안 보였다.
             인용·글자 크기는 버튼만 뺐고 TipTap extension(Blockquote·FontSize)은 그대로 둔다
             → 이미 인용·글자 크기가 들어간 옛 글은 계속 그대로 보인다.
+            아이콘은 이모지가 아니라 lucide 라인 아이콘을 쓴다 — 이모지는 기기마다 모양이
+            다르고 우리 디자인 시스템 밖이다. 아이콘은 stroke=currentColor라 글자색을 따라간다.
             버튼 구분은 테두리가 아니라 bg-muted로 준다 — globals.css의 button{border:none}이
-            Tailwind border 유틸을 덮어써서 <button>에는 테두리가 아예 안 그려진다. */}
+            Tailwind border 유틸을 덮어써서 <button>에는 테두리가 아예 안 그려진다.
+            폭은 내용만큼만(flex-1 아님) — 툴바가 큰 박스형 메뉴처럼 보이지 않게. */}
         <div className="flex items-center gap-2 px-4 py-1">
           {/* 사진 추가 */}
           <button
@@ -582,10 +590,12 @@ export default function TipTapEditor({
             onClick={() => { setMediaError(''); fileInputRef.current?.click() }}
             disabled={isUploadingImage}
             title="사진 추가"
-            className="flex-1 min-w-0 flex items-center justify-center gap-1.5 min-h-[52px] px-2 rounded-xl bg-muted text-foreground transition-colors hover:bg-border disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-1.5 min-h-[52px] px-3 rounded-xl bg-muted text-foreground transition-colors hover:bg-border disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            <span className="text-xl leading-none" aria-hidden="true">{isUploadingImage ? '⏳' : '📷'}</span>
-            <span className="text-caption font-medium truncate">사진</span>
+            {isUploadingImage
+              ? <Loader2 className="w-5 h-5 shrink-0 animate-spin" aria-hidden="true" />
+              : <ImageIcon className="w-5 h-5 shrink-0" aria-hidden="true" />}
+            <span className="text-caption font-medium whitespace-nowrap">사진</span>
           </button>
 
           {/* 동영상 추가 */}
@@ -594,10 +604,12 @@ export default function TipTapEditor({
             onClick={() => { setMediaError(''); setVideoSheet('picking') }}
             disabled={isUploadingVideo}
             title="동영상 추가"
-            className="flex-1 min-w-0 flex items-center justify-center gap-1.5 min-h-[52px] px-2 rounded-xl bg-muted text-foreground transition-colors hover:bg-border disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-1.5 min-h-[52px] px-3 rounded-xl bg-muted text-foreground transition-colors hover:bg-border disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            <span className="text-xl leading-none" aria-hidden="true">{isUploadingVideo ? '⏳' : '🎬'}</span>
-            <span className="text-caption font-medium truncate">동영상</span>
+            {isUploadingVideo
+              ? <Loader2 className="w-5 h-5 shrink-0 animate-spin" aria-hidden="true" />
+              : <Video className="w-5 h-5 shrink-0" aria-hidden="true" />}
+            <span className="text-caption font-medium whitespace-nowrap">동영상</span>
           </button>
 
           {/* 굵게 */}
@@ -608,14 +620,14 @@ export default function TipTapEditor({
             aria-pressed={editor.isActive('bold')}
             onClick={() => editor.chain().focus().toggleBold().run()}
             className={cn(
-              'flex-1 min-w-0 flex items-center justify-center gap-1.5 min-h-[52px] px-2 rounded-xl transition-colors',
+              'flex items-center justify-center gap-1.5 min-h-[52px] px-3 rounded-xl transition-colors',
               editor.isActive('bold')
                 ? 'bg-primary/10 text-primary-text'
                 : 'bg-muted text-foreground hover:bg-border',
             )}
           >
-            <span className="text-xl font-bold leading-none" aria-hidden="true">B</span>
-            <span className="text-caption font-medium truncate">굵게</span>
+            <Bold className="w-5 h-5 shrink-0" aria-hidden="true" />
+            <span className="text-caption font-medium whitespace-nowrap">굵게</span>
           </button>
         </div>
       </div>
@@ -819,7 +831,7 @@ export default function TipTapEditor({
       {isUploading && (
         <div className="absolute inset-0 bg-card/60 rounded-xl flex items-center justify-center z-10 pointer-events-none">
           <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-4 py-2 shadow-md">
-            <span className="text-lg">⏳</span>
+            <Loader2 className="w-5 h-5 shrink-0 animate-spin text-primary-text" aria-hidden="true" />
             <span className="text-[17px] font-medium text-foreground">
               {isUploadingImage ? '사진 업로드 중' : '동영상 업로드 중'}
               {uploadProgress !== null ? ` ${uploadProgress}%` : '...'}
