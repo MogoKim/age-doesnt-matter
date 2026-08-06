@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { detectEnv } from './AddToHomeScreen'
-import { triggerAppInstall, isAndroidInstallEnv } from '@/lib/app-links'
+import { triggerAppInstall, isAndroidExternalBrowserEnv } from '@/lib/app-links'
 import { useAppEnvironment } from '@/hooks/useAppEnvironment'
 
 const BLOCKED_ENVS = ['kakao-android', 'kakao-ios', 'naver-inapp', 'google-inapp', 'instagram-inapp', 'crios', 'desktop'] as const
@@ -23,7 +23,7 @@ export default function PwaInlineBanner() {
     if (sessionStorage.getItem(SESSION_INLINE_SHOWN)) return
     if (sessionStorage.getItem('signup_prompt_shown_this_session')) return  // 가입 유도 배너 노출 시 충돌 방지
     setShow(true)
-    setIsAndroid(isAndroidInstallEnv())
+    setIsAndroid(isAndroidExternalBrowserEnv())
   }, [isTWA, isStandalone, isCapacitor])
 
   const handleInstall = () => {
