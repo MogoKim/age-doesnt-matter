@@ -13,14 +13,14 @@
 - 타겟페르소나: `ALL` (여성 중심)
 
 ## 코드 위치
-- `src/components/features/community/IdentityBanner.tsx` — 정체성 배너(클라이언트, 비회원만)
 - `src/components/features/community/InlineRelatedPosts.tsx` — 본문 끝 "같은 고민 글"(서버)
 - `src/components/features/community/TrackedPostLink.tsx` — 관련글 클릭 추적 래퍼(클라이언트)
 - `src/components/features/community/PostListBottom.tsx` — `mode='related'` + `relatedPosts` prop 추가
 - `src/lib/queries/posts/posts.community.ts` — `getRelatedCommunityPosts()` 신규 쿼리
 - `src/app/(main)/community/[boardSlug]/[postId]/page.tsx` — 관련글 1회 조회 → 본문끝(0~2)·하단(3~14) 분배 + 배너 삽입
-- `src/app/(main)/magazine/[id]/page.tsx` — 정체성 배너만 삽입(`boardSlug="magazine"`). 관련글은 매거진 자체 `getRelatedMagazinePosts` 유지
+- `src/app/(main)/magazine/[id]/page.tsx` — (정체성 배너 제거됨, 2026-08-06) 관련글은 매거진 자체 `getRelatedMagazinePosts` 유지
 - `src/app/api/events/route.ts` — `CONVERSION_EVENTS`에 측정 이벤트 2개 면제
+  (`identity_banner_view`는 배너 제거로 더 이상 발생하지 않는다 — 화이트리스트에만 남아 있음)
 
 ## 관련글 매칭 로직 (getRelatedCommunityPosts)
 - 같은 `boardType` + 같은 `category` 우선 → 부족하면 같은 게시판 최신순 fallback(이미 뽑은 글·본문글 `notIn` 제외).
@@ -65,3 +65,4 @@
 | 2026-06-12 | 신규 생성 — 정체성 배너 + 같은 고민 글(본문끝·하단) + 측정 이벤트 4종 | 네이버 오가닉 유입자 락인(바운스 85%·가입 1% 개선) |
 | 2026-06-12 | QA 후속 — ①배너 클릭 이탈 제거(Link→div) ②관련글 정렬 인기순(trendingScore)으로 — 시드글 상위노출 방지 ③배너 재디자인(실제 로고 심볼+한 줄, ✕·서브2줄 제거, 문구 확정) | 실기기 QA 디자인 피드백 + 매칭 품질 |
 | 2026-06-12 | 배너 폰트 확대(text-body/caption 변수) — '가+' 글씨크기 조정 반응 + 18px화 / 매거진 글상세에도 배너 적용(boardSlug=magazine) | 실기기 피드백(폰트 작음·가+ 미반응) + 매거진 네이버 유입자 락인 |
+| 2026-08-06 | **정체성 배너(IdentityBanner) 제거** — 상세 상단 띠배너 DETAIL_HEADER(5:1)가 같은 자리를 쓴다(PR #296). 컴포넌트 파일 삭제(PR-4). `identity_banner_view` 이벤트도 함께 중단 | 같은 자리에 두 배너가 공존할 수 없음. 광고 상품 구좌로 전환 |
