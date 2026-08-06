@@ -53,7 +53,9 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
     if (!anchorId) return
     if (window.location.hash.slice(1) !== anchorId) return
     setIsAnchorTarget(true)
-    const t = setTimeout(() => setIsAnchorTarget(false), 2500)
+    // 4초 — smooth 스크롤이 도착하는 데 0.5~1초가 쓰이므로 2.5초면 실제로 보이는 시간이
+    // 1~2초밖에 안 된다. 색만 잠깐 얹는 정도라 과하지 않다.
+    const t = setTimeout(() => setIsAnchorTarget(false), 4000)
     return () => clearTimeout(t)
   }, [anchorId])
 
