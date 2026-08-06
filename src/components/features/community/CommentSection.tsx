@@ -97,6 +97,28 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
     return () => { cancelled = true }
   }, [postId, resolvedIsLoggedIn])
 
+  // [댓글 앵커 2026-08-06] 알림/공유 링크의 #comment-{id}로 들어왔을 때 그 댓글까지 스크롤한다.
+  //   댓글은 클라이언트에서 로드되므로(위 no-store fetch) 브라우저 기본 hash 스크롤은
+  //   요소가 없는 시점에 일어나 실패한다. 목록이 실제로 그려진 뒤 한 번 더 맞춰준다.
+  //   없는 id(삭제된 댓글 등)면 아무 것도 하지 않는다 — 글 상단 그대로가 안전 fallback.
+  useEffect(() => {
+    const id = window.location.hash.slice(1)
+    if (!id.startsWith('comment-')) return
+    // 두 번 시도: 첫 렌더 직후 + 개인화 댓글 반영 후(최대 1초). 찾으면 즉시 종료.
+    let done = false
+    const tryScroll = () => {
+      if (done) return
+      const el = document.getElementById(id)
+      if (!el) return
+      done = true
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    }
+    tryScroll()
+    const t1 = setTimeout(tryScroll, 300)
+    const t2 = setTimeout(tryScroll, 1000)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
+  }, [personalizedComments])
+
   const [optimisticComments, addOptimisticComment] = useOptimistic(
     personalizedComments,
     (state: CommentItemType[], newComment: CommentItemType) => [...state, newComment],

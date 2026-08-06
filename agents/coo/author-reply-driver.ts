@@ -94,11 +94,42 @@ async function writeAuthorReply(p: {
  * - 중복 방지: 같은 (수신자·글·발신봇·COMMENT) 알림이 이미 있으면 skip.
  * - 실패는 catch — 댓글 작성/발행에 영향 없음(부가 기능).
  */
+/**
+ * 보드 → URL 접두사. src/lib/board-registry가 SSoT지만 agents→src 런타임 import 금지라
+ * 여기서 재정의한다(agents/cmo/social-poster.ts·agents/community/sheet-scraper.ts와 동일 관례).
+ * 후보 보드(ELIGIBLE_BOARDS)와 동일한 4개만 둔다 — 그 밖은 앵커 없이 기존 동작.
+ */
+const BOARD_URL_PREFIX_LOCAL: Record<string, string> = {
+  STORY: '/community/stories',
+  LIFE2: '/community/life2',
+  HUMOR: '/community/humor',
+  MENOPAUSE: '/community/menopause',
+}
+
+/**
+ * 알림 클릭 시 이동할 경로. 답글 댓글 위치(#comment-{id})까지 지정해
+ * 글 상단이 아니라 "달린 답글"이 바로 보이게 한다(리텐션 루프).
+ * - slug가 있으면 canonical slug 사용(CUID→slug 301/308 왕복 제거).
+ * - 보드 매핑이 없거나 답글 id가 없으면 null → 기존 동작(buildNotificationLinkUrl이 postId로 글 URL 생성).
+ */
+function buildAuthorReplyLinkUrl(i: {
+  boardType: string
+  postSlug: string | null
+  postId: string
+  replyCommentId: string | null
+}): string | null {
+  const prefix = BOARD_URL_PREFIX_LOCAL[i.boardType]
+  if (!prefix || !i.replyCommentId) return null
+  return `${prefix}/${i.postSlug ?? i.postId}#comment-${i.replyCommentId}`
+}
+
 async function createAuthorReplyNotification(p: {
   recipient: { id: string | null; providerId: string | null; status: string } | null
   fromUserId: string
   postId: string
   fromNickname: string
+  /** 답글 위치 앵커 포함 경로. null이면 기존처럼 postId 기반 글 URL로 이동한다. */
+  linkUrl: string | null
 }): Promise<{ created: boolean; reason: string | null }> {
   const gate = shouldNotifyAuthorReply(p.recipient, p.fromUserId)
   if (!gate.ok) return { created: false, reason: gate.reason }
@@ -116,6 +147,7 @@ async function createAuthorReplyNotification(p: {
         content: `${p.fromNickname}님이 회원님의 댓글에 답글을 남겼어요`,
         postId: p.postId,
         fromUserId: p.fromUserId,
+        ...(p.linkUrl ? { linkUrl: p.linkUrl } : {}),
       },
     })
     return { created: true, reason: null }
@@ -176,7 +208,9 @@ export async function main(): Promise<void> {
       author: { select: { email: true, providerId: true, status: true } }, // providerId/status: 종모양 알림 실회원 판정용
       post: {
         select: {
-          id: true, title: true, content: true, source: true, boardType: true, authorId: true, status: true,
+          // slug: 알림 링크를 canonical slug로 만들기 위한 조회 필드 추가(2026-08-06).
+          //   where/orderBy/take 불변 — 후보 선정에는 영향이 없다.
+          id: true, slug: true, title: true, content: true, source: true, boardType: true, authorId: true, status: true,
           author: { select: { email: true } },
           // ACTIVE 답글만 — 숨김/삭제 답글이 REAL_USERS_IN_THREAD/ALREADY_REPLIED_BY_AUTHOR를 오판시키지 않게
           comments: { where: { status: 'ACTIVE' }, select: { id: true, content: true, parentId: true, authorId: true, author: { select: { email: true } } } },
@@ -344,6 +378,13 @@ export async function main(): Promise<void> {
           fromUserId: c.post.authorId!,
           postId: c.post.id,
           fromNickname: persona.nickname,
+          // 새로 쓴 답글 위치로 보낸다 — 사용자가 "무슨 답이 왔는지"를 바로 본다.
+          linkUrl: buildAuthorReplyLinkUrl({
+            boardType: c.post.boardType,
+            postSlug: c.post.slug ?? null,
+            postId: c.post.id,
+            replyCommentId: writtenCommentId,
+          }),
         })
         await prisma.botLog.create({
           data: {

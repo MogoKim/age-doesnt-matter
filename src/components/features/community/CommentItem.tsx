@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useCallback, memo } from 'react'
+import { useState, useEffect, useTransition, useCallback, memo } from 'react'
 import type { CommentItem as CommentItemType } from '@/types/api'
 import { formatTimeAgo } from './utils'
 import { cn } from '@/lib/utils'
@@ -43,6 +43,21 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
   const [guestModal, setGuestModal] = useState<'edit' | 'delete' | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [optimisticDeleted, setOptimisticDeleted] = useState(false)
+
+  // [댓글 앵커 2026-08-06] 알림/공유 링크의 #comment-{id}로 들어오면 이 댓글을 잠깐 강조한다.
+  //   BEST 섹션은 같은 댓글을 한 번 더 렌더하므로 id를 붙이지 않는다(DOM id 중복 방지) —
+  //   따라서 강조도 본문 목록 쪽에서만 일어난다.
+  const anchorId = isBest ? undefined : `comment-${comment.id}`
+  const [isAnchorTarget, setIsAnchorTarget] = useState(false)
+  useEffect(() => {
+    if (!anchorId) return
+    if (window.location.hash.slice(1) !== anchorId) return
+    setIsAnchorTarget(true)
+    // 4초 — smooth 스크롤이 도착하는 데 0.5~1초가 쓰이므로 2.5초면 실제로 보이는 시간이
+    // 1~2초밖에 안 된다. 색만 잠깐 얹는 정도라 과하지 않다.
+    const t = setTimeout(() => setIsAnchorTarget(false), 4000)
+    return () => clearTimeout(t)
+  }, [anchorId])
 
   const handleLike = useCallback(() => {
     if (isPending) return
@@ -134,9 +149,14 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
 
   return (
     <div
+      id={anchorId}
       className={cn(
         'py-4 border-b border-border',
-        isReply && 'pl-8 bg-background rounded-lg p-4 pl-8 mt-1 border-b-0 relative before:content-[""] before:absolute before:left-4 before:top-4 before:bottom-4 before:w-0.5 before:bg-primary/20 before:rounded-sm'
+        // 알림에서 들어왔을 때 상단 고정 헤더에 가리지 않게 스크롤 여백을 둔다.
+        'scroll-mt-24',
+        isReply && 'pl-8 bg-background rounded-lg p-4 pl-8 mt-1 border-b-0 relative before:content-[""] before:absolute before:left-4 before:top-4 before:bottom-4 before:w-0.5 before:bg-primary/20 before:rounded-sm',
+        // 2.5초 강조 — 색/배경만 바꾸고 레이아웃(폭·높이)은 건드리지 않아 모바일에서 밀림이 없다.
+        isAnchorTarget && 'bg-primary/10 rounded-lg ring-2 ring-primary/40 transition-colors duration-500'
       )}
     >
       <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
