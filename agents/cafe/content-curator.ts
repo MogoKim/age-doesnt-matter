@@ -957,6 +957,15 @@ export async function main() {
   const topicResults: TopicResult[] = []
   let selfRefUsedCount = 0  // [1단계 가시성] killer self-ref 실사용 횟수(loadEligibleKillerSelfRef 성공 시 +1)
 
+  // [PR-1 2026-08-06] 이번 회차에서 final gate로 차단된 mainRef.id.
+  //   quarantinedPostIds는 회차 시작 시 1회만 조회하므로 "이 회차에서 방금 차단된 원문"을 모른다.
+  //   그래서 같은 원문이 다른 topic의 mainRef로 계속 다시 뽑혀 회차가 통째로 전멸한다.
+  //   실측(2026-07-17): 후보 15/15가 전부 HAIKU_BLOCKED → 0발행 회차가 12회 이상,
+  //   단일 원문 1건이 212회 반복 차단. 30일 중복 1,355행 중 76%가 이 "회차 내 반복"이다.
+  //   차단 기준(shouldBlockPublish/BLOCKING_RISKS/isDeletedOriginal)은 일절 건드리지 않는다 —
+  //   이미 차단된 원문을 같은 회차에서 다시 고르지 않게만 한다.
+  const blockedThisRun = new Set<string>()
+
   for (const candidate of candidatePool) {
     if (publishedCount >= maxPosts) break
 
@@ -999,8 +1008,13 @@ export async function main() {
       selfRefUsedCount++
       refMetrics = { refStage: 'self', refPoolSize: 1, refCandidateSourceCounts: { [selfRef.cafeId ?? 'unknown']: 1 }, refDiversityApplied: false }
     } else {
+      // [PR-1 2026-08-06] 회차 시작 시점 격리(quarantinedPostIds) + 이 회차에서 방금 차단된 것(blockedThisRun).
+      //   blockedThisRun이 비어 있으면 기존 Set을 그대로 넘겨 동작이 100% 동일하다(회차 첫 후보 등).
+      const excludedRefIds = blockedThisRun.size > 0
+        ? new Set([...quarantinedPostIds, ...blockedThisRun])
+        : quarantinedPostIds
       // [REFS_EMPTY fix 2026-07-10] 당일 격리 Set을 전달해 slice(limit) 이전에 선제 제외 — 아래 사후 filter는 이중 방어
-      const refResult = await getReferencePosts(candidate.topic, desireCat, 3, quarantinedPostIds, usedShare7d)
+      const refResult = await getReferencePosts(candidate.topic, desireCat, 3, excludedRefIds, usedShare7d)
       candidatesBeforeUsableFilter = refResult.candidatesBeforeUsableFilter
       maxUsableCount = refResult.maxUsableCount
       refMetrics = {
@@ -1010,13 +1024,13 @@ export async function main() {
         refDiversityApplied: refResult.refDiversityApplied,
       }
       // [Phase 0-c] 오늘 DUP/POL로 차단됐던 글은 refs로도 재사용 금지 — 같은 발행물로 수렴해 반복 차단되는 루프 제거
-      refs = refResult.refs.filter(r => !quarantinedPostIds.has((r as unknown as { id: string }).id))
+      refs = refResult.refs.filter(r => !excludedRefIds.has((r as unknown as { id: string }).id))
       refsQuarantinedCount = refResult.refs.length - refs.length
 
       // usable>=5 후보가 전무(LOW_USABLE)하고 flag ON·회차 1건 미만이면, 안전한 usable==4 후보 1개로 fallback.
       // 기본 usable>=5 경로는 그대로. flag OFF면 아래 블록은 실행되지 않음(현행과 100% 동일).
       if (refs.length === 0 && candidatesBeforeUsableFilter > 0 && ENABLE_CONDITIONAL_USABLE4 && conditionalU4Used < 1) {
-        const u4Ref = pickConditionalUsable4(refResult.u4Pool.filter(p => !quarantinedPostIds.has(p.id)))
+        const u4Ref = pickConditionalUsable4(refResult.u4Pool.filter(p => !excludedRefIds.has(p.id)))
         if (u4Ref) { refs = [u4Ref]; usedConditionalU4 = true }
       }
     }
@@ -1100,6 +1114,7 @@ export async function main() {
         mode: haikuGateMode,
       })
       console.log(`[ContentCurator] HAIKU_BLOCKED (${blocked.risks.join(',')}, conf=${blocked.confidence}): "${mainRef.title.slice(0, 30)}" — 발행 차단`)
+      blockedThisRun.add(mainRef.id)  // [PR-1] 같은 회차 다음 후보의 refs에서 제외
       topicResults.push({ ...candidate, ...refMetrics, refsCount: refs.length, skipReason: 'HAIKU_BLOCKED', ...refMeta(refs[0]), haiku })
       continue
     }
@@ -1120,6 +1135,7 @@ export async function main() {
     // Haiku가 thin_or_contextless로 REJECT해도 그 축은 비차단이라 여기서 결정론적으로 막는다.
     if (isDeletedOriginal(curated.title, curated.content)) {
       console.log(`[ContentCurator] DELETED_ORIGINAL: "${curated.title.slice(0, 30)}" — 원문 내용 삭제(펑) 패턴, 발행 차단`)
+      blockedThisRun.add(mainRef.id)  // [PR-1] 판정은 curated 기준이지만 재선택 대상은 원문(mainRef)이다
       topicResults.push({ ...candidate, ...refMetrics, refsCount: refs.length, skipReason: 'DELETED_ORIGINAL', ...refMeta(refs[0]), haiku })
       continue
     }
