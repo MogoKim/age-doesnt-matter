@@ -75,8 +75,8 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 
 | ID | 기능명 | 코드 위치 | 트리거 | 충족욕망 | 타겟페르소나 | 문서 | 상태 | 최근변경 |
 |----|--------|----------|--------|---------|------------|------|------|---------|
-| F01 | 회원가입 유도 배너 | `src/components/common/SignupPromptBanner.tsx` | 정독 85% + 60초 백스톱 (문구 C·타이밍 read_complete 고정, 실험 종료) | RELATION | ALL | [F01](F01-signup-prompt.md) | ACTIVE | 2026-06-09 |
-| F02 | PWA 설치 유도 | `src/components/common/AddToHomeScreen.tsx` + `src/lib/app-links.ts` | 4단계 트리거 (13s/3페이지/행동/주간) — 안드=Play/iOS=PWA | RELATION+HEALTH | P1·P2 | [F02](F02-pwa-install.md) | ACTIVE | 2026-06-05 |
+| F01 | 회원가입 유도 배너 | `src/components/common/SignupPromptBanner.tsx` | 정독 85% + 60초 백스톱 (문구 C·타이밍 read_complete 고정, 실험 종료) | RELATION | ALL | [F01](F01-signup-prompt.md) | ACTIVE | 2026-08-06 |
+| F02 | PWA 설치 유도 | `src/components/common/AddToHomeScreen.tsx` + `src/lib/app-links.ts` | 4단계 트리거 (13s/3페이지/행동/주간) — 안드=Play/iOS=PWA. **`NEXT_PUBLIC_PWA_INSTALL_ENABLED` OFF 시 전부 미동작** | RELATION+HEALTH | P1·P2 | [F02](F02-pwa-install.md) | ACTIVE | 2026-08-06 |
 | F03 | 홈 페이지 | `src/components/features/home/` (21개 컴포넌트) | 홈 방문 | RELATION | P1·P2·P3 | [F03](F03-home-page.md) | ACTIVE | 2026-06-03 |
 | F04 | 커뮤니티 게시판 | `src/app/(main)/community/` | 사용자 작성 | RELATION+HEALTH | P1·P2·P5 | [F04](F04-community.md) | ACTIVE | 2026-06-03 |
 | F05 | 매거진 | `src/app/(main)/magazine/` | 자동생성(A02) + 사용자 탐색 — 주제 공급에 geo_seed self-refill 추가(PR #113) | HEALTH+MONEY+RETIRE | P2·P4 | [F05](F05-magazine.md) | ACTIVE | 2026-07-10 |
@@ -87,7 +87,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | F10 | 최상단 띠 배너 | `src/components/layouts/TopPromoBanner.tsx` + `TopPromoBannerClient.tsx` + `src/components/admin/TopPromoBannerPanel.tsx` | DB Setting 테이블 (어드민 관리) | RELATION | ALL | [F10](F10-top-promo-banner.md) | ACTIVE | 2026-06-05 |
 | F11 | 비회원 댓글+좋아요 | `src/lib/actions/guest-comments.ts` + `src/lib/actions/guest-likes.ts` + `src/lib/turnstile.ts` + `src/components/features/community/GuestCommentInput.tsx` + `GuestPasswordModal.tsx` | 비로그인 사용자 직접 참여 | RELATION | P1/P2/P3 | [F11](F11-guest-comment-like.md) | ACTIVE | 2026-05-23 |
 | F12 | HOT/명예의 전당 승격 시스템 | `src/lib/actions/promotion.ts` + `src/lib/actions/likes.ts` + `src/lib/actions/guest-likes.ts` + `src/lib/actions/comments.ts` + `src/lib/queries/boards.ts` + `src/lib/actions/admin/admin.content.ts` + `src/components/admin/ContentTable.tsx` | 좋아요+댓글 수 기반 자동 승격 (HOT/HALL_OF_FAME) | RELATION | P3 | [F12](F12-promotion-system.md) | ACTIVE | 2026-05-12 |
-| F13 | 게시글 하단 CTA | `src/components/features/community/PostCTA.tsx` | 게시글/매거진 상세 열람 후 자동 표시 — 비회원→가입 / 모바일웹 로그인→앱설치 | RELATION | ALL | [F13](F13-post-cta.md) | ACTIVE | 2026-06-03 |
+| F13 | 게시글 하단 CTA | `src/components/features/community/PostCTA.tsx` | 게시글 상세(매거진 미적용) 열람 시 표시 — 비회원→가입 / 로그인 안드로이드→Play스토어 / iOS는 `NEXT_PUBLIC_PWA_INSTALL_ENABLED` 연동 | RELATION | ALL | [F13](F13-post-cta.md) | ACTIVE | 2026-08-06 |
 | F14 | 목록 광고 띠배너 | `src/components/ad/ListBanner.tsx` + `ListBannerClient.tsx` + `src/app/api/ad-impression/route.ts` + AdBanner `LIST_HEADER` 슬롯 + `src/components/admin/AdBannerTable.tsx` | 6개 목록 페이지 GNB 아래 노출 (어드민 AdBanner 관리, 최대 3개 자동 슬라이드) | MONEY | ALL | [F14](F14-list-ad-banner.md) | ACTIVE | 2026-06-05 |
 | F15 | 팝업 (공지·이벤트·홍보) | `src/components/common/PopupRenderer.tsx` + `src/components/admin/PopupManager.tsx` + `src/lib/actions/popups.ts` + `src/lib/queries/popups.ts` + `src/app/api/popups/route.ts` + Popup 모델 | 대상 페이지 진입 시 노출 (어드민 Popup 관리 · 센터/바텀/전면 3종 · 기간·빈도 제어) | RELATION | ALL | [F15](F15-popup.md) | ACTIVE | 2026-06-13 |
 | F16 | 웹 A/B 테스트 인프라 | `src/lib/experiments/` + `src/app/admin/(panel)/ab-tests/` + `src/lib/queries/admin/admin.experiments-web.ts` + ExperimentState 모델 | 실험 레지스트리(코드 SSOT) + 어드민 현황·편집. f01 문구·타이밍 + twa01 게이트 모두 종료(위너 고정), 현재 운영 실험 없음·인프라 유지(다음 실험 대기) | INFRA | — | [F16](F16-ab-test-infra.md) | ACTIVE | 2026-06-13 |
