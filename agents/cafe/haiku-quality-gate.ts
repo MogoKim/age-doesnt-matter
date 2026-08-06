@@ -19,7 +19,8 @@ import { createWithUsage } from '../core/ai-usage.js'
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma } from '../core/db.js'
 import {
-  buildHaikuQualityPrompt,
+  buildHaikuQualitySystemPrompt,
+  buildHaikuQualityUserPrompt,
   parseHaikuQualityDecision,
   type HaikuQualityDecision,
   type HaikuQualityInput,
@@ -99,7 +100,18 @@ export async function evaluateContentQualityWithHaiku(input: HaikuQualityInput):
       {
         model: MODEL,
         max_tokens: 400,
-        messages: [{ role: 'user', content: buildHaikuQualityPrompt(input) }],
+        // [prompt caching 2026-08-06] 고정 지침(≈90줄)을 system으로 분리해 캐싱한다.
+        //   판정 내용은 그대로다 — system+user를 합치면 기존 단일 프롬프트와 문자열까지 동일하며
+        //   buildHaikuQualityPrompt(합침본)를 테스트가 고정한다.
+        //   cache_read는 input의 0.1배 과금 — 30일 input 9,890K의 대부분이 이 고정 블록이었다.
+        system: [
+          {
+            type: 'text' as const,
+            text: buildHaikuQualitySystemPrompt(),
+            cache_control: { type: 'ephemeral' as const, ttl: '1h' as const },
+          },
+        ],
+        messages: [{ role: 'user', content: buildHaikuQualityUserPrompt(input) }],
       },
       { timeout: API_TIMEOUT_MS },
     )

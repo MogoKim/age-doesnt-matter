@@ -50,11 +50,12 @@ export type HaikuQualityResult =
 
 const DAYS = ['일', '월', '화', '수', '목', '금', '토']
 
-export function buildHaikuQualityPrompt(input: HaikuQualityInput): string {
-  const now = input.now ?? new Date()
-  const kst = new Date(now.getTime() + 9 * 3600_000)
-  const nowLabel = `${kst.getUTCFullYear()}년 ${kst.getUTCMonth() + 1}월 ${kst.getUTCDate()}일 ${DAYS[kst.getUTCDay()]}요일`
-
+/**
+ * [prompt caching 2026-08-06] 고정 지침부 — 매 호출 동일하므로 system 블록으로 보내 캐싱한다.
+ * 문구는 한 글자도 바꾸지 않았다. 아래 user 파트와 합치면 기존 단일 프롬프트와 같은 내용·같은 순서다.
+ * (실측: HAIKU_GATE 30일 input 9,890K 토큰 중 대부분이 이 고정부, cache_read 0K였다)
+ */
+export function buildHaikuQualitySystemPrompt(): string {
   return `당신은 '우나어'(40대 중반~60대 한국 여성 커뮤니티)의 편집 게이트다.
 아래 커뮤니티 글 1건이 우리 독자에게 자연스럽게 읽힐지 판정하라.
 
@@ -133,9 +134,19 @@ export function buildHaikuQualityPrompt(input: HaikuQualityInput): string {
   단, 일반적인 '님' 존칭 하나만으로 잡지 마라 — 원카페 내부 맥락 신호와 결합될 때만 REJECT 또는 NEEDS_REVIEW.
 - 날짜 지난 브리핑/연재/매매일지, 발행 시점과 어긋난 시간 선언
 - 너무 얇거나 맥락 없는 글(펑 글, 한 줄 감탄)
-애매하면 REJECT하지 말고 NEEDS_REVIEW로 넘겨라 — 좋은 일상글 과차단이 최악의 실패다.
+애매하면 REJECT하지 말고 NEEDS_REVIEW로 넘겨라 — 좋은 일상글 과차단이 최악의 실패다.`
+}
 
-오늘(발행 시점): ${nowLabel} / 발행 게시판: ${input.boardType}
+/**
+ * [prompt caching 2026-08-06] 매 호출 달라지는 부분 — 날짜·게시판·글 본문·출력 형식.
+ * 캐시 대상이 아니므로 user 메시지로 보낸다. 순서는 기존과 동일(지침 → 데이터 → 출력형식).
+ */
+export function buildHaikuQualityUserPrompt(input: HaikuQualityInput): string {
+  const now = input.now ?? new Date()
+  const kst = new Date(now.getTime() + 9 * 3600_000)
+  const nowLabel = `${kst.getUTCFullYear()}년 ${kst.getUTCMonth() + 1}월 ${kst.getUTCDate()}일 ${DAYS[kst.getUTCDay()]}요일`
+
+  return `오늘(발행 시점): ${nowLabel} / 발행 게시판: ${input.boardType}
 
 [글]
 제목: ${input.title}
@@ -143,6 +154,14 @@ export function buildHaikuQualityPrompt(input: HaikuQualityInput): string {
 
 아래 JSON만 출력하라. 다른 텍스트 금지.
 {"decision":"PASS|REJECT|NEEDS_REVIEW","confidence":0.0,"speakerRole":"target_woman_45_60|neutral_daily|young_self|male_self|parenting_current|other_person_story|unknown","risks":["young_self|male_self|parenting_current|newlywed|early_marriage_tone|romance_self|sexualized_age_gap|original_cafe_context|mocking_or_inside_joke|stale_time|board_mismatch|thin_or_contextless"],"reason":"짧은 한국어 근거 1문장 (발화자 판정 근거 포함)"}`
+}
+
+/**
+ * 기존 단일 프롬프트 — system/user로 나누기 전과 **완전히 같은 문자열**을 만든다.
+ * 프롬프트 내용 회귀를 테스트로 고정하기 위해 남긴다(실제 호출은 system+user 분리 경로를 쓴다).
+ */
+export function buildHaikuQualityPrompt(input: HaikuQualityInput): string {
+  return `${buildHaikuQualitySystemPrompt()}\n\n${buildHaikuQualityUserPrompt(input)}`
 }
 
 
