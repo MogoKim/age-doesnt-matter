@@ -8,7 +8,6 @@ import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { buildBreadcrumbJsonLd } from '@/lib/seo/breadcrumb'
 import ActionBar from '@/components/features/community/ActionBar'
-import IdentityBanner from '@/components/features/community/IdentityBanner'
 import { formatTimeAgo } from '@/components/features/community/utils'
 import { sanitizeMagazineHtml, proxyMagazineImages } from '@/lib/sanitize'
 import GTMEventOnMount from '@/components/common/GTMEventOnMount'
@@ -226,7 +225,6 @@ export default async function MagazineDetailPage({ params }: PageProps) {
 
       {/* 정체성 배너 (네이버 유입자 락인 ① — 비회원, 제목 위). 매거진 유입자도 락인 */}
       {/* 풀블리드: wrapper의 px-3(md:px-6)를 음수 마진으로 탈출하고 같은 값의 padding으로 글 기준선 복귀 */}
-      <IdentityBanner boardSlug="magazine" className="-mx-3 px-3 md:-mx-6 md:px-6" />
 
       {/* 헤더 */}
       <div className="mb-6 pb-5 border-b border-border">
