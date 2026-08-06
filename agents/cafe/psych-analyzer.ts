@@ -179,7 +179,16 @@ async function callAnalyzeApi(posts: PostForAnalysis[]): Promise<PsychResult[] |
   const response = await createWithUsage(client, 'PSYCH_ANALYZE', {
     model: MODEL,
     max_tokens: 3500,
-    system: SYSTEM_PROMPT,
+    // [prompt caching 2026-08-06] SYSTEM_PROMPT는 매 배치 동일한 고정 지침(욕망 카테고리 20개 정의 등 ≈7.4KB).
+    //   문자열은 그대로 두고 캐시 마커만 붙인다 — 분석 기준·출력 스키마 무변경.
+    //   30일 input 8,143K 토큰 중 대부분이 이 블록이었고 cache_read는 0K였다.
+    system: [
+      {
+        type: 'text' as const,
+        text: SYSTEM_PROMPT,
+        cache_control: { type: 'ephemeral' as const, ttl: '1h' as const },
+      },
+    ],
     messages: [{
       role: 'user',
       content: `다음 ${posts.length}개 글을 분석하세요.
