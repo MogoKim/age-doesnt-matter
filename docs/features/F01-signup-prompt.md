@@ -39,7 +39,20 @@
 
 **예외 (auto-trigger)**: `?signup=1` + `utm_source` ∈ {`kakao-android`, `kakao-ios`, `naver-inapp`, `google-inapp`} → 5초 카운트다운 배너 후 **자동 OAuth 시작**. 탭당 1회(sessionStorage: `signup_auto_triggered`).
 
-### 문구·타이밍 (실험 종료 후 고정)
+### 🟢 진행 중 실험 — `android_conversion_a2_b2` (2026-08-06 21:00 KST~)
+
+이 배너는 **Android 외부 브라우저 비회원**에게만 A/B로 갈린다. 그 외 사용자는 아래 고정 문구 그대로다.
+
+| variant | 내용 | CTA |
+|---|---|---|
+| `signup_warm` (50%) | 🌿 / "같이 이야기해도 괜찮아요" / "우리 또래끼리 편하게 나눠요" | 카카오 옐로우 `💛 카카오로 1초 가입` → 기존 카카오 가입 |
+| `app_card` (50%) | "앱으로 보면 더 편해요" / "한 번 받아두면 다음엔 바로 들어올 수 있어요" + 우나어 앱 아이콘 카드 | 브랜드 코랄 `앱으로 보기` → Play스토어 |
+
+- **트리거·횟수 정책 무변경**: 정독 85% / 60초 백스톱, 세션 1회, `MAX_SHOWS=4`. `app_card`도 배너 노출 1회로 계산한다.
+- **제외**: 회원 · 인앱브라우저(카카오·**네이버 앱**·Meta·Google앱) · 안드로이드 WebView · iOS · desktop · TWA · Capacitor · standalone PWA. 판정 정본 `src/lib/experiments/android-conversion.ts`.
+- 상세·승패 기준은 [F16](F16-ab-test-infra.md) 참조. ⚠️ 승패는 설치 수가 아니라 **D7 재방문 참여 유저**로 본다.
+
+### 문구·타이밍 (실험 종료 후 고정 — 위 실험 비대상자에게 적용)
 
 문구 A/B/C 변형과 타이밍 A/B는 **2026-06-09 종료**되어 코드에서 삭제됐다. 현재는 단일 상수 `BANNER_CONTENT`(공감형)로 고정되어 있고, 배정 로직(`signup_variant` 등)은 존재하지 않는다.
 
@@ -58,9 +71,10 @@
 | `signup_banner_clicked` | CTA 클릭 | ✅ `cta_type` | ✅ `cta_type`·`env` |
 | `signup_banner_dismissed` | X 닫기 | ✅ `show_count` | ✅ `show_count` |
 | `inapp_redirect_attempted` / `_success` | 인앱 CTA → 외부 브라우저 | ✅ | ❌ **EventLog 미기록** |
+| `android_conversion_prompt_exposed` / `_clicked` / `_dismissed` | 실험 대상(Android 외부 브라우저 비회원)에서 위 3종과 **병행** 발화 | ❌ | ✅ `experiment_id`·`variant`·`surface`·`trigger`·`browser_env`·`path`·`cta_type`·`content_id` |
 
 > ⚠️ 같은 이벤트명이라도 GA4와 EventLog의 **파라미터가 서로 다르다**(예: `eligible`은 GA4=`page_path`, EventLog=`show_count`). 두 소스를 합산·대조할 때 주의.
-> 4종 모두 `/api/events`의 `CONVERSION_EVENTS` rate-limit 면제 대상이다.
+> `signup_banner_*` 4종 + `android_conversion_prompt_*` 3종 모두 `/api/events`의 `CONVERSION_EVENTS` rate-limit 면제 대상이다(빠지면 429로 조용히 유실돼 분모가 깎인다).
 
 ---
 
@@ -84,6 +98,7 @@
 | 2026-06-09 | 문구 A/B/C→**C 공감형 고정**, 타이밍→**read_complete(정독 85% + 60초 백스톱) 고정**. variant 배정·early 분기·VARIANT_CONTENT A/B 제거 | UT 위너 확정(정량 표본 1~2건 무의미, UT 정성 근거). 코드 단순화·레거시 제거 |
 | 2026-06-10 | 운영문서 `signup-prompt-policy.html`·`app-install-policy.html`을 **`docs/channel-architecture.html`(채널 정책 마스터 가이드)로 통합**하고 두 파일 삭제. stale(A/B/C·20초·배정로직) 전면 교정 | 분산 문서 단일화 + 실험 종료 미반영분 정정. 가입 배너 상세는 통합본 §5-1 |
 | 2026-08-06 | **본 문서 §세부 기획을 코드 기준으로 재작성** — 2026-06-09 실험 종료(문구 C 고정·타이밍 read_complete)가 본문에 반영되지 않아 "20초/50% 스크롤/A·B·C 랜덤 배정"이 그대로 남아 있던 것을 교정. storage 키도 실제값(`signup_prompt_count`/`signup_prompt_done`)으로 정정하고, EventLog 병행 기록과 GA4↔EventLog 파라미터 불일치를 표에 명시 | 6-10 통합본만 고치고 F01 본문은 미정정 → 이 문서만 읽은 사람이 이미 없는 A/B 실험을 근거로 판단할 위험. **동작 변경 없음(문서 전용)** |
+| 2026-08-06 | **A/B 실험 `android_conversion_a2_b2` 시작** — Android 외부 브라우저 **비회원**에게만 `signup_warm`(A2) / `app_card`(B2) 50:50 적용. 신규 EventLog 3종 발화 + rate-limit 면제 등록. 트리거·횟수·storage 정책과 비대상자 동작은 무변경 | 첫 전환 제안으로 가입이 나은지 앱이 나은지 실측. 상세 [F16](F16-ab-test-infra.md) |
 
 ---
 

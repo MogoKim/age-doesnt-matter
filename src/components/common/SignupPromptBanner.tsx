@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import Image from 'next/image'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useAppSession } from '@/components/common/AppSessionProvider'
 import {
@@ -10,11 +11,25 @@ import {
   gtmSignupBannerDismissed,
   gtmInappRedirectAttempted,
   gtmInappRedirectSuccess,
+  gtmPlayStoreClick,
+  getBrowserEnv,
 } from '@/lib/gtm'
 import { startKakaoLogin } from '@/lib/kakao-start'
 import { detectEnv } from '@/components/common/AddToHomeScreen'
 import { trackEvent } from '@/lib/track'
 import { useAppEnvironment } from '@/hooks/useAppEnvironment'
+import { getExperimentVariant } from '@/lib/experiments/assign'
+import { buildPlayStoreUrl } from '@/lib/app-links'
+import {
+  ANDROID_CONVERSION_CONTENT,
+  ANDROID_CONVERSION_EVENTS,
+  ANDROID_CONVERSION_EXPERIMENT_ID,
+  ANDROID_CONVERSION_SURFACE,
+  APP_CARD_PLAY_MEDIUM,
+  isAndroidConversionSegment,
+  isAndroidConversionVariant,
+  type AndroidConversionVariant,
+} from '@/lib/experiments/android-conversion'
 
 // 인앱 환경 (카카오/네이버/구글 앱) 감지 — CTA를 외부브라우저 유도로 변경
 const INAPP_ENVS = ['kakao-android', 'kakao-ios', 'naver-inapp', 'google-inapp'] as const
@@ -106,7 +121,7 @@ export function SignupPromptBanner() {
   const searchParams = useSearchParams()
   const { data: session, status } = useAppSession()
   const isLoggedIn = status === 'authenticated'
-  const { isTWA, isCapacitor } = useAppEnvironment() // 웹 정독 배너: TWA(2026-06-13 게이트 종료) + Capacitor 앱 제외(앱 글상세 가입 유도는 PostCTA 인라인 CTA가 담당)
+  const { isTWA, isCapacitor, isStandalone } = useAppEnvironment() // 웹 정독 배너: TWA(2026-06-13 게이트 종료) + Capacitor 앱 제외(앱 글상세 가입 유도는 PostCTA 인라인 CTA가 담당)
   const createdAt = session?.user?.createdAt ? String(session.user.createdAt) : undefined
 
   // ?signup=1 + 유효 utm_source 감지 (클라이언트에서 직접 읽기 — layout은 searchParams 미지원)
@@ -126,10 +141,41 @@ export function SignupPromptBanner() {
   const scrolledRef = useRef(false)
   const tryFireRef = useRef<() => void>(() => {})
 
+  // ── Android 외부 브라우저 비회원 전환 실험(android_conversion_a2_b2) ──
+  //  variant가 빈 문자열이면 실험 대상이 아니거나 시작 전 → 기존 배너 그대로 동작(회귀 0).
+  const [variant, setVariant] = useState<AndroidConversionVariant | ''>('')
+  // 발동 원인(read_complete | backstop) — 노출/클릭/닫기 이벤트에 함께 싣는다
+  const triggerRef = useRef<'read_complete' | 'backstop'>('backstop')
+
   // 마운트 시 환경 감지 (SSR 안전)
   useEffect(() => {
     setCurrentEnv(detectEnv())
   }, [])
+
+  // 실험 배정 — 세션 확정 후(로그인 여부가 세그먼트 조건) 1회.
+  //  세그먼트: 비회원 + Android 외부 브라우저(Whale·Chrome·Samsung Internet 등).
+  //  제외: 회원 / 인앱브라우저 / WebView / iOS / desktop / TWA·Capacitor·standalone.
+  useEffect(() => {
+    if (status === 'loading') return
+    const eligible = isAndroidConversionSegment({
+      userAgent: navigator.userAgent,
+      isLoggedIn,
+      isTWA,
+      isCapacitor,
+      isStandalone,
+    })
+    if (!eligible) {
+      setVariant('')
+      return
+    }
+    const assigned = getExperimentVariant(ANDROID_CONVERSION_EXPERIMENT_ID)
+    setVariant(isAndroidConversionVariant(assigned) ? assigned : '')
+  }, [status, isLoggedIn, isTWA, isCapacitor, isStandalone])
+
+  // variant를 ref로도 들고 있는다 — 타이머 effect 의존성에 넣으면 배정이 늦게 확정될 때
+  // 60초 백스톱 타이머가 재시작돼 노출 타이밍이 밀린다(기존 트리거 정책 보존).
+  const variantRef = useRef<AndroidConversionVariant | ''>('')
+  useEffect(() => { variantRef.current = variant }, [variant])
 
   // ── ?signup=1 auto-trigger: 인앱→외부브라우저 도착 시 카운트다운 배너 ──
   useEffect(() => {
@@ -206,6 +252,8 @@ export function SignupPromptBanner() {
       const count = getPromptCount()
       incrementCount()
       sessionStorage.setItem(SESSION_SHOWN, '1')
+      // 발동 원인 확정 — 스크롤 85%가 충족돼 있으면 정독, 아니면 60초 백스톱
+      triggerRef.current = scrolledRef.current ? 'read_complete' : 'backstop'
       setVisible(true)
       gtmSignupBannerEligible(pathname)
       gtmSignupBannerShown(pathname, count + 1)
@@ -213,8 +261,26 @@ export function SignupPromptBanner() {
       const scrollableNow = document.documentElement.scrollHeight - window.innerHeight
       const scrollAt = scrollableNow <= 0 ? 100 : Math.min(100, Math.max(0, Math.round((window.scrollY / scrollableNow) * 100)))
       // EventLog에도 GA4와 동일하게 기록 — EventLog 단독 배너 퍼널 재구성 가능하게 (eligible=분모)
+      //  ⚠️ app_card variant도 이 배너의 노출 1회로 계산한다(기존 횟수 정책 공유).
       trackEvent('signup_banner_eligible', { show_count: count + 1 })
       trackEvent('signup_banner_shown', { scroll_at_show: scrollAt })
+
+      // 실험 노출 — 기존 signup_banner_* 와 **병행**. app_card는 가입 배너가 아니므로
+      // signup 전용 이벤트만으로 해석하면 안 된다(그래서 별도 계열을 둔다).
+      const v = variantRef.current
+      if (v) {
+        trackEvent(ANDROID_CONVERSION_EVENTS.exposed, {
+          experiment_id: ANDROID_CONVERSION_EXPERIMENT_ID,
+          variant: v,
+          surface: ANDROID_CONVERSION_SURFACE,
+          trigger: triggerRef.current,
+          browser_env: getBrowserEnv(),
+          path: pathname,
+          cta_type: ANDROID_CONVERSION_CONTENT[v].ctaType,
+          scroll_at_show: scrollAt,
+          show_count: count + 1,
+        })
+      }
     }
 
     tryFireRef.current = tryFire
@@ -333,8 +399,6 @@ export function SignupPromptBanner() {
 
   if (!visible) return null
 
-  const content = BANNER_CONTENT
-
   const inapp = isInappEnv(currentEnv)
 
   // 인앱 환경별 CTA 텍스트
@@ -342,13 +406,57 @@ export function SignupPromptBanner() {
     ? '카카오 밖에서 가입하기'
     : '브라우저에서 가입하기'
 
+  // A2 signup_warm은 문구만 갈아끼운다 — 구조·색·트리거·횟수 정책 전부 기존과 동일.
+  //  (실험 대상이 아니면 기존 BANNER_CONTENT 그대로 → 비대상 사용자 회귀 0)
+  //  ⚠️ 인앱 환경은 세그먼트에서 이미 빠지므로 variant와 inapp이 동시에 참일 수 없다.
+  const content = variant === 'signup_warm' ? ANDROID_CONVERSION_CONTENT.signup_warm : BANNER_CONTENT
+  const ctaLabel =
+    variant === 'signup_warm'
+      ? ANDROID_CONVERSION_CONTENT.signup_warm.cta // 이모지가 이미 문구에 포함돼 있다
+      : `💛 ${inapp ? inappCtaText : content.cta}`
+
+  // 실험 이벤트 공통 payload — 노출/클릭/닫기가 같은 축으로 조인되게 한 곳에서 만든다
+  const experimentProps = (v: AndroidConversionVariant) => ({
+    experiment_id: ANDROID_CONVERSION_EXPERIMENT_ID,
+    variant: v,
+    surface: ANDROID_CONVERSION_SURFACE,
+    trigger: triggerRef.current,
+    browser_env: getBrowserEnv(),
+    path: pathname,
+    cta_type: ANDROID_CONVERSION_CONTENT[v].ctaType,
+    // 글 식별자 — /community/{board}/{slug} · /magazine/{id} 의 마지막 조각
+    content_id: pathname.split('/').filter(Boolean).pop() ?? null,
+  })
+
   const handleDismiss = () => {
     gtmSignupBannerDismissed(pathname, getPromptCount())
     trackEvent('signup_banner_dismissed', { show_count: getPromptCount() })
+    if (variant) {
+      trackEvent(ANDROID_CONVERSION_EVENTS.dismissed, {
+        ...experimentProps(variant),
+        show_count: getPromptCount(),
+      })
+    }
     setVisible(false)
   }
 
+  // ── B2 app_card: Play스토어로 이동 ──
+  //  referrer에 실험+variant(medium)와 노출면(content)이 남는다 → Play Console 획득 보고서에서 분리 집계.
+  //  PR #303의 "medium은 진입점을 담는다" 정책을 그대로 따른다(되돌리지 않음).
+  const handleAppCardClick = () => {
+    trackEvent(ANDROID_CONVERSION_EVENTS.clicked, experimentProps('app_card'))
+    gtmPlayStoreClick(APP_CARD_PLAY_MEDIUM)
+    // 기존 signup_banner_clicked 계열도 유지하되 cta_type으로 구분 가능하게 남긴다
+    trackEvent('signup_banner_clicked', { cta_type: 'app_install', env: currentEnv })
+    window.setTimeout(() => {
+      window.location.href = buildPlayStoreUrl(ANDROID_CONVERSION_SURFACE, { medium: APP_CARD_PLAY_MEDIUM })
+    }, 0)
+  }
+
   const handleCTAClick = () => {
+    if (variant === 'signup_warm') {
+      trackEvent(ANDROID_CONVERSION_EVENTS.clicked, experimentProps('signup_warm'))
+    }
     if (inapp) {
       // 인앱 환경: 외부브라우저로 현재 페이지 열기 + signup=1 파라미터
       gtmSignupBannerClicked(pathname, 'external_browser')
@@ -389,6 +497,64 @@ export function SignupPromptBanner() {
     }
   }
 
+  // ── B2 app_card (Android 외부 브라우저 비회원 전용) ──
+  //  "설치"가 아니라 "다음에 바로 들어오기". 앱 아이콘은 실제 자산(/logo-symbol.png)을 쓰고,
+  //  별점·설치수·스토어 배지 같은 광고 문법과 "무료/지금/다운로드" 같은 낚시 문구는 넣지 않는다.
+  if (variant === 'app_card') {
+    const c = ANDROID_CONVERSION_CONTENT.app_card
+    return (
+      <>
+        <div
+          className="fixed inset-0 z-[149] bg-black/50 animate-in fade-in duration-300"
+          onClick={handleDismiss}
+          aria-hidden="true"
+        />
+        <div
+          data-testid="android-conversion-app-card"
+          className="fixed bottom-0 left-0 right-0 z-[150] animate-in slide-in-from-bottom duration-300"
+        >
+          <div className="bg-card border-t border-border shadow-2xl px-4 pt-4 pb-[max(24px,env(safe-area-inset-bottom))]">
+            <div className="max-w-lg mx-auto">
+              <div className="flex items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-body leading-snug text-foreground">{c.headline}</p>
+                  <p className="text-sm text-muted-foreground mt-0.5 break-keep">{c.sub}</p>
+                </div>
+                {/* 닫기 버튼: 44×44px */}
+                <button
+                  onClick={handleDismiss}
+                  className="shrink-0 w-11 h-11 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label="닫기"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* 앱 카드 — 홈 화면 아이콘 은유. 코랄은 아주 옅게(진한 블록은 광고로 읽힌다) */}
+              <div className="mt-3 flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary/5 p-3">
+                <span className="flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-[13px] border border-primary/20 bg-white">
+                  <Image src="/logo-symbol.png" alt="" width={52} height={52} className="h-full w-full object-contain" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[15px] font-bold leading-tight text-foreground">{c.appName}</span>
+                  <span className="mt-0.5 block break-keep text-xs text-muted-foreground">{c.appNote}</span>
+                </span>
+              </div>
+
+              <button
+                data-testid="android-conversion-app-cta"
+                onClick={handleAppCardClick}
+                className="mt-3 flex min-h-[52px] w-full items-center justify-center rounded-xl bg-primary px-4 py-2 text-center text-[15px] font-bold leading-tight break-keep text-white transition-opacity hover:opacity-90"
+              >
+                {c.cta}
+              </button>
+            </div>
+          </div>
+        </div>
+      </>
+    )
+  }
+
   return (
     <>
       {/* 딤 오버레이 */}
@@ -426,7 +592,7 @@ export function SignupPromptBanner() {
               disabled={isStarting}
               className="mt-3 flex min-h-[52px] w-full items-center justify-center rounded-xl bg-[#FEE500] px-4 py-2 text-center text-[15px] font-bold leading-tight break-keep text-[#191919] transition-opacity disabled:opacity-70"
             >
-              {isStarting ? '카카오로 이동 중...' : `💛 ${inapp ? inappCtaText : content.cta}`}
+              {isStarting ? '카카오로 이동 중...' : ctaLabel}
             </button>
           </div>
         </div>
