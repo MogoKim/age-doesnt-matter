@@ -18,7 +18,6 @@ import NativeAdSlot from '@/components/ad/NativeAdSlot'
 import CoupangBanner from '@/components/ad/CoupangBanner'
 import PostListBottom from '@/components/features/community/PostListBottom'
 import NextPostsInline from '@/components/features/community/NextPostsInline'
-import IdentityBanner from '@/components/features/community/IdentityBanner'
 import { ADSENSE } from '@/components/ad/ad-slots'
 import Breadcrumbs from '@/components/common/Breadcrumbs'
 import GTMEventOnMount from '@/components/common/GTMEventOnMount'
@@ -200,7 +199,6 @@ export default async function PostDetailPage({ params }: PageProps) {
 
       {/* 정체성 배너 (네이버 유입자 락인 ① — 비회원, 제목 위) */}
       {/* 풀블리드: wrapper의 px-4(md:px-6)를 음수 마진으로 탈출하고 같은 값의 padding으로 글 기준선 복귀 */}
-      <IdentityBanner boardSlug={boardSlug} className="-mx-4 px-4 md:-mx-6 md:px-6" />
 
       {/* 글 본문 영역 — 카드 wrapper 없이 wrapper padding만 사용.
           (구 구조: bg-card rounded-2xl border shadow-sm p-4 로 감쌌더니 wrapper px-4와 이중이 되어
