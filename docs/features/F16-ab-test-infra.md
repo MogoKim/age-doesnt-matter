@@ -30,7 +30,14 @@
 - 기간 토글 7/30/전체. 캐시 10분(unstable_cache).
 
 ## 현재 등록 실험
-- 없음 (`EXPERIMENTS = []`). 모든 실험 종료 — 인프라는 다음 실험 위해 유지.
+- **없음 (`EXPERIMENTS = []`) — 지금 돌고 있는 A/B 실험은 하나도 없다.** 모든 실험 종료. 인프라는 다음 실험 위해 유지.
+
+### 준비 중 (아직 OFF)
+| 실험(예정) | 세그먼트 | 상태 |
+|---|---|---|
+| Android 외부 브라우저 비회원 — 가입-first vs 앱설치-first | **Android 외부 브라우저**(Chrome·Whale·Samsung Internet 등. 인앱·WebView·iOS·desktop·TWA·Capacitor·standalone 제외) | 🔴 **미등록·OFF**. 2026-08-06 기반 정리만 완료(세그먼트 판정 `src/lib/browser-env.ts` + 대표 UA 테스트, Play referrer medium 분리, iPhone PWA 안내 제거). `EXPERIMENTS` 등록은 **별도 PR**에서 |
+
+> ⚠️ 기반 정리 PR은 실험 UI를 포함하지 않는다. `getExperimentVariant` 호출부가 없으면 실험은 시작되지 않는다.
 
 > **종료(2026-06-09, UT 위너 확정)**: `f01_signup_content`(문구)→**C 공감형 고정** / `f01_signup_timing`(타이밍)→**read_complete 고정**. 레지스트리에서 삭제, SignupPromptBanner 고정값. 과거 기록은 git 히스토리.
 

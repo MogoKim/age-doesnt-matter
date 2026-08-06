@@ -8,7 +8,7 @@ import { trackEvent } from '@/lib/track'
 import { sendGtmEvent } from '@/lib/gtm'
 import { startKakaoLogin } from '@/lib/kakao-start'
 import { detectEnv } from '@/components/common/AddToHomeScreen'
-import { triggerAppInstall, isAndroidInstallEnv } from '@/lib/app-links'
+import { triggerAppInstall, isAndroidExternalBrowserEnv } from '@/lib/app-links'
 
 // 로그인 설치 CTA를 표시하지 않을 환경 (AddToHomeScreen의 BLOCKED_ENVS + desktop)
 const INSTALL_BLOCKED_ENVS = [
@@ -44,7 +44,9 @@ export default function PostCTA({ postId, postTitle, isLoggedIn }: PostCTAProps)
     }
     const env = detectEnv()
     const pwaInstalled = localStorage.getItem('pwa_installed') === '1'
-    const android = isAndroidInstallEnv()
+    // Android 외부 브라우저(Chrome·Whale·Samsung Internet 등)만 Play스토어 유도 대상.
+    // 앱 컨테이너(TWA·Capacitor·standalone)는 아래 blocked에서 따로 걸러진다.
+    const android = isAndroidExternalBrowserEnv()
     // 안드로이드가 아닌 경로(iOS Safari)는 triggerAppInstall이 'pwa-prompt' 이벤트만 쏘는데,
     // 그 리스너는 AddToHomeScreen이 NEXT_PUBLIC_PWA_INSTALL_ENABLED==='true'일 때만 등록한다.
     // 플래그가 꺼져 있으면 눌러도 화면에 아무 변화가 없는 헛버튼이 되므로 CTA 자체를 감춘다.
