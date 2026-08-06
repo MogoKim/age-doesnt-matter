@@ -1,41 +1,7 @@
 {
-  "_comment": "운영 원장(ledger) — merge는 종결이 아니다. 운영검증 PASS만 종결이다. 필수 6필드: id·title·status·owner_session·priority·next_action·close_condition. status가 merged_waiting_deploy/deployed_waiting_verification/dryrun_followup_required면 trigger 또는 due 필수.",
-  "_updated": "2026-08-05",
+  "_comment": "운영 원장(ledger) — merge는 종결이 아니다. 운영검증 PASS만 종결이다. 필수 6필드: id·title·status·owner_session·priority·next_action·close_condition. status가 merged_waiting_deploy/deployed_waiting_verification/dryrun_followup_required면 trigger 또는 due 필수. status는 ledger.ts의 LedgerStatus 유니온 값만 사용한다(임의 문자열 금지 — 타입 계약 위반).",
+  "_updated": "2026-08-06",
   "items": [
-    {
-      "id": "L-PENG-GATE",
-      "title": "PR #283 \"펑\"/내용삭제 gate 운영검증",
-      "status": "merged_waiting_deploy",
-      "owner_session": "claude-curator",
-      "priority": "P0",
-      "category": "agent",
-      "next_action": "08-06 09:50 이후 BotLog skipReason='DELETED_ORIGINAL' 집계 확인",
-      "trigger": "2026-08-06T09:50+09:00",
-      "close_condition": "sync 반영 + DELETED_ORIGINAL 집계 확인 + 발행량 회차당 2건 이상 유지",
-      "pass_criteria": "차단 발생 확인 · 발행량 2.6~3.0건/회차 유지 · 주간 차단 15건 이하",
-      "verification_required": true,
-      "last_verified_at": null,
-      "related_pr": [283],
-      "risk": "mid",
-      "note": "merge 84a12717. unao-prod는 아직 aed8c301 — 03:00 sync 대기 중."
-    },
-    {
-      "id": "L-CONSTITUTION-V5",
-      "title": "constitution v5 운영 반영 검증",
-      "status": "merged_waiting_deploy",
-      "owner_session": "claude-ops",
-      "priority": "P1",
-      "category": "governance",
-      "next_action": "08-06 09:50 이후 첫 에이전트 출력에서 금지표현 0건 확인",
-      "trigger": "2026-08-06T09:50+09:00",
-      "close_condition": "금지표현(시니어·어르신·노인·실버·중장년) 0건 + 공감 우선 톤 + 생활 4축 안의 주제 확인",
-      "pass_criteria": "발행글 샘플에서 금지표현 0건",
-      "verification_required": true,
-      "last_verified_at": null,
-      "related_pr": [276, 278, 279],
-      "risk": "mid",
-      "note": "merge 후 전 에이전트 System Prompt가 바뀐다. 첫 회차 톤 확인 필요."
-    },
     {
       "id": "L-HAIKU-DRYRUN",
       "title": "HAIKU_GATE_MODE dry-run 고아 — 종료조건 없음",
@@ -52,6 +18,37 @@
       "risk": "high",
       "known_issue_type": "needs_decision",
       "note": "GHA에만 enforce, unao-prod/.env.local에 없어 운영은 dryrun. 이 고아 상태가 '펑' 글 3건 발행의 배경. due 의도적 공란 — 경고 동작 확인용."
+    },
+    {
+      "id": "L-CURATOR-RESELECT",
+      "title": "차단 후보가 같은 회차에서 반복 재선택됨",
+      "status": "planned",
+      "owner_session": "unassigned",
+      "priority": "P1",
+      "category": "agent",
+      "next_action": "DELETED_ORIGINAL로 차단된 후보가 같은 회차에서 반복 선택되는 원인 조사",
+      "close_condition": "같은 고유 후보가 한 회차에서 반복 차단되지 않거나, 반복 시 후보 pool에서 제외되는 정책 확정",
+      "verification_required": false,
+      "last_verified_at": null,
+      "related_pr": [283],
+      "risk": "mid",
+      "note": "08-06 검증에서 고유 2개 글이 20라인 반복 차단됨('어디다가 말도 못해 삭제예정으로 글써봅니다' 15회 · '그 잘생긴 남자들은 왜 날 좋아했을까? (펑예)' 5회). 오탐 0, 발행량 3건/회차 유지. PR #229(깨진 원문 1건 93회 반복)와 구조가 같아 보이나 경로가 다름 — pool 제외 시점 확인 필요. gate 로직 자체는 정상이므로 #283은 건드리지 말 것."
+    },
+    {
+      "id": "L-LANG-SEO-META",
+      "title": "금지표현 기준 불일치 — 봇 출력 vs SEO 메타",
+      "status": "known_issue",
+      "owner_session": "founder",
+      "priority": "P2",
+      "category": "governance",
+      "next_action": "user-facing 문구와 SEO title/JSON-LD에서 허용할 표현 기준 분리 여부 결정",
+      "close_condition": "중장년/50대 60대/50·60대가 금지인지, SEO 메타에서는 허용인지 정책 확정",
+      "verification_required": false,
+      "last_verified_at": null,
+      "risk": "low",
+      "known_issue_type": "needs_decision",
+      "do_not_touch": ["src/app/(main)/page.tsx", "src/app/(main)/magazine/page.tsx", "src/app/(main)/community/[boardSlug]/page.tsx", "네이버 Search Advisor"],
+      "note": "08-06 검증: 봇 출력은 금지표현 0건. 잔존 표현은 SEO 구조화 데이터/메타 4곳(page.tsx:170 knowsAbout · magazine/page.tsx:47,51 · community/[boardSlug]/page.tsx:111 FAQ). 기준 자체가 어긋나 있음 — constitution v5 금지 목록은 시니어·어르신·노인·실버 4개뿐이고 '중장년'은 없다. 반대로 CLAUDE.md:76은 '50대 60대'를 시니어의 권장 대체 표현으로 명시한다. 네이버 노출면(title·JSON-LD)이라 결정 전 즉시 수정 금지."
     },
     {
       "id": "L-DRYRUN-AUDIT",
@@ -77,12 +74,12 @@
       "next_action": "sitemap/robots/Yeti 무변화 + GSC noindex 제외 감소 조짐 확인",
       "trigger": "2026-08-12T00:00+09:00",
       "close_condition": "네이버 영향 0 확인 + GSC noindex 제외 추이 기록",
-      "pass_criteria": "robots.txt 해시 6505a2ca5b35 · sitemap URL 급감 없음 · Yeti robots index,follow",
+      "pass_criteria": "robots.txt sha1 앞12자 = 6505a2ca5b35 (`shasum -a 1 | cut -c1-12`) · sitemap URL 급감 없음(08-06 실측 8,827건) · Yeti UA 글 상세 robots=index,follow",
       "verification_required": true,
-      "last_verified_at": "2026-08-05",
+      "last_verified_at": "2026-08-06",
       "risk": "low",
       "do_not_touch": ["src/app/sitemap.ts", "src/app/robots.ts", "네이버 Search Advisor"],
-      "note": "색인 재요청·sitemap 재제출 금지. 자연 재수집 대기."
+      "note": "색인 재요청·sitemap 재제출 금지. 자연 재수집 대기. 08-06 중간확인 PASS — robots 해시 동일(sha1 6505a2ca5b35, sha256으로 재면 a953403f5cc6이라 산출법 다르면 오판 주의) · sitemap 2,908(06-07)→8,827 증가 · Yeti robots=index,follow / googlebot=noindex,follow 대조 확인."
     },
     {
       "id": "L-SEO-0818",
@@ -99,22 +96,7 @@
       "last_verified_at": null,
       "related_pr": [259],
       "risk": "low",
-      "note": "28일 클릭 90·노출 582 baseline. 브랜드 47%, 비브랜드는 연예 가십(HUMOR)."
-    },
-    {
-      "id": "L-NORTHSTAR-SCRIPT",
-      "title": "North Star 측정 스크립트",
-      "status": "verified_closed",
-      "owner_session": "claude-ops",
-      "priority": "P2",
-      "category": "ops",
-      "next_action": "필요 시 npx tsx scripts/measure-north-star.ts 실행",
-      "close_condition": "스크립트 merge + 실행 검증 완료",
-      "verification_required": false,
-      "last_verified_at": "2026-08-05",
-      "related_pr": [280],
-      "risk": "low",
-      "note": "첫 실측: 7일 North Star 2명 / 28일 7명. 댓글 작성자 202명 중 봇 198명."
+      "note": "28일 클릭 90·노출 582 baseline. 브랜드 47%, 비브랜드는 연예 가십(HUMOR). 08-06 실측으로 Google-only 설계 작동 확인 — 일반 robots=index,follow 유지된 채 googlebot만 noindex,follow."
     },
     {
       "id": "L-SOURCE-EXPAND",
@@ -161,6 +143,55 @@
       "known_issue_type": "deferred",
       "do_not_touch": ["docs/backlog/OPERATING_BACKLOG.md"],
       "note": "docs/backlog/operating-safety-harness-2026-07-30.md 133줄. 타 세션 변경과 섞이면 안 됨."
+    },
+    {
+      "id": "L-PENG-GATE",
+      "title": "PR #283 \"펑\"/내용삭제 gate 운영검증",
+      "status": "verified_closed",
+      "owner_session": "claude-curator",
+      "priority": "P0",
+      "category": "agent",
+      "next_action": "종결 — 반복 재선택 건은 L-CURATOR-RESELECT로 분리",
+      "trigger": null,
+      "close_condition": "sync 반영 + DELETED_ORIGINAL 집계 확인 + 발행량 회차당 2건 이상 유지",
+      "pass_criteria": "차단 발생 확인 · 발행량 2.6~3.0건/회차 유지 · 주간 차단 15건 이하",
+      "verification_required": true,
+      "last_verified_at": "2026-08-06",
+      "related_pr": [283],
+      "risk": "mid",
+      "note": "08-06 운영검증 PASS. unao-prod 0c6a6c40 반영 확인(content-curator.ts:1121 gate). 20회차 중 6회차에서 차단 발생, 고유 글 2개(오탐 0건 — 둘 다 제목에 '삭제예정'/'(펑예)'). 발행량 18/20회차 3건 유지(2회차는 로그 조회 실패, job은 success). 주간 차단 페이스는 고유 글 기준 2건으로 15건 기준 이내 — 로그 라인 수로 세면 20이지만 같은 글 반복분임."
+    },
+    {
+      "id": "L-CONSTITUTION-V5",
+      "title": "constitution v5 운영 반영 검증",
+      "status": "verified_closed",
+      "owner_session": "claude-ops",
+      "priority": "P1",
+      "category": "governance",
+      "next_action": "종결 — 표현 기준 불일치는 L-LANG-SEO-META로 분리",
+      "trigger": null,
+      "close_condition": "금지표현(시니어·어르신·노인·실버·중장년) 0건 + 공감 우선 톤 + 생활 4축 안의 주제 확인",
+      "pass_criteria": "발행글 샘플에서 금지표현 0건",
+      "verification_required": true,
+      "last_verified_at": "2026-08-06",
+      "related_pr": [276, 278, 279],
+      "risk": "mid",
+      "note": "08-06 운영검증 PASS. unao-prod constitution.yaml 597줄에 v5 마커 7종 전부 반영(core_emotion '나만 이런 게 아니구나' · life_axes 4축 · north_star_definition · survival_reference_only · naver_search_advisor · current_phase · ideal_demographic). 봇 발행글 금지표현 0건, 주제는 4축 안(관계·노후와 일상). 잔존 '중장년'은 봇 출력이 아니라 SEO 메타 하드코딩 → L-LANG-SEO-META."
+    },
+    {
+      "id": "L-NORTHSTAR-SCRIPT",
+      "title": "North Star 측정 스크립트",
+      "status": "verified_closed",
+      "owner_session": "claude-ops",
+      "priority": "P2",
+      "category": "ops",
+      "next_action": "필요 시 npx tsx scripts/measure-north-star.ts 실행",
+      "close_condition": "스크립트 merge + 실행 검증 완료",
+      "verification_required": false,
+      "last_verified_at": "2026-08-06",
+      "related_pr": [280],
+      "risk": "low",
+      "note": "08-06 unao-prod에서 재실행 PASS(171줄, DB write 0·Raw SQL 0). 실측 7일 North Star 1명 / 28일 7명(08-05는 7일 2명). 7일 표본이 작아 단일 수치로 판단 금지 — 주간 추세로만 본다."
     }
   ]
 }
