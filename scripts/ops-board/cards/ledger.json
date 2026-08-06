@@ -37,7 +37,7 @@
       "id": "L-AUTHOR-REPLY-THREAD-FLOW",
       "title": "작성자 대댓글 자연스러움 정책 운영검증 — 같은 회차 companion",
       "status": "deployed_waiting_verification",
-      "owner_session": "claude-comment-ux",
+      "owner_session": "claude-ops",
       "priority": "P1",
       "category": "retention",
       "trigger": "2026-08-07T18:00+09:00",
