@@ -63,7 +63,6 @@ const PAGE_VIEW_TRIGGER_THRESHOLD  = 3
 // sessionStorage (탭 닫으면 리셋)
 const SESSION_VISITED       = 'pwa_visited_this_session'        // 세션 카운트 중복 방지
 const SESSION_SHOWN         = 'pwa_shown_this_session'          // 세션 내 팝업 1회 노출 제한
-const SESSION_PENDING       = 'pwa_pending'                     // OnboardingForm → 마운트 후 처리
 const SESSION_BANNER_SHOWN  = 'pwa_banner_shown_this_session'   // 세션 내 배너 1회 노출 제한
 
 // 타이머 미동작 페이지 (가입 플로우 방해 방지)
@@ -312,13 +311,6 @@ export default function AddToHomeScreen() {
         }
       })
       .catch(() => {})
-
-    // OnboardingForm에서 저장한 pending 트리거 처리
-    const pending = sessionStorage.getItem(SESSION_PENDING)
-    if (pending === 'signup') {
-      sessionStorage.removeItem(SESSION_PENDING)
-      // pwa_pending deprecated — 페이지 카운터(pathname effect)가 signup 트리거 처리
-    }
 
     const onBeforeInstall = (e: Event) => {
       e.preventDefault()

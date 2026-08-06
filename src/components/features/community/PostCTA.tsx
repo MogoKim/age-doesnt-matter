@@ -44,9 +44,16 @@ export default function PostCTA({ postId, postTitle, isLoggedIn }: PostCTAProps)
     }
     const env = detectEnv()
     const pwaInstalled = localStorage.getItem('pwa_installed') === '1'
-    const blocked = INSTALL_BLOCKED_ENVS.includes(env) || pwaInstalled || isTWA || isStandalone || isCapacitor
+    const android = isAndroidInstallEnv()
+    // 안드로이드가 아닌 경로(iOS Safari)는 triggerAppInstall이 'pwa-prompt' 이벤트만 쏘는데,
+    // 그 리스너는 AddToHomeScreen이 NEXT_PUBLIC_PWA_INSTALL_ENABLED==='true'일 때만 등록한다.
+    // 플래그가 꺼져 있으면 눌러도 화면에 아무 변화가 없는 헛버튼이 되므로 CTA 자체를 감춘다.
+    // (환경이 아니라 플래그를 보고 판정하므로, 플래그를 켜면 iOS 안내가 그대로 되살아난다.)
+    const pwaPromptUnavailable = !android && process.env.NEXT_PUBLIC_PWA_INSTALL_ENABLED !== 'true'
+    const blocked =
+      INSTALL_BLOCKED_ENVS.includes(env) || pwaInstalled || isTWA || isStandalone || isCapacitor || pwaPromptUnavailable
     setInstallCtaVisible(!blocked)
-    setIsAndroid(isAndroidInstallEnv())
+    setIsAndroid(android)
   }, [authKnown, resolvedIsLoggedIn, isTWA, isStandalone, isCapacitor])
 
   // 노출 이벤트 — 실제 렌더되는 CTA에 대해서만 1회 전송

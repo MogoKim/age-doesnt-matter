@@ -35,7 +35,7 @@ C1은 "TWA 관련 측정"에 영향을 주지만, **모든 게 망가지는 건 
 
 | 항목 | 내용 |
 |------|------|
-| **앱 설치 유도 ON** | `NEXT_PUBLIC_PWA_INSTALL_ENABLED` 현재 OFF (Vercel). 켜면 AddToHomeScreen 팝업/배너/footer/inline 설치 유도 작동. "지금은 보류" 결정 상태 → 켤지/계속 보류할지 |
+| **앱 설치 유도 ON** | `NEXT_PUBLIC_PWA_INSTALL_ENABLED` — 문서·로컬 `.env.local` 기준 OFF (**프로덕션 실제값은 Vercel 콘솔 확인 필요**). 켜면 `AddToHomeScreen` 팝업/하단배너 + `PwaInlineBanner` + 인앱 외부브라우저 유도배너 3종 + `PostCTA`의 **iOS** 설치 CTA가 함께 살아난다. ~~footer~~ 진입점은 없다(2026-08-06 `FooterPwaButton`·`FooterChannelLinks` 삭제). "지금은 보류" 결정 상태 → 켤지/계속 보류할지<br>⚠️ **켜기 전 선결**: OFF 기간에도 과거 사용자 브라우저에 `pwa_shown_count`·`pwa_declined_count`가 남아 있어, 그대로 켜면 `weekly` 조건(`shownCount >= 2`)을 이미 충족한 사용자에게 즉시 팝업이 뜬다. 잔존 카운터 처리 방안을 먼저 정할 것.<br>ℹ️ 인앱(카카오·네이버·인스타) **외부 브라우저 유도 배너**는 설치 기능이 아닌데 같은 `useEffect` 가드에 묶여 함께 꺼져 있다. 의도 여부 미확인 — 별도 판단 필요. |
 
 ---
 
@@ -45,7 +45,7 @@ C1은 "TWA 관련 측정"에 영향을 주지만, **모든 게 망가지는 건 
 |----|------|----------|
 | C3 | 어드민 A/B 전환율 "근사치" 라벨 | bd3d58a(게이트 표 N/M명 병기·모집단 각주) + 배너 funnel은 실험 종료(9dca8fe)로 카드 소멸 |
 | C4 | SignupPromptBanner가 SSOT 미사용(자체 variant 함수 중복) | 실험 종료(9dca8fe)로 `getOrAssignVariant`/`getTriggerVariant` 삭제 |
-| C2 | TWA 게이트 긴급 OFF 스위치 마련 | 2026-06-09: `TwaEntryGate`에 `NEXT_PUBLIC_TWA_GATE_ENABLED==='false'` 가드 추가(미설정=ON, **현재 동작 무변경**). 끄려면 Vercel서 `='false'`. 죽은 `flags.twa`(non-public이라 클라이언트서 무용)는 제거 |
+| C2 | TWA 게이트 긴급 OFF 스위치 마련 | 2026-06-09: `TwaEntryGate`에 `NEXT_PUBLIC_TWA_GATE_ENABLED==='false'` 가드 추가(미설정=ON). 끄려면 Vercel서 `='false'`. 죽은 `flags.twa`는 제거<br>**→ 2026-06-13 실험 종료(A 위너)로 `TwaEntryGate` 컴포넌트와 `NEXT_PUBLIC_TWA_GATE_ENABLED` 가드 모두 코드에서 삭제됨**(현재 grep 0건). 이 스위치는 더 이상 존재하지 않으니 Vercel에 해당 키가 남아 있다면 정리 대상. `GateOnboardingSlides`는 `/login` 전용으로 보존 |
 | C5 | 죽은 FEATURE_* 정리 | 2026-06-09: `env.ts` export 3개 + `feature-flags.ts` twa 제거 + `.env.example`서 FEATURE_TWA 제거(FEATURE_PUSH_TOAST·WEB_PUSH는 사용 중이라 유지) |
 | C1 | TWA 측정 sticky 보강 | 2026-06-09: `getBrowserEnv`에 `_twa_confirmed` sticky 반영 → referrer 소실(OAuth 복귀)에도 twa-android 유지. baseline·재방문·signupSource 누락 방지(useAppEnvironment.isTWA와 동일 신호). **프로덕션 network 실측 검증 완료** — referrer 소실 상황(referrer=자사도메인)에서 page_view.browser_env=`twa-android` 확인 |
 | C7 | detectEnv↔getBrowserEnv 역할 명확화 | 2026-06-09: 완전 통합 대신(순환의존·역할 차이) 양쪽 주석으로 역할 분리 명시 — getBrowserEnv=분석(twa+sticky), detectEnv=설치유도(상위 isTWA 가드 보호) |

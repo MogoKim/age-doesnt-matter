@@ -8,17 +8,21 @@
 
 ## 코드 위치
 - `src/components/features/community/PostCTA.tsx` — 클라이언트 컴포넌트
-- `src/app/(main)/community/[boardSlug]/[postId]/page.tsx` — ActionBar 아래 삽입
-- `src/app/(main)/magazine/[id]/page.tsx` — ActionBar 아래 삽입
+- `src/app/(main)/community/[boardSlug]/[postId]/page.tsx` — ActionBar 아래 삽입 (**현재 유일한 삽입 지점**)
 
-## 표시 조건
+> ⚠️ 매거진 상세(`src/app/(main)/magazine/[id]/page.tsx`)에는 **PostCTA가 없다.** 초판 문서에 "삽입"으로 적혀 있었으나 코드에 존재한 적이 확인되지 않는다. 매거진에도 붙일지는 별도 결정 사항.
+
+## 표시 조건 (코드 기준)
 
 | 상태 | 표시 내용 |
 |------|---------|
-| 비로그인 | 가입 CTA (모바일·데스크탑 모두) |
-| 로그인 + 모바일웹 + 미설치 | 앱설치 CTA |
-| 로그인 + desktop/kakao-android/kakao-ios/인앱/crios | 숨김 |
-| TWA 또는 standalone | 전체 숨김 |
+| 비로그인 | **가입 CTA** — 모바일·데스크탑·앱·TWA·standalone 포함 **모든 환경**에서 노출 (환경 가드 없음) |
+| 로그인 + 안드로이드 모바일웹 + 미설치 | **앱설치 CTA** → Play스토어 이동 (`triggerAppInstall` → `buildPlayStoreUrl`) |
+| 로그인 + iOS Safari + 미설치 | **`NEXT_PUBLIC_PWA_INSTALL_ENABLED === 'true'`일 때만** 앱설치 CTA(홈 화면에 추가). 플래그 OFF면 숨김 — 아래 주 참고 |
+| 로그인 + desktop / kakao-android / kakao-ios / naver-inapp / google-inapp / instagram-inapp / crios | 설치 CTA 숨김 (`INSTALL_BLOCKED_ENVS`) |
+| 로그인 + TWA / Capacitor 앱 / standalone PWA / `pwa_installed==='1'` | 설치 CTA 숨김 |
+
+> **iOS 플래그 연동 이유(2026-08-06)**: iOS 경로의 `triggerAppInstall()`은 `pwa-prompt` 커스텀 이벤트를 dispatch할 뿐이고, 그 리스너는 `AddToHomeScreen`이 `NEXT_PUBLIC_PWA_INSTALL_ENABLED === 'true'`일 때만 등록한다. 플래그가 꺼져 있으면 버튼을 눌러도 화면에 아무 변화가 없어 헛클릭이 된다(클릭 이벤트만 기록됨). 그래서 **환경이 아니라 플래그를 보고** CTA를 감춘다 — 플래그를 켜면 iOS 안내가 그대로 되살아난다. 안드로이드 Play스토어 경로는 이 플래그와 무관하게 항상 동작한다.
 
 ## 이벤트 로그
 
@@ -32,10 +36,13 @@
 ## 구현 메모
 - `useState<boolean | null>(null)` — null=미계산(SSR 안전), false=숨김, true=표시
 - `detectEnv()` (`AddToHomeScreen.tsx` export) + `localStorage['pwa_installed']`로 설치 여부 판단
-- 비회원 CTA: `sessionStorage.signup_prompt_shown_this_session = '1'` 설정 → SignupPromptBanner와 중복 방지용
+- 비회원 CTA는 `sessionStorage.signup_prompt_shown_this_session`을 **설정하지 않는다** (2026-06-08 제거). 따라서 글 상세에서 PostCTA(하단 인라인)와 SignupPromptBanner(정독 완료 띠배너)는 **공존한다.**
 
 ## 수정 이력
 
 | 날짜 | 변경 내용 | 이유 |
 |------|---------|------|
 | 2026-06-03 | 신규 생성 — 비회원 가입 CTA + 로그인 모바일웹 앱설치 CTA | 게시글 읽기 후 인라인 전환 유도 |
+| 2026-06-08 | 비회원 CTA의 `signup_prompt_shown_this_session` 설정 제거 (코드 변경, 문서 미반영분) | 글 상세 정독 동선 배너와 공존 허용 — 효과를 타이밍으로 측정 |
+| 2026-08-06 | **문서를 코드 기준으로 정정** — ① 매거진 상세 삽입 기술 삭제(실제 없음) ② 표시 조건 표에 실제 `INSTALL_BLOCKED_ENVS`·Capacitor·`pwa_installed` 반영 ③ 구현 메모의 `signup_prompt_shown_this_session` 설명을 현행(설정 안 함)으로 교정 | 문서가 코드와 반대로 적혀 있어 중복 노출 판단을 오도 |
+| 2026-08-06 | **iOS 설치 CTA를 `NEXT_PUBLIC_PWA_INSTALL_ENABLED` 연동으로 변경** (`PostCTA.tsx`) | 플래그 OFF 상태에서 iOS 회원에게 보이던 무반응 버튼 제거. 안드로이드 Play 경로·TWA/Capacitor/standalone 차단 정책은 무변경 |
