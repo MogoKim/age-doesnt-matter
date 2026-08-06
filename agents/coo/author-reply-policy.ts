@@ -2,10 +2,15 @@
  * 작성자 봇 대댓글 — 순수부 (판정 타입·구조 필터·프롬프트 빌더·파서). DB/SDK 의존 없음.
  * 런타임(후보 조회·Sonnet 호출·BotLog)은 author-reply-driver.ts 참조.
  *
- * 원칙 (2026-07-15 설계, 14일 실측 13건 기반):
- *  - BOT/SHEET 글의 최상위(parentId=null) 실회원·게스트 댓글만 후보
- *  - 실회원 글(source USER)·MAGAZINE/JOB·실회원끼리 대화 중 스레드·이중 답변 금지
+ * 원칙 (2026-08-06 개정 — 댓글판 흐름 기반):
+ *  - BOT/SHEET 글의 최상위(parentId=null) 댓글을 **글 단위 댓글판**으로 본다.
+ *  - 실회원·게스트 댓글이 핵심 후보인 것은 그대로다(리텐션 목적).
+ *    다만 **봇 댓글도 후보가 될 수 있다** — 같은 글에서 사람 댓글에만 답하면
+ *    "내 댓글만 감지해서 답한다"는 티가 나기 때문이다(30일 실측: 21건 중 13건이 그 패턴).
+ *  - 대상 선정은 selectThreadReplyTargets()가 글 단위로 결정한다. 답글 총량은 글당 cap으로 묶는다.
+ *  - 실회원 글(source USER)·MAGAZINE/JOB·실회원끼리 대화 중 스레드·이중 답변 금지는 유지.
  *  - 글쓴이 봇 페르소나만 답한다. dry-run에서는 초안만 기록(Comment write 금지)
+ *  - 알림은 실회원 수신자에게만 간다(shouldNotifyAuthorReply) — 봇/게스트 대상 답글은 알림 없음.
  */
 
 export type AuthorReplyVerdict = 'REPLY' | 'SKIP' | 'ESCALATE'
@@ -48,8 +53,11 @@ const ELIGIBLE_BOARDS = new Set(['STORY', 'LIFE2', 'HUMOR', 'MENOPAUSE']) // MAG
  * 후보 조회(DB where)에서 봇 작성 댓글을 먼저 제외하는 조건 — 상류 잘림 hotfix (2026-07-15).
  * 배경: 48h 최상위 댓글 1,696건 중 대부분이 봇 wave 댓글이라 take 200(createdAt asc)이
  * 봇 댓글로만 소진되어, 비봇 댓글 6건 전원이 구조 필터에 도달하기 전에 잘렸다(첫 회차 판정 0건).
- * 이 조건은 take 상한을 사람 댓글 후보로 채우기 위한 것이고,
- * 최종 안전망은 여전히 findIneligibleReason의 COMMENT_BY_BOT이다(이중 방어).
+ *
+ * [2026-08-06] 이 조건의 역할이 바뀌었다. 이제 "봇 댓글을 영구 배제"하는 필터가 아니라
+ * **댓글판을 열어볼 글을 찾는 1단계 조회**다. 봇 댓글도 후보가 될 수 있고
+ * (selectThreadReplyTargets가 결정), 스캔 대상만 사람이 참여한 글로 한정해
+ * 판정량 폭증을 막는다(실측 48h: 사람 최상위 5건 vs 봇 포함 1,947건 = 389배).
  * 글(post) 작성자 조건은 걸지 않는다 — curator-* 작성글의 실회원 댓글도 후보에 남아야 한다.
  */
 export const NON_BOT_COMMENT_AUTHOR_WHERE = {
@@ -71,7 +79,10 @@ export function findIneligibleReason(c: CandidateInput): string | null {
   if (!ELIGIBLE_BOARDS.has(c.postBoardType)) return 'BOARD_EXCLUDED'
   if (!c.postAuthorId) return 'NO_POST_AUTHOR'
   if (c.comment.parentId !== null) return 'NOT_TOP_LEVEL'
-  if (c.comment.isBotAuthor) return 'COMMENT_BY_BOT' // 봇 댓글엔 답하지 않음(기존 체인 영역)
+  // [2026-08-06] 봇 댓글 hard block(COMMENT_BY_BOT)을 제거했다.
+  //   같은 글에서 사람 댓글에만 답하면 "내 댓글만 감지한다"는 티가 난다(30일 21건 중 13건).
+  //   봇 댓글도 후보가 될 수 있고, 분포는 selectThreadReplyTargets가 글 단위로 통제한다.
+  //   봇 댓글엔 알림이 가지 않는다(shouldNotifyAuthorReply가 실회원만 통과).
   if (!c.comment.authorId && !c.comment.guestNickname) return 'NO_COMMENT_AUTHOR'
 
   // 글쓴이 봇이 이미 답함 → 1댓글 1답변 원칙
@@ -80,6 +91,122 @@ export function findIneligibleReason(c: CandidateInput): string | null {
   if (c.replies.some(r => !r.isBotAuthor)) return 'REAL_USERS_IN_THREAD'
 
   return null
+}
+
+// ── 댓글판 흐름 기반 대상 선정 (순수 — 테스트 대상) ─────────────────────────
+// 목적: "실유저 댓글만 감지해 답한다"는 티를 없앤다.
+// 방법: 글 단위로 댓글판을 보고, 사람 댓글에 답할 때 같은 글의 봇 댓글에도 함께 답한다.
+//   답글 수를 늘리는 게 아니라 **분포**를 바꾸는 것이다 — 글당 총량은 cap으로 묶는다.
+
+export type CommentActor = 'REAL_MEMBER' | 'GUEST' | 'BOT' | 'NON_REAL'
+
+export interface ThreadComment {
+  id: string
+  actor: CommentActor
+  content: string
+  /** 글쓴이 봇이 이미 이 댓글에 답했는가 */
+  hasAuthorReply: boolean
+  /** 실회원(비봇)이 이 스레드에서 대화 중인가 — 개입 금지 신호 */
+  hasRealUserReply: boolean
+}
+
+export interface ThreadState {
+  postId: string
+  /** 최상위(parentId=null) ACTIVE 댓글만, 오래된 순 */
+  topLevel: ThreadComment[]
+}
+
+export type ReplyTargetRole = 'PRIMARY' | 'COMPANION'
+
+export interface ReplyTarget {
+  commentId: string
+  /** PRIMARY=사람 댓글(리텐션 목적) · COMPANION=같은 글 봇 댓글(패턴 지우기) */
+  role: ReplyTargetRole
+  score: number
+}
+
+/** 글 하나에 글쓴이 답글이 몇 개까지 자연스러운가 (기존 답글 포함) */
+export const MAX_AUTHOR_REPLIES_PER_POST = 3
+/**
+ * 댓글판 밀도에 따른 COMPANION 허용 수.
+ * 한산한 글은 애초에 "사람 것만 골라 답했다"가 눈에 안 띄고, 붙이면 부자연스럽기만 하다.
+ * 북적이는 글일수록 사람 댓글 하나만 답한 그림이 도드라지므로 더 허용한다.
+ */
+export function companionQuota(topLevelCount: number): number {
+  if (topLevelCount < 5) return 0
+  if (topLevelCount <= 7) return 1
+  return 2
+}
+
+/** COMPANION 후보 최소 점수 — 짧은 감탄·비꼼·단정은 제외한다 */
+export const COMPANION_MIN_SCORE = 1
+
+const isHuman = (a: CommentActor) => a === 'REAL_MEMBER' || a === 'GUEST'
+
+/**
+ * 답글을 달 가치 점수. 질문·경험 공유는 높고, 짧은 감탄·단정은 낮다.
+ * (여기서 내용을 "판단"하지는 않는다 — 최종 판정은 LLM이 하고, 이건 순서를 정할 뿐이다)
+ */
+export function scoreReplyWorthiness(content: string): number {
+  const t = content.trim()
+  const compact = t.replace(/\s+/g, '')
+  let s = 0
+  if (/[?？]|나요|까요|는지|어떠|어때|건가요|하세요\?/.test(t)) s += 3   // 질문 — 답을 기다린다
+  if (compact.length >= 30) s += 2                                        // 경험 공유
+  else if (compact.length >= 15) s += 1
+  if (compact.length <= 10) s -= 2                                        // "ㅋㅋ", "맞아요" 류
+  if (/^[ㄱ-ㅎㅏ-ㅣ\s.!~ㅋㅎ]+$/.test(t)) s -= 2                          // 자모/감탄만
+  return s
+}
+
+/**
+ * 글 하나의 댓글판에서 글쓴이 봇이 답할 대상을 고른다.
+ *
+ * 규칙
+ *  1. 이미 글쓴이가 답한 댓글, 실회원이 대화 중인 스레드는 제외한다.
+ *  2. 사람(실회원·게스트) 댓글이 PRIMARY다 — 리텐션 목적은 그대로다.
+ *  3. **PRIMARY가 생기는 회차에 COMPANION을 같이 고른다.** 다음 회차로 미루면
+ *     실유저가 알림을 눌러 들어온 그 순간 화면이 여전히 "내 댓글에만 답글"이라
+ *     AI 티 제거라는 목적 자체가 달성되지 않는다.
+ *  4. COMPANION 수는 댓글판 밀도로 정한다 — companionQuota(): <5 → 0 · 5~7 → 1 · 8+ → 2.
+ *     COMPANION 후보는 봇/게스트/실유저를 가리지 않되, 짧은 감탄·비꼼·단정은 제외한다.
+ *  5. 글당 총 답글(기존+신규)은 MAX_AUTHOR_REPLIES_PER_POST를 넘지 않는다.
+ *  6. 사람 댓글이 하나도 없으면 아무 것도 고르지 않는다 — 봇끼리 연극을 만들지 않는다.
+ */
+export function selectThreadReplyTargets(t: ThreadState): ReplyTarget[] {
+  const existingAuthorReplies = t.topLevel.filter(c => c.hasAuthorReply).length
+  const room = MAX_AUTHOR_REPLIES_PER_POST - existingAuthorReplies
+  if (room <= 0) return []
+
+  // 사람이 아예 참여하지 않은 댓글판은 건드리지 않는다(봇끼리 연극 금지).
+  const humansAll = t.topLevel.filter(c => isHuman(c.actor))
+  if (humansAll.length === 0) return []
+
+  const open = t.topLevel.filter(c => !c.hasAuthorReply && !c.hasRealUserReply)
+  const humansOpen = open.filter(c => isHuman(c.actor))
+  // PRIMARY(사람 댓글)가 없으면 이 회차엔 아무 것도 하지 않는다.
+  // COMPANION은 "사람에게 답하는 김에 같이" 붙이는 것이지, 그것만 따로 붙이지 않는다.
+  if (humansOpen.length === 0) return []
+
+  const targets: ReplyTarget[] = []
+  const primary = humansOpen
+    .map(c => ({ commentId: c.id, role: 'PRIMARY' as const, score: scoreReplyWorthiness(c.content) }))
+    .sort((a, b) => b.score - a.score)[0]
+  targets.push(primary)
+
+  // 같은 회차에 COMPANION을 붙여, 알림을 눌러 들어온 그 화면에서 이미
+  // "글쓴이가 여러 댓글에 답하고 있다"로 보이게 한다.
+  const quota = Math.min(companionQuota(t.topLevel.length), room - targets.length)
+  if (quota > 0) {
+    const companions = open
+      .filter(c => c.id !== primary.commentId)
+      .map(c => ({ commentId: c.id, role: 'COMPANION' as const, score: scoreReplyWorthiness(c.content) }))
+      .filter(c => c.score >= COMPANION_MIN_SCORE) // 짧은 감탄·비꼼·단정 제외
+      .sort((a, b) => b.score - a.score)
+    for (const c of companions.slice(0, quota)) targets.push(c)
+  }
+
+  return targets.slice(0, room)
 }
 
 // ── MENOPAUSE 전용 안전 게이트 (순수 — 테스트 대상) ─────────────────────────

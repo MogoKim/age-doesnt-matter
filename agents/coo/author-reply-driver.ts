@@ -19,6 +19,9 @@ import {
   shouldNotifyAuthorReply,
   findMenopauseAuthorReplySafetySkip,
   NON_BOT_COMMENT_AUTHOR_WHERE,
+  selectThreadReplyTargets,
+  isRealUserProviderId,
+  type CommentActor,
 } from './author-reply-policy.js'
 
 const MODEL = process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6' // 판단 품질 우선 — Haiku 강등 금지(창업자 확정)
@@ -213,7 +216,8 @@ export async function main(): Promise<void> {
           id: true, slug: true, title: true, content: true, source: true, boardType: true, authorId: true, status: true,
           author: { select: { email: true } },
           // ACTIVE 답글만 — 숨김/삭제 답글이 REAL_USERS_IN_THREAD/ALREADY_REPLIED_BY_AUTHOR를 오판시키지 않게
-          comments: { where: { status: 'ACTIVE' }, select: { id: true, content: true, parentId: true, authorId: true, author: { select: { email: true } } } },
+          // guestNickname/providerId: 댓글판 actor 분류(REAL_MEMBER·GUEST·BOT)용 — select 필드 추가만, where/take 불변.
+          comments: { where: { status: 'ACTIVE' }, select: { id: true, content: true, parentId: true, authorId: true, guestNickname: true, author: { select: { email: true, providerId: true } } } },
         },
       },
     },
@@ -223,8 +227,70 @@ export async function main(): Promise<void> {
   let written = 0 // write 모드 실제 작성 성공 수
   const summary: Record<string, number> = { REPLY: 0, SKIP: 0, ESCALATE: 0, ERROR: 0 }
 
-  for (const c of candidates) {
+  // ── 댓글판 흐름 기반 대상 선정 (2026-08-06) ────────────────────────────
+  // 1단계 조회(candidates)는 "사람이 댓글 단 글"을 찾는 용도다. 실제 답할 대상은
+  // 그 글의 **댓글판 전체**를 보고 selectThreadReplyTargets가 고른다 —
+  // 사람 댓글에만 답해서 "내 댓글만 감지한다"는 티가 나던 패턴을 없애기 위함이다.
+  // post.comments가 이미 로드돼 있어 추가 DB 조회는 없다.
+  // 댓글판 처리에 필요한 최소 shape — prisma 타입이 이 파일에서 unknown이라 로컬로 고정한다.
+  type ThreadRow = {
+    id: string
+    content: string
+    parentId: string | null
+    authorId: string | null
+    guestNickname: string | null
+    author?: { email: string | null; providerId: string | null } | null
+  }
+  type PostRow = {
+    id: string
+    slug: string | null
+    title: string
+    content: string
+    source: string
+    boardType: string
+    status: string
+    authorId: string | null
+    author?: { email: string | null } | null
+    comments: ThreadRow[]
+  }
+  type CandidateRow = { id: string; post: PostRow }
+
+  const actorOf = (x: ThreadRow): CommentActor => {
+    if (!x.authorId && x.guestNickname) return 'GUEST'
+    if (isBotEmail(x.author?.email)) return 'BOT'
+    if (isRealUserProviderId(x.author?.providerId)) return 'REAL_MEMBER'
+    return 'NON_REAL'
+  }
+
+  const postReps = new Map<string, PostRow>()
+  for (const c of candidates as CandidateRow[]) if (!postReps.has(c.post.id)) postReps.set(c.post.id, c.post)
+
+  const planned: Array<{ comment: ThreadRow; post: PostRow; role: string }> = []
+  for (const post of postReps.values()) {
+    const all: ThreadRow[] = post.comments
+    const tops = all.filter((x: ThreadRow) => x.parentId === null)
+    const repliesOf = (id: string) => all.filter((x: ThreadRow) => x.parentId === id)
+    const chosen = selectThreadReplyTargets({
+      postId: post.id,
+      topLevel: tops.map((x: ThreadRow) => ({
+        id: x.id,
+        actor: actorOf(x),
+        content: strip(x.content),
+        hasAuthorReply: repliesOf(x.id).some((r: ThreadRow) => r.authorId === post.authorId),
+        hasRealUserReply: repliesOf(x.id).some((r: ThreadRow) => !!r.authorId && !isBotEmail(r.author?.email)),
+      })),
+    })
+    for (const t of chosen) {
+      const cm = tops.find((x: ThreadRow) => x.id === t.commentId)
+      if (cm) planned.push({ comment: cm, post, role: t.role })
+    }
+  }
+  console.log(`[AuthorReply] 댓글판 ${postReps.size}개 → 대상 ${planned.length}건 (PRIMARY ${planned.filter(p => p.role === 'PRIMARY').length} · COMPANION ${planned.filter(p => p.role === 'COMPANION').length})`)
+
+  for (const plan of planned) {
     if (todayCount + judged >= DAILY_JUDGE_CAP) break
+    // 기존 루프가 쓰던 형태로 맞춘다(댓글 + 글). status는 조회 시 ACTIVE만 담겼다.
+    const c = { ...plan.comment, status: 'ACTIVE' as const, post: plan.post }
     if (judgedCommentIds.has(c.id)) continue
 
     const replies = c.post.comments.filter(r => r.parentId === c.id)

@@ -10,6 +10,12 @@ import {
   isRealUserProviderId,
   findMenopauseAuthorReplySafetySkip,
   NON_BOT_COMMENT_AUTHOR_WHERE,
+  selectThreadReplyTargets,
+  scoreReplyWorthiness,
+  MAX_AUTHOR_REPLIES_PER_POST,
+  companionQuota,
+  type CommentActor,
+  type ThreadComment,
   type CandidateInput,
   type AuthorReplyVerdict,
   type WritePreconditionInput,
@@ -130,8 +136,11 @@ describe('findIneligibleReason — 구조 필터 (필수 원칙 고정)', () => 
   it('대댓글(parentId 있음)은 대상 아님 — 최상위만', () => {
     expect(findIneligibleReason({ ...base, comment: { ...base.comment, parentId: 'c-parent' } })).toBe('NOT_TOP_LEVEL')
   })
-  it('봇이 단 댓글엔 답하지 않음 (기존 체인 영역)', () => {
-    expect(findIneligibleReason({ ...base, comment: { ...base.comment, isBotAuthor: true } })).toBe('COMMENT_BY_BOT')
+  // [2026-08-06 정책 변경] 예전에는 봇 댓글을 여기서 hard block(COMMENT_BY_BOT)했다.
+  //   같은 글에서 사람 댓글에만 답하면 "내 댓글만 감지한다"는 티가 나서(30일 21건 중 13건),
+  //   봇 댓글도 구조 필터는 통과시키고 분포는 selectThreadReplyTargets가 통제한다.
+  it('봇이 단 댓글도 구조 필터는 통과한다 (분포는 selectThreadReplyTargets가 결정)', () => {
+    expect(findIneligibleReason({ ...base, comment: { ...base.comment, isBotAuthor: true } })).toBeNull()
   })
   it('글쓴이 봇이 이미 답함 → 1댓글 1답변 (중복 방지)', () => {
     expect(
@@ -464,5 +473,126 @@ describe('shouldNotifyAuthorReply — 종모양 알림 생성 게이트', () => 
 
   it('수신자 == 답글 작성자 → SELF_NOTIFY', () => {
     expect(shouldNotifyAuthorReply({ ...realUser, id: 'same' }, 'same').reason).toBe('SELF_NOTIFY')
+  })
+})
+
+// ── 댓글판 흐름 기반 대상 선정 (2026-08-06 PR-2) ─────────────────────────────
+// 목적: "실유저 댓글만 감지해 답한다"는 티를 없앤다. 답글 수를 늘리는 게 아니라 분포를 바꾼다.
+describe('selectThreadReplyTargets — 댓글판 흐름', () => {
+  const c = (
+    id: string,
+    actor: CommentActor,
+    content = '오늘 하루도 참 길었네요 다들 어떻게 지내시나요',
+    over: Partial<ThreadComment> = {},
+  ): ThreadComment => ({ id, actor, content, hasAuthorReply: false, hasRealUserReply: false, ...over })
+
+  it('1. 실회원 댓글은 여전히 후보다', () => {
+    const t = selectThreadReplyTargets({ postId: 'p1', topLevel: [c('c1', 'REAL_MEMBER')] })
+    expect(t.map(x => x.commentId)).toContain('c1')
+    expect(t.find(x => x.commentId === 'c1')!.role).toBe('PRIMARY')
+  })
+
+  it('2. 게스트 댓글도 후보가 된다', () => {
+    const t = selectThreadReplyTargets({ postId: 'p1', topLevel: [c('g1', 'GUEST')] })
+    expect(t.map(x => x.commentId)).toContain('g1')
+  })
+
+  it('3. 봇 댓글도 같은 회차에 companion으로 후보가 된다', () => {
+    // 최상위 8개(봇 7 + 사람 1) → quota 2
+    const tops = [...Array(7)].map((_, i) => c(`b${i}`, 'BOT')).concat(c('r1', 'REAL_MEMBER'))
+    const picked = selectThreadReplyTargets({ postId: 'p1', topLevel: tops })
+    expect(picked.some(x => x.role === 'PRIMARY' && x.commentId === 'r1')).toBe(true)
+    expect(picked.some(x => x.role === 'COMPANION' && x.commentId.startsWith('b'))).toBe(true)
+  })
+
+  it('9. 사람 댓글 하나에만 답글이 붙는 패턴이 같은 회차에 사라진다', () => {
+    // 실측 패턴 재현: 최상위 8개 중 봇 7 + 사람 1
+    const tops = [...Array(7)].map((_, i) => c(`b${i}`, 'BOT')).concat(c('r1', 'REAL_MEMBER'))
+    const picked = selectThreadReplyTargets({ postId: 'p1', topLevel: tops })
+    const roles = new Set(picked.map(x => x.role))
+    expect(roles.has('PRIMARY')).toBe(true)
+    expect(roles.has('COMPANION')).toBe(true) // ← 같은 회차에 함께 붙는다(다음 회차 대기 아님)
+  })
+
+  it('밀도별 companion quota: <5 → 0 · 5~7 → 1 · 8+ → 2', () => {
+    expect(companionQuota(4)).toBe(0)
+    expect(companionQuota(5)).toBe(1)
+    expect(companionQuota(7)).toBe(1)
+    expect(companionQuota(8)).toBe(2)
+    expect(companionQuota(20)).toBe(2)
+  })
+
+  it('한산한 글(최상위 4개)에는 companion을 붙이지 않는다', () => {
+    const tops = [c('b0', 'BOT'), c('b1', 'BOT'), c('b2', 'BOT'), c('r1', 'REAL_MEMBER')]
+    const picked = selectThreadReplyTargets({ postId: 'p1', topLevel: tops })
+    expect(picked.every(x => x.role === 'PRIMARY')).toBe(true)
+    expect(picked.length).toBe(1)
+  })
+
+  it('companion 후보에서 짧은 감탄/비꼼은 제외된다', () => {
+    const tops = [...Array(7)].map((_, i) => c(`s${i}`, 'BOT', 'ㅋㅋ')).concat(c('r1', 'REAL_MEMBER'))
+    const picked = selectThreadReplyTargets({ postId: 'p1', topLevel: tops })
+    expect(picked.some(x => x.role === 'COMPANION')).toBe(false) // 전부 저점수 → 붙지 않음
+  })
+
+  it('companion은 봇뿐 아니라 게스트·실유저 댓글도 될 수 있다', () => {
+    const tops = [
+      c('r1', 'REAL_MEMBER', '이럴 땐 어떻게 하셨나요?'),
+      c('g1', 'GUEST', '저도 작년에 비슷한 일이 있어서 한참 고민했었어요'),
+      ...[...Array(6)].map((_, i) => c(`b${i}`, 'BOT', 'ㅋㅋ')),
+    ]
+    const picked = selectThreadReplyTargets({ postId: 'p1', topLevel: tops })
+    expect(picked.some(x => x.role === 'COMPANION' && x.commentId === 'g1')).toBe(true)
+  })
+
+  it('PRIMARY가 없으면 companion만 따로 붙이지 않는다', () => {
+    // 사람 댓글에 이미 답함 → 이 회차엔 아무 것도 고르지 않는다
+    const tops = [...Array(7)].map((_, i) => c(`b${i}`, 'BOT')).concat(
+      c('r1', 'REAL_MEMBER', '질문 있어요?', { hasAuthorReply: true }),
+    )
+    expect(selectThreadReplyTargets({ postId: 'p1', topLevel: tops })).toEqual([])
+  })
+
+  it('10. 글당 답글 총량에 cap이 있다 (기존 답글 포함)', () => {
+    const many = [...Array(10)].map((_, i) => c(`r${i}`, 'REAL_MEMBER'))
+    const t = selectThreadReplyTargets({ postId: 'p1', topLevel: many })
+    expect(t.length).toBeLessThanOrEqual(MAX_AUTHOR_REPLIES_PER_POST)
+  })
+
+  it('이미 답글이 cap만큼 있으면 더 고르지 않는다', () => {
+    const tops = [...Array(MAX_AUTHOR_REPLIES_PER_POST)].map((_, i) =>
+      c(`x${i}`, 'BOT', '봇', { hasAuthorReply: true }),
+    ).concat(c('r1', 'REAL_MEMBER'))
+    expect(selectThreadReplyTargets({ postId: 'p1', topLevel: tops })).toEqual([])
+  })
+
+  it('질문/경험 공유가 짧은 감탄보다 먼저 선택된다', () => {
+    const t = selectThreadReplyTargets({
+      postId: 'p1',
+      topLevel: [c('short', 'REAL_MEMBER', 'ㅋㅋㅋ'), c('q', 'REAL_MEMBER', '이럴 땐 어떻게 하셨나요?')],
+    })
+    expect(t[0].commentId).toBe('q')
+  })
+
+  it('scoreReplyWorthiness — 질문 > 경험 > 짧은 감탄', () => {
+    expect(scoreReplyWorthiness('이럴 땐 어떻게 하셨나요?')).toBeGreaterThan(
+      scoreReplyWorthiness('저도 작년에 비슷한 일이 있어서 한참 고민했었어요'),
+    )
+    expect(scoreReplyWorthiness('저도 작년에 비슷한 일이 있어서 한참 고민했었어요')).toBeGreaterThan(
+      scoreReplyWorthiness('ㅋㅋㅋ'),
+    )
+  })
+
+  it('4·8. 알림/민감주제 게이트는 이 함수가 건드리지 않는다 (기존 게이트 유지)', () => {
+    // 봇 대상 답글에 알림이 가지 않는 것은 shouldNotifyAuthorReply가 보장한다
+    expect(shouldNotifyAuthorReply({ id: 'bot-1', providerId: 'bot-abc', status: 'ACTIVE' }, 'author-1').ok).toBe(false)
+    // MENOPAUSE 의료 조언성은 여전히 SKIP
+    expect(
+      findMenopauseAuthorReplySafetySkip({
+        postBoardType: 'MENOPAUSE',
+        postTitle: '갱년기 증상',
+        targetComment: '호르몬 치료 받아야 할까요? 약 먹어도 되나요?',
+      }),
+    ).not.toBeNull()
   })
 })
