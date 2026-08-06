@@ -121,13 +121,19 @@ pathname 변경 감지 (useEffect)
 
 ---
 
-### DB 기반 광고 슬롯 (`src/components/ad/AdSlot.tsx`)
+### DB 기반 광고 슬롯
 
 어드민에서 등록한 광고를 DB 기반으로 동적 운영:
 - `startDate ≤ now ≤ endDate` 필터
-- `priority DESC` 정렬 → 1건 선택
+- `priority DESC` 정렬
 - `adType`: GOOGLE / COUPANG / SELF / EXTERNAL
 - 노출 시 `impressions +1` fire-and-forget
+
+실제 렌더 컴포넌트는 구좌별로 나뉜다 — 규격이 서로 달라 하나로 합치지 않는다:
+- 목록 상단 띠(3:1) — `src/components/ad/ListBanner.tsx` + `ListBannerClient.tsx`
+- 상세 상단 띠(5:1) — `src/components/ad/DetailHeaderBanner.tsx` + `DetailHeaderBannerClient.tsx`
+
+> 범용 `AdSlot.tsx`가 있었으나 어디서도 import되지 않는 죽은 코드여서 2026-08-06 삭제했다.
 
 ---
 
@@ -170,7 +176,7 @@ pathname 변경 감지 (useEffect)
 - 슬롯 설정: `src/components/ad/ad-slots.ts`
 - 클릭 추적: `src/components/ad/AdClickTracker.tsx`
 - 반응형 분기: `src/components/ad/ResponsiveAd.tsx`
-- DB 기반 슬롯: `src/components/ad/AdSlot.tsx`
+- DB 기반 슬롯: `src/components/ad/ListBanner.tsx`(목록 3:1) · `src/components/ad/DetailHeaderBanner.tsx`(상세 5:1)
 - 클릭 API: `src/app/api/ad-click/route.ts`
 - CSP: `next.config.js`
 - 쿠팡 CPS: [R02](R02-coupang-cps.md)
