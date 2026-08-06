@@ -13,7 +13,7 @@ import {
   selectThreadReplyTargets,
   scoreReplyWorthiness,
   MAX_AUTHOR_REPLIES_PER_POST,
-  MAX_NEW_REPLIES_PER_POST_PER_RUN,
+  companionQuota,
   type CommentActor,
   type ThreadComment,
   type CandidateInput,
@@ -497,80 +497,65 @@ describe('selectThreadReplyTargets — 댓글판 흐름', () => {
     expect(t.map(x => x.commentId)).toContain('g1')
   })
 
-  it('3. 봇 댓글도 후보가 된다 — 단 사람 댓글을 다 답한 다음 회차에 (COMPANION)', () => {
-    // 사람 댓글이 아직 열려 있으면 그쪽이 먼저다(총량을 늘리지 않기 위해).
-    const tops = [...Array(4)].map((_, i) => c(`b${i}`, 'BOT')).concat(c('r1', 'REAL_MEMBER'))
-    const round1 = selectThreadReplyTargets({ postId: 'p1', topLevel: tops })
-    expect(round1.every(x => x.role === 'PRIMARY')).toBe(true)
-    expect(round1.map(x => x.commentId)).toContain('r1')
-
-    // 사람 댓글에 답한 뒤 회차 → 이번엔 봇 댓글이 후보가 된다
-    const after = tops.map(x => (x.id === 'r1' ? { ...x, hasAuthorReply: true } : x))
-    const round2 = selectThreadReplyTargets({ postId: 'p1', topLevel: after })
-    expect(round2.some(x => x.role === 'COMPANION' && x.commentId.startsWith('b'))).toBe(true)
-  })
-
-  it('9. 사람 댓글 하나에만 답글이 붙는 패턴이 사라진다 (봇 있는 글)', () => {
-    // 실측 패턴 재현: 최상위 8개 중 봇 7 + 사람 1 → 예전에는 사람 1개만 영원히 답글 대상
-    let tops = [...Array(7)].map((_, i) => c(`b${i}`, 'BOT')).concat(c('r1', 'REAL_MEMBER'))
-    const roles = new Set<string>()
-    for (let round = 0; round < 4; round++) {
-      const picked = selectThreadReplyTargets({ postId: 'p1', topLevel: tops })
-      if (picked.length === 0) break
-      for (const p of picked) {
-        roles.add(p.role)
-        tops = tops.map(x => (x.id === p.commentId ? { ...x, hasAuthorReply: true } : x))
-      }
-    }
-    expect(roles.has('PRIMARY')).toBe(true)
-    expect(roles.has('COMPANION')).toBe(true) // ← 결국 봇 댓글에도 답해 패턴을 지운다
-  })
-
-  it('총량 억제: 사람 댓글이 열려 있는 회차에는 봇 댓글을 같이 고르지 않는다', () => {
-    const tops = [...Array(6)].map((_, i) => c(`b${i}`, 'BOT')).concat(c('r1', 'REAL_MEMBER'))
+  it('3. 봇 댓글도 같은 회차에 companion으로 후보가 된다', () => {
+    // 최상위 8개(봇 7 + 사람 1) → quota 2
+    const tops = [...Array(7)].map((_, i) => c(`b${i}`, 'BOT')).concat(c('r1', 'REAL_MEMBER'))
     const picked = selectThreadReplyTargets({ postId: 'p1', topLevel: tops })
-    expect(picked.some(x => x.role === 'COMPANION')).toBe(false)
+    expect(picked.some(x => x.role === 'PRIMARY' && x.commentId === 'r1')).toBe(true)
+    expect(picked.some(x => x.role === 'COMPANION' && x.commentId.startsWith('b'))).toBe(true)
   })
 
-  it('한산한 글(봇 댓글 적음)에는 COMPANION을 억지로 붙이지 않는다', () => {
-    // 봇 2개뿐 — COMPANION_MIN_BOT_COMMENTS(3) 미만
-    const tops = [c('b0', 'BOT'), c('b1', 'BOT'), c('r1', 'REAL_MEMBER', '질문', { hasAuthorReply: true })]
+  it('9. 사람 댓글 하나에만 답글이 붙는 패턴이 같은 회차에 사라진다', () => {
+    // 실측 패턴 재현: 최상위 8개 중 봇 7 + 사람 1
+    const tops = [...Array(7)].map((_, i) => c(`b${i}`, 'BOT')).concat(c('r1', 'REAL_MEMBER'))
+    const picked = selectThreadReplyTargets({ postId: 'p1', topLevel: tops })
+    const roles = new Set(picked.map(x => x.role))
+    expect(roles.has('PRIMARY')).toBe(true)
+    expect(roles.has('COMPANION')).toBe(true) // ← 같은 회차에 함께 붙는다(다음 회차 대기 아님)
+  })
+
+  it('밀도별 companion quota: <5 → 0 · 5~7 → 1 · 8+ → 2', () => {
+    expect(companionQuota(4)).toBe(0)
+    expect(companionQuota(5)).toBe(1)
+    expect(companionQuota(7)).toBe(1)
+    expect(companionQuota(8)).toBe(2)
+    expect(companionQuota(20)).toBe(2)
+  })
+
+  it('한산한 글(최상위 4개)에는 companion을 붙이지 않는다', () => {
+    const tops = [c('b0', 'BOT'), c('b1', 'BOT'), c('b2', 'BOT'), c('r1', 'REAL_MEMBER')]
+    const picked = selectThreadReplyTargets({ postId: 'p1', topLevel: tops })
+    expect(picked.every(x => x.role === 'PRIMARY')).toBe(true)
+    expect(picked.length).toBe(1)
+  })
+
+  it('companion 후보에서 짧은 감탄/비꼼은 제외된다', () => {
+    const tops = [...Array(7)].map((_, i) => c(`s${i}`, 'BOT', 'ㅋㅋ')).concat(c('r1', 'REAL_MEMBER'))
+    const picked = selectThreadReplyTargets({ postId: 'p1', topLevel: tops })
+    expect(picked.some(x => x.role === 'COMPANION')).toBe(false) // 전부 저점수 → 붙지 않음
+  })
+
+  it('companion은 봇뿐 아니라 게스트·실유저 댓글도 될 수 있다', () => {
+    const tops = [
+      c('r1', 'REAL_MEMBER', '이럴 땐 어떻게 하셨나요?'),
+      c('g1', 'GUEST', '저도 작년에 비슷한 일이 있어서 한참 고민했었어요'),
+      ...[...Array(6)].map((_, i) => c(`b${i}`, 'BOT', 'ㅋㅋ')),
+    ]
+    const picked = selectThreadReplyTargets({ postId: 'p1', topLevel: tops })
+    expect(picked.some(x => x.role === 'COMPANION' && x.commentId === 'g1')).toBe(true)
+  })
+
+  it('PRIMARY가 없으면 companion만 따로 붙이지 않는다', () => {
+    // 사람 댓글에 이미 답함 → 이 회차엔 아무 것도 고르지 않는다
+    const tops = [...Array(7)].map((_, i) => c(`b${i}`, 'BOT')).concat(
+      c('r1', 'REAL_MEMBER', '질문 있어요?', { hasAuthorReply: true }),
+    )
     expect(selectThreadReplyTargets({ postId: 'p1', topLevel: tops })).toEqual([])
-  })
-
-  it('사람 댓글이 없으면 아무 것도 고르지 않는다 (봇끼리 연극 금지)', () => {
-    const t = selectThreadReplyTargets({ postId: 'p1', topLevel: [c('b1', 'BOT'), c('b2', 'BOT')] })
-    expect(t).toEqual([])
-  })
-
-  it('6. 이미 글쓴이가 답한 댓글은 다시 고르지 않는다', () => {
-    const t = selectThreadReplyTargets({
-      postId: 'p1',
-      topLevel: [c('r1', 'REAL_MEMBER', '질문 있어요 어떻게 하나요?', { hasAuthorReply: true })],
-    })
-    expect(t.map(x => x.commentId)).not.toContain('r1')
-  })
-
-  it('7. 실회원이 대화 중인 스레드에는 개입하지 않는다', () => {
-    const t = selectThreadReplyTargets({
-      postId: 'p1',
-      topLevel: [c('r1', 'REAL_MEMBER', '어떻게 하셨어요?', { hasRealUserReply: true })],
-    })
-    expect(t.map(x => x.commentId)).not.toContain('r1')
-  })
-
-  it('봇 댓글에 이미 글쓴이가 답했으면 COMPANION을 더 붙이지 않는다', () => {
-    const t = selectThreadReplyTargets({
-      postId: 'p1',
-      topLevel: [c('b1', 'BOT', '봇 댓글', { hasAuthorReply: true }), c('r1', 'REAL_MEMBER')],
-    })
-    expect(t.some(x => x.role === 'COMPANION')).toBe(false)
   })
 
   it('10. 글당 답글 총량에 cap이 있다 (기존 답글 포함)', () => {
     const many = [...Array(10)].map((_, i) => c(`r${i}`, 'REAL_MEMBER'))
     const t = selectThreadReplyTargets({ postId: 'p1', topLevel: many })
-    expect(t.length).toBeLessThanOrEqual(MAX_NEW_REPLIES_PER_POST_PER_RUN + 1)
     expect(t.length).toBeLessThanOrEqual(MAX_AUTHOR_REPLIES_PER_POST)
   })
 

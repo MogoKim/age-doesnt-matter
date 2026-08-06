@@ -127,12 +127,19 @@ export interface ReplyTarget {
 
 /** 글 하나에 글쓴이 답글이 몇 개까지 자연스러운가 (기존 답글 포함) */
 export const MAX_AUTHOR_REPLIES_PER_POST = 3
-/** 한 회차에 한 글에서 새로 다는 답글 수 — 댓글판이 갑자기 북적이지 않게 */
-export const MAX_NEW_REPLIES_PER_POST_PER_RUN = 2
-/** COMPANION(봇 댓글 동반 답글)을 붙일 최소 댓글판 규모 — 이보다 한산하면 안 붙인다 */
-export const COMPANION_MIN_TOP_LEVEL = 5
-/** COMPANION 조건: 봇 최상위 댓글이 이만큼은 있어야 "사람 것만 골랐다"가 눈에 띈다 */
-export const COMPANION_MIN_BOT_COMMENTS = 3
+/**
+ * 댓글판 밀도에 따른 COMPANION 허용 수.
+ * 한산한 글은 애초에 "사람 것만 골라 답했다"가 눈에 안 띄고, 붙이면 부자연스럽기만 하다.
+ * 북적이는 글일수록 사람 댓글 하나만 답한 그림이 도드라지므로 더 허용한다.
+ */
+export function companionQuota(topLevelCount: number): number {
+  if (topLevelCount < 5) return 0
+  if (topLevelCount <= 7) return 1
+  return 2
+}
+
+/** COMPANION 후보 최소 점수 — 짧은 감탄·비꼼·단정은 제외한다 */
+export const COMPANION_MIN_SCORE = 1
 
 const isHuman = (a: CommentActor) => a === 'REAL_MEMBER' || a === 'GUEST'
 
@@ -157,11 +164,13 @@ export function scoreReplyWorthiness(content: string): number {
  *
  * 규칙
  *  1. 이미 글쓴이가 답한 댓글, 실회원이 대화 중인 스레드는 제외한다.
- *  2. 사람(실회원·게스트) 댓글이 PRIMARY 후보다 — 리텐션 목적은 그대로다.
- *  3. PRIMARY를 고를 때, 같은 글에 봇 최상위 댓글이 있고 글쓴이가 봇 댓글에 답한 적이 없으면
- *     봇 댓글 1개를 COMPANION으로 함께 고른다 → "사람 댓글에만 답글" 패턴이 사라진다.
- *  4. 글당 총 답글(기존+신규)은 MAX_AUTHOR_REPLIES_PER_POST를 넘지 않는다.
- *  5. 한 회차 신규는 MAX_NEW_REPLIES_PER_POST_PER_RUN까지.
+ *  2. 사람(실회원·게스트) 댓글이 PRIMARY다 — 리텐션 목적은 그대로다.
+ *  3. **PRIMARY가 생기는 회차에 COMPANION을 같이 고른다.** 다음 회차로 미루면
+ *     실유저가 알림을 눌러 들어온 그 순간 화면이 여전히 "내 댓글에만 답글"이라
+ *     AI 티 제거라는 목적 자체가 달성되지 않는다.
+ *  4. COMPANION 수는 댓글판 밀도로 정한다 — companionQuota(): <5 → 0 · 5~7 → 1 · 8+ → 2.
+ *     COMPANION 후보는 봇/게스트/실유저를 가리지 않되, 짧은 감탄·비꼼·단정은 제외한다.
+ *  5. 글당 총 답글(기존+신규)은 MAX_AUTHOR_REPLIES_PER_POST를 넘지 않는다.
  *  6. 사람 댓글이 하나도 없으면 아무 것도 고르지 않는다 — 봇끼리 연극을 만들지 않는다.
  */
 export function selectThreadReplyTargets(t: ThreadState): ReplyTarget[] {
@@ -175,39 +184,29 @@ export function selectThreadReplyTargets(t: ThreadState): ReplyTarget[] {
 
   const open = t.topLevel.filter(c => !c.hasAuthorReply && !c.hasRealUserReply)
   const humansOpen = open.filter(c => isHuman(c.actor))
-  const cap = Math.min(room, MAX_NEW_REPLIES_PER_POST_PER_RUN)
+  // PRIMARY(사람 댓글)가 없으면 이 회차엔 아무 것도 하지 않는다.
+  // COMPANION은 "사람에게 답하는 김에 같이" 붙이는 것이지, 그것만 따로 붙이지 않는다.
+  if (humansOpen.length === 0) return []
+
   const targets: ReplyTarget[] = []
+  const primary = humansOpen
+    .map(c => ({ commentId: c.id, role: 'PRIMARY' as const, score: scoreReplyWorthiness(c.content) }))
+    .sort((a, b) => b.score - a.score)[0]
+  targets.push(primary)
 
-  if (humansOpen.length > 0) {
-    // 아직 답하지 않은 사람 댓글이 있으면 그쪽이 먼저다 — 리텐션이 목적이다.
-    // 여기서 봇 댓글까지 같이 답하면 답글 총량이 그대로 2배가 된다
-    // (실측: 매번 동반하면 21건 → 41건 = 1.95배, rollback 기준 2배에 근접).
-    const primaries = humansOpen
-      .map(c => ({ commentId: c.id, role: 'PRIMARY' as const, score: scoreReplyWorthiness(c.content) }))
-      .sort((a, b) => b.score - a.score)
-    for (const p of primaries) {
-      if (targets.length >= cap) break
-      targets.push(p)
-    }
-    return targets
-  }
-
-  // 사람 댓글에는 이미 답했다. 그런데 봇 댓글은 전부 무시된 상태라면
-  // "사람 것만 골라 답한다"가 눈에 보인다 → 다음 회차에 봇 댓글 하나를 답해 분포를 맞춘다.
-  // 총량은 늘지 않고(사람 답글이 끝난 뒤에만 붙는다) 시차가 생겨 오히려 자연스럽다.
-  const botTops = t.topLevel.filter(c => c.actor === 'BOT')
-  const authorRepliedToBot = botTops.some(c => c.hasAuthorReply)
-  const authorRepliedToHuman = humansAll.some(c => c.hasAuthorReply)
-  // 한산한 글·봇 댓글이 한둘뿐인 글은 애초에 티가 안 나므로 억지로 붙이지 않는다.
-  const crowded = t.topLevel.length >= COMPANION_MIN_TOP_LEVEL && botTops.length >= COMPANION_MIN_BOT_COMMENTS
-  if (authorRepliedToHuman && crowded && !authorRepliedToBot) {
-    const botOpen = open
-      .filter(c => c.actor === 'BOT')
+  // 같은 회차에 COMPANION을 붙여, 알림을 눌러 들어온 그 화면에서 이미
+  // "글쓴이가 여러 댓글에 답하고 있다"로 보이게 한다.
+  const quota = Math.min(companionQuota(t.topLevel.length), room - targets.length)
+  if (quota > 0) {
+    const companions = open
+      .filter(c => c.id !== primary.commentId)
       .map(c => ({ commentId: c.id, role: 'COMPANION' as const, score: scoreReplyWorthiness(c.content) }))
+      .filter(c => c.score >= COMPANION_MIN_SCORE) // 짧은 감탄·비꼼·단정 제외
       .sort((a, b) => b.score - a.score)
-    if (botOpen[0]) targets.push(botOpen[0])
+    for (const c of companions.slice(0, quota)) targets.push(c)
   }
-  return targets.slice(0, cap)
+
+  return targets.slice(0, room)
 }
 
 // ── MENOPAUSE 전용 안전 게이트 (순수 — 테스트 대상) ─────────────────────────
