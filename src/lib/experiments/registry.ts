@@ -68,8 +68,11 @@ export interface ExperimentDef {
 // [2026-06-23] ⛔ exp1_related_flow 종료 — B(본문직후 카드) 방향 채택 확정.
 //   A/B 모두 3화면·D1 유의차 없었으나 카드 노출 자체는 무해 + inline 클릭(추가 동선) 확인 → B 상시 노출로 전환.
 //   NextPostsInline 이 더 이상 getExperimentVariant(exp1) 를 호출하지 않으므로 신규 배정·exp1_exposure 발생 안 함(자연 종료).
-//   관련글은 추천 v2(src/lib/recommend/related.ts, 맥락×흥미도 점수화)로 대체. 새 A/B 실험은 추가하지 않는다.
+//   관련글은 추천 v2(src/lib/recommend/related.ts, 맥락×흥미도 점수화)로 대체.
 //   이 정의는 어드민 RetentionPanel 의 과거 데이터 조회를 위해 보존(제거 시 getExperiment 호출처 깨짐).
+// [2026-08-06] android_conversion_a2_b2 — Android 외부 브라우저 **비회원** 첫 전환 제안 A/B(가입 vs 앱).
+//   ⚠️ 위 exp1 주석의 "새 A/B 실험은 추가하지 않는다"는 그 시점(2026-06-23) 판단이었고, 이 실험으로 갱신됐다.
+//   세그먼트·문구·승패기준은 src/lib/experiments/android-conversion.ts 상단 주석이 정본.
 export const EXPERIMENTS: ExperimentDef[] = [
   {
     id: 'exp1_related_flow',
@@ -93,6 +96,41 @@ export const EXPERIMENTS: ExperimentDef[] = [
     // ExperimentDef 타입 필수값 — sign_up 엔 related_flow 가 안 실리므로 가입 전환 카드는 어드민에서 미표시(RetentionPanel 로만 판단).
     conversionEvent: 'sign_up',
     variantProperty: 'related_flow',
+  },
+  {
+    id: 'android_conversion_a2_b2',
+    name: 'Android 외부 브라우저 비회원 — 가입-first vs 앱-first',
+    purpose:
+      '글을 읽고 마음이 움직인 비회원에게 첫 전환 제안으로 가입(A2)이 나은지 앱(B2)이 나은지 가린다. 목적은 가입 수·설치 수가 아니라 주간 재방문 참여 유저 수(North Star)다.',
+    background:
+      'Android 외부 브라우저 비회원은 지금 정독 85%/60초 백스톱에 가입 배너 하나만 만난다. 앱(TWA)은 재방문 진입점이라 D7에 직접 붙지만 가입을 건너뛰어 참여로 안 이어질 수 있다. 어느 쪽이 재방문 참여를 더 만드는지 실측된 적이 없다.',
+    hypothesis:
+      'app_card는 클릭·설치가 더 나오지만, signup_warm 쪽이 가입→댓글·공감으로 이어져 D7 재방문 참여 유저를 더 만든다. 이 가설이 뒤집히면 앱 유도를 전면에 둘 근거가 생긴다.',
+    howToVerify:
+      '1순위 = D7 재방문 + 글/댓글/공감 1회 이상 고유 사용자(variant별). 보조 = 설치→가입 전환율, 시트 닫힘률(광고로 읽혔는지의 대리 지표), android_conversion_prompt_clicked/exposed 비율. ⚠️ 설치 수로 승패를 보면 app_card가 항상 이긴다 — 승패 지표로 쓰지 않는다. 2026-08-11 아침 판단은 조기 판정이며 최종 D7 판정은 별도다.',
+    owner: '창업자',
+    // 시작 시각(KST) = 2026-08-06 21:00. 이 시각 전엔 배정/노출/이벤트가 일어나지 않는다(assign.ts 게이트).
+    // 어드민 ExperimentState.startedAt 도 같은 시각으로 맞춰야 집계 컷이 일치한다.
+    startsAt: Date.parse('2026-08-06T21:00:00+09:00'),
+    variants: [
+      {
+        key: 'signup_warm',
+        label: 'A2 가입-first · warm',
+        description:
+          '🌿 / "같이 이야기해도 괜찮아요" / "우리 또래끼리 편하게 나눠요" / 카카오 옐로우(#FEE500) "💛 카카오로 1초 가입". 보조 버튼 없음.',
+        weight: 50,
+      },
+      {
+        key: 'app_card',
+        label: 'B2 앱-first · app-card',
+        description:
+          '"앱으로 보면 더 편해요" / "한 번 받아두면 다음엔 바로 들어올 수 있어요" / 우나어 앱 아이콘 카드 + 브랜드 코랄(#FF6F61) "앱으로 보기" → Play스토어. 보조 가입 버튼 없음.',
+        weight: 50,
+      },
+    ],
+    exposureEvent: 'android_conversion_prompt_exposed',
+    conversionEvent: 'sign_up',
+    variantProperty: 'variant',
   },
 ]
 

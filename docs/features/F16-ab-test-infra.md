@@ -30,14 +30,27 @@
 - 기간 토글 7/30/전체. 캐시 10분(unstable_cache).
 
 ## 현재 등록 실험
-- **없음 (`EXPERIMENTS = []`) — 지금 돌고 있는 A/B 실험은 하나도 없다.** 모든 실험 종료. 인프라는 다음 실험 위해 유지.
 
-### 준비 중 (아직 OFF)
-| 실험(예정) | 세그먼트 | 상태 |
-|---|---|---|
-| Android 외부 브라우저 비회원 — 가입-first vs 앱설치-first | **Android 외부 브라우저**(Chrome·Whale·Samsung Internet 등. 인앱·WebView·iOS·desktop·TWA·Capacitor·standalone 제외) | 🔴 **미등록·OFF**. 2026-08-06 기반 정리만 완료(세그먼트 판정 `src/lib/browser-env.ts` + 대표 UA 테스트, Play referrer medium 분리, iPhone PWA 안내 제거). `EXPERIMENTS` 등록은 **별도 PR**에서 |
+| 실험 id | 이름 | 세그먼트 | variant | 상태 |
+|---|---|---|---|---|
+| `android_conversion_a2_b2` | Android 외부 브라우저 비회원 — 가입-first vs 앱-first | **비회원 + Android 외부 브라우저**(Chrome·**Whale**·Samsung Internet·Firefox 등). 회원·인앱브라우저(카카오·**네이버 앱**·Meta·Google앱)·WebView·iOS·desktop·TWA·Capacitor·standalone 제외 | `signup_warm` 50 / `app_card` 50 | 🟢 **등록됨** · `startsAt` 2026-08-06 21:00 KST |
+| `exp1_related_flow` | 글 상세 관련글 카드 | — | A/B | ⛔ 종료(2026-06-23). 어드민 과거 조회용 보존 |
 
-> ⚠️ 기반 정리 PR은 실험 UI를 포함하지 않는다. `getExperimentVariant` 호출부가 없으면 실험은 시작되지 않는다.
+### `android_conversion_a2_b2` 운영 메모
+
+- **노출면**: 새 팝업을 만들지 않고 기존 `SignupPromptBanner`에 얹었다. 트리거(정독 85% / 60초 백스톱), 세션당 1회, `MAX_SHOWS=4`, `signup_prompt_count`·`signup_prompt_done` 정책 **그대로**. `app_card`도 배너 노출 1회로 계산한다.
+- **비대상은 회귀 0**: variant가 빈 문자열이면 기존 배너가 그대로 뜬다.
+- **계측**: `android_conversion_prompt_exposed` / `_clicked` / `_dismissed` (EventLog). 기존 `signup_banner_*`도 **그대로 병행 발화**한다 — `app_card` 클릭을 가입 전용 이벤트로만 해석하면 안 되므로 별도 계열을 둔다. 세 이벤트 모두 `/api/events` rate-limit 면제 대상(빠지면 429로 조용히 유실돼 분모가 오염된다).
+- **properties**: `experiment_id` · `variant` · `surface` · `trigger`(read_complete\|backstop) · `browser_env` · `path` · `cta_type`(signup\|app_install) · `content_id` · `show_count`.
+- **Play referrer**(app_card 클릭): `utm_medium=android_conversion_app_card`, `utm_content=signup_prompt_banner`, 패키지 `com.agenotmatter.app`. PR #303의 medium 분리 정책을 따른다.
+
+> ⚠️ **이 실험은 "가입 버튼 vs 앱 버튼"만 비교하는 실험이 아니다.** `signup_warm`과 `app_card`는 **문구와 레이아웃이 함께** 다르다. 승패는 *축(가입/앱)*의 승패로 읽되, "버튼 하나만 바꿨을 때의 효과"로 일반화하면 안 된다.
+>
+> ⚠️ **승패 기준은 설치 수가 아니다.** 설치 수로 보면 `app_card`가 항상 이긴다. **1순위 = D7 재방문 + 글/댓글/공감 1회 이상 고유 사용자**(North Star). 보조로 설치→가입 전환율, 시트 닫힘률을 본다.
+>
+> ⚠️ **2026-08-11(화) 아침 판단은 조기 판정이다.** 최종 D7 판정은 별도로 잡는다.
+>
+> 어드민 `/admin/ab-tests`의 `ExperimentState.startedAt`을 **2026-08-06 21:00 KST**로 맞춰야 집계 컷이 코드 게이트와 일치한다.
 
 > **종료(2026-06-09, UT 위너 확정)**: `f01_signup_content`(문구)→**C 공감형 고정** / `f01_signup_timing`(타이밍)→**read_complete 고정**. 레지스트리에서 삭제, SignupPromptBanner 고정값. 과거 기록은 git 히스토리.
 

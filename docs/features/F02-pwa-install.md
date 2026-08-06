@@ -154,6 +154,7 @@ Play Console에서 전부 "footer"로 뭉개졌다(utm_content는 획득 보고�
 | 2026-08-06 | **Android 판정을 "외부 브라우저" 세그먼트로 재정의** — 순수 helper `src/lib/browser-env.ts` 신설(`isAndroidExternalBrowser`/`isAndroidExternalBrowserEnv`), `isAndroidInstallEnv` → `isAndroidExternalBrowserEnv`로 교체(PostCTA·PwaInlineBanner·triggerAppInstall). 대표 UA 테스트 `browser-env.test.ts` 추가 | 실험 분모가 되는 판정이라 오판 시 데이터 전체 오염. 종전 `detectEnv()`는 창 좁힌 데스크탑이 안드로이드로 새고 Whale이 우연히 catch-all로만 잡히던 구조 |
 | 2026-08-06 | **아이폰 "홈 화면에 추가" 안내 제거** — `AppInstallFaqAnswer` 3단계 토글 삭제 + `HomeFaqSection` JSON-LD 답변 동시 수정. 안드로이드 Play 안내는 유지 | 받쳐 주는 PWA 팝업이 꺼져 있어 안내대로 해도 헛수고. 아이폰은 설치가 아니라 가입 유도가 맞다 |
 | 2026-08-06 | **Play referrer `utm_medium` 하드코딩(`footer`) 제거** — medium이 진입점을 담도록 변경 + `sanitizeUtmToken` 방어 + `play-store-referrer.test.ts` 추가 | 모든 진입점 설치가 Play Console에서 "footer"로 뭉개져 어트리뷰션 불가. 실험 시작 전 반드시 분리 필요 |
+| 2026-08-06 | **Android 외부 브라우저 비회원 A/B 실험 `android_conversion_a2_b2` 시작** — `app_card` variant가 `SignupPromptBanner`에서 Play스토어로 유도(`utm_medium=android_conversion_app_card`). iPhone 설치 유도 없음 정책·회원 `PostCTA` 정책은 **무변경** | 첫 전환 제안으로 가입이 나은지 앱이 나은지 실측. 승패는 설치 수가 아니라 D7 재방문 참여 유저 |
 
 ---
 
