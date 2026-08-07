@@ -14,9 +14,17 @@
       "pass_criteria": "회차당 발행량 2건 이상 유지 · 차단 후보 반복 1회차 내 0 또는 허용 기준 이하 · 정상 글 오탐 증가 없음",
       "verification_required": true,
       "last_verified_at": "2026-08-07",
-      "related_pr": [283, 229, 297],
+      "related_pr": [
+        283,
+        229,
+        297
+      ],
       "risk": "mid",
-      "do_not_touch": ["agents/cafe/haiku-quality-prompt.ts", "agents/cafe/haiku-quality-gate.ts", ".github/workflows/agents-cafe-hourly-curation.yml"],
+      "do_not_touch": [
+        "agents/cafe/haiku-quality-prompt.ts",
+        "agents/cafe/haiku-quality-gate.ts",
+        ".github/workflows/agents-cafe-hourly-curation.yml"
+      ],
       "note": "2026-08-06 read-only 실측. HAIKU_QUALITY_BLOCKED 30일 1,706행 → 고유 351건(중복 79%), 7일 373행 → 고유 120건(중복 68%). 최악 반복: '학폭.. 고소 참을수가없네요' 212회 · '고독사 2' 166회 · '나솔사계) 여자 2호' 96회. PR #297로 blockedThisRun을 적용해 같은 회차 내 재선택을 차단했다. 2026-08-07 운영검증 PASS: 같은 회차 내 동일 cafePostId 반복 0회차/0행, 평균 발행 3.00, 0발행 0, GENERATION_FAILED/REFS_EMPTY 0. 회차 간 재등장 등 별도 이슈는 발견 시 신규 항목으로 다룬다."
     },
     {
@@ -36,20 +44,28 @@
     {
       "id": "L-AUTHOR-REPLY-THREAD-FLOW",
       "title": "작성자 대댓글 자연스러움 정책 운영검증 — 같은 회차 companion",
-      "status": "deployed_waiting_verification",
+      "status": "verified_closed",
       "owner_session": "claude-ops",
       "priority": "P1",
       "category": "retention",
-      "trigger": "2026-08-07T18:00+09:00",
-      "next_action": "PR #302 merge 후 24시간 운영검증 10항목을 확인한다. 특히 BOT companion 발생, 사람 댓글에만 답글 패턴 감소, 글당 cap 3, 알림 anchor 유지, 육안 10건을 본다.",
-      "close_condition": "10항목 PASS + 육안 확인에서 봇끼리 연극처럼 보이지 않음 + North Star 기여 방향 확인",
+      "next_action": "종결. PR #302 조기 운영검증 PASS(2026-08-07 14:43 KST) — 작성자 답글 11건, 대상 BOT_COMMENT 6/REAL_MEMBER 5로 BOT companion 실제 발생, 글당 cap 3 초과 0, 봇/게스트 알림 0, \"봇 있는데 사람에만 답글\" 9개 중 1개(11%), rollback 신호 0.",
+      "close_condition": "충족됨. 대상 actor 분포에 BOT 포함 + 글당 대댓글 3개 이하 + 봇/게스트 알림 0 + 육안에서 봇끼리 연극처럼 보이지 않음. 실회원 알림 #comment 앵커는 검증 구간에 실회원 답글 표본이 없어 미관측(PR #300 preview 육안 확인 완료 — 회귀 아님).",
       "pass_criteria": "write 총량 2배 미만 · 글당 대댓글 3개 이하 · 대상 actor 분포에 BOT 포함 · '봇 있는데 사람에만 답글' 10% 이하 · 실회원 알림 #comment 유지 · 봇/게스트 알림 0 · MENOPAUSE/건강/돈/가족 부적절 0 · 샘플 10건 육안 PASS · LLM/API 비용 급증 없음 · CI/agents-check 실패 없음",
       "verification_required": true,
-      "last_verified_at": null,
-      "related_pr": [302, 300],
+      "last_verified_at": "2026-08-07",
+      "related_pr": [
+        302,
+        300
+      ],
       "risk": "mid",
-      "do_not_touch": ["agents/coo/author-reply-persona.ts", "agents/coo/reply-chain-driver.ts", "agents/cafe/", ".github/workflows/", ".env"],
-      "note": "PR #302 merged 2026-08-06 17:59 KST, mergeCommit 58d22546. AUTHOR_REPLY_MODE=write 상태라 다음 agents-daily 회차부터 실제 반영된다. 반사실 예상: 사람에만 답글 62%→5%(1회차 기준도 5%), 작성자 답글 총량 1.90배, 글당 최대 3, 실회원 알림만 생성. PR #300 알림 anchor는 유지되어야 한다. 운영검증 PASS 전 verified_closed 금지."
+      "do_not_touch": [
+        "agents/coo/author-reply-persona.ts",
+        "agents/coo/reply-chain-driver.ts",
+        "agents/cafe/",
+        ".github/workflows/",
+        ".env"
+      ],
+      "note": "PR #302 merged 2026-08-06 17:59 KST, mergeCommit 58d22546. AUTHOR_REPLY_MODE=write 상태라 다음 agents-daily 회차부터 실제 반영된다. 반사실 예상: 사람에만 답글 62%→5%(1회차 기준도 5%), 작성자 답글 총량 1.90배, 글당 최대 3, 실회원 알림만 생성. PR #300 알림 anchor는 유지되어야 한다. 운영검증 PASS 전 verified_closed 금지. | 2026-08-07 종결: 조기 검증으로 충분 PASS 판단. AS-IS 조사에서 봇 계정 304개·활동 286개·HHI 0.012로 쏠림 없음, 댓글 길이 변동계수 0.85로 획일성 낮음을 함께 확인. 후속은 L-PERSONA-SSOT."
     },
     {
       "id": "L-LLM-COST-AUDIT",
@@ -80,7 +96,10 @@
       "verification_required": false,
       "last_verified_at": null,
       "risk": "low",
-      "do_not_touch": ["agents/cafe/haiku-quality-prompt.ts", "agents/cafe/haiku-quality-gate.ts"],
+      "do_not_touch": [
+        "agents/cafe/haiku-quality-prompt.ts",
+        "agents/cafe/haiku-quality-gate.ts"
+      ],
       "note": "2026-08-06 고유 글 19건 샘플에서 명확 오탐 2건(10.5%), 의심 포함 4건(21%). 대표 사례 ① '키 몸무게 여자 연예인' — 화자가 '30대 40대 였을때 지금은 머 나이가 있어서'라고 스스로 회고하는데 young_self로 차단(판정이 반대) ② '남자는 모두 어린 여자를 좋아한다?' — '제 또래 남자'·'내 남편'·'나이 든다는 게 슬퍼진다'는 타깃 본인 정서인데 sexualized_age_gap+romance_self로 차단. haiku-quality-prompt.ts에 보정3(2026-07-16) '중장년 회고·오래된 부부·성인자녀 맥락이면 PASS'가 이미 있으나 일부가 빠져나간다. 조사만 — 코드 수정은 별도 승인 후."
     },
     {
@@ -96,7 +115,12 @@
       "last_verified_at": null,
       "risk": "low",
       "known_issue_type": "needs_decision",
-      "do_not_touch": ["src/app/(main)/page.tsx", "src/app/(main)/magazine/page.tsx", "src/app/(main)/community/[boardSlug]/page.tsx", "네이버 Search Advisor"],
+      "do_not_touch": [
+        "src/app/(main)/page.tsx",
+        "src/app/(main)/magazine/page.tsx",
+        "src/app/(main)/community/[boardSlug]/page.tsx",
+        "네이버 Search Advisor"
+      ],
       "note": "08-06 검증: 봇 출력은 금지표현 0건. 잔존 표현은 SEO 구조화 데이터/메타 4곳(page.tsx:170 knowsAbout · magazine/page.tsx:47,51 · community/[boardSlug]/page.tsx:111 FAQ). 기준 자체가 어긋나 있음 — constitution v5 금지 목록은 시니어·어르신·노인·실버 4개뿐이고 '중장년'은 없다. 반대로 CLAUDE.md:76은 '50대 60대'를 시니어의 권장 대체 표현으로 명시한다. 네이버 노출면(title·JSON-LD)이라 결정 전 즉시 수정 금지."
     },
     {
@@ -113,7 +137,11 @@
       "verification_required": true,
       "last_verified_at": "2026-08-06",
       "risk": "low",
-      "do_not_touch": ["src/app/sitemap.ts", "src/app/robots.ts", "네이버 Search Advisor"],
+      "do_not_touch": [
+        "src/app/sitemap.ts",
+        "src/app/robots.ts",
+        "네이버 Search Advisor"
+      ],
       "note": "색인 재요청·sitemap 재제출 금지. 자연 재수집 대기. 08-06 중간확인 PASS — robots 해시 동일(sha1 6505a2ca5b35, sha256으로 재면 a953403f5cc6이라 산출법 다르면 오판 주의) · sitemap 2,908(06-07)→8,827 증가 · Yeti robots=index,follow / googlebot=noindex,follow 대조 확인."
     },
     {
@@ -129,7 +157,9 @@
       "pass_criteria": "GSC 색인 수 증가 또는 noindex 제외 감소 확인",
       "verification_required": true,
       "last_verified_at": null,
-      "related_pr": [259],
+      "related_pr": [
+        259
+      ],
       "risk": "low",
       "note": "28일 클릭 90·노출 582 baseline. 브랜드 47%, 비브랜드는 연예 가십(HUMOR). 08-06 실측으로 Google-only 설계 작동 확인 — 일반 robots=index,follow 유지된 채 googlebot만 noindex,follow."
     },
@@ -176,7 +206,9 @@
       "last_verified_at": null,
       "risk": "low",
       "known_issue_type": "deferred",
-      "do_not_touch": ["docs/backlog/OPERATING_BACKLOG.md"],
+      "do_not_touch": [
+        "docs/backlog/OPERATING_BACKLOG.md"
+      ],
       "note": "docs/backlog/operating-safety-harness-2026-07-30.md 133줄. 타 세션 변경과 섞이면 안 됨."
     },
     {
@@ -210,7 +242,9 @@
       "pass_criteria": "차단 발생 확인 · 발행량 2.6~3.0건/회차 유지 · 주간 차단 15건 이하",
       "verification_required": true,
       "last_verified_at": "2026-08-06",
-      "related_pr": [283],
+      "related_pr": [
+        283
+      ],
       "risk": "mid",
       "note": "08-06 운영검증 PASS. unao-prod 0c6a6c40 반영 확인(content-curator.ts:1121 gate). 20회차 중 6회차에서 차단 발생, 고유 글 2개(오탐 0건 — 둘 다 제목에 '삭제예정'/'(펑예)'). 발행량 18/20회차 3건 유지(2회차는 로그 조회 실패, job은 success). 주간 차단 페이스는 고유 글 기준 2건으로 15건 기준 이내 — 로그 라인 수로 세면 20이지만 같은 글 반복분임."
     },
@@ -227,7 +261,11 @@
       "pass_criteria": "발행글 샘플에서 금지표현 0건",
       "verification_required": true,
       "last_verified_at": "2026-08-06",
-      "related_pr": [276, 278, 279],
+      "related_pr": [
+        276,
+        278,
+        279
+      ],
       "risk": "mid",
       "note": "08-06 운영검증 PASS. unao-prod constitution.yaml 597줄에 v5 마커 7종 전부 반영(core_emotion '나만 이런 게 아니구나' · life_axes 4축 · north_star_definition · survival_reference_only · naver_search_advisor · current_phase · ideal_demographic). 봇 발행글 금지표현 0건, 주제는 4축 안(관계·노후와 일상). 잔존 '중장년'은 봇 출력이 아니라 SEO 메타 하드코딩 → L-LANG-SEO-META."
     },
@@ -242,9 +280,34 @@
       "close_condition": "스크립트 merge + 실행 검증 완료",
       "verification_required": false,
       "last_verified_at": "2026-08-06",
-      "related_pr": [280],
+      "related_pr": [
+        280
+      ],
       "risk": "low",
       "note": "08-06 unao-prod에서 재실행 PASS(171줄, DB write 0·Raw SQL 0). 실측 7일 North Star 1명 / 28일 7명(08-05는 7일 2명). 7일 표본이 작아 단일 수치로 판단 금지 — 주간 추세로만 본다."
+    },
+    {
+      "id": "L-PERSONA-BOT-GAP",
+      "title": "기능 봇 4개 페르소나 정의 부재 — author-reply resolve null 잠재",
+      "status": "known_issue",
+      "owner_session": "claude-ops",
+      "priority": "P2",
+      "category": "agent",
+      "next_action": "bot-humor/bot-caregiving/bot-health 3개는 author-reply 대상 보드(HUMOR·STORY·MENOPAUSE)에 글이 있으나 persona-data.ts에 정의가 없어 resolveAuthorPersonaContext가 null → 작성자 답글 skip. 단 3개 모두 2026-05-15~16 이후 신규 글 0(dormant)이고 전 기간 실회원 댓글 0건이라 현재 발현 위험 없음. L-PERSONA-SSOT에서 registry로 일괄 처리하거나 의도적 제외로 명시한다.",
+      "close_condition": "활동 봇 전수가 registry에 존재하거나 의도적 제외로 코드에 명시됨 + author-reply resolve null 0건",
+      "pass_criteria": "bot-* 계정 83개 중 정의 없는 계정 0 또는 명시적 제외 목록에 등재 · 대상 보드 글에서 resolve null 0",
+      "verification_required": true,
+      "last_verified_at": null,
+      "related_pr": [
+        302
+      ],
+      "risk": "low",
+      "do_not_touch": [
+        "agents/coo/author-reply-policy.ts",
+        "agents/coo/author-reply-driver.ts",
+        "agents/cafe/wave-processor.ts"
+      ],
+      "note": "2026-08-07 read-only 실측 정정. 최초 가설은 \"bot-job이 30일 82건 활동하는데 정의가 없어 author-reply skip\"이었으나 author-reply-driver.ts 후보 조회가 boardType in [STORY,LIFE2,HUMOR,MENOPAUSE]로 제한되어 JOB 보드는 구조적으로 제외 — bot-job(JOB 보드 294건 전량, 최근글 2026-08-07)은 구멍이 아니다. 실제 잠재 대상은 dormant 3개. 4개 봇 모두 전 기간 실회원 댓글 0건. 계정 확대는 불필요(304개·HHI 0.012). | lane: persona-identity-account-expansion-as-is-2026-08-07 (owner_session은 계약 유니온상 claude-ops)."
     }
   ]
 }
