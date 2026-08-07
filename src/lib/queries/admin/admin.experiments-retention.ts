@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { unstable_cache } from 'next/cache'
 import { getExperiment } from '@/lib/experiments/registry'
 import { confidenceLevel, conversionRate, type Confidence } from '@/lib/experiments/stats'
+import { resolveGuestKey } from '@/lib/anon-cid'
 
 // 실험 리텐션 집계 — exp1_related_flow 주지표(3화면 도달률·D1~D7·세션 page_view·inline 클릭).
 // 노출(exposureEvent)의 sessionId 를 분모로, EventLog page_view 로 3화면/Dn, related_post_click(inline) 로 보조.
@@ -88,7 +89,10 @@ const _getExperimentRetention = unstable_cache(
     const inlineClickSessions = new Set<string>()
 
     for (const e of events) {
-      if (!e.sessionId) continue
+      // [F19] 노출 분모·재방문 조인 키 = anon_cid → sessionId fallback.
+      //   노출과 이후 page_view를 같은 키로 묶어야 Dn이 성립한다.
+      const key = resolveGuestKey(e)
+      if (!key) continue
       const props =
         typeof e.properties === 'object' && e.properties !== null
           ? (e.properties as Record<string, unknown>)
@@ -97,9 +101,9 @@ const _getExperimentRetention = unstable_cache(
         const v = props[exp.variantProperty]
         if (typeof v !== 'string' || !exp.variants.some((x) => x.key === v)) continue
         const at = e.createdAt.getTime()
-        const prev = exposures.get(e.sessionId)
+        const prev = exposures.get(key)
         if (!prev || at < prev.at) {
-          exposures.set(e.sessionId, {
+          exposures.set(key, {
             variant: v,
             at,
             relatedCount: typeof props.relatedCount === 'number' ? props.relatedCount : 0,
@@ -107,11 +111,11 @@ const _getExperimentRetention = unstable_cache(
           })
         }
       } else if (e.eventName === 'page_view') {
-        const arr = pvBySession.get(e.sessionId) ?? []
+        const arr = pvBySession.get(key) ?? []
         arr.push(e.createdAt.getTime())
-        pvBySession.set(e.sessionId, arr)
+        pvBySession.set(key, arr)
       } else if (e.eventName === 'related_post_click' && props.position === 'inline') {
-        inlineClickSessions.add(e.sessionId)
+        inlineClickSessions.add(key)
       }
     }
 

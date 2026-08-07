@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { unstable_cache } from 'next/cache'
 import { getInternalSessionIds, getAdminUserIds } from './internal-sessions'
 import { isLowQualityDirectSession, ACTIVITY_EVENTS } from './pc-direct-filter'
+import { resolveGuestKey, resolveIdentityKey } from '@/lib/anon-cid'
 
 // 실고객 = providerId 순수 숫자(진짜 카카오 가입자). seed_/bot-/curator-/@unao.bot 봇 전부 제외.
 // 봇 판별 단일 기준 — 대시보드 전 지표 통일(트렌드·OKR·카드).
@@ -38,17 +39,20 @@ async function computeGuestRetention(now: number, windowDays = 60): Promise<Gues
   const nowIdx = kstDayIdx(now)
   const since = new Date(now - windowDays * DAY_MS)
   const internalSids = await getInternalSessionIds(since)
+  // [F19] 코호트 키 = anon_cid → sessionId fallback (properties 동반 조회 필요)
   const events = await prisma.eventLog.findMany({
     where: { eventName: 'page_view', isBot: false, userId: null, sessionId: { not: null }, createdAt: { gte: since } },
-    select: { sessionId: true, createdAt: true },
+    select: { sessionId: true, createdAt: true, properties: true },
     orderBy: { createdAt: 'asc' },
   })
   const active = new Map<string, Set<number>>()
   for (const e of events) {
     const sid = e.sessionId!
     if (internalSids.has(sid)) continue
-    let s = active.get(sid)
-    if (!s) { s = new Set(); active.set(sid, s) }
+    const key = resolveGuestKey(e) ?? sid
+    if (internalSids.has(key)) continue
+    let s = active.get(key)
+    if (!s) { s = new Set(); active.set(key, s) }
     s.add(kstDayIdx(e.createdAt.getTime()))
   }
   const offs = [1, 3, 7, 14, 30] as const
@@ -128,11 +132,17 @@ export const getDashboardStats = unstable_cache(
       getAdminUserIds(),
       prisma.eventLog.findMany({
         where: { eventName: { in: [...ACTIVITY_EVENTS] }, isBot: false, sessionId: { not: null }, createdAt: { gte: today } },
-        select: { sessionId: true },
+        select: { sessionId: true, properties: true },
         distinct: ['sessionId'],
       }),
     ])
-    const activeSids = new Set(activeRows.map((r) => r.sessionId).filter((s): s is string => !!s))
+    // [F19] 활동 세션 판정도 같은 키 공간에서 봐야 한다 — sessionId·anon_cid 양쪽 모두 담는다
+    const activeSids = new Set<string>()
+    for (const r of activeRows) {
+      if (r.sessionId) activeSids.add(r.sessionId)
+      const k = resolveGuestKey(r)
+      if (k) activeSids.add(k)
+    }
     const rows = pvRows.filter((r) => !(r.sessionId && internalSids.has(r.sessionId)))
 
     // UV/PV 회원·비회원·봇 분리 (등장 userId의 실고객 여부 조회)
@@ -142,20 +152,24 @@ export const getDashboardStats = unstable_cache(
       : []
     const realUserSet = new Set(userRows.filter((u) => isReal(u.providerId) && !adminIds.has(u.id)).map((u) => u.id))
 
-    const memberSessions = new Set<string>() // 실고객 userId 가진 세션
-    const botSessions = new Set<string>() // 비실고객 userId(seed 등) = 봇 → 제외
-    const sMeta = new Map<string, { pv: number; firstRef: string; be: string }>() // 세션별 메타(B룰용)
+    // [F19] 식별자 우선순위: 회원 UV는 **userId**로 센다(같은 사람이 기기·세션이 갈려도 1명).
+    //   비회원은 anon_cid → sessionId fallback. 세션 단위 분류(B룰)는 그 해석키를 그대로 쓴다.
+    const memberUserIds = new Set<string>() // 실고객 userId(회원 UV 분모)
+    const memberKeys = new Set<string>() // 실고객 pv가 있었던 키 → 비회원에서 제외
+    const botKeys = new Set<string>() // 비실고객 userId(seed 등) = 봇 → 제외
+    const sMeta = new Map<string, { pv: number; firstRef: string; be: string }>() // 키별 메타(B룰용)
     let memberPv = 0
     let guestPvAll = 0
     for (const r of rows) {
-      const sid = r.sessionId
-      if (sid && !sMeta.has(sid)) sMeta.set(sid, { pv: 0, firstRef: typeof r.referrer === 'string' ? r.referrer : '', be: beOf(r.properties) })
-      if (sid) sMeta.get(sid)!.pv++
+      const key = resolveGuestKey(r)
+      if (key && !sMeta.has(key)) sMeta.set(key, { pv: 0, firstRef: typeof r.referrer === 'string' ? r.referrer : '', be: beOf(r.properties) })
+      if (key) sMeta.get(key)!.pv++
       if (r.userId && realUserSet.has(r.userId)) {
         memberPv++
-        if (sid) memberSessions.add(sid)
+        memberUserIds.add(r.userId)
+        if (key) memberKeys.add(key)
       } else if (r.userId) {
-        if (sid) botSessions.add(sid)
+        if (key) botKeys.add(key)
       } else {
         guestPvAll++ // userId null = 진짜 익명(비회원)
       }
@@ -165,18 +179,18 @@ export const getDashboardStats = unstable_cache(
     let lowQualityPv = 0
     let lowQualityExcluded = 0
     for (const r of rows) {
-      const sid = r.sessionId
-      if (!sid || memberSessions.has(sid) || botSessions.has(sid) || guestSessions.has(sid)) continue
-      const m = sMeta.get(sid)!
-      if (isLowQualityDirectSession({ browserEnv: m.be, firstReferrer: m.firstRef, pv: m.pv, hasUserId: false, hasActivity: activeSids.has(sid) })) {
+      const key = resolveGuestKey(r)
+      if (!key || memberKeys.has(key) || botKeys.has(key) || guestSessions.has(key)) continue
+      const m = sMeta.get(key)!
+      if (isLowQualityDirectSession({ browserEnv: m.be, firstReferrer: m.firstRef, pv: m.pv, hasUserId: false, hasActivity: activeSids.has(key) })) {
         lowQualityExcluded++
         lowQualityPv += m.pv
         continue
       }
-      guestSessions.add(sid)
+      guestSessions.add(key)
     }
     const guestPv = guestPvAll - lowQualityPv
-    const memberUv = memberSessions.size
+    const memberUv = memberUserIds.size
     const guestUv = guestSessions.size
     const todayUniqueVisitors = memberUv + guestUv // 시드봇 + PC직접 무활동 세션 제외 합
     const todayPV = memberPv + guestPv // 시드봇 + PC직접 무활동 PV 제외 합
@@ -222,6 +236,8 @@ export const getMonthlyOkrStats = unstable_cache(
     const internalArr = [...internalSids]
 
     // KR1: 월 UV (내부 세션 제외)
+    // [F19] 식별자 우선순위 userId → anon_cid → sessionId. distinct는 sessionId로 걸어 스캔량을 유지하고,
+    //   같은 사람이 여러 sessionId로 쪼개진 경우를 해석키로 합친다(오늘 UV 카드와 같은 기준).
     const monthlyUvRows = await prisma.eventLog.findMany({
       where: {
         eventName: 'page_view',
@@ -229,10 +245,17 @@ export const getMonthlyOkrStats = unstable_cache(
         sessionId: { not: null },
         createdAt: { gte: monthStart },
       },
-      select: { sessionId: true },
+      select: { sessionId: true, userId: true, properties: true },
       distinct: ['sessionId'],
     })
-    const monthlyUv = monthlyUvRows.filter((r) => r.sessionId && !internalSids.has(r.sessionId)).length
+    const monthlyUvKeys = new Set<string>()
+    for (const r of monthlyUvRows) {
+      if (r.sessionId && internalSids.has(r.sessionId)) continue
+      const key = resolveIdentityKey(r)
+      if (!key || internalSids.has(key)) continue
+      monthlyUvKeys.add(key)
+    }
+    const monthlyUv = monthlyUvKeys.size
 
     // KR2: 월 PV (내부 세션 제외 — null sessionId PV는 보존)
     const monthlyPv = await prisma.eventLog.count({
@@ -306,6 +329,11 @@ export const getMonthlyOkrStats = unstable_cache(
 )
 
 // ─── 최근 30일 일별 트렌드 (30분 캐시) ───
+// [F19] 여기만 sessionId를 그대로 UV 키로 쓴다 — 의도된 예외다.
+//   이 PR 이후 서버가 `sessionId = anon_cid`로 적재하므로 신규 행은 두 값이 같고, 해석키를 써도 결과가 동일하다.
+//   반면 이 쿼리는 30일치 page_view를 distinct 없이 전량 스캔하므로 properties(JSON)까지 끌어오면
+//   payload만 커지고 얻는 게 없다. 과거 행에는 anon_cid가 없어 어차피 병합되지도 않는다.
+//   ※ 추이(모양) 지표이고 절대값 카드(getDashboardStats)와는 필터가 원래 다르다.
 
 export const getDailyTrend = unstable_cache(
   async () => {

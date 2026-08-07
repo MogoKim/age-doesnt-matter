@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { checkApiRateLimit } from '@/lib/api-rate-limit'
 import { BOT_UA_PATTERN } from '@/lib/bot-patterns'
+import { resolveEventSessionId } from '@/lib/anon-cid'
 
 interface EventPayload {
   eventName: string
@@ -59,8 +60,21 @@ export async function POST(request: NextRequest) {
 
   // 봇이 아닐 때만 anon session 발급 — 기존 middleware 정책과 동일
   // HTML 응답에서 Set-Cookie를 제거했으므로, 최초 이벤트 발생 시 여기서 sessionId를 생성
+  //
+  // [F19] 식별자 우선순위: 클라 anon_cid → 기존 `_anon_sid` 쿠키 → 신규 UUID.
+  //   첫 방문에서 5개 이벤트가 쿠키 왕복 전에 동시 출발해도 anon_cid가 같으므로 하나로 묶인다.
+  //   anon_cid를 sessionId에 그대로 넣는 이유: 아래 Set-Cookie로 `_anon_sid`까지 같은 값으로 수렴시켜
+  //   **localStorage와 쿠키가 한 값을 갖게** 하기 위해서다. 둘 중 하나가 지워져도 식별자가 바뀌지 않는다.
+  //   (역순으로 쿠키를 우선하면 두 저장소가 서로 다른 값을 유지해, 쿠키 만료 시점에 식별자가 튄다.)
+  //   기준: docs/features/F19-anonymous-session-measurement.md §7
+  //   클라가 보낸 anon_cid는 그대로 DB 식별자가 되므로 형식 검증을 통과한 값만 채택한다(이상하면 무시하고 fallback).
   const existingSid = request.cookies.get('_anon_sid')?.value ?? null
-  const sessionId = isBot ? null : (existingSid ?? crypto.randomUUID())
+  const sessionId = resolveEventSessionId({
+    isBot,
+    properties: body.properties,
+    existingSid,
+    createFallbackId: () => crypto.randomUUID(),
+  })
 
   await prisma.eventLog.create({
     data: {

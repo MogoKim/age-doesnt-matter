@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { unstable_cache } from 'next/cache'
 import { getInternalSessionIds } from './internal-sessions'
+import { resolveGuestKey } from '@/lib/anon-cid'
 
 // 리텐션 4분면 (TWA/웹 × 회원/비회원) D1/D3/D7.
 // 회원 = providerId 순수숫자(^\d+$), 채널 = User.signupSource(없으면 UNKNOWN), 코호트 = 가입일.
@@ -96,20 +97,24 @@ export const getRetentionQuadrants = unstable_cache(
 
     // ── 비회원 ── (창업자 내부 세션 /admin·founder플래그 제외)
     const internalSids = await getInternalSessionIds(since)
+    // [F19] 코호트 키 = anon_cid → sessionId fallback. properties를 함께 읽어야 anon_cid를 볼 수 있다.
     const guestEvents = await prisma.eventLog.findMany({
       where: { eventName: 'page_view', isBot: false, userId: null, sessionId: { not: null }, createdAt: { gte: since } },
-      select: { sessionId: true, referrer: true, createdAt: true },
+      select: { sessionId: true, referrer: true, createdAt: true, properties: true },
       orderBy: { createdAt: 'asc' },
     })
     const guestActive = new Map<string, Set<number>>()
     const guestFirstRef = new Map<string, string>()
     for (const e of guestEvents) {
       const sid = e.sessionId!
+      // 내부 세션 제외는 sessionId·해석키 양쪽으로 확인 — 신규 행은 두 값이 같지만 과거 행은 다를 수 있다
       if (internalSids.has(sid)) continue
-      let s = guestActive.get(sid)
-      if (!s) { s = new Set(); guestActive.set(sid, s) }
+      const key = resolveGuestKey(e) ?? sid
+      if (internalSids.has(key)) continue
+      let s = guestActive.get(key)
+      if (!s) { s = new Set(); guestActive.set(key, s) }
       s.add(dayIdx(e.createdAt.getTime()))
-      if (!guestFirstRef.has(sid)) guestFirstRef.set(sid, typeof e.referrer === 'string' ? e.referrer : '')
+      if (!guestFirstRef.has(key)) guestFirstRef.set(key, typeof e.referrer === 'string' ? e.referrer : '')
     }
     const guestBuckets: Record<string, Cohort[]> = { TWA: [], WEB: [] }
     for (const [sid, active] of guestActive) {
