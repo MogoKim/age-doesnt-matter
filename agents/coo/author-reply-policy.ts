@@ -126,6 +126,57 @@ export interface ReplyTarget {
 }
 
 /** 글 하나에 글쓴이 답글이 몇 개까지 자연스러운가 (기존 답글 포함) */
+// ── 일 판정 lane (2026-08-07) — 기존 전역 일 판정 상한(10)을 대체한다 ──
+//
+// 왜 바꿨나: 전역 cap 하나가 실회원·게스트·봇 companion·safety SKIP·ESCALATE를 모두 같이 세서,
+//   실회원 댓글이 봇 companion이나 SKIP에 밀려 응답을 못 받는 일이 생겼다.
+//   실측(30일): 판정 70건 중 REPLY가 아닌 판정이 43%, cap 도달 2일 중 08-07은 12:40에 소진되어
+//   이후 11시간 동안 들어온 실회원 댓글 5건이 무응답으로 남았다.
+//   실회원 최상위 댓글은 하루 평균 2건뿐이라, cap 자체가 아니라 "누가 먼저 쓰느냐"가 문제였다.
+//
+// 그래서 lane을 분리한다. human이 다 차도 companion은 자기 몫으로 돌고, 그 반대도 같다.
+// 무제한이 아니다 — 합계 상한은 18건/일이고 실제 후보가 없으면 소비되지 않는다.
+export type JudgeLane = 'human' | 'companion'
+
+/** 실회원·게스트 댓글 응답 — North Star(주간 재방문) 직결이라 넉넉히 둔다(실측 수요의 6배) */
+export const DAILY_HUMAN_JUDGE_CAP = 12
+/** 봇 댓글 companion — 댓글판 패턴 지우기용 보조. 사람 응답을 밀어내지 않도록 낮게 */
+export const DAILY_COMPANION_JUDGE_CAP = 6
+/** 같은 실회원에게 하루 몇 번까지 답할지 — AI 티 방지(과거 한 유저에게 5회 연속 사례) */
+export const PER_USER_DAILY_REPLY_CAP = 2
+
+/**
+ * 판정 대상이 어느 lane을 소비하는지.
+ * COMPANION은 대상이 사람이어도 companion lane이다 — 사람 응답 몫을 보조가 잠식하지 않게 한다.
+ */
+export function laneOf(actor: CommentActor, role: ReplyTargetRole): JudgeLane {
+  if (role === 'COMPANION') return 'companion'
+  return actor === 'REAL_MEMBER' || actor === 'GUEST' ? 'human' : 'companion'
+}
+
+export function judgeCapFor(lane: JudgeLane): number {
+  return lane === 'human' ? DAILY_HUMAN_JUDGE_CAP : DAILY_COMPANION_JUDGE_CAP
+}
+
+/**
+ * 처리 우선순위. 낮을수록 먼저다.
+ *   0 사람 PRIMARY(REAL_MEMBER·GUEST) → 1 기타 PRIMARY → 2 COMPANION
+ * 기존에는 planned가 글 단위로 쌓여서 앞 글의 COMPANION이 뒤 글의 실회원 PRIMARY보다
+ * 먼저 cap을 먹었다. 전역 정렬로 그 밀림을 없앤다.
+ */
+export function judgeOrderRank(actor: CommentActor, role: ReplyTargetRole): number {
+  if (role === 'COMPANION') return 2
+  return actor === 'REAL_MEMBER' || actor === 'GUEST' ? 0 : 1
+}
+
+/** judgeOrderRank 기준 안정 정렬 — 같은 rank 안에서는 원래 순서(작성 시각) 유지 */
+export function sortByJudgeOrder<T>(items: T[], pick: (t: T) => { actor: CommentActor; role: ReplyTargetRole }): T[] {
+  return items
+    .map((item, i) => ({ item, i, rank: judgeOrderRank(pick(item).actor, pick(item).role) }))
+    .sort((a, b) => (a.rank - b.rank) || (a.i - b.i))
+    .map(x => x.item)
+}
+
 export const MAX_AUTHOR_REPLIES_PER_POST = 3
 /**
  * 댓글판 밀도에 따른 COMPANION 허용 수.

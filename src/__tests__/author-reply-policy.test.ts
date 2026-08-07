@@ -359,7 +359,7 @@ describe('shouldWriteReply — REPLY만 작성, SKIP/ESCALATE·dry-run은 절대
     expect(shouldWriteReply('write', 'ESCALATE', false)).toBe(false)
   })
 
-  it('write 모드: REPLY 여러 건이면 각각 true (건수 제한 없음 — DAILY_JUDGE_CAP은 판정 단계에서 제어)', () => {
+  it('write 모드: REPLY 여러 건이면 각각 true (건수 제한 없음 — 일 판정 상한은 driver의 lane cap이 제어)', () => {
     expect(shouldWriteReply('write', 'REPLY', true)).toBe(true)
     expect(shouldWriteReply('write', 'REPLY', true)).toBe(true)
     expect(shouldWriteReply('write', 'REPLY', true)).toBe(true)

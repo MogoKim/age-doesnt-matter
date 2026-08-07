@@ -21,6 +21,14 @@ import {
   NON_BOT_COMMENT_AUTHOR_WHERE,
   selectThreadReplyTargets,
   isRealUserProviderId,
+  laneOf,
+  judgeCapFor,
+  sortByJudgeOrder,
+  DAILY_HUMAN_JUDGE_CAP,
+  DAILY_COMPANION_JUDGE_CAP,
+  PER_USER_DAILY_REPLY_CAP,
+  type JudgeLane,
+  type ReplyTargetRole,
   type CommentActor,
 } from './author-reply-policy.js'
 
@@ -29,7 +37,6 @@ const client = new Anthropic()
 
 export const AUTHOR_REPLY_ACTION = 'AUTHOR_REPLY_DRYRUN'   // 판정 로그(일 상한 카운트 + 중복 dedup 소스) — mode 무관 항상 기록
 export const AUTHOR_REPLY_WRITE_ACTION = 'AUTHOR_REPLY_WRITE' // write 모드 실제 작성 성공/실패 전용 로그
-const DAILY_JUDGE_CAP = 10 // 하루 최대 판정 수 (write 모드에서도 불변 — REPLY는 이 상한 내에서 전부 작성)
 const LOOKBACK_HOURS = 48
 
 type WriteOutcome = 'WRITTEN' | 'DUP_SKIP' | 'PRECONDITION_SKIP'
@@ -171,13 +178,47 @@ export async function main(): Promise<void> {
   const MODE = resolveAuthorReplyMode(process.env.AUTHOR_REPLY_MODE) // 기본 dry-run — 'write'일 때만 실제 작성
   console.log(`[AuthorReply] 모드: ${MODE}${MODE === 'write' ? ' (verdict=REPLY 후보 실제 작성)' : ' (초안만 기록, Comment write 없음)'}`)
 
-  // 일 상한 + 이미 판정한 댓글(중복 방지) — 과거 전체 BotLog에서 commentId 수집
-  const todayCount = await prisma.botLog.count({
+  // 일 상한(lane별) + 이미 판정한 댓글(중복 방지) — 과거 전체 BotLog에서 commentId 수집
+  const todayJudges = await (prisma as unknown as {
+    botLog: { findMany(a: unknown): Promise<Array<{ logData: unknown }>> }
+  }).botLog.findMany({
     where: { action: AUTHOR_REPLY_ACTION, createdAt: { gte: kstMidnight() } },
+    select: { logData: true },
   })
-  if (todayCount >= DAILY_JUDGE_CAP) {
-    console.log(`[AuthorReply] 일 판정 상한(${DAILY_JUDGE_CAP}) 도달 — 스킵`)
+  // 과도기: lane 필드가 없는 기존 로그(이 PR 이전)는 human으로 센다 — 사람 몫을 덜 쓰는 쪽이 아니라
+  //   더 보수적으로 잡는 쪽이다. 배포 다음날부터는 전부 lane이 찍힌 로그라 자연 해소된다.
+  const laneUsed = (lane: JudgeLane) =>
+    todayJudges.filter(l => {
+      const v = (l.logData as { lane?: string } | null)?.lane
+      return v ? v === lane : lane === 'human'
+    }).length
+  const used: Record<JudgeLane, number> = { human: laneUsed('human'), companion: laneUsed('companion') }
+  if (used.human >= DAILY_HUMAN_JUDGE_CAP && used.companion >= DAILY_COMPANION_JUDGE_CAP) {
+    console.log(`[AuthorReply] 양 lane 상한 도달 (human ${used.human}/${DAILY_HUMAN_JUDGE_CAP} · companion ${used.companion}/${DAILY_COMPANION_JUDGE_CAP}) — 스킵`)
     return
+  }
+  console.log(`[AuthorReply] lane 잔여 — human ${DAILY_HUMAN_JUDGE_CAP - used.human} · companion ${DAILY_COMPANION_JUDGE_CAP - used.companion}`)
+
+  // 같은 실회원에게 하루 몇 번 답했는지 — AI 티 방지(PER_USER_DAILY_REPLY_CAP)
+  //   판정 로그에 writtenCommentId가 있으면 실제로 답글이 나간 건이다. 위에서 이미 읽은
+  //   todayJudges를 재사용해 추가 조회를 한 번으로 줄인다.
+  const todayWrittenParentIds = todayJudges
+    .map(l => l.logData as { commentId?: string; writtenCommentId?: string | null } | null)
+    .filter(d => Boolean(d?.writtenCommentId && d?.commentId))
+    .map(d => d!.commentId!) as string[]
+  const repliedTodayByUser = new Map<string, number>()
+  if (todayWrittenParentIds.length > 0) {
+    // prisma 클라이언트가 이 파일에서 unknown으로 추론되는 기존 제약을 우회 — 필요한 형태만 좁게 선언
+    const parents = (await (prisma as unknown as {
+      comment: { findMany(a: unknown): Promise<Array<{ authorId: string | null }>> }
+    }).comment.findMany({
+      where: { id: { in: todayWrittenParentIds } },
+      select: { authorId: true },
+    }))
+    for (const x of parents) {
+      if (!x.authorId) continue // 게스트는 per-user 대상 아님(식별자 불안정)
+      repliedTodayByUser.set(x.authorId, (repliedTodayByUser.get(x.authorId) ?? 0) + 1)
+    }
   }
   const pastLogs = await prisma.botLog.findMany({
     where: { action: AUTHOR_REPLY_ACTION },
@@ -265,7 +306,7 @@ export async function main(): Promise<void> {
   const postReps = new Map<string, PostRow>()
   for (const c of candidates as CandidateRow[]) if (!postReps.has(c.post.id)) postReps.set(c.post.id, c.post)
 
-  const planned: Array<{ comment: ThreadRow; post: PostRow; role: string }> = []
+  const planned: Array<{ comment: ThreadRow; post: PostRow; role: ReplyTargetRole; actor: CommentActor }> = []
   for (const post of postReps.values()) {
     const all: ThreadRow[] = post.comments
     const tops = all.filter((x: ThreadRow) => x.parentId === null)
@@ -282,13 +323,28 @@ export async function main(): Promise<void> {
     })
     for (const t of chosen) {
       const cm = tops.find((x: ThreadRow) => x.id === t.commentId)
-      if (cm) planned.push({ comment: cm, post, role: t.role })
+      if (cm) planned.push({ comment: cm, post, role: t.role, actor: actorOf(cm) })
     }
   }
-  console.log(`[AuthorReply] 댓글판 ${postReps.size}개 → 대상 ${planned.length}건 (PRIMARY ${planned.filter(p => p.role === 'PRIMARY').length} · COMPANION ${planned.filter(p => p.role === 'COMPANION').length})`)
+  // 전역 정렬 — 사람 PRIMARY가 항상 봇 COMPANION보다 먼저다.
+  //   이전에는 글 단위로 쌓인 순서 그대로 소비해서, 앞 글의 COMPANION이 뒤 글의 실회원 PRIMARY보다
+  //   먼저 판정을 가져가는 일이 가능했다.
+  const ordered = sortByJudgeOrder(planned, x => ({ actor: x.actor, role: x.role }))
+  console.log(`[AuthorReply] 댓글판 ${postReps.size}개 → 대상 ${ordered.length}건 (PRIMARY ${ordered.filter(p => p.role === 'PRIMARY').length} · COMPANION ${ordered.filter(p => p.role === 'COMPANION').length})`)
 
-  for (const plan of planned) {
-    if (todayCount + judged >= DAILY_JUDGE_CAP) break
+  for (const plan of ordered) {
+    const lane = laneOf(plan.actor, plan.role)
+    // lane별 독립 소진 — 한쪽이 차도 다른 쪽은 계속 돈다
+    if (used[lane] >= judgeCapFor(lane)) continue
+    // 같은 실회원 하루 상한 — 봇/게스트는 대상 아님
+    if (
+      plan.actor === 'REAL_MEMBER' &&
+      plan.comment.authorId &&
+      (repliedTodayByUser.get(plan.comment.authorId) ?? 0) >= PER_USER_DAILY_REPLY_CAP
+    ) {
+      console.log(`[AuthorReply] per-user 상한(${PER_USER_DAILY_REPLY_CAP}) — 건너뜀`)
+      continue
+    }
     // 기존 루프가 쓰던 형태로 맞춘다(댓글 + 글). status는 조회 시 ACTIVE만 담겼다.
     const c = { ...plan.comment, status: 'ACTIVE' as const, post: plan.post }
     if (judgedCommentIds.has(c.id)) continue
@@ -326,6 +382,7 @@ export async function main(): Promise<void> {
     })
     if (menopauseSafetySkip) {
       judged++
+      used[lane]++ // safety SKIP도 해당 lane을 소진한다(판정 비용은 이미 들었다)
       summary.SKIP++
       await prisma.botLog.create({
         data: {
@@ -345,6 +402,8 @@ export async function main(): Promise<void> {
             replyDraft: null,
             writtenCommentId: null,
             menopauseSafetySkipReason: menopauseSafetySkip,
+            lane,
+            capState: { lane, used: used[lane], cap: judgeCapFor(lane) },
           },
         },
       })
@@ -366,6 +425,7 @@ export async function main(): Promise<void> {
     })
 
     judged++
+    used[lane]++
     try {
       const res = await createWithUsage(client, AUTHOR_REPLY_ACTION, {
         model: MODEL,
@@ -431,6 +491,8 @@ export async function main(): Promise<void> {
             reason: decision?.reason ?? '파싱 실패 — ESCALATE 처리',
             replyDraft: decision?.reply ?? null,
             writtenCommentId,
+            lane,
+            capState: { lane, used: used[lane], cap: judgeCapFor(lane) },
           },
         },
       })
@@ -438,6 +500,8 @@ export async function main(): Promise<void> {
       // write 성공 별도 로그 (writtenCommentId 등 상세)
       if (writeOutcome === 'WRITTEN' && writtenCommentId) {
         written++
+        // 같은 회차 안에서도 per-user 상한이 즉시 반영되게 한다
+        if (c.authorId) repliedTodayByUser.set(c.authorId, (repliedTodayByUser.get(c.authorId) ?? 0) + 1)
         // 종모양 알림 — 원댓글 작성자에게 "답글 달렸어요"(리텐션 루프 연결). 실패해도 발행/댓글에 영향 없음.
         const notif = await createAuthorReplyNotification({
           recipient: c.authorId ? { id: c.authorId, providerId: c.author?.providerId ?? null, status: c.author?.status ?? 'UNKNOWN' } : null,
