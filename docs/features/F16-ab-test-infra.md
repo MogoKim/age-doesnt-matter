@@ -15,6 +15,9 @@
 | 어드민 현황·편집 | `src/app/admin/(panel)/ab-tests/` (`/admin/ab-tests`) |
 | 운영 상태 | `ExperimentState` 모델 (status/owner/note/conclusion) — 어드민 편집, 배포 불필요 |
 
+> ⚠️ **실험 분모(노출 식별자)는 [F19 비회원 세션 계측 기준](F19-anonymous-session-measurement.md)을 따른다.**
+> 특히 **첫 진입 10초 안에 발화하는 노출 이벤트는 세션 파편화로 분모가 부풀 수 있다**(2026-08-07 확인). 늦게 발화하는 실험(`android_conversion_a2_b2` 등)은 영향 없음이 실측 확인됐다.
+
 ## 새 실험 추가 표준 절차 (6스텝)
 > 상세는 `src/lib/experiments/registry.ts` 상단 주석.
 1. **registry에 정의 추가**: id, variant(종류·비율), 측정 이벤트, 목적·배경·가설·확인방법·담당(자연어)
