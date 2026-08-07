@@ -22,7 +22,20 @@ import { PERSONAS as CURATOR_PERSONAS } from '../cafe/curator-shared.js'
 import { CURATOR_PERSONA_META } from '../cafe/curator-persona-meta.js'
 import { classifyTopicGroups, type TopicGroup } from '../coo/persona-matcher-policy.js'
 import { inferFamilyStatus, type FamilyStatus, type PersonaProfile } from '../coo/persona-matcher-profiles.js'
-import type { AuthorReplyPersonaContext } from '../coo/author-reply-persona.js'
+
+/**
+ * author-reply 프롬프트 입력 형태. PR-3에서 author-reply-persona.ts가 registry를
+ * 호출하게 되면서 순환 참조를 피하기 위해 정의를 이쪽으로 옮겼다.
+ * author-reply-persona.ts가 그대로 re-export하므로 기존 import 경로는 유지된다.
+ */
+export interface AuthorReplyPersonaContext {
+  /** 관측용 — bot은 대문자 id, curator는 'curator-{id}' */
+  personaId: string
+  nickname: string
+  personality: string
+  style: string
+  speechPatterns: string[]
+}
 
 /** persona=인격체 · system_feed=기능 봇(채용 피드 등) · official_operator=운영 공식 계정 */
 export type PersonaRole = 'persona' | 'system_feed' | 'official_operator'

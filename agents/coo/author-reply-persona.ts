@@ -1,52 +1,26 @@
 /**
- * 작성자 이메일 → 답글 페르소나 컨텍스트 변환 (순수 — DB/SDK 의존 없음, vitest 직접 로드 가능)
+ * 작성자 이메일 → 답글 페르소나 컨텍스트 (얇은 wrapper — PR-3, L-PERSONA-SSOT)
  *
- * 배경(2026-07-15 페르소나 감사): 발행 작성자가 두 체계로 분리 —
- *  - bot-{id}@unao.bot  : persona-data.ts (깊은 인격 — SHEET 발행·seed 댓글)
- *  - curator-{id}@unao.bot : curator-shared.ts PERSONAS (CONTENT_CURATE·popular 발행)
- * 기존 author-reply는 bot-* regex만 역추적해 curator-* 글의 실회원 댓글(~15%)이 조용히 skip됐다.
- * 이 helper가 두 체계를 모두 프롬프트 입력 형태로 변환한다. curator id는 숫자 포함(s028 등) 허용.
+ * 2026-08-07 PR-3: 내부 로직을 agents/core/persona-registry.ts로 위임했다.
+ *   - export API(타입·함수 시그니처)는 전환 전과 **동일**하다. 호출부 수정 0.
+ *   - 동작 결과도 전환 전과 **동일**하다 — 313건 스냅샷 회귀 테스트로 고정
+ *     (src/__tests__/fixtures/author-reply-persona-snapshot.json, 전환 전 구현이 생성).
+ *
+ * 이전 구현(2026-07-15 페르소나 감사)이 하던 일:
+ *   bot-{id}@unao.bot    → persona-data.ts (깊은 인격)
+ *   curator-{id}@unao.bot → curator-shared.ts PERSONAS (얕은 정의)
+ * 두 체계를 각각 역추적하던 분기는 registry가 흡수했다. 원본 파일은 아직 살아 있고
+ * export 제거·CI 가드는 PR-7에서 처리한다.
  */
-import { getPersona, getAllPersonaIds } from '../seed/persona-data.js'
-import { PERSONAS as CURATOR_PERSONAS } from '../cafe/curator-shared.js'
+import { resolveByEmail, toAuthorReplyContext } from '../core/persona-registry.js'
 
-export interface AuthorReplyPersonaContext {
-  /** 관측용 — bot은 대문자 id, curator는 'curator-{id}' */
-  personaId: string
-  nickname: string
-  personality: string
-  style: string
-  speechPatterns: string[]
-}
+export type { AuthorReplyPersonaContext } from '../core/persona-registry.js'
+import type { AuthorReplyPersonaContext } from '../core/persona-registry.js'
 
+/**
+ * 알 수 없는 id(기능 봇 bot-job/humor/caregiving/health, 운영 계정, 오타)는 null.
+ * 엉뚱한 인격으로 답하는 것을 막는 기존 동작 그대로다.
+ */
 export function resolveAuthorPersonaContext(email: string): AuthorReplyPersonaContext | null {
-  const botId = email.match(/^bot-([a-z0-9]+)@unao\.bot$/i)?.[1]?.toUpperCase()
-  if (botId) {
-    // getPersona는 unknown id에 PERSONAS.A로 fallback하므로 명시 검증 — 엉뚱한 인격으로 답하는 것 방지
-    if (!getAllPersonaIds().includes(botId)) return null
-    const p = getPersona(botId)
-    return {
-      personaId: botId,
-      nickname: p.nickname,
-      personality: p.personality,
-      style: p.style,
-      speechPatterns: p.speech_patterns,
-    }
-  }
-
-  const curatorId = email.match(/^curator-([a-z0-9]+)@unao\.bot$/i)?.[1]
-  if (curatorId) {
-    const p = CURATOR_PERSONAS.find(x => x.id.toLowerCase() === curatorId.toLowerCase())
-    if (!p) return null // 알 수 없는 curator id — skip
-    return {
-      personaId: `curator-${p.id}`,
-      nickname: p.nickname,
-      // curator 페르소나는 personality 필드가 없어 style+topics+quirks로 요약 합성
-      personality: `${p.style}. 주로 ${p.topics.slice(0, 3).join(', ')} 이야기를 하고, ${p.quirks.slice(0, 2).join(' / ')} 같은 습관이 있다`,
-      style: p.style,
-      speechPatterns: p.patterns,
-    }
-  }
-
-  return null
+  return toAuthorReplyContext(resolveByEmail(email))
 }
