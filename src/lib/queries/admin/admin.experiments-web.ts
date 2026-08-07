@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { unstable_cache } from 'next/cache'
 import { EXPERIMENTS } from '@/lib/experiments/registry'
 import { confidenceLevel, conversionRate, type Confidence } from '@/lib/experiments/stats'
+import { resolveGuestKey } from '@/lib/anon-cid'
 
 // 웹 A/B 실험 현황 집계 — EventLog 메모리 집계(insights 패턴, Raw SQL 없음).
 // 노출(exposureEvent)의 properties[variantProperty]로 variant별 세션을 모으고,
@@ -107,8 +108,10 @@ const _getWebExperiments = unstable_cache(
             : {}
         const vk = props[exp.variantProperty]
         if (typeof vk !== 'string') continue
-        if (e.eventName === exp.exposureEvent && e.sessionId && variantSessions[vk]) {
-          variantSessions[vk]!.add(e.sessionId)
+        // [F19] 노출 분모 = anon_cid → sessionId fallback. 전환 분자는 기존대로 userId(회원 정본) 유지.
+        const exposureKey = resolveGuestKey(e)
+        if (e.eventName === exp.exposureEvent && exposureKey && variantSessions[vk]) {
+          variantSessions[vk]!.add(exposureKey)
         } else if (e.eventName === exp.conversionEvent && e.userId && variantConv[vk]) {
           variantConv[vk]!.add(e.userId)
         }

@@ -16,7 +16,11 @@
 | 운영 상태 | `ExperimentState` 모델 (status/owner/note/conclusion) — 어드민 편집, 배포 불필요 |
 
 > ⚠️ **실험 분모(노출 식별자)는 [F19 비회원 세션 계측 기준](F19-anonymous-session-measurement.md)을 따른다.**
-> 특히 **첫 진입 10초 안에 발화하는 노출 이벤트는 세션 파편화로 분모가 부풀 수 있다**(2026-08-07 확인). 늦게 발화하는 실험(`android_conversion_a2_b2` 등)은 영향 없음이 실측 확인됐다.
+> 특히 **첫 진입 10초 안에 발화하는 노출 이벤트는 세션 파편화로 분모가 부풀 수 있었다**(2026-08-07 확인). 늦게 발화하는 실험(`android_conversion_a2_b2` 등)은 영향 없음이 실측 확인됐다.
+>
+> ✅ **2026-08-07 구현 반영**: 분모 식별자는 이제 `anon_cid → sessionId` 순으로 해석한다(`admin.experiments-web.ts`·`admin.experiments-retention.ts`).
+> 전환 분자는 **기존대로 `userId`** 다(회원 정본, 인앱→외부 sessionId 단절 우회 목적 그대로).
+> 새 실험을 설계할 때 **분모를 무엇으로 세는지 반드시 명시한다**(F19 §5·§8).
 
 ## 새 실험 추가 표준 절차 (6스텝)
 > 상세는 `src/lib/experiments/registry.ts` 상단 주석.
