@@ -308,6 +308,31 @@
         "agents/cafe/wave-processor.ts"
       ],
       "note": "2026-08-07 read-only 실측 정정. 최초 가설은 \"bot-job이 30일 82건 활동하는데 정의가 없어 author-reply skip\"이었으나 author-reply-driver.ts 후보 조회가 boardType in [STORY,LIFE2,HUMOR,MENOPAUSE]로 제한되어 JOB 보드는 구조적으로 제외 — bot-job(JOB 보드 294건 전량, 최근글 2026-08-07)은 구멍이 아니다. 실제 잠재 대상은 dormant 3개. 4개 봇 모두 전 기간 실회원 댓글 0건. 계정 확대는 불필요(304개·HHI 0.012). | lane: persona-identity-account-expansion-as-is-2026-08-07 (owner_session은 계약 유니온상 claude-ops)."
+    },
+    {
+      "id": "L-PERSONA-SSOT",
+      "title": "페르소나 SSoT registry — 원본 2 + 보강 1 + 어댑터 2 단일화",
+      "status": "planned",
+      "owner_session": "claude-ops",
+      "priority": "P1",
+      "category": "agent",
+      "next_action": "원본 2(agents/seed/persona-data.ts 79명 깊은필드 / agents/cafe/curator-shared.ts 225명 얕은필드) + 보강 1(agents/cafe/curator-persona-meta.ts) + 어댑터 2(agents/coo/author-reply-persona.ts, agents/coo/persona-matcher-profiles.ts)를 단일 registry로 흡수하는 PR을 설계한다. 적용 순서는 author-reply → seed → popular/content-curate → wave(마지막). wave-processor.ts는 두 원본을 모두 직접 import하므로 반드시 최후에 옮긴다.",
+      "close_condition": "① 모든 활동 봇이 registry에 존재 ② registry 없는 봇은 의도적 제외로 코드에 명시 ③ 모든 workflow가 같은 registry 사용 ④ 기존 persona 원본 직접 import 금지(CI 가드) ⑤ 304개 계정 전수 검증 PASS ⑥ 계정별 필수 정체성 필드 누락 0",
+      "pass_criteria": "registry 경유 resolve 결과가 기존 어댑터 2종과 304건 전수 동일 · git grep으로 registry 외부의 persona-data/curator-shared PERSONAS 직접 import 0건 · ops-typecheck 신규 오류 0 · 발행량/댓글량 회귀 0 · HHI 0.012 및 댓글 길이 변동계수 0.85 악화 없음",
+      "verification_required": true,
+      "last_verified_at": null,
+      "related_pr": [
+        302,
+        311
+      ],
+      "risk": "mid",
+      "do_not_touch": [
+        "agents/coo/author-reply-policy.ts",
+        "agents/coo/author-reply-driver.ts",
+        ".github/workflows/",
+        "prisma/"
+      ],
+      "note": "2026-08-07 AS-IS 실측 근거. 계정 확대는 보류 — 봇 계정 304개(bot 83/curator 220/official 1), 30일 활동 286개, HHI 0.012로 쏠림 없음, 댓글 길이 변동계수 0.85로 획일성 낮음. 부족한 것은 계정이 아니라 단일 기준이다. | bot-humor/bot-caregiving/bot-health는 84일 dormant + 전 기간 실회원 댓글 0건 known_issue(L-PERSONA-BOT-GAP)로, SSoT에서 일괄 처리한다(개별 정의 추가 금지 — 어댑터 위에 예외를 더 쌓는 일). | bot-job은 JOB 보드 전량(294건)이고 author-reply-driver 후보 조회가 boardType in [STORY,LIFE2,HUMOR,MENOPAUSE]로 제한돼 구조적으로 제외되는 채용 피드 봇 — 인격 페르소나화하지 않는다. | 고아 구조 방지: 새 registry만 추가하고 원본 export를 남기면 세 번째 어댑터가 생긴다. 원본에서 PERSONAS export 제거 + CI 가드를 같은 PR에서 처리해야 한다."
     }
   ]
 }
