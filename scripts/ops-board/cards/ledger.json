@@ -1,6 +1,6 @@
 {
   "_comment": "운영 원장(ledger) — merge는 종결이 아니다. 운영검증 PASS만 종결이다. 필수 6필드: id·title·status·owner_session·priority·next_action·close_condition. status가 merged_waiting_deploy/deployed_waiting_verification/dryrun_followup_required면 trigger 또는 due 필수. status는 ledger.ts의 LedgerStatus 유니온 값만 사용한다(임의 문자열 금지 — 타입 계약 위반). 컬럼은 priority가 아니라 columnOf(status·issues·overdue)가 정한다 — '절대누락금지'는 error/overdue/dryrun_followup_required 3조건에서만 자동 배치되므로, P0를 올리려고 due를 과거로 조작하지 않는다.",
-  "_updated": "2026-08-07",
+  "_updated": "2026-08-08",
   "items": [
     {
       "id": "L-CURATOR-RESELECT",
@@ -333,6 +333,33 @@
         "prisma/"
       ],
       "note": "2026-08-07 AS-IS 실측 근거. 계정 확대는 보류 — 봇 계정 304개(bot 83/curator 220/official 1), 30일 활동 286개, HHI 0.012로 쏠림 없음, 댓글 길이 변동계수 0.85로 획일성 낮음. 부족한 것은 계정이 아니라 단일 기준이다. | bot-humor/bot-caregiving/bot-health는 84일 dormant + 전 기간 실회원 댓글 0건 known_issue(L-PERSONA-BOT-GAP)로, SSoT에서 일괄 처리한다(개별 정의 추가 금지 — 어댑터 위에 예외를 더 쌓는 일). | bot-job은 JOB 보드 전량(294건)이고 author-reply-driver 후보 조회가 boardType in [STORY,LIFE2,HUMOR,MENOPAUSE]로 제한돼 구조적으로 제외되는 채용 피드 봇 — 인격 페르소나화하지 않는다. | 고아 구조 방지: 새 registry만 추가하고 원본 export를 남기면 세 번째 어댑터가 생긴다. 원본에서 PERSONAS export 제거 + CI 가드를 같은 PR에서 처리해야 한다."
+    },
+    {
+      "id": "L-AUTHOR-REPLY-LANE-CAP",
+      "title": "author-reply lane cap — 전역 일 판정 상한을 human/companion 분리로 교체",
+      "status": "deployed_waiting_verification",
+      "owner_session": "claude-ops",
+      "priority": "P1",
+      "category": "retention",
+      "next_action": "PR #315 lane cap 적용 후 7일 관찰. 실회원 응답률, cap 소진 후 무응답, human/companion lane 사용률, per-user cap 효과, AI_USAGE 증가를 확인한다.",
+      "close_condition": "7일 관찰 기준 실회원 응답률 60% 이상, cap 소진 후 실회원 무응답 0, 글당 author-reply 3 이하, 같은 실회원 하루 2 이하 또는 조정 결정 완료, 봇/게스트 알림 0, AI_USAGE 월 +$2 이내, ERROR/FAIL 증가 0.",
+      "pass_criteria": "실회원 응답률 60%↑ · cap 소진 후 실회원 무응답 0 · 글당 ≤3 · 같은 실회원 ≤2(또는 조정 결정) · 봇/게스트 알림 0 · AI_USAGE 월 +$2 이내 · ERROR/FAIL 증가 0 · logData.lane/capState 정상 기록",
+      "verification_required": true,
+      "last_verified_at": null,
+      "related_pr": [
+        315,
+        314,
+        302
+      ],
+      "risk": "mid",
+      "do_not_touch": [
+        "agents/coo/author-reply-persona.ts",
+        "agents/core/persona-registry.ts",
+        ".github/workflows/",
+        "prisma/"
+      ],
+      "note": "2026-08-08 조기 운영검증 PASS. 옛 전역 cap이면 0건 처리였을 회차에서 6건 처리. lane/capState 6/6 기록. companion lane 독립 소진 확인. per-user cap이 한 유저 11건 폭주를 2건으로 차단. rollback 필요 없음. 다만 실회원 응답률 36%→60% 목표는 7일 관찰 필요. | 상수: DAILY_HUMAN_JUDGE_CAP=12 · DAILY_COMPANION_JUDGE_CAP=6 · PER_USER_DAILY_REPLY_CAP=2 · MAX_AUTHOR_REPLIES_PER_POST=3(PR #302 불변). 옛 DAILY_JUDGE_CAP=10은 제거(잔존 0, 테스트가 강제). | 08-08 실측: 회차 3건 전부 sha=373c8068 success · WRITE 4 · DRYRUN 6 · ERROR/FAIL 0 · persona mismatch 0 · 글당 최대 2 · 봇/게스트 알림 0 · 회당 $0.00904(월 추정 +$1.07). | 관찰 포인트: 08-08은 실회원 후보가 1명뿐이라 human lane 잔여 2가 미사용됐다 — cap 문제가 아니라 후보 부족. per-user cap 2→3 조정 여부는 며칠 관찰 후 판단.",
+      "trigger": "2026-08-15T00:00+09:00"
     }
   ]
 }
