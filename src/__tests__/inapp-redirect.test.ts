@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import {
   INAPP_REDIRECT_EVENTS,
+  arrivalRedirectMethod,
   buildInappRedirectProps,
   inappChannelFromEnv,
   osFromUa,
@@ -96,6 +97,17 @@ describe('기존 GTM 계측이 사라지지 않았다 (두 파이프 병행)', (
     expect(banner).toContain('INAPP_REDIRECT_EVENTS.attempted')
     expect(banner).toContain('INAPP_REDIRECT_EVENTS.opened')
     expect(banner).toContain('INAPP_REDIRECT_EVENTS.failed')
+  })
+
+  // 보정 이력: opened의 method를 'intent'로 고정하면 kakao-ios(clipboard 경유)가 틀리게 기록된다.
+  it('opened의 method를 상수로 고정하지 않는다 — 채널로 역추론해야 한다', () => {
+    expect(banner).toContain('arrivalRedirectMethod(arrivedFrom)')
+    // opened 호출 블록 안에 `method: 'intent'` 같은 하드코딩이 남아 있으면 실패
+    const openedBlock = banner.slice(
+      banner.indexOf('INAPP_REDIRECT_EVENTS.opened'),
+      banner.indexOf('SESSION_AUTO_TRIGGERED'),
+    )
+    expect(openedBlock).not.toMatch(/method:\s*'(intent|clipboard|none)'/)
   })
 
   it('일반 외부 브라우저 경로(kakao_oauth)는 건드리지 않았다 — 회귀 0', () => {
@@ -263,6 +275,103 @@ describe('buildInappRedirectProps — 세 이벤트가 같은 축으로 조인�
     expect(p.redirect_method).toBe('clipboard')
     // ⚠️ 기존 불일치: 이 경로의 utm_source는 언더스코어다. 이번 PR은 값을 고치지 않고 그대로 기록한다.
     expect(p.utm_source).toBe('naver_inapp')
+  })
+})
+
+describe('arrivalRedirectMethod — 도착(opened)의 수단을 떠나온 채널로 역추론', () => {
+  // 도착 페이지는 "어떤 수단으로 왔는지"를 직접 알 수 없다. utm_source로 되짚는 수밖에 없고,
+  // 이 매핑이 attempted 분기와 어긋나면 attempted(clipboard) ↔ opened(intent)로 갈려 퍼널이 깨진다.
+  it('kakao-ios는 clipboard — intent가 불가능한 환경이라 intent로 기록하면 틀린다', () => {
+    expect(arrivalRedirectMethod('kakao-ios')).toBe('clipboard')
+  })
+
+  it('kakao-android는 intent', () => {
+    expect(arrivalRedirectMethod('kakao-android')).toBe('intent')
+  })
+
+  it('naver-inapp / google-inapp은 intent — 실제로 도착하는 경로가 Android intent뿐이다', () => {
+    // iOS 네이버·구글은 이동 수단이 없어 failed로 끝나므로 opened 자체가 발생하지 않는다
+    expect(arrivalRedirectMethod('naver-inapp')).toBe('intent')
+    expect(arrivalRedirectMethod('google-inapp')).toBe('intent')
+  })
+
+  it('미상은 기존 동작(intent)과 호환 — 값이 갑자기 바뀌면 과거 시계열과 끊긴다', () => {
+    expect(arrivalRedirectMethod('unknown')).toBe('intent')
+    expect(arrivalRedirectMethod('')).toBe('intent')
+    expect(arrivalRedirectMethod('naver_inapp')).toBe('intent') // 언더스코어(PWA 가이드 경로)도 동일
+  })
+
+  it('attempted 분기와 1:1로 맞는다 — 채널별 대조', () => {
+    // SignupPromptBanner.handleCTAClick가 실제로 쓰는 수단
+    const attemptedMethod: Record<string, string> = {
+      'kakao-android': 'intent',
+      'kakao-ios': 'clipboard',
+      'naver-inapp': 'intent', // Android 도착 케이스 기준
+      'google-inapp': 'intent',
+    }
+    for (const [source, method] of Object.entries(attemptedMethod)) {
+      expect(arrivalRedirectMethod(source)).toBe(method)
+    }
+  })
+})
+
+describe('opened payload — 채널별 redirect_method가 정확히 실린다', () => {
+  const openedProps = (source: string, arrivingUa: string) =>
+    buildInappRedirectProps({
+      surface: 'signup_prompt_banner',
+      source,
+      browserEnv: source === 'kakao-ios' ? 'ios-safari' : 'android-chrome',
+      userAgent: arrivingUa,
+      path: '/community/stories',
+      target: '/community/stories?signup=1',
+      method: arrivalRedirectMethod(source),
+      ctaType: 'external_browser',
+      utmSource: source,
+      utmMedium: 'signup_banner',
+    })
+
+  it('kakao-ios에서 Safari로 도착하면 clipboard로 기록된다', () => {
+    const p = openedProps('kakao-ios', UA.iosSafari)
+    expect(p.redirect_method).toBe('clipboard')
+    expect(p.channel).toBe('kakao')
+    expect(p.browser_env).toBe('ios-safari')
+    expect(p.ua_class).toBe('ios-safari')
+  })
+
+  it('naver-inapp에서 Chrome으로 도착하면 intent로 기록된다', () => {
+    const p = openedProps('naver-inapp', UA.androidChrome)
+    expect(p.redirect_method).toBe('intent')
+    expect(p.channel).toBe('naver')
+    expect(p.ua_class).toBe('android-chrome')
+  })
+
+  it('kakao-android에서 Chrome으로 도착하면 intent로 기록된다', () => {
+    const p = openedProps('kakao-android', UA.androidChrome)
+    expect(p.redirect_method).toBe('intent')
+    expect(p.channel).toBe('kakao')
+  })
+
+  it('attempted와 opened의 method가 같은 채널에서 일치한다 — 퍼널 조인 검증', () => {
+    // kakao-ios: attempted(clipboard) ↔ opened(clipboard)
+    const attempted = buildInappRedirectProps({
+      surface: 'signup_prompt_banner', source: 'kakao-ios', browserEnv: 'kakao-ios',
+      userAgent: UA.kakaoIos, path: '/community/stories', target: '/community/stories?signup=1',
+      method: 'clipboard', ctaType: 'external_browser', utmSource: 'kakao-ios',
+    })
+    const opened = openedProps('kakao-ios', UA.iosSafari)
+    expect(opened.redirect_method).toBe(attempted.redirect_method)
+    expect(opened.source).toBe(attempted.source)
+    expect(opened.channel).toBe(attempted.channel)
+  })
+
+  it('보정 후에도 attempted와 opened가 같은 키 집합을 유지한다', () => {
+    const attempted = buildInappRedirectProps({
+      surface: 'signup_prompt_banner', source: 'kakao-ios', browserEnv: 'kakao-ios',
+      userAgent: UA.kakaoIos, path: '/p', target: '/p?signup=1',
+      method: 'clipboard', ctaType: 'external_browser', utmSource: 'kakao-ios', utmMedium: 'signup_banner',
+    })
+    const opened = openedProps('kakao-ios', UA.iosSafari)
+    expect(Object.keys(attempted).sort()).toEqual(Object.keys(opened).sort())
   })
 })
 

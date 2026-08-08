@@ -32,6 +32,7 @@ import {
 } from '@/lib/experiments/android-conversion'
 import {
   INAPP_REDIRECT_EVENTS,
+  arrivalRedirectMethod,
   buildInappRedirectProps,
   redirectTargetOf,
   type InappRedirectFailReason,
@@ -195,16 +196,19 @@ export function SignupPromptBanner() {
     gtmInappRedirectSuccess(signupUtmSource ?? '')
     // [계측] 외부 브라우저 도착을 EventLog에도 남긴다 — attempted와 짝을 이뤄 퍼널이 완성된다.
     //   `source`는 **떠나온 인앱 환경**(utm_source), `browser_env`는 **도착한 지금 환경**이다.
+    //   `redirect_method`는 도착 페이지가 직접 알 수 없으므로 떠나온 채널로 역추론한다
+    //   (kakao-ios는 clipboard 경유라 intent로 기록하면 틀린다 — arrivalRedirectMethod 참고).
+    const arrivedFrom = signupUtmSource || 'unknown'
     trackEvent(
       INAPP_REDIRECT_EVENTS.opened,
       buildInappRedirectProps({
         surface: 'signup_prompt_banner',
-        source: signupUtmSource || 'unknown',
+        source: arrivedFrom,
         browserEnv: getBrowserEnv(),
         userAgent: navigator.userAgent,
         path: pathname,
         target: `${window.location.pathname}${window.location.search}`,
-        method: 'intent',
+        method: arrivalRedirectMethod(arrivedFrom),
         ctaType: 'external_browser',
         utmSource: signupUtmSource || undefined,
         utmMedium: searchParams.get('utm_medium') ?? undefined,

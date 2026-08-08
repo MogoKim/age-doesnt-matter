@@ -125,3 +125,26 @@ export function buildInappRedirectProps(input: InappRedirectPropsInput): Record<
 export function redirectTargetOf(url: URL): string {
   return `${url.pathname}${url.search}`
 }
+
+/**
+ * **도착(opened) 시점의 유도 수단**을 떠나온 채널로 역추론한다.
+ *
+ * 도착한 페이지는 "어떤 수단으로 왔는지"를 직접 알 수 없다 — `?signup=1&utm_source=…` 쿼리만 들고 온다.
+ * 그래서 `utm_source`(= 떠나온 인앱 환경)로 되짚는다. 각 채널이 쓰는 수단은
+ * `SignupPromptBanner.handleCTAClick`의 분기와 **1:1로 맞춰야** attempted↔opened가 같은 축으로 조인된다.
+ *
+ * | 떠나온 채널 | attempted method | 도착 추론 |
+ * |---|---|---|
+ * | `kakao-ios` | clipboard (intent 불가) | **clipboard** |
+ * | `kakao-android` | intent | intent |
+ * | `naver-inapp` · `google-inapp` | Android는 intent / iOS는 none(막다른 길) | intent |
+ *
+ * 네이버·구글을 intent로 두는 이유: iOS는 애초에 도착하지 못하므로(`failed`),
+ * **실제로 도착한 케이스는 Android intent 경유뿐**이다.
+ *
+ * 미상(`unknown` 등)은 기존 동작과 동일하게 `intent`로 둔다 — 값이 갑자기 바뀌면 과거 시계열과 끊긴다.
+ */
+export function arrivalRedirectMethod(source: string): InappRedirectMethod {
+  if (source === 'kakao-ios') return 'clipboard'
+  return 'intent'
+}
