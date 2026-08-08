@@ -43,7 +43,9 @@ export async function POST(request: NextRequest) {
   // (top_promo_*: 최상단 띠배너 퍼널. 랜딩마다 shown 발생 → page_view 버킷 공유 시 429 유실 방지. signup_banner_* 와 별개 계열)
   // (android_conversion_prompt_*: Android 외부 브라우저 비회원 A/B 실험의 노출=분모·클릭·닫기.
   //  signup_banner_* 와 같은 시점에 발생하므로 같이 면제하지 않으면 429로 조용히 유실돼 실험 분모가 오염된다)
-  const CONVERSION_EVENTS = ['post_cta_clicked', 'sign_up', 'signup_step', 'identity_banner_view', 'related_post_click', 'exp1_exposure', 'signup_banner_eligible', 'signup_banner_shown', 'signup_banner_clicked', 'signup_banner_dismissed', 'related_recommend_view', 'top_promo_shown', 'top_promo_clicked', 'top_promo_dismissed', 'android_conversion_prompt_exposed', 'android_conversion_prompt_clicked', 'android_conversion_prompt_dismissed']
+  // (inapp_redirect_*: 인앱→외부브라우저 유도 퍼널. signup_banner_clicked와 같은 클릭에서 함께 발생하므로
+  //  같이 면제하지 않으면 page_view 버킷 공유로 429 유실 → attempted만 빠지고 opened만 남는 식으로 퍼널이 깨진다)
+  const CONVERSION_EVENTS = ['post_cta_clicked', 'sign_up', 'signup_step', 'identity_banner_view', 'related_post_click', 'exp1_exposure', 'signup_banner_eligible', 'signup_banner_shown', 'signup_banner_clicked', 'signup_banner_dismissed', 'related_recommend_view', 'top_promo_shown', 'top_promo_clicked', 'top_promo_dismissed', 'android_conversion_prompt_exposed', 'android_conversion_prompt_clicked', 'android_conversion_prompt_dismissed', 'inapp_redirect_attempted', 'inapp_redirect_opened', 'inapp_redirect_failed']
   if (!CONVERSION_EVENTS.includes(body.eventName)) {
     const rl = await checkApiRateLimit(request, 'event', { max: 30 })
     if (rl) return rl
