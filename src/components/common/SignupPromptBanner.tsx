@@ -30,6 +30,13 @@ import {
   isAndroidConversionVariant,
   type AndroidConversionVariant,
 } from '@/lib/experiments/android-conversion'
+import {
+  INAPP_REDIRECT_EVENTS,
+  buildInappRedirectProps,
+  redirectTargetOf,
+  type InappRedirectFailReason,
+  type InappRedirectMethod,
+} from '@/lib/inapp-redirect'
 
 // 인앱 환경 (카카오/네이버/구글 앱) 감지 — CTA를 외부브라우저 유도로 변경
 const INAPP_ENVS = ['kakao-android', 'kakao-ios', 'naver-inapp', 'google-inapp'] as const
@@ -186,6 +193,23 @@ export function SignupPromptBanner() {
 
     // 조건 통과: GTM 이벤트 + 카운트다운 시작
     gtmInappRedirectSuccess(signupUtmSource ?? '')
+    // [계측] 외부 브라우저 도착을 EventLog에도 남긴다 — attempted와 짝을 이뤄 퍼널이 완성된다.
+    //   `source`는 **떠나온 인앱 환경**(utm_source), `browser_env`는 **도착한 지금 환경**이다.
+    trackEvent(
+      INAPP_REDIRECT_EVENTS.opened,
+      buildInappRedirectProps({
+        surface: 'signup_prompt_banner',
+        source: signupUtmSource || 'unknown',
+        browserEnv: getBrowserEnv(),
+        userAgent: navigator.userAgent,
+        path: pathname,
+        target: `${window.location.pathname}${window.location.search}`,
+        method: 'intent',
+        ctaType: 'external_browser',
+        utmSource: signupUtmSource || undefined,
+        utmMedium: searchParams.get('utm_medium') ?? undefined,
+      }),
+    )
     sessionStorage.setItem(SESSION_AUTO_TRIGGERED, '1')
     setAutoCountdown(AUTO_TRIGGER_COUNTDOWN_S)
     setAutoVisible(true)
@@ -466,13 +490,33 @@ export function SignupPromptBanner() {
       targetUrl.searchParams.set('utm_source', currentEnv)
       targetUrl.searchParams.set('utm_medium', 'signup_banner')
 
+      // [계측] 인앱 유도 퍼널을 EventLog에도 남긴다 — 어드민은 EventLog 기반이라
+      //   GTM에만 있으면 운영에서 볼 수 없다. GTM 호출은 그대로 유지(두 파이프 병행).
+      //   ⚠️ 동작·문구는 바꾸지 않는다. 아래 iOS 막다른 길도 고치지 않고 기록만 한다(수정은 별도 PR).
+      const redirectProps = (method: InappRedirectMethod, reason?: InappRedirectFailReason) =>
+        buildInappRedirectProps({
+          surface: 'signup_prompt_banner',
+          source: currentEnv,
+          browserEnv: getBrowserEnv(),
+          userAgent: navigator.userAgent,
+          path: pathname,
+          target: redirectTargetOf(targetUrl),
+          method,
+          ctaType: 'external_browser',
+          utmSource: currentEnv,
+          utmMedium: 'signup_banner',
+          reason,
+        })
+
       if (currentEnv === 'kakao-android') {
         gtmInappRedirectAttempted(currentEnv, 'intent')
+        trackEvent(INAPP_REDIRECT_EVENTS.attempted, redirectProps('intent'))
         navigator.clipboard?.writeText(targetUrl.toString())?.catch(() => {})
         const host = targetUrl.hostname + targetUrl.pathname + targetUrl.search
         location.href = `intent://${host}#Intent;scheme=https;package=com.android.chrome;end`
       } else if (currentEnv === 'kakao-ios') {
         gtmInappRedirectAttempted(currentEnv, 'clipboard')
+        trackEvent(INAPP_REDIRECT_EVENTS.attempted, redirectProps('clipboard'))
         navigator.clipboard?.writeText(targetUrl.toString())?.catch(() => {})
         // iOS: 클립보드 복사 후 Safari에서 붙여넣기 안내는 AddToHomeScreen 토스트 재사용 불가
         // → 배너 UI 자체에서 안내 (닫기 대신 안내 메시지로 전환은 Phase 2)
@@ -482,9 +526,14 @@ export function SignupPromptBanner() {
         gtmInappRedirectAttempted(currentEnv, 'intent')
         navigator.clipboard?.writeText(targetUrl.toString())?.catch(() => {})
         if (/android/i.test(navigator.userAgent)) {
+          trackEvent(INAPP_REDIRECT_EVENTS.attempted, redirectProps('intent'))
           const host = targetUrl.hostname + targetUrl.pathname + targetUrl.search
           location.href = `intent://${host}#Intent;scheme=https;package=com.android.chrome;end`
         } else {
+          // iOS 네이버/구글 인앱: 여기엔 이동 수단이 없어 배너만 닫힌다(현행 동작 유지).
+          //   그 사실 자체를 기록해야 "막다른 길이 실제로 얼마나 발생하는지"를 알 수 있다.
+          trackEvent(INAPP_REDIRECT_EVENTS.attempted, redirectProps('none'))
+          trackEvent(INAPP_REDIRECT_EVENTS.failed, redirectProps('none', 'no_handler_for_os'))
           setVisible(false)
         }
       }

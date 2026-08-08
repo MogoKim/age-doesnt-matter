@@ -3,7 +3,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import { useAppSession } from '@/components/common/AppSessionProvider'
-import { gtmPwaPopupShown, gtmPwaInstall, gtmPwaBannerAction } from '@/lib/gtm'
+import { gtmPwaPopupShown, gtmPwaInstall, gtmPwaBannerAction, getBrowserEnv } from '@/lib/gtm'
+import { trackEvent } from '@/lib/track'
+import {
+  INAPP_REDIRECT_EVENTS,
+  buildInappRedirectProps,
+  redirectTargetOf,
+} from '@/lib/inapp-redirect'
 import { useToast } from '@/components/common/Toast'
 import { useAppEnvironment } from '@/hooks/useAppEnvironment'
 
@@ -207,7 +213,25 @@ export default function AddToHomeScreen() {
     // 클립보드 복사 (Android intent 실패 시 폴백 보장)
     navigator.clipboard?.writeText(targetUrl.toString())?.catch(() => {})
 
-    if (envRef.current === 'kakao-android') {
+    const isAndroid = envRef.current === 'kakao-android'
+    // [계측] 이 경로는 지금까지 GTM 계측조차 없었다 → EventLog에 남긴다. 동작은 무변경.
+    trackEvent(
+      INAPP_REDIRECT_EVENTS.attempted,
+      buildInappRedirectProps({
+        surface: 'pwa_inapp_guide',
+        source: envRef.current,
+        browserEnv: getBrowserEnv(),
+        userAgent: navigator.userAgent,
+        path: window.location.pathname,
+        target: redirectTargetOf(targetUrl),
+        method: isAndroid ? 'intent' : 'clipboard',
+        ctaType: 'external_browser',
+        utmSource: 'kakao_inapp',
+        utmMedium: 'pwa_banner',
+      }),
+    )
+
+    if (isAndroid) {
       const host = targetUrl.hostname + targetUrl.pathname + targetUrl.search
       location.href = `intent://${host}#Intent;scheme=https;package=com.android.chrome;end`
     } else {
@@ -233,7 +257,27 @@ export default function AddToHomeScreen() {
 
     navigator.clipboard?.writeText(targetUrl.toString())?.catch(() => {})
 
-    if (/android/i.test(navigator.userAgent)) {
+    const isAndroid = /android/i.test(navigator.userAgent)
+    // [계측] 동일 — 동작 무변경, EventLog 기록만 추가.
+    //   ⚠️ 여기 utm_source는 언더스코어(`naver_inapp`)라 SignupPromptBanner의 INAPP_UTM_SOURCES(하이픈)와
+    //      매칭되지 않는다(기존 불일치). 이번 PR은 계측만 하므로 값을 바꾸지 않고 그대로 기록한다.
+    trackEvent(
+      INAPP_REDIRECT_EVENTS.attempted,
+      buildInappRedirectProps({
+        surface: 'pwa_inapp_guide',
+        source: env,
+        browserEnv: getBrowserEnv(),
+        userAgent: navigator.userAgent,
+        path: window.location.pathname,
+        target: redirectTargetOf(targetUrl),
+        method: isAndroid ? 'intent' : 'clipboard',
+        ctaType: 'external_browser',
+        utmSource: env === 'naver-inapp' ? 'naver_inapp' : 'instagram_inapp',
+        utmMedium: 'pwa_banner',
+      }),
+    )
+
+    if (isAndroid) {
       const host = targetUrl.hostname + targetUrl.pathname + targetUrl.search
       location.href = `intent://${host}#Intent;scheme=https;package=com.android.chrome;end`
     } else {
