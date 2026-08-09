@@ -36,8 +36,15 @@ export type InappRedirectMethod = 'intent' | 'clipboard' | 'none'
 /** 어느 노출면에서 발생했는가 */
 export type InappRedirectSurface = 'signup_prompt_banner' | 'pwa_inapp_guide'
 
-/** 실패 사유 — 왜 못 넘어갔는지 구분해야 고칠 지점을 알 수 있다 */
-export type InappRedirectFailReason = 'no_handler_for_os' | 'unsupported_env'
+/**
+ * 실패 사유 — 왜 못 넘어갔는지 구분해야 고칠 지점을 알 수 있다.
+ *
+ * `no_handler_for_os`: 그 OS에 쓸 수 있는 이동 수단이 없었다.
+ *   → iOS 인앱은 2026-08-09부터 클립보드+안내로 대체돼 이 사유가 나지 않는다(과거 데이터에는 남아 있다).
+ * `clipboard_unavailable`: 클립보드 API를 못 써서 주소를 넘겨줄 방법조차 없었다.
+ *   iOS 인앱의 **유일한 실질 실패**다. 이 값이 늘면 안내만으로는 부족하다는 뜻이다.
+ */
+export type InappRedirectFailReason = 'no_handler_for_os' | 'unsupported_env' | 'clipboard_unavailable'
 
 /** UA → OS. 채널 비교 시 Android/iOS를 반드시 갈라 봐야 한다(인앱 유도 수단이 OS별로 다르다). */
 export function osFromUa(ua: string): 'android' | 'ios' | 'other' {

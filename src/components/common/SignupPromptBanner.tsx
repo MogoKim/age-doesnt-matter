@@ -139,6 +139,9 @@ export function SignupPromptBanner() {
   const signupUtmSource = searchParams.get('utm_source') ?? ''
   const [visible, setVisible] = useState(false)
   const [isStarting, setIsStarting] = useState(false)
+  // iOS 인앱에서 CTA를 눌렀을 때 — 배너를 닫지 않고 "주소 복사됨" 안내로 전환한다.
+  // 이전에는 그냥 닫혀서 사용자 눈에 아무 일도 안 일어난 것처럼 보였다.
+  const [iosGuide, setIosGuide] = useState(false)
   const [currentEnv, setCurrentEnv] = useState<string>('android-chrome')
 
   // auto-trigger 카운트다운 상태
@@ -358,12 +361,17 @@ export function SignupPromptBanner() {
   }, [pathname, isLoggedIn, status, isTWA, isCapacitor])
 
   // ── Body scroll lock ──
+  // ⚠️ 인앱에서는 잠그지 않는다.
+  //   배너가 뜨면 스크롤이 잠기고, 오버레이 탭은 닫기였다. 즉 사용자가 글을 계속 읽으려면
+  //   **배너를 치우는 것 말고 선택지가 없었다.** 실측 shown→dismissed 중앙값 2.4초가 그 결과다.
+  //   인앱은 글 읽기 도중(정독 중앙값 42%)에 배너를 만나므로 읽기를 막으면 안 된다.
+  //   비인앱은 기존 동작 유지 — Android 외부 브라우저 A/B 실험 조작감을 건드리지 않기 위해서다.
   useEffect(() => {
-    if (visible) {
-      document.body.style.overflow = 'hidden'
-      return () => { document.body.style.overflow = '' }
-    }
-  }, [visible])
+    if (!visible) return
+    if (isInappEnv(currentEnv)) return
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [visible, currentEnv])
 
   // ── auto-trigger 카운트다운 배너 (일반 배너보다 우선 렌더) ──
   if (autoVisible) {
@@ -496,7 +504,6 @@ export function SignupPromptBanner() {
 
       // [계측] 인앱 유도 퍼널을 EventLog에도 남긴다 — 어드민은 EventLog 기반이라
       //   GTM에만 있으면 운영에서 볼 수 없다. GTM 호출은 그대로 유지(두 파이프 병행).
-      //   ⚠️ 동작·문구는 바꾸지 않는다. 아래 iOS 막다른 길도 고치지 않고 기록만 한다(수정은 별도 PR).
       const redirectProps = (method: InappRedirectMethod, reason?: InappRedirectFailReason) =>
         buildInappRedirectProps({
           surface: 'signup_prompt_banner',
@@ -512,6 +519,29 @@ export function SignupPromptBanner() {
           reason,
         })
 
+      /**
+       * iOS 인앱 공통 처리 — `intent://`가 없는 환경.
+       *
+       * 이전에는 클립보드에만 복사하고 배너를 닫아버려서, 사용자 눈에는 **아무 일도 일어나지 않았다**
+       * (주소가 복사된 사실조차 알 수 없었다). 그래서 배너를 닫지 않고 안내 상태로 바꾼다.
+       * 문구는 AddToHomeScreen이 이미 쓰던 것을 그대로 쓴다(신규 문구를 만들지 않는다).
+       */
+      const handleIosInapp = () => {
+        gtmInappRedirectAttempted(currentEnv, 'clipboard')
+        trackEvent(INAPP_REDIRECT_EVENTS.attempted, redirectProps('clipboard'))
+        const copying = navigator.clipboard?.writeText(targetUrl.toString())
+        if (copying) {
+          copying.catch(() => {
+            // 복사 자체가 막힌 환경 — 안내는 그대로 띄우되(주소를 눈으로 옮길 수 있게) 실패로 기록
+            trackEvent(INAPP_REDIRECT_EVENTS.failed, redirectProps('clipboard', 'clipboard_unavailable'))
+          })
+        } else {
+          trackEvent(INAPP_REDIRECT_EVENTS.failed, redirectProps('none', 'clipboard_unavailable'))
+        }
+        // 닫지 않는다 — 안내로 전환한다. 이게 no-op 제거의 핵심이다.
+        setIosGuide(true)
+      }
+
       if (currentEnv === 'kakao-android') {
         gtmInappRedirectAttempted(currentEnv, 'intent')
         trackEvent(INAPP_REDIRECT_EVENTS.attempted, redirectProps('intent'))
@@ -519,26 +549,17 @@ export function SignupPromptBanner() {
         const host = targetUrl.hostname + targetUrl.pathname + targetUrl.search
         location.href = `intent://${host}#Intent;scheme=https;package=com.android.chrome;end`
       } else if (currentEnv === 'kakao-ios') {
-        gtmInappRedirectAttempted(currentEnv, 'clipboard')
-        trackEvent(INAPP_REDIRECT_EVENTS.attempted, redirectProps('clipboard'))
-        navigator.clipboard?.writeText(targetUrl.toString())?.catch(() => {})
-        // iOS: 클립보드 복사 후 Safari에서 붙여넣기 안내는 AddToHomeScreen 토스트 재사용 불가
-        // → 배너 UI 자체에서 안내 (닫기 대신 안내 메시지로 전환은 Phase 2)
-        setVisible(false)
+        handleIosInapp()
       } else {
-        // naver-inapp, google-inapp: Android intent 시도
-        gtmInappRedirectAttempted(currentEnv, 'intent')
-        navigator.clipboard?.writeText(targetUrl.toString())?.catch(() => {})
+        // naver-inapp, google-inapp: Android면 intent, iOS면 클립보드+안내
         if (/android/i.test(navigator.userAgent)) {
+          gtmInappRedirectAttempted(currentEnv, 'intent')
           trackEvent(INAPP_REDIRECT_EVENTS.attempted, redirectProps('intent'))
+          navigator.clipboard?.writeText(targetUrl.toString())?.catch(() => {})
           const host = targetUrl.hostname + targetUrl.pathname + targetUrl.search
           location.href = `intent://${host}#Intent;scheme=https;package=com.android.chrome;end`
         } else {
-          // iOS 네이버/구글 인앱: 여기엔 이동 수단이 없어 배너만 닫힌다(현행 동작 유지).
-          //   그 사실 자체를 기록해야 "막다른 길이 실제로 얼마나 발생하는지"를 알 수 있다.
-          trackEvent(INAPP_REDIRECT_EVENTS.attempted, redirectProps('none'))
-          trackEvent(INAPP_REDIRECT_EVENTS.failed, redirectProps('none', 'no_handler_for_os'))
-          setVisible(false)
+          handleIosInapp()
         }
       }
     } else {
@@ -610,10 +631,21 @@ export function SignupPromptBanner() {
 
   return (
     <>
-      {/* 딤 오버레이 */}
+      {/*
+        딤 오버레이 — **인앱에서는 탭으로 닫지 않는다.**
+
+        인앱 사용자는 글을 읽던 중 배너를 만난다. 오버레이 탭이 곧 닫기이면,
+        "계속 읽으려고 화면을 한 번 누른 것"이 그대로 dismiss가 된다.
+        실측(2026-08-09): 인앱 shown→dismissed 중앙값 2.4초, 3초 이내 닫힘 63.2%,
+        인앱 닫힘률 77.6% vs 데스크탑 35.2%(마우스라 화면을 탭할 일이 없다).
+        닫기는 ✕ 버튼(44×44px)으로만 하고, 스크롤은 지금처럼 그대로 가능하다.
+
+        ⚠️ 인앱이 아닌 환경은 기존 동작을 그대로 유지한다 — Android 외부 브라우저 A/B 실험
+        (android_conversion_a2_b2)의 UI·조작을 건드리지 않기 위해서다.
+      */}
       <div
         className="fixed inset-0 z-[149] bg-black/50 animate-in fade-in duration-300"
-        onClick={handleDismiss}
+        onClick={inapp ? undefined : handleDismiss}
         aria-hidden="true"
       />
       {/* 배너 */}
@@ -621,13 +653,13 @@ export function SignupPromptBanner() {
         <div className="bg-card border-t border-border shadow-2xl px-4 pt-4 pb-[max(24px,env(safe-area-inset-bottom))]">
           <div className="max-w-lg mx-auto">
             <div className="flex items-start gap-3">
-              <span className="text-2xl" aria-hidden="true">{content.emoji}</span>
+              <span className="text-2xl" aria-hidden="true">{iosGuide ? '📋' : content.emoji}</span>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-body leading-snug text-foreground">
-                  {content.headline}
+                  {iosGuide ? '주소가 복사됐어요' : content.headline}
                 </p>
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  {content.sub}
+                <p className="text-sm text-muted-foreground mt-0.5 break-keep">
+                  {iosGuide ? 'Safari 주소창에 붙여넣으면 가입할 수 있어요' : content.sub}
                 </p>
               </div>
               {/* 닫기 버튼: 44×44px (5060 터치 타겟 기준) */}
@@ -639,13 +671,17 @@ export function SignupPromptBanner() {
                 ✕
               </button>
             </div>
+            {/*
+              iOS 인앱에서 CTA를 누르면 안내로 전환된다(배너를 닫지 않는다).
+              같은 버튼을 다시 눌러 복사를 재시도할 수 있게 두되, 라벨만 바꾼다.
+            */}
             <button
-              data-testid="signup-banner-cta"
+              data-testid={iosGuide ? 'signup-banner-ios-guide' : 'signup-banner-cta'}
               onClick={handleCTAClick}
               disabled={isStarting}
               className="mt-3 flex min-h-[52px] w-full items-center justify-center rounded-xl bg-[#FEE500] px-4 py-2 text-center text-[15px] font-bold leading-tight break-keep text-[#191919] transition-opacity disabled:opacity-70"
             >
-              {isStarting ? '카카오로 이동 중...' : ctaLabel}
+              {isStarting ? '카카오로 이동 중...' : iosGuide ? '주소 다시 복사하기' : ctaLabel}
             </button>
           </div>
         </div>

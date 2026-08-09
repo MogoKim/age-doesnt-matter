@@ -120,10 +120,13 @@ describe('기존 GTM 계측이 사라지지 않았다 (두 파이프 병행)', (
     expect(banner).toContain("'브라우저에서 가입하기'")
   })
 
-  it('iOS 네이버 막다른 길 동작을 고치지 않았다 — 이번 PR은 기록만 (수정은 PR-N1)', () => {
-    // else 분기에서 여전히 setVisible(false)로 끝난다
+  // 2026-08-09 갱신: PR-N2 시점에는 "고치지 않았다"를 고정했으나,
+  // 후속 PR에서 no-op를 제거했다. 이제는 "고쳐진 상태"를 고정한다.
+  // (상세 회귀 고정은 inapp-banner-dismiss.test.ts)
+  it('iOS 네이버 인앱은 더 이상 no-op가 아니다 — 클립보드+안내로 전환', () => {
     const tail = banner.slice(banner.indexOf('naver-inapp, google-inapp'))
-    expect(tail).toContain('setVisible(false)')
+    expect(tail).toContain('handleIosInapp()')
+    expect(tail).not.toContain('setVisible(false)')
   })
 })
 
