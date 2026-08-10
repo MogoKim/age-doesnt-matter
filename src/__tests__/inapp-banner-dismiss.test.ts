@@ -129,9 +129,10 @@ describe('P0. iOS 가입 CTA hotfix', () => {
     expect(mainReturnBlock).toContain('aria-label="닫기"')
   })
 
-  it('Android 인앱 문구와 기존 배너 UI는 유지한다', () => {
-    expect(banner).toContain("'카카오 밖에서 가입하기'")
-    expect(banner).toContain("'브라우저에서 가입하기'")
+  it('Android 인앱 문구는 가입 중심이고 기존 배너 UI는 유지한다', () => {
+    expect(banner).toContain("const inappCtaText = '카카오로 가입하기'")
+    expect(banner).not.toContain("'브라우저에서 가입하기'")
+    expect(banner).not.toContain("'카카오 밖에서 가입하기'")
     expect(banner).toContain('나만 이런 게 아니었네?')
     // 버튼 색·크기 무변경
     expect(mainReturnBlock).toContain('bg-[#FEE500]')
