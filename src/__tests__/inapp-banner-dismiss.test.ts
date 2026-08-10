@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { INAPP_REDIRECT_EVENTS, buildInappRedirectProps } from '@/lib/inapp-redirect'
+import { INAPP_REDIRECT_EVENTS } from '@/lib/inapp-redirect'
 
 /**
- * 인앱 배너 — 오버레이 탭 닫기 제거 + iOS no-op 제거.
+ * 인앱 배너 — 오버레이 탭 닫기 제거 + iOS 가입 CTA 복구.
  *
  * ## 왜 이 테스트가 필요한가
  * 인앱에서 배너 밖 탭이 곧 dismiss였다. 글을 계속 읽으려고 화면을 한 번 누른 것이
@@ -14,7 +14,7 @@ import { INAPP_REDIRECT_EVENTS, buildInappRedirectProps } from '@/lib/inapp-redi
  * 되돌아가기 쉬운 변경이라 **소스 수준에서 고정**한다. 특히 아래 두 가지가 깨지면
  * 조용히 원상복구되고 아무도 모른다.
  *  1) 인앱에서 오버레이 onClick이 다시 붙는 것
- *  2) iOS 인앱 CTA가 다시 setVisible(false)로 끝나는 것(=no-op 복귀)
+ *  2) iOS 인앱 CTA가 다시 주소 복사/외부 브라우저 유도로 빠지는 것
  */
 
 const banner = readFileSync(
@@ -93,32 +93,43 @@ describe('A. 실험 UI·비인앱은 건드리지 않았다 (회귀 0)', () => {
   })
 })
 
-describe('N1. iOS 인앱 CTA no-op 제거', () => {
-  it('iOS 인앱 공통 핸들러가 존재한다', () => {
-    expect(banner).toContain('const handleIosInapp = ()')
+describe('P0. iOS 가입 CTA hotfix', () => {
+  it('iOS 판정과 전용 가입 CTA가 존재한다', () => {
+    expect(banner).toContain('function isIOSUserAgent')
+    expect(banner).toContain("const IOS_SIGNUP_CTA = '카카오로 1초 가입'")
   })
 
-  it('kakao-ios와 naver/google-iOS가 같은 핸들러를 쓴다 — 정책 분기 방지', () => {
-    expect(banner.match(/handleIosInapp\(\)/g)?.length).toBe(2)
+  it('iOS면 inapp 여부와 무관하게 카카오 OAuth 직행으로 먼저 빠진다', () => {
+    const idx = banner.indexOf('if (isIOS)')
+    expect(idx).toBeGreaterThan(-1)
+    const chunk = banner.slice(idx, idx + 180)
+    expect(chunk).toContain('startSignupWithKakao()')
+    expect(chunk).toContain('return')
+    expect(idx).toBeLessThan(banner.indexOf('if (inapp)'))
   })
 
-  it('iOS 경로가 배너를 닫지 않고 안내로 전환한다 (no-op 복귀 방지)', () => {
-    const idx = banner.indexOf('const handleIosInapp')
-    const chunk = banner.slice(idx, idx + 900)
-    expect(chunk).toContain('setIosGuide(true)')
-    expect(chunk).not.toContain('setVisible(false)')
+  it('기존 정상 가입 시작 함수만 사용한다 — auth 로직을 새로 만들지 않는다', () => {
+    const idx = banner.indexOf('const startSignupWithKakao')
+    const chunk = banner.slice(idx, idx + 500)
+    expect(chunk).toContain("gtmSignupBannerClicked(pathname, 'kakao_oauth')")
+    expect(chunk).toContain("trackEvent('signup_banner_clicked', { cta_type: 'kakao_oauth', env: currentEnv })")
+    expect(chunk).toContain('startKakaoLogin(pathname)')
   })
 
-  it('안내 문구는 AddToHomeScreen이 쓰던 표현을 따른다 (신규 문구 창작 아님)', () => {
-    expect(banner).toContain('주소가 복사됐어요')
-    expect(banner).toContain('Safari 주소창에 붙여넣')
+  it('iOS 주소복사/Safari 붙여넣기 안내 상태가 완전히 사라졌다', () => {
+    expect(banner).not.toContain('iosGuide')
+    expect(banner).not.toContain('handleIosInapp')
+    expect(banner).not.toContain('주소가 복사됐어요')
+    expect(banner).not.toContain('주소 다시 복사하기')
+    expect(banner).not.toContain('Safari 주소창')
+    expect(banner).not.toContain('clipboard_unavailable')
   })
 
-  it('안내 상태에서도 ✕로 닫을 수 있다', () => {
+  it('✕ 닫기는 계속 가능하다', () => {
     expect(mainReturnBlock).toContain('aria-label="닫기"')
   })
 
-  it('기존 배너 문구·CTA 라벨은 그대로 남아 있다', () => {
+  it('Android 인앱 문구와 기존 배너 UI는 유지한다', () => {
     expect(banner).toContain("'카카오 밖에서 가입하기'")
     expect(banner).toContain("'브라우저에서 가입하기'")
     expect(banner).toContain('나만 이런 게 아니었네?')
@@ -130,47 +141,25 @@ describe('N1. iOS 인앱 CTA no-op 제거', () => {
 
 describe('PR-N2 계측 유지', () => {
   it('GTM 호출이 그대로 남아 있다', () => {
-    expect(banner.match(/gtmInappRedirectAttempted\(/g)?.length).toBe(3)
+    // iOS는 가입 직행으로 빠지므로 attempted는 Android 인앱 외부 브라우저 유도 2곳에만 남는다.
+    expect(banner.match(/gtmInappRedirectAttempted\(/g)?.length).toBe(2)
     expect(banner).toContain('gtmInappRedirectSuccess(signupUtmSource')
   })
 
-  it('EventLog 3종이 모두 쓰인다', () => {
+  it('EventLog attempted/opened 계측은 유지한다', () => {
     expect(banner).toContain('INAPP_REDIRECT_EVENTS.attempted')
     expect(banner).toContain('INAPP_REDIRECT_EVENTS.opened')
-    expect(banner).toContain('INAPP_REDIRECT_EVENTS.failed')
   })
 
-  it('iOS는 clipboard로 attempted를 남긴다 (method가 none으로 퇴행하지 않는다)', () => {
-    const idx = banner.indexOf('const handleIosInapp')
-    const chunk = banner.slice(idx, idx + 900)
-    expect(chunk).toContain("redirectProps('clipboard')")
-    expect(chunk).toContain('INAPP_REDIRECT_EVENTS.attempted')
-  })
-
-  it('failed는 클립보드를 못 썼을 때만 남긴다 — 안내가 떴으면 실패가 아니다', () => {
-    const idx = banner.indexOf('const handleIosInapp')
-    const chunk = banner.slice(idx, idx + 900)
-    expect(chunk).toContain("'clipboard_unavailable'")
-    expect(chunk).not.toContain("'no_handler_for_os'")
+  it('iOS 가입 CTA는 inapp_redirect 이벤트를 남기지 않는다 — OAuth 클릭으로 기록된다', () => {
+    const idx = banner.indexOf('if (isIOS)')
+    const chunk = banner.slice(idx, idx + 220)
+    expect(chunk).not.toContain('INAPP_REDIRECT_EVENTS')
+    expect(chunk).not.toContain('gtmInappRedirectAttempted')
   })
 
   it('opened의 method 역추론(보정)이 유지된다', () => {
     expect(banner).toContain('arrivalRedirectMethod(arrivedFrom)')
-  })
-
-  it('properties 스키마는 그대로다', () => {
-    const p = buildInappRedirectProps({
-      surface: 'signup_prompt_banner', source: 'naver-inapp', browserEnv: 'naver-inapp',
-      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) NAVER(inapp; search; 2000; 12.9.2; 11)',
-      path: '/community/stories', target: '/community/stories?signup=1',
-      method: 'clipboard', ctaType: 'external_browser', reason: 'clipboard_unavailable',
-    })
-    expect(p).toMatchObject({
-      surface: 'signup_prompt_banner', source: 'naver-inapp', channel: 'naver',
-      os: 'ios', ua_class: 'naver-inapp-ios', redirect_method: 'clipboard',
-      fail_reason: 'clipboard_unavailable',
-    })
-    expect(p.anon_cid).toBeUndefined() // trackEvent 중앙 로직이 붙인다(F19)
   })
 
   it('이벤트명은 rate-limit 면제 목록과 계속 일치한다', () => {

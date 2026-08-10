@@ -85,18 +85,17 @@ describe('기존 GTM 계측이 사라지지 않았다 (두 파이프 병행)', (
 
   it('gtmInappRedirectAttempted 호출이 그대로 남아 있다', () => {
     expect(banner).toContain('gtmInappRedirectAttempted')
-    // 세 분기(kakao-android / kakao-ios / naver·google) 각각에서 호출된다
-    expect(banner.match(/gtmInappRedirectAttempted\(/g)?.length).toBe(3)
+    // iOS는 카카오 OAuth 직행. Android 인앱 외부 브라우저 유도 2곳에만 남는다.
+    expect(banner.match(/gtmInappRedirectAttempted\(/g)?.length).toBe(2)
   })
 
   it('gtmInappRedirectSuccess 호출이 그대로 남아 있다', () => {
     expect(banner).toContain('gtmInappRedirectSuccess(signupUtmSource')
   })
 
-  it('EventLog 계측이 GTM과 같은 지점에 추가됐다', () => {
+  it('EventLog attempted/opened 계측이 GTM과 같은 지점에 추가됐다', () => {
     expect(banner).toContain('INAPP_REDIRECT_EVENTS.attempted')
     expect(banner).toContain('INAPP_REDIRECT_EVENTS.opened')
-    expect(banner).toContain('INAPP_REDIRECT_EVENTS.failed')
   })
 
   // 보정 이력: opened의 method를 'intent'로 고정하면 kakao-ios(clipboard 경유)가 틀리게 기록된다.
@@ -120,13 +119,16 @@ describe('기존 GTM 계측이 사라지지 않았다 (두 파이프 병행)', (
     expect(banner).toContain("'브라우저에서 가입하기'")
   })
 
-  // 2026-08-09 갱신: PR-N2 시점에는 "고치지 않았다"를 고정했으나,
-  // 후속 PR에서 no-op를 제거했다. 이제는 "고쳐진 상태"를 고정한다.
+  // 2026-08-10 hotfix: iOS 가입 CTA는 주소복사/외부 브라우저 유도가 아니라 카카오 OAuth 직행이다.
   // (상세 회귀 고정은 inapp-banner-dismiss.test.ts)
-  it('iOS 네이버 인앱은 더 이상 no-op가 아니다 — 클립보드+안내로 전환', () => {
-    const tail = banner.slice(banner.indexOf('naver-inapp, google-inapp'))
-    expect(tail).toContain('handleIosInapp()')
-    expect(tail).not.toContain('setVisible(false)')
+  it('iOS 네이버 인앱은 카카오 OAuth 직행으로 먼저 빠진다', () => {
+    const idx = banner.indexOf('if (isIOS)')
+    expect(idx).toBeGreaterThan(-1)
+    const chunk = banner.slice(idx, idx + 180)
+    expect(chunk).toContain('startSignupWithKakao()')
+    expect(chunk).toContain('return')
+    expect(banner).not.toContain('handleIosInapp()')
+    expect(banner).not.toContain('주소가 복사됐어요')
   })
 })
 
