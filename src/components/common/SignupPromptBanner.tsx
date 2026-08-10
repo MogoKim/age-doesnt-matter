@@ -35,7 +35,6 @@ import {
   arrivalRedirectMethod,
   buildInappRedirectProps,
   redirectTargetOf,
-  type InappRedirectFailReason,
   type InappRedirectMethod,
 } from '@/lib/inapp-redirect'
 
@@ -45,6 +44,10 @@ type InappEnv = typeof INAPP_ENVS[number]
 
 function isInappEnv(env: string): env is InappEnv {
   return (INAPP_ENVS as readonly string[]).includes(env)
+}
+
+function isIOSUserAgent(userAgent: string): boolean {
+  return /iPhone|iPad|iPod/i.test(userAgent)
 }
 
 // ──────────────────────────────────────────────
@@ -79,6 +82,8 @@ const BANNER_CONTENT = {
   sub: '우리끼리 편하게 수다 떨어봐요',
   cta: '카카오 한 번 클릭으로 가입',
 } as const
+
+const IOS_SIGNUP_CTA = '카카오로 1초 가입'
 
 // ──────────────────────────────────────────────
 // 순수 유틸
@@ -139,10 +144,8 @@ export function SignupPromptBanner() {
   const signupUtmSource = searchParams.get('utm_source') ?? ''
   const [visible, setVisible] = useState(false)
   const [isStarting, setIsStarting] = useState(false)
-  // iOS 인앱에서 CTA를 눌렀을 때 — 배너를 닫지 않고 "주소 복사됨" 안내로 전환한다.
-  // 이전에는 그냥 닫혀서 사용자 눈에 아무 일도 안 일어난 것처럼 보였다.
-  const [iosGuide, setIosGuide] = useState(false)
   const [currentEnv, setCurrentEnv] = useState<string>('android-chrome')
+  const [isIOS, setIsIOS] = useState(false)
 
   // auto-trigger 카운트다운 상태
   const [autoVisible, setAutoVisible] = useState(false)
@@ -161,6 +164,7 @@ export function SignupPromptBanner() {
   // 마운트 시 환경 감지 (SSR 안전)
   useEffect(() => {
     setCurrentEnv(detectEnv())
+    setIsIOS(isIOSUserAgent(navigator.userAgent))
   }, [])
 
   // 실험 배정 — 세션 확정 후(로그인 여부가 세그먼트 조건) 1회.
@@ -449,7 +453,7 @@ export function SignupPromptBanner() {
   const ctaLabel =
     variant === 'signup_warm'
       ? ANDROID_CONVERSION_CONTENT.signup_warm.cta // 이모지가 이미 문구에 포함돼 있다
-      : `💛 ${inapp ? inappCtaText : content.cta}`
+      : `💛 ${isIOS ? IOS_SIGNUP_CTA : inapp ? inappCtaText : content.cta}`
 
   // 실험 이벤트 공통 payload — 노출/클릭/닫기가 같은 축으로 조인되게 한 곳에서 만든다
   const experimentProps = (v: AndroidConversionVariant) => ({
@@ -489,9 +493,22 @@ export function SignupPromptBanner() {
     }, 0)
   }
 
+  const startSignupWithKakao = () => {
+    gtmSignupBannerClicked(pathname, 'kakao_oauth')
+    trackEvent('signup_banner_clicked', { cta_type: 'kakao_oauth', env: currentEnv })
+    setIsStarting(true)
+    startKakaoLogin(pathname)
+  }
+
   const handleCTAClick = () => {
     if (variant === 'signup_warm') {
       trackEvent(ANDROID_CONVERSION_EVENTS.clicked, experimentProps('signup_warm'))
+    }
+    // iOS 정책: 브라우저/인앱 구분 없이 가입 CTA는 기존 카카오 OAuth 직행만 사용한다.
+    // 외부 브라우저 유도, 주소 복사, Safari 붙여넣기 안내는 가입 관문을 끊으므로 금지한다.
+    if (isIOS) {
+      startSignupWithKakao()
+      return
     }
     if (inapp) {
       // 인앱 환경: 외부브라우저로 현재 페이지 열기 + signup=1 파라미터
@@ -504,7 +521,7 @@ export function SignupPromptBanner() {
 
       // [계측] 인앱 유도 퍼널을 EventLog에도 남긴다 — 어드민은 EventLog 기반이라
       //   GTM에만 있으면 운영에서 볼 수 없다. GTM 호출은 그대로 유지(두 파이프 병행).
-      const redirectProps = (method: InappRedirectMethod, reason?: InappRedirectFailReason) =>
+      const redirectProps = (method: InappRedirectMethod) =>
         buildInappRedirectProps({
           surface: 'signup_prompt_banner',
           source: currentEnv,
@@ -516,31 +533,7 @@ export function SignupPromptBanner() {
           ctaType: 'external_browser',
           utmSource: currentEnv,
           utmMedium: 'signup_banner',
-          reason,
         })
-
-      /**
-       * iOS 인앱 공통 처리 — `intent://`가 없는 환경.
-       *
-       * 이전에는 클립보드에만 복사하고 배너를 닫아버려서, 사용자 눈에는 **아무 일도 일어나지 않았다**
-       * (주소가 복사된 사실조차 알 수 없었다). 그래서 배너를 닫지 않고 안내 상태로 바꾼다.
-       * 문구는 AddToHomeScreen이 이미 쓰던 것을 그대로 쓴다(신규 문구를 만들지 않는다).
-       */
-      const handleIosInapp = () => {
-        gtmInappRedirectAttempted(currentEnv, 'clipboard')
-        trackEvent(INAPP_REDIRECT_EVENTS.attempted, redirectProps('clipboard'))
-        const copying = navigator.clipboard?.writeText(targetUrl.toString())
-        if (copying) {
-          copying.catch(() => {
-            // 복사 자체가 막힌 환경 — 안내는 그대로 띄우되(주소를 눈으로 옮길 수 있게) 실패로 기록
-            trackEvent(INAPP_REDIRECT_EVENTS.failed, redirectProps('clipboard', 'clipboard_unavailable'))
-          })
-        } else {
-          trackEvent(INAPP_REDIRECT_EVENTS.failed, redirectProps('none', 'clipboard_unavailable'))
-        }
-        // 닫지 않는다 — 안내로 전환한다. 이게 no-op 제거의 핵심이다.
-        setIosGuide(true)
-      }
 
       if (currentEnv === 'kakao-android') {
         gtmInappRedirectAttempted(currentEnv, 'intent')
@@ -548,26 +541,18 @@ export function SignupPromptBanner() {
         navigator.clipboard?.writeText(targetUrl.toString())?.catch(() => {})
         const host = targetUrl.hostname + targetUrl.pathname + targetUrl.search
         location.href = `intent://${host}#Intent;scheme=https;package=com.android.chrome;end`
-      } else if (currentEnv === 'kakao-ios') {
-        handleIosInapp()
       } else {
-        // naver-inapp, google-inapp: Android면 intent, iOS면 클립보드+안내
+        // naver-inapp, google-inapp: Android intent만 유지한다. iOS는 위에서 카카오 OAuth 직행.
         if (/android/i.test(navigator.userAgent)) {
           gtmInappRedirectAttempted(currentEnv, 'intent')
           trackEvent(INAPP_REDIRECT_EVENTS.attempted, redirectProps('intent'))
           navigator.clipboard?.writeText(targetUrl.toString())?.catch(() => {})
           const host = targetUrl.hostname + targetUrl.pathname + targetUrl.search
           location.href = `intent://${host}#Intent;scheme=https;package=com.android.chrome;end`
-        } else {
-          handleIosInapp()
         }
       }
     } else {
-      // 일반 브라우저: 직접 카카오 OAuth
-      gtmSignupBannerClicked(pathname, 'kakao_oauth')
-      trackEvent('signup_banner_clicked', { cta_type: 'kakao_oauth', env: currentEnv })
-      setIsStarting(true)
-      startKakaoLogin(pathname)
+      startSignupWithKakao()
     }
   }
 
@@ -653,13 +638,13 @@ export function SignupPromptBanner() {
         <div className="bg-card border-t border-border shadow-2xl px-4 pt-4 pb-[max(24px,env(safe-area-inset-bottom))]">
           <div className="max-w-lg mx-auto">
             <div className="flex items-start gap-3">
-              <span className="text-2xl" aria-hidden="true">{iosGuide ? '📋' : content.emoji}</span>
+              <span className="text-2xl" aria-hidden="true">{content.emoji}</span>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-body leading-snug text-foreground">
-                  {iosGuide ? '주소가 복사됐어요' : content.headline}
+                  {content.headline}
                 </p>
                 <p className="text-sm text-muted-foreground mt-0.5 break-keep">
-                  {iosGuide ? 'Safari 주소창에 붙여넣으면 가입할 수 있어요' : content.sub}
+                  {content.sub}
                 </p>
               </div>
               {/* 닫기 버튼: 44×44px (5060 터치 타겟 기준) */}
@@ -672,16 +657,16 @@ export function SignupPromptBanner() {
               </button>
             </div>
             {/*
-              iOS 인앱에서 CTA를 누르면 안내로 전환된다(배너를 닫지 않는다).
-              같은 버튼을 다시 눌러 복사를 재시도할 수 있게 두되, 라벨만 바꾼다.
+              iOS는 인앱 여부와 관계없이 기존 카카오 OAuth 직행이다.
+              Android 인앱만 외부 브라우저 유도 문구를 유지한다.
             */}
             <button
-              data-testid={iosGuide ? 'signup-banner-ios-guide' : 'signup-banner-cta'}
+              data-testid="signup-banner-cta"
               onClick={handleCTAClick}
               disabled={isStarting}
               className="mt-3 flex min-h-[52px] w-full items-center justify-center rounded-xl bg-[#FEE500] px-4 py-2 text-center text-[15px] font-bold leading-tight break-keep text-[#191919] transition-opacity disabled:opacity-70"
             >
-              {isStarting ? '카카오로 이동 중...' : iosGuide ? '주소 다시 복사하기' : ctaLabel}
+              {isStarting ? '카카오로 이동 중...' : ctaLabel}
             </button>
           </div>
         </div>
