@@ -1,6 +1,11 @@
 import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import type { PostSummary } from '@/types/api'
+import {
+  getMagazineTopicTitleKeywords,
+  sortMagazineRelatedPostsByTopic,
+  type MagazineTopicHubId,
+} from '@/lib/seo/magazine-topic-link'
 import { postSelect, toPostSummary, buildTextSearch, SearchField } from './posts.base'
 
 /* ── 관련 매거진 (내부 링크용) ── */
@@ -11,6 +16,7 @@ async function _getRelatedMagazinePosts(
   limit = 3,
   titleKeywords?: string[],  // 제목 키워드 (시리즈명, 주요 단어)
   seriesId?: string | null,  // 이미 알고 있으면 DB 조회 생략 (Q1 제거)
+  topicHubId?: MagazineTopicHubId | null,
 ): Promise<PostSummary[]> {
   // 1순위: 같은 시리즈 내 다른 편 (seriesId 기반)
   const resolvedSeriesId = seriesId !== undefined
@@ -46,41 +52,49 @@ async function _getRelatedMagazinePosts(
     if (seriesRows.length >= limit) return seriesRows.map(toPostSummary)
 
     const seriesIdSet = new Set(seriesRows.map(r => r.id))
-    const filteredCategory = categoryRows.filter(r => !seriesIdSet.has(r.id))
+    const filteredCategory = sortMagazineRelatedPostsByTopic(
+      categoryRows.filter(r => !seriesIdSet.has(r.id)).map(toPostSummary),
+      topicHubId,
+    )
     const remainingLimit = limit - seriesRows.length
-    return [...seriesRows, ...filteredCategory.slice(0, remainingLimit)].map(toPostSummary)
+    return [...seriesRows.map(toPostSummary), ...filteredCategory.slice(0, remainingLimit)]
   }
 
   // 2순위: 제목 키워드 매칭 (같은 카테고리 내)
-  if (titleKeywords && titleKeywords.length > 0) {
+  const topicKeywords = getMagazineTopicTitleKeywords(topicHubId, 8)
+  const keywordTerms = Array.from(new Set([...(titleKeywords ?? []).slice(0, 3), ...topicKeywords]))
+
+  if (keywordTerms.length > 0) {
     const keywordRows = await prisma.post.findMany({
       where: {
         boardType: 'MAGAZINE',
         status: 'PUBLISHED',
         id: { not: excludeId },
         ...(category ? { category } : {}),
-        OR: titleKeywords.slice(0, 3).map(kw => ({ title: { contains: kw } })),
+        OR: keywordTerms.map(kw => ({ title: { contains: kw } })),
       },
       orderBy: { createdAt: 'desc' },
-      take: limit,
+      take: topicHubId ? limit * 2 : limit,
       select: postSelect,
     })
-    if (keywordRows.length >= limit) return keywordRows.map(toPostSummary)
+    const sortedKeywordRows = sortMagazineRelatedPostsByTopic(keywordRows.map(toPostSummary), topicHubId)
+    if (sortedKeywordRows.length >= limit) return sortedKeywordRows.slice(0, limit)
 
     // 키워드 매칭이 부족하면 같은 카테고리로 채움
-    const remainingLimit = limit - keywordRows.length
+    const remainingLimit = limit - sortedKeywordRows.length
     const categoryRows = await prisma.post.findMany({
       where: {
         boardType: 'MAGAZINE',
         status: 'PUBLISHED',
-        id: { notIn: [excludeId, ...keywordRows.map(r => r.id)] },
+        id: { notIn: [excludeId, ...sortedKeywordRows.map(r => r.id)] },
         ...(category ? { category } : {}),
       },
       orderBy: { createdAt: 'desc' },
-      take: remainingLimit,
+      take: topicHubId ? remainingLimit * 2 : remainingLimit,
       select: postSelect,
     })
-    return [...keywordRows, ...categoryRows].map(toPostSummary)
+    const sortedCategoryRows = sortMagazineRelatedPostsByTopic(categoryRows.map(toPostSummary), topicHubId)
+    return [...sortedKeywordRows, ...sortedCategoryRows.slice(0, remainingLimit)]
   }
 
   // 3순위: 카테고리 기반 (기존 방식)
@@ -92,10 +106,10 @@ async function _getRelatedMagazinePosts(
       ...(category ? { category } : {}),
     },
     orderBy: { createdAt: 'desc' },
-    take: limit,
+    take: topicHubId ? limit * 2 : limit,
     select: postSelect,
   })
-  return rows.map(toPostSummary)
+  return sortMagazineRelatedPostsByTopic(rows.map(toPostSummary), topicHubId).slice(0, limit)
 }
 export const getRelatedMagazinePosts = unstable_cache(
   _getRelatedMagazinePosts,

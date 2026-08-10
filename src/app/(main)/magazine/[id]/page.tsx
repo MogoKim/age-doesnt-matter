@@ -162,10 +162,6 @@ export default async function MagazineDetailPage({ params }: PageProps) {
     .filter((w: string) => w.length >= 2)
     .slice(0, 3)
 
-  const [cpsLinks, relatedPosts] = await Promise.all([
-    CPS_ENABLED ? getCachedCpsLinks(resolvedId) : Promise.resolve([] as Awaited<ReturnType<typeof getCachedCpsLinks>>),
-    getRelatedMagazinePosts(post.category ?? null, resolvedId, 5, titleKeywords, post.seriesId ?? null),
-  ])
   const topicHubLink = resolveMagazineTopicHubLink({
     title: post.title,
     seoTitle: post.seoTitle,
@@ -173,6 +169,11 @@ export default async function MagazineDetailPage({ params }: PageProps) {
     seoDescription: post.seoDescription,
     category: post.category,
   })
+
+  const [cpsLinks, relatedPosts] = await Promise.all([
+    CPS_ENABLED ? getCachedCpsLinks(resolvedId) : Promise.resolve([] as Awaited<ReturnType<typeof getCachedCpsLinks>>),
+    getRelatedMagazinePosts(post.category ?? null, resolvedId, 5, titleKeywords, post.seriesId ?? null, topicHubLink?.id ?? null),
+  ])
   const relatedItems = appendTopicHubLinkToRelated<RelatedMagazinePost>(relatedPosts, topicHubLink, 5)
 
   // JSON-LD 구조화 데이터
