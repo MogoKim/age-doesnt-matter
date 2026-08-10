@@ -8,7 +8,7 @@ export interface MagazineTopicHubLink {
   badge: string
 }
 
-interface MagazineTopicInput {
+export interface MagazineTopicInput {
   title: string
   seoTitle?: string | null
   preview?: string | null
@@ -63,7 +63,7 @@ function includesAny(text: string, keywords: readonly string[]): number {
   return keywords.reduce((count, keyword) => count + (text.includes(keyword.toLowerCase()) ? 1 : 0), 0)
 }
 
-function scoreTopic(input: MagazineTopicInput, topic: MagazineTopicHubId): number {
+export function scoreMagazineTopic(input: MagazineTopicInput, topic: MagazineTopicHubId): number {
   const titleText = `${input.title} ${input.seoTitle ?? ''}`.toLowerCase()
   const bodyText = `${input.preview ?? ''} ${input.seoDescription ?? ''}`.toLowerCase()
   const category = input.category ?? ''
@@ -80,12 +80,33 @@ function scoreTopic(input: MagazineTopicInput, topic: MagazineTopicHubId): numbe
 }
 
 export function resolveMagazineTopicHubLink(input: MagazineTopicInput): MagazineTopicHubLink | null {
-  const menopauseScore = scoreTopic(input, 'menopause')
-  const secondActScore = scoreTopic(input, 'second-act')
+  const menopauseScore = scoreMagazineTopic(input, 'menopause')
+  const secondActScore = scoreMagazineTopic(input, 'second-act')
   const bestScore = Math.max(menopauseScore, secondActScore)
 
   if (bestScore < 4) return null
   return menopauseScore >= secondActScore ? TOPIC_LINKS.menopause : TOPIC_LINKS['second-act']
+}
+
+export function getMagazineTopicTitleKeywords(topic: MagazineTopicHubId | null | undefined, limit = 8): string[] {
+  if (!topic || limit <= 0) return []
+  const keywords = topic === 'menopause' ? MENOPAUSE_TITLE_KEYWORDS : SECOND_ACT_TITLE_KEYWORDS
+  return [...keywords].slice(0, limit)
+}
+
+export function sortMagazineRelatedPostsByTopic<T extends MagazineTopicInput>(
+  posts: readonly T[],
+  topic: MagazineTopicHubId | null | undefined,
+): T[] {
+  if (!topic) return posts.slice()
+
+  return posts
+    .map((post, index) => ({ post, index, score: scoreMagazineTopic(post, topic) }))
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score
+      return a.index - b.index
+    })
+    .map(({ post }) => post)
 }
 
 export function isMagazineTopicHubLink(item: unknown): item is MagazineTopicHubLink {
