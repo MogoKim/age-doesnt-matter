@@ -18,8 +18,15 @@ import AdSenseUnit from '@/components/ad/AdSenseUnit'
 import NativeAdSlot from '@/components/ad/NativeAdSlot'
 import CpsClickTracker from '@/components/ad/CpsClickTracker'
 import { ADSENSE } from '@/components/ad/ad-slots'
+import {
+  appendTopicHubLinkToRelated,
+  isMagazineTopicHubLink,
+  resolveMagazineTopicHubLink,
+} from '@/lib/seo/magazine-topic-link'
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'
+
+type RelatedMagazinePost = Awaited<ReturnType<typeof getRelatedMagazinePosts>>[number]
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -159,6 +166,14 @@ export default async function MagazineDetailPage({ params }: PageProps) {
     CPS_ENABLED ? getCachedCpsLinks(resolvedId) : Promise.resolve([] as Awaited<ReturnType<typeof getCachedCpsLinks>>),
     getRelatedMagazinePosts(post.category ?? null, resolvedId, 5, titleKeywords, post.seriesId ?? null),
   ])
+  const topicHubLink = resolveMagazineTopicHubLink({
+    title: post.title,
+    seoTitle: post.seoTitle,
+    preview: post.preview,
+    seoDescription: post.seoDescription,
+    category: post.category,
+  })
+  const relatedItems = appendTopicHubLinkToRelated<RelatedMagazinePost>(relatedPosts, topicHubLink, 5)
 
   // JSON-LD 구조화 데이터
   const canonicalSlug = post.slug ?? id
@@ -338,29 +353,51 @@ export default async function MagazineDetailPage({ params }: PageProps) {
       <MagazineExploreLinks postId={resolvedId} postTitle={post.title} />
 
       {/* 함께 읽어보세요 */}
-      {relatedPosts.length > 0 && (
+      {relatedPosts.length > 0 && relatedItems.length > 0 && (
         <div className="mb-8">
           <h3 className="text-body font-bold text-foreground mb-4">함께 읽어보세요</h3>
           <div className="space-y-3">
-            {relatedPosts.map((related) => (
-              <a
-                key={related.id}
-                href={`/magazine/${related.slug ?? related.id}`}
-                className="flex items-start gap-3 p-4 bg-card rounded-xl border border-border no-underline transition-colors hover:border-primary/30 hover:shadow-sm min-h-[52px]"
-              >
-                <div className="flex-1 min-w-0">
-                  {related.category && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary-strong text-caption font-bold mb-1">
-                      {related.category}
-                    </span>
-                  )}
-                  <p className="text-body font-medium text-foreground m-0 line-clamp-2 leading-[1.4]">
-                    {related.title}
-                  </p>
-                </div>
-                <span className="text-[17px] text-primary-text flex-shrink-0 mt-1">→</span>
-              </a>
-            ))}
+            {relatedItems.map((related) => {
+              if (isMagazineTopicHubLink(related)) {
+                return (
+                  <a
+                    key={related.href}
+                    href={related.href}
+                    className="flex items-start gap-3 p-4 bg-card rounded-xl border border-border no-underline transition-colors hover:border-primary/30 hover:shadow-sm min-h-[52px]"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary-strong text-caption font-bold mb-1">
+                        {related.badge}
+                      </span>
+                      <p className="text-body font-medium text-foreground m-0 line-clamp-2 leading-[1.4]">
+                        {related.label}
+                      </p>
+                    </div>
+                    <span className="text-[17px] text-primary-text flex-shrink-0 mt-1">→</span>
+                  </a>
+                )
+              }
+
+              return (
+                <a
+                  key={related.id}
+                  href={`/magazine/${related.slug ?? related.id}`}
+                  className="flex items-start gap-3 p-4 bg-card rounded-xl border border-border no-underline transition-colors hover:border-primary/30 hover:shadow-sm min-h-[52px]"
+                >
+                  <div className="flex-1 min-w-0">
+                    {related.category && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary-strong text-caption font-bold mb-1">
+                        {related.category}
+                      </span>
+                    )}
+                    <p className="text-body font-medium text-foreground m-0 line-clamp-2 leading-[1.4]">
+                      {related.title}
+                    </p>
+                  </div>
+                  <span className="text-[17px] text-primary-text flex-shrink-0 mt-1">→</span>
+                </a>
+              )
+            })}
           </div>
         </div>
       )}
