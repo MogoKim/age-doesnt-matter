@@ -441,10 +441,9 @@ export function SignupPromptBanner() {
 
   const inapp = isInappEnv(currentEnv)
 
-  // 인앱 환경별 CTA 텍스트
-  const inappCtaText = currentEnv === 'kakao-android' || currentEnv === 'kakao-ios'
-    ? '카카오 밖에서 가입하기'
-    : '브라우저에서 가입하기'
+  // Android 인앱도 사용자는 "회원가입"을 누르는 것이다.
+  // 외부 브라우저 전환은 내부 구현 경로이므로 CTA 문구에 노출하지 않는다.
+  const inappCtaText = '카카오로 가입하기'
 
   // A2 signup_warm은 문구만 갈아끼운다 — 구조·색·트리거·횟수 정책 전부 기존과 동일.
   //  (실험 대상이 아니면 기존 BANNER_CONTENT 그대로 → 비대상 사용자 회귀 0)

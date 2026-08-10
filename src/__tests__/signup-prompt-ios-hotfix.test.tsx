@@ -133,10 +133,11 @@ describe('iOS SignupPromptBanner hotfix — 모든 iOS는 카카오 OAuth 직행
 })
 
 describe('Android 정책 회귀 방지', () => {
-  it('Android Naver 인앱은 기존 외부 브라우저 유도 문구를 유지한다', async () => {
+  it('Android Naver 인앱은 가입 문구를 보이되 기존 외부 브라우저 유도 동작을 유지한다', async () => {
     const cta = await renderShownBanner('naver-inapp', UA.naverAndroid)
 
-    expect(cta.textContent).toContain('브라우저에서 가입하기')
+    expect(cta.textContent).toContain('카카오로 가입하기')
+    expect(cta.textContent).not.toContain('브라우저')
     fireEvent.click(cta)
 
     expect(mock.startKakaoLogin).not.toHaveBeenCalled()

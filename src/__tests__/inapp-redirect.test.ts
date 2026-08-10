@@ -114,9 +114,10 @@ describe('기존 GTM 계측이 사라지지 않았다 (두 파이프 병행)', (
     expect(banner).toContain('startKakaoLogin(pathname)')
   })
 
-  it('인앱 CTA 문구를 바꾸지 않았다', () => {
-    expect(banner).toContain("'카카오 밖에서 가입하기'")
-    expect(banner).toContain("'브라우저에서 가입하기'")
+  it('인앱 CTA는 기술 경로가 아니라 가입 문구를 보여준다', () => {
+    expect(banner).toContain("const inappCtaText = '카카오로 가입하기'")
+    expect(banner).not.toContain("'브라우저에서 가입하기'")
+    expect(banner).not.toContain("'카카오 밖에서 가입하기'")
   })
 
   // 2026-08-10 hotfix: iOS 가입 CTA는 주소복사/외부 브라우저 유도가 아니라 카카오 OAuth 직행이다.
