@@ -6,7 +6,7 @@ import BestContent from '@/components/features/best/BestContent'
 
 export const metadata: Metadata = {
   title: '이번 주 인기글 베스트',
-  description: '40대 50대 60대 여성들이 가장 많이 공감하고 나눈 이번 주 인기 글 모음.',
+  description: '40대 50대 여성들이 가장 많이 공감하고 나눈 이번 주 인기 글 모음.',
   alternates: { canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'}/best` },
 }
 

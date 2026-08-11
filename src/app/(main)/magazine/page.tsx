@@ -13,14 +13,14 @@ const CI_DUMMY_DB = process.env.CI === 'true' && process.env.DATABASE_URL?.inclu
 
 export const metadata: Metadata = {
   title: '갱년기·노후·건강 매거진',
-  description: '갱년기 증상, 노후 준비, 기초연금, 재취업까지 — 40대 50대 60대 여성에게 꼭 필요한 정보를 쉽게 정리했어요.',
+  description: '갱년기 증상, 노후 준비, 기초연금, 재취업까지 — 40대 50대 여성에게 꼭 필요한 정보를 쉽게 정리했어요.',
   alternates: { canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'}/magazine` },
   openGraph: {
-    title: '갱년기·노후·건강 매거진 | 40대 50대 60대 여성 커뮤니티 : 우리 나이가 어때서',
-    description: '갱년기 증상, 노후 준비, 기초연금, 재취업까지 — 40대 50대 60대 여성에게 꼭 필요한 정보를 쉽게 정리했어요.',
+    title: '갱년기·노후·건강 매거진 | 40대 50대 여성 커뮤니티 : 우리 나이가 어때서',
+    description: '갱년기 증상, 노후 준비, 기초연금, 재취업까지 — 40대 50대 여성에게 꼭 필요한 정보를 쉽게 정리했어요.',
     url: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'}/magazine`,
     type: 'website',
-    images: [{ url: '/og-cover.png', width: 1200, height: 630, alt: '우리 나이가 어때서 — 40대 50대 60대 여성 커뮤니티' }],
+    images: [{ url: '/og-cover.png', width: 1200, height: 630, alt: '우리 나이가 어때서 — 40대 50대 여성 커뮤니티' }],
   },
 }
 
