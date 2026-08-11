@@ -192,6 +192,13 @@ export function SignupPromptBanner() {
   const variantRef = useRef<AndroidConversionVariant | ''>('')
   useEffect(() => { variantRef.current = variant }, [variant])
 
+  // 인앱 여부도 같은 이유로 ref로 들고 있는다.
+  //   `currentEnv`는 마운트 직후 `detectEnv()`로 확정되는데, 이걸 타이머 effect 의존성에 넣으면
+  //   확정되는 순간 effect가 재실행돼 **비인앱의 60초 백스톱이 리셋된다.**
+  //   이번 변경은 인앱만 건드리는 것이므로 비인앱 타이밍을 1ms도 바꾸면 안 된다.
+  const inappRef = useRef(false)
+  useEffect(() => { inappRef.current = isInappEnv(currentEnv) }, [currentEnv])
+
   // ── ?signup=1 auto-trigger: 인앱→외부브라우저 도착 시 카운트다운 배너 ──
   useEffect(() => {
     if (status === 'loading') return
@@ -279,7 +286,17 @@ export function SignupPromptBanner() {
 
     const tryFire = () => {
       if (alreadyFired) return
-      if (!timerFired && !scrolledRef.current) return  // 백스톱(60초) 또는 정독 85% 중 충족
+      // [F20 §8] 인앱은 **정독 85% 도달만** 트리거다 — 60초 백스톱으로는 뜨지 않는다.
+      //   인앱 사용자는 백스톱이 정독보다 먼저 걸려 글을 42%밖에 안 읽은 시점에 배너를 만났고
+      //   (노출 시점 정독률 중앙값, 데스크탑은 86%), 그래서 2.7초 만에 ✕로 치웠다(3초 내 닫힘 63.6%).
+      //   구조적 방해(스크롤 잠금·바깥 탭 닫기)는 PR #318에서 이미 제거했으므로 남은 원인은 타이밍이다.
+      //   ⚠️ 비인앱은 기존 그대로 — 백스톱 또는 정독 중 하나만 충족하면 발동한다.
+      //      (Android 외부 브라우저는 android_conversion_a2_b2 실험 중이라 분모를 건드리면 안 된다)
+      if (inappRef.current) {
+        if (!scrolledRef.current) return
+      } else if (!timerFired && !scrolledRef.current) {
+        return
+      }
       if (!canShow()) return
       alreadyFired = true
       if (timerId) { clearTimeout(timerId); timerId = null }
