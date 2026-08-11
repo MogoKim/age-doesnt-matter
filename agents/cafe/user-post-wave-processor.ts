@@ -13,7 +13,8 @@
  */
 import { prisma, disconnect } from '../core/db.js'
 import { getBotUser, generateUserPostComment } from '../seed/generator.js'
-import { getAllPersonaIds, getPersona } from '../seed/persona-data.js'
+// persona 정본은 registry 경유(PR-6). 원본 직접 import 금지 — CI 가드는 PR-7.
+import { getAllPersonaIds, getPersona } from '../core/persona-registry.js'
 import { sendSlackMessage } from '../core/notifier.js'
 import { notifyAuthorOfBotComment } from '../core/notify-author.js'
 import { COMPETITOR_KEYWORDS } from './config.js'
