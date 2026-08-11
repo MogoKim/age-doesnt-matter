@@ -55,7 +55,7 @@ async function renderNearComment(isFeedback = false) {
   const target = makeTarget(VH + 100)
   setScrollY(VH)
   const ref = { current: target } as React.RefObject<HTMLElement>
-  const view = render(<CommentDock targetRef={ref} isFeedback={isFeedback} composing={false} onOpen={onOpen} />)
+  const view = render(<CommentDock targetRef={ref} sectionRef={ref} isFeedback={isFeedback} composing={false} onOpen={onOpen} />)
   await scrollTo(VH)
   return { target, view }
 }
@@ -95,7 +95,7 @@ describe('CommentDock — 표시 조건', () => {
   it('글 초반에는 뜨지 않는다 (광고를 덮던 원인)', async () => {
     const target = makeTarget(VH + 100)
     const ref = { current: target } as React.RefObject<HTMLElement>
-    render(<CommentDock targetRef={ref} composing={false} onOpen={onOpen} />)
+    render(<CommentDock targetRef={ref} sectionRef={ref} composing={false} onOpen={onOpen} />)
     await scrollTo(0)
     expect(screen.queryByTestId('comment-dock')).toBeNull()
   })
@@ -108,7 +108,7 @@ describe('CommentDock — 표시 조건', () => {
   it('입력창이 화면에 보이면 숨는다 (입력창 2개 방지)', async () => {
     const target = makeTarget(VH + 100)
     const ref = { current: target } as React.RefObject<HTMLElement>
-    render(<CommentDock targetRef={ref} composing={false} onOpen={onOpen} />)
+    render(<CommentDock targetRef={ref} sectionRef={ref} composing={false} onOpen={onOpen} />)
     await scrollTo(VH)
     expect(screen.getByTestId('comment-dock')).toBeTruthy()
 
@@ -122,7 +122,7 @@ describe('CommentDock — 표시 조건', () => {
   it('입력창을 지나치면 다시 숨는다 — 아래 광고 구간을 덮지 않는다', async () => {
     const target = makeTarget(VH + 100)
     const ref = { current: target } as React.RefObject<HTMLElement>
-    render(<CommentDock targetRef={ref} composing={false} onOpen={onOpen} />)
+    render(<CommentDock targetRef={ref} sectionRef={ref} composing={false} onOpen={onOpen} />)
     await scrollTo(VH)
     expect(screen.getByTestId('comment-dock')).toBeTruthy()
 
@@ -177,11 +177,11 @@ describe('CommentDock — 동작', () => {
     const target = makeTarget(VH + 100)
     setScrollY(VH)
     const ref = { current: target } as React.RefObject<HTMLElement>
-    const { rerender } = render(<CommentDock targetRef={ref} composing={false} onOpen={onOpen} />)
+    const { rerender } = render(<CommentDock targetRef={ref} sectionRef={ref} composing={false} onOpen={onOpen} />)
     await scrollTo(VH)
     expect(screen.getByTestId('comment-dock')).toBeTruthy()
 
-    rerender(<CommentDock targetRef={ref} composing={true} onOpen={onOpen} />)
+    rerender(<CommentDock targetRef={ref} sectionRef={ref} composing={true} onOpen={onOpen} />)
     expect(screen.queryByTestId('comment-dock')).toBeNull()
   })
 
@@ -189,22 +189,22 @@ describe('CommentDock — 동작', () => {
     const target = makeTarget(VH + 100)   // 입력창은 화면 밖
     setScrollY(VH)
     const ref = { current: target } as React.RefObject<HTMLElement>
-    const { rerender } = render(<CommentDock targetRef={ref} composing={false} onOpen={onOpen} />)
+    const { rerender } = render(<CommentDock targetRef={ref} sectionRef={ref} composing={false} onOpen={onOpen} />)
     await scrollTo(VH)
     expect(isCommentEntryActive()).toBe(false)
 
-    await act(async () => { rerender(<CommentDock targetRef={ref} composing={true} onOpen={onOpen} />) })
+    await act(async () => { rerender(<CommentDock targetRef={ref} sectionRef={ref} composing={true} onOpen={onOpen} />) })
     expect(isCommentEntryActive()).toBe(true)
 
     // 닫으면 스크롤을 기다리지 않고 즉시 해제된다
-    await act(async () => { rerender(<CommentDock targetRef={ref} composing={false} onOpen={onOpen} />) })
+    await act(async () => { rerender(<CommentDock targetRef={ref} sectionRef={ref} composing={false} onOpen={onOpen} />) })
     expect(isCommentEntryActive()).toBe(false)
   })
 
   it('배너 지연 신호는 입력창의 실제 노출에만 연동된다 (Dock 노출과 별개)', async () => {
     const target = makeTarget(VH + 100)
     const ref = { current: target } as React.RefObject<HTMLElement>
-    render(<CommentDock targetRef={ref} composing={false} onOpen={onOpen} />)
+    render(<CommentDock targetRef={ref} sectionRef={ref} composing={false} onOpen={onOpen} />)
 
     // Dock은 떴지만 입력창은 아직 화면 밖 → 배너를 미룰 이유가 없다
     await scrollTo(VH)
@@ -216,5 +216,59 @@ describe('CommentDock — 동작', () => {
       ({ top: 200, bottom: 500, left: 0, right: 390, width: 390, height: 300, x: 0, y: 200, toJSON: () => ({}) }) as DOMRect
     await scrollTo(VH + 200)
     expect(isCommentEntryActive()).toBe(true)
+  })
+})
+
+
+describe('[2026-08-11 보정] Dock이 섹션 위치를 실제로 본다 (배선 고정)', () => {
+  /**
+   * 이 테스트가 없으면 CommentDock이 sectionRef를 무시하도록 바뀌어도 아무도 못 잡는다.
+   * 다른 테스트들은 sectionRef에 입력창과 같은 ref를 넘겨서 차이가 드러나지 않는다.
+   */
+  it('섹션은 가깝고 입력창은 멀 때 뜬다 — 댓글 많은 글 재현', async () => {
+    const section = makeTarget(VH + 100)        // 섹션 시작은 화면 바로 아래(근접)
+    const input = makeTarget(VH * 4)            // 입력창은 목록 아래 한참 멀리
+    setScrollY(VH)
+    render(
+      <CommentDock
+        targetRef={{ current: input } as React.RefObject<HTMLElement>}
+        sectionRef={{ current: section } as React.RefObject<HTMLElement>}
+        composing={false}
+        onOpen={onOpen}
+      />
+    )
+    await scrollTo(VH)
+    expect(screen.getByTestId('comment-dock')).toBeTruthy()
+  })
+
+  it('섹션도 입력창도 멀면 뜨지 않는다', async () => {
+    const section = makeTarget(VH * 4)
+    const input = makeTarget(VH * 5)
+    setScrollY(VH)
+    render(
+      <CommentDock
+        targetRef={{ current: input } as React.RefObject<HTMLElement>}
+        sectionRef={{ current: section } as React.RefObject<HTMLElement>}
+        composing={false}
+        onOpen={onOpen}
+      />
+    )
+    await scrollTo(VH)
+    expect(screen.queryByTestId('comment-dock')).toBeNull()
+  })
+
+  it('섹션 ref가 비어 있으면 입력창 기준으로 안전하게 떨어진다', async () => {
+    const input = makeTarget(VH + 100)
+    setScrollY(VH)
+    render(
+      <CommentDock
+        targetRef={{ current: input } as React.RefObject<HTMLElement>}
+        sectionRef={{ current: null } as unknown as React.RefObject<HTMLElement>}
+        composing={false}
+        onOpen={onOpen}
+      />
+    )
+    await scrollTo(VH)
+    expect(screen.getByTestId('comment-dock')).toBeTruthy()
   })
 })

@@ -5,8 +5,13 @@ import { setCommentEntryActive, resetCommentEntryActive } from '@/lib/comment-en
 import { resolveDockVisibility } from '@/lib/comment-dock-visibility'
 
 interface CommentDockProps {
-  /** 실제 댓글 입력 영역. Dock은 이 위치를 기준으로 보일지 정한다. */
+  /** 실제 댓글 입력 영역. 탭하면 여기를 하단으로 전환한다. */
   targetRef: React.RefObject<HTMLElement | null>
+  /**
+   * 댓글 섹션 루트. **노출 시점은 이쪽을 기준으로 정한다.**
+   * 입력창은 댓글 목록 아래에 있어서, 그것만 보면 댓글이 많은 글에서 Dock이 한참 늦게 떴다.
+   */
+  sectionRef: React.RefObject<HTMLElement | null>
   /** 의견수렴형(FEEDBACK) 글이면 '댓글'→'의견'. 기존 문구 정책과 맞춘다. */
   isFeedback?: boolean
   /** [PR-C1-B] 입력 영역이 하단 고정으로 전환돼 있는가. 열려 있으면 Dock은 숨는다. */
@@ -31,7 +36,7 @@ interface CommentDockProps {
  *   그 결과 본문 광고를 덮었다. 지금은 `resolveDockVisibility`가 정하며,
  *   광고 마크업에는 전혀 의존하지 않는다 — 기준은 **댓글을 쓸 맥락**이다.
  */
-export default function CommentDock({ targetRef, isFeedback, composing, onOpen }: CommentDockProps) {
+export default function CommentDock({ targetRef, sectionRef, isFeedback, composing, onOpen }: CommentDockProps) {
   const [visible, setVisible] = useState(false)
 
   // effect를 재등록하지 않고 최신 값을 읽기 위한 ref
@@ -61,9 +66,12 @@ export default function CommentDock({ targetRef, isFeedback, composing, onOpen }
       const node = targetRef.current
       if (!node) return
       const rect = node.getBoundingClientRect()
+      // 섹션을 못 잡으면 입력창 위치로 대체한다 — 기존(C1-B) 동작으로 안전하게 떨어진다.
+      const sectionRect = sectionRef.current?.getBoundingClientRect()
       const result = resolveDockVisibility({
         inputTop: rect.top,
         inputBottom: rect.bottom,
+        sectionTop: sectionRect ? sectionRect.top : rect.top,
         viewportHeight: window.innerHeight,
         scrollY: window.scrollY,
         documentHeight: document.documentElement.scrollHeight,
@@ -92,7 +100,7 @@ export default function CommentDock({ targetRef, isFeedback, composing, onOpen }
       // 글을 떠날 때 신호를 반드시 내린다. 안 내리면 다음 글에서 배너가 영영 안 뜬다.
       resetCommentEntryActive()
     }
-  }, [targetRef])
+  }, [targetRef, sectionRef])
 
   // [C1-B] 스크롤해서 데려가지 않는다 — 입력 영역을 손가락 아래로 가져온다.
   //   포커스는 CommentSection이 전환 렌더 직후에 준다.

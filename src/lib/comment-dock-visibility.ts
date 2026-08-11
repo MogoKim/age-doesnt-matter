@@ -23,7 +23,7 @@
 export const MIN_SCROLL_RATIO = 0.5
 
 /**
- * 입력창이 화면 아래 이만큼 안으로 들어오면 "곧 댓글 영역"으로 본다.
+ * 댓글 **섹션 시작**이 화면 아래 이만큼 안으로 들어오면 "곧 댓글 영역"으로 본다.
  * 화면 높이 기준 비율이라 기기 크기에 따라 같이 늘어난다.
  */
 export const NEAR_VIEWPORT_RATIO = 0.8
@@ -41,6 +41,18 @@ export interface DockVisibilityInput {
   /** 댓글 입력 영역의 뷰포트 기준 위치 */
   inputTop: number
   inputBottom: number
+  /**
+   * 댓글 **섹션 시작**("댓글 N개" 헤더)의 뷰포트 기준 top.
+   *
+   * 왜 입력창이 아니라 여기를 보는가:
+   *   입력창은 댓글 목록 **아래**에 있다. 그래서 입력창을 기준으로 잡으면
+   *   **댓글이 많을수록 Dock이 늦게 뜬다** — 목록 길이가 그대로 지연이 된다.
+   *   실측(2026-08-11 프로덕션): 댓글 7개 글에서 입력창은 y=3587까지 밀렸고
+   *   Dock은 scrollY=2086에서야 떴다. 첫 광고가 끝난 지점(722)보다 1364px 늦었다.
+   *   같은 글의 댓글 섹션 시작은 y=1693(도달 scrollY=849)으로 첫 광고 끝과 거의 겹친다.
+   *   사용자가 "댓글을 쓸 맥락"에 들어서는 순간은 목록 끝이 아니라 **목록 시작**이다.
+   */
+  sectionTop: number
   viewportHeight: number
   scrollY: number
   /** document.documentElement.scrollHeight */
@@ -56,8 +68,8 @@ export interface DockVisibilityResult {
     | 'input_in_view'      // 입력창이 보이니 Dock이 필요 없다
     | 'scrolled_past'      // 입력창을 지나쳤다 — 아래는 광고·추천글 구간
     | 'too_early'          // 아직 충분히 스크롤하지 않았다
-    | 'not_near_yet'       // 댓글 영역이 아직 멀고, 긴 글 진행률도 못 넘었다
-    | 'near_comment'       // 댓글 영역이 가까워졌다
+    | 'not_near_yet'       // 댓글 섹션이 아직 멀고, 긴 글 진행률도 못 넘었다
+    | 'near_comment'       // 댓글 섹션 시작이 가까워졌다
     | 'read_enough'        // 긴 글을 충분히 읽었다
 }
 
@@ -70,10 +82,13 @@ export interface DockVisibilityResult {
  *     이 사이트는 댓글 영역 아래에 CTA·추천글·광고가 더 있다. 거기서 Dock을 띄우면
  *     위로 되돌아가는 진입점으로서 쓸모도 적고 광고만 덮는다.
  *  3. 최소 스크롤 전에는 띄우지 않는다 (짧은 글 즉시 노출 방지)
- *  4. 그 다음에야 "근접" 또는 "긴 글 충분히 읽음" 중 하나를 만족하면 띄운다
+ *  4. 그 다음에야 "댓글 섹션 근접" 또는 "긴 글 충분히 읽음" 중 하나를 만족하면 띄운다
+ *
+ * [2026-08-11 보정] 4번의 "근접" 기준을 입력창 → **댓글 섹션 시작**으로 옮겼다.
+ *   입력창은 댓글 목록 아래에 있어서, 댓글이 많은 글일수록 Dock이 늦게 떴다.
  */
 export function resolveDockVisibility(input: DockVisibilityInput): DockVisibilityResult {
-  const { inputTop, inputBottom, viewportHeight, scrollY, documentHeight } = input
+  const { inputTop, inputBottom, sectionTop, viewportHeight, scrollY, documentHeight } = input
 
   const inputInView = inputBottom > 0 && inputTop < viewportHeight
   if (inputInView) return { visible: false, inputInView, reason: 'input_in_view' }
@@ -84,7 +99,10 @@ export function resolveDockVisibility(input: DockVisibilityInput): DockVisibilit
     return { visible: false, inputInView, reason: 'too_early' }
   }
 
-  const near = inputTop <= viewportHeight * (1 + NEAR_VIEWPORT_RATIO)
+  // 댓글 **섹션 시작**이 가까워지면 띄운다. 목록을 다 지나칠 때까지 기다리지 않는다.
+  //   섹션이 이미 화면 위로 지나갔어도(음수) 참이다 — 목록을 읽는 내내 Dock이 남아 있어야
+  //   "지금 한마디 쓰기"가 계속 손 닿는 곳에 있다. 목록 끝에서 입력창이 보이면 위 1번이 숨긴다.
+  const near = sectionTop <= viewportHeight * (1 + NEAR_VIEWPORT_RATIO)
   if (near) return { visible: true, inputInView, reason: 'near_comment' }
 
   const scrollable = documentHeight - viewportHeight
