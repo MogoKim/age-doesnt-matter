@@ -1,32 +1,55 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { setCommentEntryActive, resetCommentEntryActive } from '@/lib/comment-entry-state'
 import { resolveDockVisibility } from '@/lib/comment-dock-visibility'
 
 interface CommentDockProps {
-  /** 실제 댓글 입력 영역. Dock은 이 위치를 기준으로 보일지 정하고, 탭하면 여기로 데려간다. */
+  /** 실제 댓글 입력 영역. Dock은 이 위치를 기준으로 보일지 정한다. */
   targetRef: React.RefObject<HTMLElement | null>
   /** 의견수렴형(FEEDBACK) 글이면 '댓글'→'의견'. 기존 문구 정책과 맞춘다. */
   isFeedback?: boolean
+  /** [PR-C1-B] 입력 영역이 하단 고정으로 전환돼 있는가. 열려 있으면 Dock은 숨는다. */
+  composing: boolean
+  /** [PR-C1-B] Dock 탭 — 스크롤이 아니라 하단 직접 입력을 연다. */
+  onOpen: () => void
 }
 
 /**
- * 하단 댓글 입력 진입점 (PR-C1-A + 표시 조건 보정) — 모바일 전용.
+ * 하단 댓글 입력 진입점 (PR-C1-A → 표시 조건 보정 → C1-B 직접 입력) — 모바일 전용.
  *
  * 왜 입력창을 하나 더 만들지 않았나:
  *   비회원 입력은 닉네임·번호 점진 노출과 Turnstile 위젯 생명주기를 갖는다.
- *   같은 컴포넌트를 두 벌 띄우면 위젯이 둘이 되어 토큰 발급이 어긋난다.
- *   그래서 Dock은 **입력창이 아니라 진입점**이다 — 누르면 기존 입력창으로 데려가 포커스만 준다.
- *   덕분에 비회원·회원 작성 흐름과 PR-C3 계측(focus·text_started…)이 그대로 살아 있다.
+ *   같은 컴포넌트를 두 벌 띄우면 위젯이 둘이 되어 토큰이 어긋나고, 제출이 15초 대기 후 조용히 실패한다.
+ *   그래서 Dock은 **입력창이 아니라 진입점**이다.
+ *   [C1-B] 탭하면 스크롤해서 데려가는 대신, CommentSection이 **기존 입력 영역을 그 자리에서**
+ *   하단 고정으로 전환한다. 인스턴스가 그대로라 리마운트가 없고,
+ *   입력 중 내용·닉네임·번호와 PR-C3 계측(focus·text_started…)이 전부 살아 있다.
  *
  * 언제 보이는가:
  *   초기 C1-A는 "입력창이 화면 밖"이면 무조건 떠서 **글 최상단부터 하단을 점유**했고,
  *   그 결과 본문 광고를 덮었다. 지금은 `resolveDockVisibility`가 정하며,
  *   광고 마크업에는 전혀 의존하지 않는다 — 기준은 **댓글을 쓸 맥락**이다.
  */
-export default function CommentDock({ targetRef, isFeedback }: CommentDockProps) {
+export default function CommentDock({ targetRef, isFeedback, composing, onOpen }: CommentDockProps) {
   const [visible, setVisible] = useState(false)
+
+  // effect를 재등록하지 않고 최신 값을 읽기 위한 ref
+  const composingRef = useRef(composing)
+  composingRef.current = composing
+
+  // 열림 상태가 바뀌는 즉시 배너 지연 신호를 갱신한다 — 다음 스크롤을 기다리지 않는다.
+  //   닫힘도 반드시 여기서 처리해야 한다. 안 하면 사용자가 스크롤할 때까지 배너가 계속 미뤄진다.
+  useEffect(() => {
+    if (composing) {
+      setCommentEntryActive(true)
+      return
+    }
+    const node = targetRef.current
+    if (!node) return
+    const r = node.getBoundingClientRect()
+    setCommentEntryActive(r.bottom > 0 && r.top < window.innerHeight)
+  }, [composing, targetRef])
 
   useEffect(() => {
     const el = targetRef.current
@@ -46,9 +69,11 @@ export default function CommentDock({ targetRef, isFeedback }: CommentDockProps)
         documentHeight: document.documentElement.scrollHeight,
       })
       setVisible(result.visible)
-      // 가입 배너 지연 신호 — 입력창이 **실제로 화면에 있는 동안**에만 미룬다.
-      // Dock 노출 여부와는 별개다(Dock이 안 보여도 입력창이 보이면 배너는 미뤄야 한다).
-      setCommentEntryActive(result.inputInView)
+      // 가입 배너 지연 신호.
+      //  · 입력창이 실제로 화면에 있는 동안 미룬다 (C1-A)
+      //  · [C1-B] 하단 직접 입력이 열려 있는 동안에는 **계속** 미룬다. 상한 없음.
+      //    글을 쓰는 중에 배너가 덮으면 쓰던 내용을 잃는다. 닫거나 제출하면 아래 cleanup이 신호를 내린다.
+      setCommentEntryActive(composingRef.current || result.inputInView)
     }
 
     // 스크롤마다 레이아웃을 재는 대신 프레임당 1회로 묶는다.
@@ -69,18 +94,12 @@ export default function CommentDock({ targetRef, isFeedback }: CommentDockProps)
     }
   }, [targetRef])
 
-  const handleTap = useCallback(() => {
-    const el = targetRef.current
-    if (!el) return
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    // 스크롤이 끝난 뒤 포커스해야 화면이 튀지 않는다. preventScroll로 이중 스크롤도 막는다.
-    window.setTimeout(() => {
-      const field = el.querySelector<HTMLTextAreaElement>('textarea')
-      field?.focus({ preventScroll: true })
-    }, 320)
-  }, [targetRef])
+  // [C1-B] 스크롤해서 데려가지 않는다 — 입력 영역을 손가락 아래로 가져온다.
+  //   포커스는 CommentSection이 전환 렌더 직후에 준다.
+  const handleTap = useCallback(() => { onOpen() }, [onOpen])
 
-  if (!visible) return null
+  // 입력이 열려 있으면 Dock은 숨는다 — 하단에 두 개가 겹치면 안 된다.
+  if (composing || !visible) return null
 
   const label = isFeedback ? '의견을 남겨주세요' : '댓글을 남겨주세요'
 
