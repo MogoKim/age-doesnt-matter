@@ -6,7 +6,7 @@ import {
   personaBoardForRouting,
   personaIdsForRoutingBoard,
   personasForRoutingBoard,
-} from '../../agents/cafe/curator-shared'
+} from '../../agents/core/persona-registry'
 
 describe('갱년기톡 curator persona 정책', () => {
   it('MENOPAUSE 라우팅은 STORY 전체가 아니라 전용 allowlist만 사용한다', () => {

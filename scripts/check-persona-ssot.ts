@@ -66,18 +66,6 @@ const BASELINE: BaselineEntry[] = [
     reason: 'PR-7c/7e — 전환용 facade. 소비자 이전 후 제거',
   },
   {
-    file: 'agents/cafe/content-curator.ts',
-    module: 'curator-shared', kind: 'named-import',
-    symbols: ['PersonaMatch', 'PERSONAS', 'DESIRE_PERSONA_MAP', 'matchPersona', 'personaBoardForRouting', 'personaIdsForRoutingBoard'],
-    reason: 'PR-7c — curator-shared persona 블록 분리 후 전환',
-  },
-  {
-    file: 'agents/cafe/popular-curator.ts',
-    module: 'curator-shared', kind: 'named-import',
-    symbols: ['matchPersona', 'personaBoardForRouting', 'personasForRoutingBoard'],
-    reason: 'PR-7c — 동일',
-  },
-  {
     file: 'agents/coo/persona-matcher-profiles.ts',
     module: 'persona-data', kind: 'named-import',
     symbols: ['PERSONAS'],
@@ -88,12 +76,6 @@ const BASELINE: BaselineEntry[] = [
     module: 'curator-shared', kind: 'named-import',
     symbols: ['PERSONAS'],
     reason: 'PR-7d — registry로 흡수',
-  },
-  {
-    file: 'src/__tests__/curator-menopause-persona.test.ts',
-    module: 'curator-shared', kind: 'named-import',
-    symbols: ['MENOPAUSE_CURATOR_PERSONA_IDS', 'isMenopauseCuratorPersona', 'matchPersona', 'personaBoardForRouting', 'personaIdsForRoutingBoard', 'personasForRoutingBoard'],
-    reason: 'PR-7c — curator 라우팅 테스트, 전환과 함께 이동',
   },
 ]
 

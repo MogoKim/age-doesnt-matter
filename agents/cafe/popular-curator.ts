@@ -4,17 +4,19 @@
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
 import {
+  matchPersona,
+  personaBoardForRouting,
+  personasForRoutingBoard,
+} from '../core/persona-registry.js'
+import {
   stripMarkdown,
   replaceCafeReferences,
   stripCafeBoilerplate,
   toCuratedHtmlContent,
   toCuratedSummary,
-  matchPersona,
   guessDesire,
   resolveCommunityBoard,
   resolveMenopauseRouteOverride,
-  personaBoardForRouting,
-  personasForRoutingBoard,
 } from './curator-shared.js'
 import { getCuratorBotUser, countTodayPostsByPersona, AUTHOR_DAILY_POST_CAP } from './curator-users.js'
 import { generateCommunitySlug } from '../core/slug.js'

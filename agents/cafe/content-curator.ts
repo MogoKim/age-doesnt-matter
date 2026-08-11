@@ -17,9 +17,11 @@ import {
   PERSONAS,
   DESIRE_PERSONA_MAP,
   matchPersona,
-  resolveBoardFromRef,
   personaBoardForRouting,
   personaIdsForRoutingBoard,
+} from '../core/persona-registry.js'
+import {
+  resolveBoardFromRef,
   guessDesire,
   stripMarkdown,
   replaceCafeReferences,
