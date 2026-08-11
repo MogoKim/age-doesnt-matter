@@ -40,6 +40,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | `src/components/features/community/PostCTA*` | F13 |
 | `src/lib/experiments*`, `src/app/admin/(panel)/ab-tests*`, `src/lib/queries/admin/admin.experiments-web*` | F16 |
 | `src/lib/track.ts`, `src/app/api/events/route.ts`, `src/middleware.ts`, `src/lib/queries/admin/admin.dashboard*`, `src/lib/queries/admin/admin.retention*`, `src/lib/anon-cid*` | F19 |
+| `src/components/common/SignupPromptBanner*`, `src/components/common/AddToHomeScreen*`, `src/lib/browser-env*`, `src/lib/inapp-redirect*`, `src/lib/app-links*` | **F20**(정책) + F01·F02·F13 |
 | `src/components/features/community/InlineRelatedPosts*`, `.../TrackedPostLink*` | F17 |
 | `src/lib/votes*`, `src/lib/vote-status*`, `src/lib/ai/vote-draft*`, `src/app/api/votes*`, `src/components/features/vote*`, `src/app/admin/(panel)/vote-events*`, `src/components/admin/VoteEventManager*` | F18 |
 | `src/components/ad/ListBanner*`, `src/app/api/ad-impression*` | F14 |
@@ -94,7 +95,8 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | F16 | 웹 A/B 테스트 인프라 | `src/lib/experiments/` + `src/app/admin/(panel)/ab-tests/` + `src/lib/queries/admin/admin.experiments-web.ts` + ExperimentState 모델 | 실험 레지스트리(코드 SSOT) + 어드민 현황·편집. f01 문구·타이밍 + twa01 게이트 모두 종료(위너 고정), 현재 운영 실험 없음·인프라 유지(다음 실험 대기) | INFRA | — | [F16](F16-ab-test-infra.md) | ACTIVE | 2026-08-06 |
 | F17 | 네이버 유입자 락인 (글 상세) | `InlineRelatedPosts`+`TrackedPostLink` + `getRelatedCommunityPosts`(posts.community) + `community/[boardSlug]/[postId]/page.tsx` + events/route.ts 면제 | 비회원 글상세에 ①본문끝 같은 고민 글 ②하단 관련글 교체 + 측정. 네이버 오가닉 유입자 락인. (정체성 배너는 2026-08-06 제거 — DETAIL_HEADER 띠배너가 대체) | RELATION | ALL | [F17](F17-naver-lockin.md) | ACTIVE | 2026-08-06 |
 | F18 | 오늘의 투표 (참여형 이벤트 MVP) | `src/lib/votes.ts`+`vote-status.ts`+`ai/vote-draft.ts` + `src/app/api/votes/*` + `src/components/features/vote/VoteWidget.tsx` + HeroSlider 분기 + 글상세 위젯·댓글 진영배지(CommentSection/Item) + `src/app/admin/(panel)/vote-events/*`+`VoteEventManager` + VoteEvent/VoteBallot 모델 | 하루 1투표(KST 20시 자동마감): 홈 배너·게시글에서 비회원 포함 즉시 투표·실시간 %·댓글 진영 배지 + 어드민 통제판(seed 조작·봇 댓글 AI 초안 batch·실측 분리 집계) | RELATION | ALL | [F18](F18-daily-vote.md) | ACTIVE | 2026-07-13 |
-| F19 | 비회원 세션 계측 기준 (**운영 기준 문서**) | `src/lib/track.ts` + `src/app/api/events/route.ts` + `src/middleware.ts`(`_anon_sid`) + `src/lib/queries/admin/admin.dashboard.ts`·`admin.retention.ts`·`admin.experiments-web.ts`·`admin.experiments-retention.ts` | 비회원 UV·D1/D7·A/B 분모의 식별자 정의. **문서만 존재(2026-08-07), 구현 미착수** — 첫 방문 동시 이벤트 세션 파편화로 비회원 재방문 52.9% 유실 | INFRA | — | [F19](F19-anonymous-session-measurement.md) | ACTIVE | 2026-08-07 |
+| F19 | 비회원 세션 계측 기준 (**운영 기준 문서**) | `src/lib/track.ts` + `src/app/api/events/route.ts` + `src/middleware.ts`(`_anon_sid`) + `src/lib/anon-cid.ts` + `src/lib/queries/admin/admin.dashboard.ts`·`admin.retention.ts`·`admin.experiments-web.ts`·`admin.experiments-retention.ts` | 비회원 UV·D1/D7·A/B 분모의 식별자 정의. **구현 적용 완료(2026-08-07)** — 첫 방문 동시 이벤트 파편화(기기당 sessionId 4.57→1.18) 해소 | INFRA | — | [F19](F19-anonymous-session-measurement.md) | ACTIVE | 2026-08-11 |
+| F20 | 전환 채널 정책 (**정책 정본**) | `src/components/common/SignupPromptBanner.tsx` + `src/components/features/community/PostCTA.tsx` + `src/components/common/AddToHomeScreen.tsx` + `src/lib/browser-env.ts`·`inapp-redirect.ts`·`app-links.ts` | 채널(iOS/Android·인앱/외부브라우저·앱)별 가입·앱·인앱 유도 정책의 단일 진실. 실험 대상과 단독 변경 대상 분리, 금지 문구·UX 고정 | INFRA | — | [F20](F20-conversion-channel-policy.md) | ACTIVE | 2026-08-11 |
 
 ---
 
