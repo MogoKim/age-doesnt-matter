@@ -241,6 +241,21 @@ jobs:
       # baseline 방식 — 기존 잔존 위반은 통과, 새 위반만 실패. 전면 차단은 PR-7e.
       - name: persona SSoT 가드 (baseline)
         run: npx tsx scripts/check-persona-ssot.ts
+      # persona 계열은 src/__tests__ 에 있어 agents/·scripts/ 만 바뀐 PR에서는
+      # quality job(Lint→Typecheck→Test→Build)이 paths-filter에 걸리지 않아 skip된다.
+      # PR-7b처럼 persona 정의를 대량 이동하는 변경은 로컬 검증만으로 merge하지 않기 위해
+      # 영향권 테스트를 이 job에서 직접 돌린다. npm ci·prisma generate를 재사용해 비용 증가가 없다.
+      - name: persona 계열 테스트 (agents·scripts 변경 영향권)
+        run: |
+          npx vitest run \
+            src/__tests__/persona-curator-bridge.test.ts \
+            src/__tests__/persona-registry.test.ts \
+            src/__tests__/persona-matcher-shadow.test.ts \
+            src/__tests__/curator-menopause-persona.test.ts \
+            src/__tests__/board-routing.test.ts \
+            src/__tests__/curator-empty-content.test.ts \
+            src/__tests__/normalize-source-references.test.ts \
+            src/__tests__/strip-cafe-boilerplate.test.ts
 
   # Step 6: 어드민 E2E — src/app/(admin)/** 변경 시
   e2e-admin:
