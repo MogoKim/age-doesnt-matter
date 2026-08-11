@@ -18,6 +18,7 @@ import {
 } from '@/lib/comment-entry-state'
 import CommentDock from '@/components/features/community/CommentDock'
 
+const onOpen = vi.fn()
 const VH = 800
 const DOC_H = VH + VH * 5   // 긴 글
 
@@ -54,7 +55,7 @@ async function renderNearComment(isFeedback = false) {
   const target = makeTarget(VH + 100)
   setScrollY(VH)
   const ref = { current: target } as React.RefObject<HTMLElement>
-  const view = render(<CommentDock targetRef={ref} isFeedback={isFeedback} />)
+  const view = render(<CommentDock targetRef={ref} isFeedback={isFeedback} composing={false} onOpen={onOpen} />)
   await scrollTo(VH)
   return { target, view }
 }
@@ -94,7 +95,7 @@ describe('CommentDock — 표시 조건', () => {
   it('글 초반에는 뜨지 않는다 (광고를 덮던 원인)', async () => {
     const target = makeTarget(VH + 100)
     const ref = { current: target } as React.RefObject<HTMLElement>
-    render(<CommentDock targetRef={ref} />)
+    render(<CommentDock targetRef={ref} composing={false} onOpen={onOpen} />)
     await scrollTo(0)
     expect(screen.queryByTestId('comment-dock')).toBeNull()
   })
@@ -107,7 +108,7 @@ describe('CommentDock — 표시 조건', () => {
   it('입력창이 화면에 보이면 숨는다 (입력창 2개 방지)', async () => {
     const target = makeTarget(VH + 100)
     const ref = { current: target } as React.RefObject<HTMLElement>
-    render(<CommentDock targetRef={ref} />)
+    render(<CommentDock targetRef={ref} composing={false} onOpen={onOpen} />)
     await scrollTo(VH)
     expect(screen.getByTestId('comment-dock')).toBeTruthy()
 
@@ -121,7 +122,7 @@ describe('CommentDock — 표시 조건', () => {
   it('입력창을 지나치면 다시 숨는다 — 아래 광고 구간을 덮지 않는다', async () => {
     const target = makeTarget(VH + 100)
     const ref = { current: target } as React.RefObject<HTMLElement>
-    render(<CommentDock targetRef={ref} />)
+    render(<CommentDock targetRef={ref} composing={false} onOpen={onOpen} />)
     await scrollTo(VH)
     expect(screen.getByTestId('comment-dock')).toBeTruthy()
 
@@ -161,22 +162,49 @@ describe('CommentDock — 생김새', () => {
 })
 
 describe('CommentDock — 동작', () => {
-  it('탭하면 기존 입력창으로 스크롤하고 포커스를 준다 (C1-A 동작 유지)', async () => {
+  it('[C1-B] 탭하면 스크롤이 아니라 하단 직접 입력을 연다', async () => {
     const { target } = await renderNearComment()
     const scrollSpy = vi.fn()
     target.scrollIntoView = scrollSpy
-    const focusSpy = vi.spyOn(target.querySelector('textarea')!, 'focus')
 
     fireEvent.click(screen.getByTestId('comment-dock').querySelector('button')!)
-    expect(scrollSpy).toHaveBeenCalledTimes(1)
-    await act(async () => { await new Promise((r) => setTimeout(r, 400)) })
-    expect(focusSpy).toHaveBeenCalledWith({ preventScroll: true })
+    expect(onOpen).toHaveBeenCalledTimes(1)
+    // 스크롤로 데려가지 않는다 — 입력을 손가락 아래로 가져온다
+    expect(scrollSpy).not.toHaveBeenCalled()
+  })
+
+  it('[C1-B] 입력이 열려 있으면 Dock은 숨는다 (하단 중복 방지)', async () => {
+    const target = makeTarget(VH + 100)
+    setScrollY(VH)
+    const ref = { current: target } as React.RefObject<HTMLElement>
+    const { rerender } = render(<CommentDock targetRef={ref} composing={false} onOpen={onOpen} />)
+    await scrollTo(VH)
+    expect(screen.getByTestId('comment-dock')).toBeTruthy()
+
+    rerender(<CommentDock targetRef={ref} composing={true} onOpen={onOpen} />)
+    expect(screen.queryByTestId('comment-dock')).toBeNull()
+  })
+
+  it('[C1-B] 입력이 열려 있는 동안 배너 지연이 유지되고, 닫으면 해제된다', async () => {
+    const target = makeTarget(VH + 100)   // 입력창은 화면 밖
+    setScrollY(VH)
+    const ref = { current: target } as React.RefObject<HTMLElement>
+    const { rerender } = render(<CommentDock targetRef={ref} composing={false} onOpen={onOpen} />)
+    await scrollTo(VH)
+    expect(isCommentEntryActive()).toBe(false)
+
+    await act(async () => { rerender(<CommentDock targetRef={ref} composing={true} onOpen={onOpen} />) })
+    expect(isCommentEntryActive()).toBe(true)
+
+    // 닫으면 스크롤을 기다리지 않고 즉시 해제된다
+    await act(async () => { rerender(<CommentDock targetRef={ref} composing={false} onOpen={onOpen} />) })
+    expect(isCommentEntryActive()).toBe(false)
   })
 
   it('배너 지연 신호는 입력창의 실제 노출에만 연동된다 (Dock 노출과 별개)', async () => {
     const target = makeTarget(VH + 100)
     const ref = { current: target } as React.RefObject<HTMLElement>
-    render(<CommentDock targetRef={ref} />)
+    render(<CommentDock targetRef={ref} composing={false} onOpen={onOpen} />)
 
     // Dock은 떴지만 입력창은 아직 화면 밖 → 배너를 미룰 이유가 없다
     await scrollTo(VH)

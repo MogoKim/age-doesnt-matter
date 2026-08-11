@@ -57,6 +57,33 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
   // [PR-C1] 하단 진입점이 스크롤·포커스로 데려갈 대상
   const inputAreaRef = useRef<HTMLDivElement>(null)
 
+  // [PR-C1-B] 하단 직접 입력 — 입력 영역을 **그 자리에서** 하단 고정으로 전환한다.
+  //   입력창을 하나 더 만들지 않는 이유: 비회원 입력은 Turnstile 위젯 생명주기를 갖는다.
+  //   인스턴스가 둘이면 위젯도 둘이 되어 토큰이 어긋나고, 제출이 15초 대기 후 조용히 실패한다.
+  //   같은 인스턴스의 className만 바꾸므로 리마운트가 없고 입력 중 내용·닉네임·번호가 보존된다.
+  const [composing, setComposing] = useState(false)
+  //   fixed로 빠지면 흐름에서 빠져 아래 콘텐츠가 위로 밀린다 → 원래 높이를 자리로 남겨 레이아웃 흔들림을 막는다.
+  const [placeholderHeight, setPlaceholderHeight] = useState<number>()
+
+  const openCompose = useCallback(() => {
+    setPlaceholderHeight(inputAreaRef.current?.getBoundingClientRect().height)
+    setComposing(true)
+  }, [])
+
+  const closeCompose = useCallback(() => {
+    setComposing(false)
+    setPlaceholderHeight(undefined)
+  }, [])
+
+  // 열린 뒤 포커스한다. 전환 렌더가 끝난 다음이어야 커서가 잡힌다.
+  useEffect(() => {
+    if (!composing) return
+    const id = window.setTimeout(() => {
+      inputAreaRef.current?.querySelector('textarea')?.focus({ preventScroll: true })
+    }, 60)
+    return () => window.clearTimeout(id)
+  }, [composing])
+
   // 진영 배지 — 이 글에 연동된 투표가 있을 때만 값이 옴 (1회 fetch)
   useEffect(() => {
     let cancelled = false
@@ -290,21 +317,52 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
         <div className="h-24 bg-muted rounded-2xl animate-pulse" aria-hidden="true" />
       ) : (
         // [PR-C1] 입력 영역을 감싸 하단 진입점(CommentDock)이 여기로 데려올 수 있게 한다.
-        //   래퍼 div는 스타일이 없다 — 기존 레이아웃·간격을 바꾸지 않기 위해서다.
-        <div ref={inputAreaRef}>
-          {resolvedIsLoggedIn ? (
-            <CommentInput postId={postId} onOptimisticAdd={resolvedCurrentUser ? handleOptimisticAdd : undefined} />
-          ) : (
-            <GuestCommentInput postId={postId} onOptimisticAdd={handleGuestOptimisticAdd} isGreeting={isGreeting} isFeedback={isFeedback} />
-          )}
+        // [PR-C1-B] 바깥 div는 **자리만 지킨다** — 안쪽이 fixed로 빠져도 아래 콘텐츠가 밀리지 않게.
+        <div style={placeholderHeight !== undefined ? { minHeight: placeholderHeight } : undefined}>
+          <div
+            ref={inputAreaRef}
+            className={
+              composing
+                ? // 모바일에서만 하단 고정. 데스크탑은 원래대로 둔다(Dock 자체가 md:hidden이라 열릴 일도 없다).
+                  // 55dvh 상한 + 내부 스크롤 — 전면 시트가 아니라 뒤 본문이 계속 보이는 부분 전환이다.
+                  // z-[96]은 Dock과 같은 층: 가입 배너(150)보다 아래이되, 열려 있는 동안 배너는 미뤄진다.
+                  'max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:z-[96] max-md:max-h-[55dvh] max-md:overflow-y-auto max-md:overscroll-contain max-md:border-t max-md:border-border max-md:bg-card max-md:px-3 max-md:pb-[max(8px,env(safe-area-inset-bottom))] max-md:pt-1 max-md:shadow-[0_-4px_16px_rgba(0,0,0,0.12)]'
+                : undefined
+            }
+          >
+            {composing && (
+              // 닫기는 ✕ 버튼만이다. 바깥 탭으로 닫으면 쓰던 글이 실수로 사라진다.
+              <div className="sticky top-0 z-10 -mx-3 mb-1 flex justify-end bg-card px-3 pt-1 md:hidden">
+                <button
+                  type="button"
+                  onClick={closeCompose}
+                  aria-label="댓글 입력 닫기"
+                  data-testid="comment-compose-close"
+                  className="flex min-h-[52px] min-w-[52px] items-center justify-center rounded-full text-muted-foreground transition-colors active:bg-muted"
+                >
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                    <path d="M18 6 6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
+            {resolvedIsLoggedIn ? (
+              <CommentInput postId={postId} onOptimisticAdd={resolvedCurrentUser ? handleOptimisticAdd : undefined} />
+            ) : (
+              <GuestCommentInput postId={postId} onOptimisticAdd={handleGuestOptimisticAdd} isGreeting={isGreeting} isFeedback={isFeedback} />
+            )}
+          </div>
         </div>
       )}
 
       {/*
         하단 댓글 진입점 — 모바일 전용. 입력창이 화면 밖일 때만 뜬다.
         readOnly(마감)·인증 확인 전에는 띄우지 않는다: 눌러도 갈 곳이 없기 때문이다.
+        입력이 열려 있는 동안에는 Dock을 숨긴다 — 하단에 두 개가 겹치면 안 된다.
       */}
-      {!readOnly && authKnown && <CommentDock targetRef={inputAreaRef} isFeedback={isFeedback} />}
+      {!readOnly && authKnown && (
+        <CommentDock targetRef={inputAreaRef} isFeedback={isFeedback} composing={composing} onOpen={openCompose} />
+      )}
     </section>
   )
 }
