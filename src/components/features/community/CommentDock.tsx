@@ -1,17 +1,18 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { setCommentEntryActive, resetCommentEntryActive } from '@/lib/comment-entry-state'
+import { resolveDockVisibility } from '@/lib/comment-dock-visibility'
 
 interface CommentDockProps {
-  /** 실제 댓글 입력 영역. 이 요소가 화면에 있으면 Dock은 숨는다. */
+  /** 실제 댓글 입력 영역. Dock은 이 위치를 기준으로 보일지 정하고, 탭하면 여기로 데려간다. */
   targetRef: React.RefObject<HTMLElement | null>
   /** 의견수렴형(FEEDBACK) 글이면 '댓글'→'의견'. 기존 문구 정책과 맞춘다. */
   isFeedback?: boolean
 }
 
 /**
- * 하단 댓글 입력 진입점 (PR-C1) — 모바일 전용.
+ * 하단 댓글 입력 진입점 (PR-C1-A + 표시 조건 보정) — 모바일 전용.
  *
  * 왜 입력창을 하나 더 만들지 않았나:
  *   비회원 입력은 닉네임·번호 점진 노출과 Turnstile 위젯 생명주기를 갖는다.
@@ -19,37 +20,50 @@ interface CommentDockProps {
  *   그래서 Dock은 **입력창이 아니라 진입점**이다 — 누르면 기존 입력창으로 데려가 포커스만 준다.
  *   덕분에 비회원·회원 작성 흐름과 PR-C3 계측(focus·text_started…)이 그대로 살아 있다.
  *
- * 단순함이 요구사항이다:
- *   아이콘 + 안내 문구 한 줄. **댓글 수·정렬·부가 버튼을 넣지 않는다.**
- *   Blind·Remember의 하단 바가 좋은 이유도 기능이 적어서다.
+ * 언제 보이는가:
+ *   초기 C1-A는 "입력창이 화면 밖"이면 무조건 떠서 **글 최상단부터 하단을 점유**했고,
+ *   그 결과 본문 광고를 덮었다. 지금은 `resolveDockVisibility`가 정하며,
+ *   광고 마크업에는 전혀 의존하지 않는다 — 기준은 **댓글을 쓸 맥락**이다.
  */
 export default function CommentDock({ targetRef, isFeedback }: CommentDockProps) {
-  // 입력창이 화면에 없을 때만 Dock을 보인다 → 입력창이 둘로 보이는 혼란이 없다.
-  const [inputInView, setInputInView] = useState(true)
-  const dockRef = useRef<HTMLDivElement>(null)
+  const [visible, setVisible] = useState(false)
 
   useEffect(() => {
     const el = targetRef.current
     if (!el) return
 
-    // IO 미지원 환경은 Dock을 띄우지 않는다 — 기존 화면(입력창만 있는 상태)이 안전한 기본값이다.
-    if (typeof IntersectionObserver === 'undefined') {
-      setInputInView(true)
-      return
+    let frame = 0
+    const evaluate = () => {
+      frame = 0
+      const node = targetRef.current
+      if (!node) return
+      const rect = node.getBoundingClientRect()
+      const result = resolveDockVisibility({
+        inputTop: rect.top,
+        inputBottom: rect.bottom,
+        viewportHeight: window.innerHeight,
+        scrollY: window.scrollY,
+        documentHeight: document.documentElement.scrollHeight,
+      })
+      setVisible(result.visible)
+      // 가입 배너 지연 신호 — 입력창이 **실제로 화면에 있는 동안**에만 미룬다.
+      // Dock 노출 여부와는 별개다(Dock이 안 보여도 입력창이 보이면 배너는 미뤄야 한다).
+      setCommentEntryActive(result.inputInView)
     }
 
-    const io = new IntersectionObserver(
-      (entries) => {
-        const visible = entries.some((e) => e.isIntersecting)
-        setInputInView(visible)
-        // 배너 지연 신호 — 입력창이 화면에 있는 동안에는 가입 배너 자동 노출을 미룬다.
-        setCommentEntryActive(visible)
-      },
-      { threshold: 0.01 }
-    )
-    io.observe(el)
+    // 스크롤마다 레이아웃을 재는 대신 프레임당 1회로 묶는다.
+    const schedule = () => {
+      if (frame) return
+      frame = requestAnimationFrame(evaluate)
+    }
+
+    evaluate()
+    window.addEventListener('scroll', schedule, { passive: true })
+    window.addEventListener('resize', schedule, { passive: true })
     return () => {
-      io.disconnect()
+      if (frame) cancelAnimationFrame(frame)
+      window.removeEventListener('scroll', schedule)
+      window.removeEventListener('resize', schedule)
       // 글을 떠날 때 신호를 반드시 내린다. 안 내리면 다음 글에서 배너가 영영 안 뜬다.
       resetCommentEntryActive()
     }
@@ -66,19 +80,19 @@ export default function CommentDock({ targetRef, isFeedback }: CommentDockProps)
     }, 320)
   }, [targetRef])
 
-  if (inputInView) return null
+  if (!visible) return null
 
   const label = isFeedback ? '의견을 남겨주세요' : '댓글을 남겨주세요'
 
   return (
     <div
-      ref={dockRef}
       data-testid="comment-dock"
       /*
         z-[96]: 글쓰기 FAB(97)·가입 배너(150)보다 아래에 둔다.
         글 상세에서는 FAB이 애초에 렌더되지 않으므로(resolveWriteHref → null) 하단 버튼은 항상 하나뿐이고,
         배너가 뜨는 순간에는 배너가 위를 덮는 게 맞다 — 대신 배너 자동 노출 자체를
         댓글 입력 맥락에서 미루므로(comment-entry-state) 입력이 막히지 않는다.
+        ⚠️ 광고를 덮는 문제를 z-index로 풀지 않는다. 문제는 레이어가 아니라 **점유 시간**이었다.
       */
       className="fixed bottom-0 left-0 right-0 z-[96] border-t border-border bg-card px-4 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 shadow-[0_-2px_10px_rgba(0,0,0,0.08)] md:hidden"
     >

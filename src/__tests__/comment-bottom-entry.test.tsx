@@ -1,145 +1,192 @@
 /**
- * PR-C1 하단 댓글 입력 진입점.
+ * PR-C1-A 하단 댓글 입력 진입점 + 표시 조건 보정.
  *
  * 고정하는 것:
- *  1. Dock은 입력창이 화면 밖일 때만 뜨고, 댓글 수를 표시하지 않는다
- *  2. 탭하면 기존 입력창으로 데려가 포커스를 준다 (입력창을 새로 만들지 않는다)
- *  3. 댓글 입력이 화면에 있는 동안 가입 배너 자동 노출이 **미뤄진다** (취소가 아니다)
- *  4. 입력창이 화면을 벗어나면 배너가 **다시 뜬다**
+ *  1. 글 초반에는 Dock이 뜨지 않는다 (광고를 덮던 원인)
+ *  2. 댓글 영역이 가까워지면 뜨고, 입력창이 보이면 숨는다
+ *  3. 댓글 수를 표시하지 않고, Dock 안에 입력 필드를 만들지 않는다
+ *  4. 탭하면 기존 입력창으로 데려가 포커스를 준다
+ *  5. 배너 지연 신호는 **입력창의 실제 노출**에만 연동된다 (Dock 노출과 별개)
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import {
   isCommentEntryActive,
-  setCommentEntryActive,
   resetCommentEntryActive,
+  setCommentEntryActive,
   subscribeCommentEntryActive,
 } from '@/lib/comment-entry-state'
 import CommentDock from '@/components/features/community/CommentDock'
 
-/** IntersectionObserver 스텁 — 콜백을 테스트가 직접 호출해 교차 상태를 만든다. */
-let ioCallbacks: Array<(entries: Array<{ isIntersecting: boolean }>) => void> = []
-class StubIO {
-  constructor(cb: (entries: Array<{ isIntersecting: boolean }>) => void) { ioCallbacks.push(cb) }
-  observe() {}
-  disconnect() {}
+const VH = 800
+const DOC_H = VH + VH * 5   // 긴 글
+
+/** 뷰포트·문서 높이를 실제 값처럼 세운다 (happy-dom 기본값은 scrollHeight=0) */
+function setViewport() {
+  Object.defineProperty(window, 'innerHeight', { value: VH, configurable: true, writable: true })
+  Object.defineProperty(document.documentElement, 'scrollHeight', { value: DOC_H, configurable: true })
 }
-function setInputInView(visible: boolean) {
-  act(() => { ioCallbacks.forEach((cb) => cb([{ isIntersecting: visible }])) })
+function setScrollY(y: number) {
+  Object.defineProperty(window, 'scrollY', { value: y, configurable: true, writable: true })
+}
+
+/** 댓글 입력 영역을 만든다. rect는 테스트가 직접 정한다. */
+function makeTarget(top: number, height = 300) {
+  const el = document.createElement('div')
+  el.appendChild(document.createElement('textarea'))
+  document.body.appendChild(el)
+  el.getBoundingClientRect = () =>
+    ({ top, bottom: top + height, left: 0, right: 390, width: 390, height, x: 0, y: top, toJSON: () => ({}) }) as DOMRect
+  return el
+}
+
+/** 스크롤 이벤트를 흘려 Dock 판정을 다시 돌린다 (컴포넌트가 rAF로 묶어 처리) */
+async function scrollTo(y: number) {
+  setScrollY(y)
+  await act(async () => {
+    window.dispatchEvent(new Event('scroll'))
+    await new Promise((r) => setTimeout(r, 20))
+  })
+}
+
+/** 글 초반이 아닌 상태 + 댓글 근접 — Dock이 뜨는 기본 조건 */
+async function renderNearComment(isFeedback = false) {
+  const target = makeTarget(VH + 100)
+  setScrollY(VH)
+  const ref = { current: target } as React.RefObject<HTMLElement>
+  const view = render(<CommentDock targetRef={ref} isFeedback={isFeedback} />)
+  await scrollTo(VH)
+  return { target, view }
 }
 
 beforeEach(() => {
-  ioCallbacks = []
+  setViewport()
+  setScrollY(0)
   resetCommentEntryActive()
-  // @ts-expect-error 테스트 스텁
-  globalThis.IntersectionObserver = StubIO
+  // rAF를 타이머로 갈아끼워 스크롤 판정이 테스트 안에서 동기적으로 흐르게 한다
+  globalThis.requestAnimationFrame = ((cb: FrameRequestCallback) =>
+    Number(setTimeout(() => cb(0), 0))) as unknown as typeof requestAnimationFrame
+  globalThis.cancelAnimationFrame = ((id: number) =>
+    clearTimeout(id)) as unknown as typeof cancelAnimationFrame
 })
-afterEach(() => { cleanup(); resetCommentEntryActive() })
+afterEach(() => { cleanup(); resetCommentEntryActive(); document.body.innerHTML = '' })
 
 describe('comment-entry-state — 배너 지연 신호', () => {
   it('값이 바뀔 때만 구독자에게 알린다', () => {
     const seen: boolean[] = []
     const off = subscribeCommentEntryActive((v) => seen.push(v))
     setCommentEntryActive(true)
-    setCommentEntryActive(true)   // 중복 — 알리지 않는다
+    setCommentEntryActive(true)
     setCommentEntryActive(false)
     off()
-    setCommentEntryActive(true)   // 해제 후 — 알리지 않는다
+    setCommentEntryActive(true)
     expect(seen).toEqual([true, false])
   })
 
   it('reset은 항상 false로 되돌린다 — 다음 글에서 배너가 막히지 않게', () => {
     setCommentEntryActive(true)
-    expect(isCommentEntryActive()).toBe(true)
     resetCommentEntryActive()
     expect(isCommentEntryActive()).toBe(false)
   })
 })
 
-describe('CommentDock', () => {
-  function renderDock(isFeedback = false) {
-    const Harness = () => {
-      const ref = { current: document.createElement('div') } as React.RefObject<HTMLElement>
-      const ta = document.createElement('textarea')
-      ref.current!.appendChild(ta)
-      document.body.appendChild(ref.current!)
-      return <CommentDock targetRef={ref} isFeedback={isFeedback} />
-    }
-    return render(<Harness />)
-  }
-
-  it('입력창이 화면에 있으면 Dock이 뜨지 않는다 (입력창 2개 방지)', () => {
-    renderDock()
-    setInputInView(true)
+describe('CommentDock — 표시 조건', () => {
+  it('글 초반에는 뜨지 않는다 (광고를 덮던 원인)', async () => {
+    const target = makeTarget(VH + 100)
+    const ref = { current: target } as React.RefObject<HTMLElement>
+    render(<CommentDock targetRef={ref} />)
+    await scrollTo(0)
     expect(screen.queryByTestId('comment-dock')).toBeNull()
   })
 
-  it('입력창이 화면 밖이면 Dock이 뜬다', () => {
-    renderDock()
-    setInputInView(false)
+  it('댓글 영역이 가까워지면 뜬다', async () => {
+    await renderNearComment()
     expect(screen.getByTestId('comment-dock')).toBeTruthy()
   })
 
-  it('Dock에 댓글 수를 표시하지 않는다', () => {
-    renderDock()
-    setInputInView(false)
+  it('입력창이 화면에 보이면 숨는다 (입력창 2개 방지)', async () => {
+    const target = makeTarget(VH + 100)
+    const ref = { current: target } as React.RefObject<HTMLElement>
+    render(<CommentDock targetRef={ref} />)
+    await scrollTo(VH)
+    expect(screen.getByTestId('comment-dock')).toBeTruthy()
+
+    // 입력창이 화면 안으로 들어옴
+    target.getBoundingClientRect = () =>
+      ({ top: 200, bottom: 500, left: 0, right: 390, width: 390, height: 300, x: 0, y: 200, toJSON: () => ({}) }) as DOMRect
+    await scrollTo(VH + 200)
+    expect(screen.queryByTestId('comment-dock')).toBeNull()
+  })
+
+  it('입력창을 지나치면 다시 숨는다 — 아래 광고 구간을 덮지 않는다', async () => {
+    const target = makeTarget(VH + 100)
+    const ref = { current: target } as React.RefObject<HTMLElement>
+    render(<CommentDock targetRef={ref} />)
+    await scrollTo(VH)
+    expect(screen.getByTestId('comment-dock')).toBeTruthy()
+
+    target.getBoundingClientRect = () =>
+      ({ top: -900, bottom: -600, left: 0, right: 390, width: 390, height: 300, x: 0, y: -900, toJSON: () => ({}) }) as DOMRect
+    await scrollTo(DOC_H - VH)
+    expect(screen.queryByTestId('comment-dock')).toBeNull()
+  })
+})
+
+describe('CommentDock — 생김새', () => {
+  it('댓글 수를 표시하지 않는다', async () => {
+    await renderNearComment()
     const text = screen.getByTestId('comment-dock').textContent ?? ''
     expect(text).toBe('댓글을 남겨주세요')
     expect(text).not.toMatch(/\d/)
   })
 
-  it('의견수렴형이면 문구가 의견으로 바뀐다', () => {
-    renderDock(true)
-    setInputInView(false)
+  it('의견수렴형이면 문구가 의견으로 바뀐다', async () => {
+    await renderNearComment(true)
     expect(screen.getByTestId('comment-dock').textContent).toBe('의견을 남겨주세요')
   })
 
-  it('Dock 안에 입력 필드를 만들지 않는다 — 진입점이지 입력창이 아니다', () => {
-    renderDock()
-    setInputInView(false)
+  it('Dock 안에 입력 필드를 만들지 않는다 — 진입점이지 입력창이 아니다', async () => {
+    await renderNearComment()
     const dock = screen.getByTestId('comment-dock')
     expect(dock.querySelector('textarea')).toBeNull()
     expect(dock.querySelector('input')).toBeNull()
   })
 
-  it('모바일 전용 — 데스크탑에서는 숨는다', () => {
-    renderDock()
-    setInputInView(false)
-    expect(screen.getByTestId('comment-dock').className).toContain('md:hidden')
+  it('모바일 전용이고, z-index를 올리지 않는다 (배너 150·FAB 97보다 아래)', async () => {
+    await renderNearComment()
+    const cls = screen.getByTestId('comment-dock').className
+    expect(cls).toContain('md:hidden')
+    expect(cls).toContain('z-[96]')
   })
+})
 
-  it('가입 배너(z-150)·FAB(z-97)보다 아래에 둔다', () => {
-    renderDock()
-    setInputInView(false)
-    expect(screen.getByTestId('comment-dock').className).toContain('z-[96]')
-  })
-
-  it('입력창이 화면에 들어오면 배너 지연 신호를 켠다', () => {
-    renderDock()
-    setInputInView(true)
-    expect(isCommentEntryActive()).toBe(true)
-    setInputInView(false)
-    expect(isCommentEntryActive()).toBe(false)
-  })
-
-  it('탭하면 기존 입력창으로 스크롤하고 포커스를 준다', () => {
-    vi.useFakeTimers()
-    const target = document.createElement('div')
-    const ta = document.createElement('textarea')
-    target.appendChild(ta)
-    document.body.appendChild(target)
+describe('CommentDock — 동작', () => {
+  it('탭하면 기존 입력창으로 스크롤하고 포커스를 준다 (C1-A 동작 유지)', async () => {
+    const { target } = await renderNearComment()
     const scrollSpy = vi.fn()
     target.scrollIntoView = scrollSpy
-    const focusSpy = vi.spyOn(ta, 'focus')
+    const focusSpy = vi.spyOn(target.querySelector('textarea')!, 'focus')
 
+    fireEvent.click(screen.getByTestId('comment-dock').querySelector('button')!)
+    expect(scrollSpy).toHaveBeenCalledTimes(1)
+    await act(async () => { await new Promise((r) => setTimeout(r, 400)) })
+    expect(focusSpy).toHaveBeenCalledWith({ preventScroll: true })
+  })
+
+  it('배너 지연 신호는 입력창의 실제 노출에만 연동된다 (Dock 노출과 별개)', async () => {
+    const target = makeTarget(VH + 100)
     const ref = { current: target } as React.RefObject<HTMLElement>
     render(<CommentDock targetRef={ref} />)
-    setInputInView(false)
-    fireEvent.click(screen.getByTestId('comment-dock').querySelector('button')!)
 
-    expect(scrollSpy).toHaveBeenCalledTimes(1)
-    act(() => { vi.advanceTimersByTime(400) })
-    expect(focusSpy).toHaveBeenCalledWith({ preventScroll: true })
-    vi.useRealTimers()
+    // Dock은 떴지만 입력창은 아직 화면 밖 → 배너를 미룰 이유가 없다
+    await scrollTo(VH)
+    expect(screen.getByTestId('comment-dock')).toBeTruthy()
+    expect(isCommentEntryActive()).toBe(false)
+
+    // 입력창이 화면에 들어옴 → 배너 지연
+    target.getBoundingClientRect = () =>
+      ({ top: 200, bottom: 500, left: 0, right: 390, width: 390, height: 300, x: 0, y: 200, toJSON: () => ({}) }) as DOMRect
+    await scrollTo(VH + 200)
+    expect(isCommentEntryActive()).toBe(true)
   })
 })
