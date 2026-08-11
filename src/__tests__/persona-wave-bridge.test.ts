@@ -111,8 +111,9 @@ describe('새 bridge·adapter를 만들지 않았다', () => {
 
   it('PR-6 전용 bridge가 추가되지 않았다', () => {
     expect(registrySrc).not.toContain('PR-6')
-    // seed(PR-4) + curator(PR-5a) 두 개뿐이어야 한다
+    // seed(PR-4) + curator(PR-5a) + SEED_PERSONAS 별칭(PR-7a) — PR-6은 하나도 더하지 않았다.
+    // PR-7a에서 scripts/one-time-fix-posts.ts를 옮기며 seed PERSONAS 별칭이 추가돼 2→3이 됐다.
     const bridges = registrySrc.match(/^export \{[^}]*\} from '\.\.\//gm) ?? []
-    expect(bridges).toHaveLength(2)
+    expect(bridges).toHaveLength(3)
   })
 })

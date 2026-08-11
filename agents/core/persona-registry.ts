@@ -32,6 +32,12 @@ import { inferFamilyStatus, type FamilyStatus, type PersonaProfile } from '../co
  * 구조적으로 보장되고(같은 참조), 새 adapter가 생기지 않는다.
  */
 export { getPersona, getAllPersonaIds, type Persona } from '../seed/persona-data.js'
+/**
+ * seed PERSONAS는 `SEED_PERSONAS` 별칭으로 낸다 — 아래 curator `PERSONAS`(225명 배열)와
+ * 이름이 겹치기 때문이다. 둘은 타입도 다르다(seed=Record<string,Persona> / curator=PersonaMatch[]).
+ * PR-7a에서 scripts/one-time-fix-posts.ts를 registry 경유로 옮기며 추가. 원본 export 제거는 PR-7e.
+ */
+export { PERSONAS as SEED_PERSONAS } from '../seed/persona-data.js'
 
 /**
  * Temporary bridge for PR-5a curator-users migration. Exposes the exact legacy curator
