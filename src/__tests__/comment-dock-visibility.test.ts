@@ -25,6 +25,7 @@ function at(o: Partial<Parameters<typeof resolveDockVisibility>[0]>) {
   return resolveDockVisibility({
     inputTop: 5000,
     inputBottom: 5200,
+    sectionTop: o.sectionTop ?? o.inputTop ?? 5000,   // 지정 없으면 입력창과 같은 위치
     viewportHeight: VH,
     scrollY: 0,
     documentHeight: LONG_DOC,
@@ -50,7 +51,8 @@ describe('글 초반 — 뜨지 않는다 (이번 보정의 핵심)', () => {
 
   it('재현된 최악 지점(scrollY=129, 뷰포트 844)에서 뜨지 않는다', () => {
     const r = resolveDockVisibility({
-      inputTop: 4200, inputBottom: 4500, viewportHeight: 844, scrollY: 129, documentHeight: 6003,
+      inputTop: 4200, inputBottom: 4500, sectionTop: 1693,
+      viewportHeight: 844, scrollY: 129, documentHeight: 6003,
     })
     expect(r.visible).toBe(false)
     expect(r.reason).toBe('too_early')
@@ -159,8 +161,76 @@ describe('경계', () => {
 
   it('스크롤 불가 문서에서도 터지지 않는다', () => {
     const r = resolveDockVisibility({
-      inputTop: 900, inputBottom: 1000, viewportHeight: VH, scrollY: 0, documentHeight: VH,
+      inputTop: 900, inputBottom: 1000, sectionTop: 900,
+      viewportHeight: VH, scrollY: 0, documentHeight: VH,
     })
     expect(r.visible).toBe(false)
+  })
+})
+
+
+describe('[2026-08-11 보정] 댓글이 많아도 Dock이 밀리지 않는다', () => {
+  /**
+   * 프로덕션 실측(post2, 390x844): 문서 6803px · 댓글 7개
+   *   첫 광고 끝 통과 scrollY=722 / 댓글 섹션 시작 도달 849 / 입력창 y=3587
+   *   보정 전 Dock은 scrollY=2086에서야 떴다 — 광고 끝보다 1364px 늦었다.
+   */
+  const P2 = { viewportHeight: 844, documentHeight: 6803 }
+
+  it('입력창이 한참 아래여도 댓글 섹션이 가까우면 뜬다 (핵심)', () => {
+    // scrollY=849 시점: 섹션 시작이 화면 하단(844)에 막 닿음, 입력창은 아직 2738px 아래
+    const r = resolveDockVisibility({
+      ...P2, scrollY: 849,
+      sectionTop: 1693 - 849,      // = 844
+      inputTop: 3587 - 849,        // = 2738  ← 보정 전이라면 근접 실패
+      inputBottom: 3587 - 849 + 300,
+    })
+    expect(r.visible).toBe(true)
+    expect(r.reason).toBe('near_comment')
+  })
+
+  it('보정 전 기준(입력창)이었다면 같은 지점에서 안 떴다 — 회귀 감지용', () => {
+    // 입력창을 섹션 자리에 놓지 않으면(=옛 기준) 근접이 성립하지 않음을 명시한다
+    const oldStyle = resolveDockVisibility({
+      ...P2, scrollY: 849,
+      sectionTop: 2738,            // 섹션도 입력창 위치라고 가정 = 옛 동작
+      inputTop: 2738, inputBottom: 3038,
+    })
+    expect(oldStyle.visible).toBe(false)
+    expect(oldStyle.reason).toBe('not_near_yet')
+  })
+
+  it('댓글 목록을 읽는 동안(섹션이 화면 위로 지나가도) 계속 보인다', () => {
+    const r = resolveDockVisibility({
+      ...P2, scrollY: 1600,
+      sectionTop: -500,            // 섹션은 위로 지나감
+      inputTop: 1987, inputBottom: 2287,
+    })
+    expect(r.visible).toBe(true)
+    expect(r.reason).toBe('near_comment')
+  })
+
+  it('글 초반에는 섹션 기준이어도 뜨지 않는다', () => {
+    const r = resolveDockVisibility({
+      ...P2, scrollY: 129, sectionTop: 1564, inputTop: 3458, inputBottom: 3758,
+    })
+    expect(r.visible).toBe(false)
+    expect(r.reason).toBe('too_early')
+  })
+
+  it('입력창이 보이면 여전히 숨긴다 (입력창 2개 방지)', () => {
+    const r = resolveDockVisibility({
+      ...P2, scrollY: 3000, sectionTop: -1300, inputTop: 400, inputBottom: 700,
+    })
+    expect(r.visible).toBe(false)
+    expect(r.reason).toBe('input_in_view')
+  })
+
+  it('입력창을 지나치면 숨긴다 — 아래 광고 구간을 덮지 않는다', () => {
+    const r = resolveDockVisibility({
+      ...P2, scrollY: 4500, sectionTop: -2800, inputTop: -1200, inputBottom: -900,
+    })
+    expect(r.visible).toBe(false)
+    expect(r.reason).toBe('scrolled_past')
   })
 })

@@ -56,6 +56,9 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
   const [voteBadges, setVoteBadges] = useState<VoteBadges | null>(null)
   // [PR-C1] 하단 진입점이 스크롤·포커스로 데려갈 대상
   const inputAreaRef = useRef<HTMLDivElement>(null)
+  // [2026-08-11] Dock 노출 시점의 기준 — 댓글 섹션 시작.
+  //   입력창은 목록 아래라 댓글이 많으면 Dock이 늦게 떴다.
+  const sectionRef = useRef<HTMLElement>(null)
 
   // [PR-C1-B] 하단 직접 입력 — 입력 영역을 **그 자리에서** 하단 고정으로 전환한다.
   //   입력창을 하나 더 만들지 않는 이유: 비회원 입력은 Turnstile 위젯 생명주기를 갖는다.
@@ -230,7 +233,7 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
         : null
 
   return (
-    <section className="mb-12">
+    <section ref={sectionRef} className="mb-12">
       {bestComments.length > 0 && (
         <div className="mb-6 p-4 bg-primary/5 rounded-2xl border border-primary/10">
           <p className="text-caption font-bold text-primary-strong mb-2">{L.popular}</p>
@@ -361,7 +364,7 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
         입력이 열려 있는 동안에는 Dock을 숨긴다 — 하단에 두 개가 겹치면 안 된다.
       */}
       {!readOnly && authKnown && (
-        <CommentDock targetRef={inputAreaRef} isFeedback={isFeedback} composing={composing} onOpen={openCompose} />
+        <CommentDock targetRef={inputAreaRef} sectionRef={sectionRef} isFeedback={isFeedback} composing={composing} onOpen={openCompose} />
       )}
     </section>
   )
