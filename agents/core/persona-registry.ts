@@ -34,6 +34,17 @@ import { inferFamilyStatus, type FamilyStatus, type PersonaProfile } from '../co
 export { getPersona, getAllPersonaIds, type Persona } from '../seed/persona-data.js'
 
 /**
+ * Temporary bridge for PR-5a curator-users migration. Exposes the exact legacy curator
+ * persona source (225 entries) through the registry so curator output stays byte-identical.
+ * Direct legacy exports are removed in PR-7 (along with a CI guard).
+ *
+ * 변환하지 않는다 — 원본 배열/타입을 그대로 내보낸다. curator-shared.ts는 persona 정의뿐
+ * 아니라 텍스트 유틸·보드 라우팅도 함께 갖고 있어, 나머지 소비자(content-curator ·
+ * popular-curator)는 PR-7에서 persona 블록 분리와 함께 정리한다.
+ */
+export { PERSONAS, type PersonaMatch } from '../cafe/curator-shared.js'
+
+/**
  * author-reply 프롬프트 입력 형태. PR-3에서 author-reply-persona.ts가 registry를
  * 호출하게 되면서 순환 참조를 피하기 위해 정의를 이쪽으로 옮겼다.
  * author-reply-persona.ts가 그대로 re-export하므로 기존 import 경로는 유지된다.
