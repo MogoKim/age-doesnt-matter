@@ -20,7 +20,7 @@ import { readFileSync } from 'node:fs'
  * persona 정의 원본 — basename으로 매치한다.
  * 같은 디렉토리에서는 './curator-shared.js'처럼 쓰기 때문에 디렉토리를 포함하면 놓친다.
  */
-const ORIGIN_MODULES = ['persona-data', 'curator-shared'] as const
+const ORIGIN_MODULES = ['persona-data', 'curator-shared', 'curator-personas'] as const
 
 /** curator-shared는 텍스트 유틸도 함께 갖고 있다. persona 심볼을 가져갈 때만 위반으로 본다. */
 const CURATOR_PERSONA_SYMBOLS = [
@@ -56,6 +56,15 @@ type BaselineEntry = {
 }
 
 const BASELINE: BaselineEntry[] = [
+  {
+    // PR-7b: persona 정의를 curator-personas.ts로 분리하면서, 기존 소비자가 깨지지 않도록
+    // curator-shared.ts가 facade로 re-export한다. PR-7c에서 소비자를 옮기고 PR-7e에서 걷어낸다.
+    file: 'agents/cafe/curator-shared.ts',
+    module: 'curator-personas', kind: 'named-reexport',
+    symbols: ['PERSONAS', 'DESIRE_PERSONA_MAP', 'MENOPAUSE_CURATOR_PERSONA_IDS', 'isMenopauseCuratorPersona',
+              'personasForRoutingBoard', 'personaIdsForRoutingBoard', 'personaBoardForRouting', 'matchPersona', 'PersonaMatch'],
+    reason: 'PR-7c/7e — 전환용 facade. 소비자 이전 후 제거',
+  },
   {
     file: 'agents/cafe/content-curator.ts',
     module: 'curator-shared', kind: 'named-import',
