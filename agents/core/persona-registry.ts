@@ -24,6 +24,16 @@ import { classifyTopicGroups, type TopicGroup } from '../coo/persona-matcher-pol
 import { inferFamilyStatus, type FamilyStatus, type PersonaProfile } from '../coo/persona-matcher-profiles.js'
 
 /**
+ * Temporary bridge for PR-4 seed migration. Exposes the exact legacy seed functions
+ * through the registry so seed output stays byte-identical. Direct legacy exports are
+ * removed in PR-7.
+ *
+ * 변환하지 않는다 — 원본 함수 객체를 그대로 내보낸다. seed 결과 동일성이
+ * 구조적으로 보장되고(같은 참조), 새 adapter가 생기지 않는다.
+ */
+export { getPersona, getAllPersonaIds, type Persona } from '../seed/persona-data.js'
+
+/**
  * author-reply 프롬프트 입력 형태. PR-3에서 author-reply-persona.ts가 registry를
  * 호출하게 되면서 순환 참조를 피하기 위해 정의를 이쪽으로 옮겼다.
  * author-reply-persona.ts가 그대로 re-export하므로 기존 import 경로는 유지된다.

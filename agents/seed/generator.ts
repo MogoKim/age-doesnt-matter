@@ -1,7 +1,8 @@
 import { createWithUsage } from '../core/ai-usage.js'
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma } from '../core/db.js'
-import { getPersona, getAllPersonaIds, type Persona } from './persona-data.js'
+// persona 정본은 registry 경유(PR-4). 원본 직접 import 금지 — CI 가드는 PR-7.
+import { getPersona, type Persona } from '../core/persona-registry.js'
 import type { ControversyTopic } from '../core/intelligence.js'
 import { parseTopComments } from '../cafe/types.js'
 import { hasYoungDemographicMarker } from '../community/content-transformer.js'
@@ -306,8 +307,6 @@ function stripMarkdown(text: string): string {
     .trim()
 }
 
-// re-export for scheduler.ts
-export { getAllPersonaIds, getPersona }
 
 
 
