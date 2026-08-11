@@ -74,7 +74,7 @@
       "owner_session": "codex-master",
       "priority": "P1",
       "category": "ops",
-      "trigger": "2026-08-08T10:00+09:00",
+      "trigger": "2026-09-08T10:00+09:00",
       "next_action": "비용이 급증하거나 사용량이 늘 때 재감사한다. PR #307 프롬프트 캐싱은 Haiku 4.5 최소 4,096 토큰 미달로 cache_read/cache_write 0, 비용 절감 0이므로 추가 보강은 보류한다.",
       "close_condition": "비용 급증 또는 사용량 증가 트리거 발생 시 사용처별 비용/호출량/목적/North Star 기여도 표를 재작성하고, 유지/감축/중단 후보와 owner/trigger/PASS 기준을 결정한다.",
       "pass_criteria": "North Star 직접 기여 비용과 비기여/중복/리포트성 비용을 분리하고, 감축 후보별 운영 영향·rollback 기준을 기록. 캐싱 재시도는 판정 프롬프트 품질 리스크가 절감액보다 작을 때만 진행.",
@@ -82,7 +82,7 @@
       "last_verified_at": null,
       "risk": "mid",
       "known_issue_type": "deferred",
-      "note": "2026-08-06 감사: 30일 $47.97 중 PSYCH_ANALYZE 46.5% + HAIKU_GATE 24.9% = 71%. PR #307로 프롬프트 캐싱을 적용했으나 2026-08-07 운영 실측에서 cache_read 0 · cache_write 0 · 비용 절감 0. 원인: Haiku 4.5 프롬프트 캐싱 최소 4,096 tokens 미달(HAIKU_GATE system 3,989 tokens, PSYCH SYSTEM_PROMPT 2,632 tokens). PR #307 rollback은 불필요 — 판정 분포·에러율·발행량 정상, 효과만 0. 토큰을 억지로 늘리는 프롬프트 보강은 HAIKU_GATE 판정 품질 리스크가 있어 보류한다. PR #302의 작성자 대댓글 companion 비용 증가는 댓글 참여·재방문을 만드는 North Star 정렬 비용으로 보고 차단 조건으로 삼지 않는다."
+      "note": "2026-08-06 감사: 30일 $47.97 중 PSYCH_ANALYZE 46.5% + HAIKU_GATE 24.9% = 71%. PR #307로 프롬프트 캐싱을 적용했으나 2026-08-07 운영 실측에서 cache_read 0 · cache_write 0 · 비용 절감 0. 원인: Haiku 4.5 프롬프트 캐싱 최소 4,096 tokens 미달(HAIKU_GATE system 3,989 tokens, PSYCH SYSTEM_PROMPT 2,632 tokens). PR #307 rollback은 불필요 — 판정 분포·에러율·발행량 정상, 효과만 0. 토큰을 억지로 늘리는 프롬프트 보강은 HAIKU_GATE 판정 품질 리스크가 있어 보류한다. PR #302의 작성자 대댓글 companion 비용 증가는 댓글 참여·재방문을 만드는 North Star 정렬 비용으로 보고 차단 조건으로 삼지 않는다. | 2026-08-11 trigger 정리: 기존 2026-08-08T10:00이 경과해 overdue로 절대누락금지에 상주했다. next_action이 \"비용 급증·사용량 증가 시 재감사\"라는 조건 기반인데 날짜 trigger가 붙어 있어 날짜가 지나면 영구 overdue가 되는 구조였다. 월 1회 정기 확인으로 재설정(2026-09-08). 그때 비용 급증이 없으면 다시 한 달 미룬다. 내용 정정(캐싱 무효·rollback 불필요·보강 보류)은 08-08에 이미 반영됨."
     },
     {
       "id": "L-YOUNGSELF-FALSEPOS",
