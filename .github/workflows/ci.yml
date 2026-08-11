@@ -237,6 +237,10 @@ jobs:
         env:
           BASE_REF: origin/${{ github.base_ref }}
         run: npx tsx scripts/check-ops-typecheck.ts
+      # persona 정의 원본(persona-data / curator-shared)을 registry 밖에서 직접 import하는 것을 막는다.
+      # baseline 방식 — 기존 잔존 위반은 통과, 새 위반만 실패. 전면 차단은 PR-7e.
+      - name: persona SSoT 가드 (baseline)
+        run: npx tsx scripts/check-persona-ssot.ts
 
   # Step 6: 어드민 E2E — src/app/(admin)/** 변경 시
   e2e-admin:

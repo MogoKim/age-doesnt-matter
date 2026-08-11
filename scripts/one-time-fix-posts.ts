@@ -6,7 +6,8 @@ import { Pool } from 'pg'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '../src/generated/prisma/client'
 import Anthropic from '@anthropic-ai/sdk'
-import { PERSONAS } from '../agents/seed/persona-data.js'
+// persona 정본은 registry 경유(PR-7a). seed PERSONAS는 SEED_PERSONAS 별칭(curator PERSONAS와 이름 충돌 회피).
+import { SEED_PERSONAS as PERSONAS } from '../agents/core/persona-registry.js'
 import { calculateTrendingScore } from '../src/lib/utils/trending.js'
 
 function parseDbUrl(url: string) {

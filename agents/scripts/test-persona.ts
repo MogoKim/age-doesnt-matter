@@ -8,7 +8,8 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk'
-import { getPersona } from '../seed/persona-data.js'
+// persona 정본은 registry 경유(PR-7a). 원본 직접 import 금지 — CI 가드 scripts/check-persona-ssot.ts
+import { getPersona } from '../core/persona-registry.js'
 import { DESIRE_PERSONA_MAP } from '../seed/generator.js'
 import { prisma, disconnect } from '../core/db.js'
 
