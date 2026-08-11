@@ -343,6 +343,15 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
         console.log(`[ContentCurator] 정화 후 본문 없음 reference 제외: "${p.title.slice(0, 20)}"`)
         return false
       }
+      // [sticky poison 2026-08-12] 원문 '펑'(내용 삭제) 글 선제 제외 — 위 empty-content와 같은 원칙.
+      //   publishCuratedContent의 DELETED_ORIGINAL gate는 결정론적이라 이 원문은 영구 발행 불가인데,
+      //   차단은 usedAt 미마킹이라 매 회차 같은 글이 다시 후보로 뽑힌다(실측 2026-08-11:
+      //   5건이 후보 15개의 33%를 6회차 내내 점유 → LOW_USABLE_COMMENTS 10건과 겹쳐 0발행 6회).
+      //   최종 gate는 그대로 둔다 — 여기서 거르는 건 반복 점유(sticky poison) 해소 목적이다.
+      if (isDeletedOriginal(p.title, p.content)) {
+        console.log(`[ContentCurator] 원문 삭제(펑) reference 선제 제외: "${p.title.slice(0, 20)}"`)
+        return false
+      }
       const flat = p.content.replace(/\n/g, ' ') // R1: 본문 줄바꿈 보존 후에도 시그널 매칭 유지
       const blocked = ACCESS_BLOCKED_SIGNALS_CC.some(s => flat.includes(s))
       if (blocked) { console.log(`[ContentCurator] 접근 차단 안내문 2차 필터 skip: "${p.title.slice(0, 30)}"`)
