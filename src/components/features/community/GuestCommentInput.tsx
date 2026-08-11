@@ -7,6 +7,7 @@ import AutoResizeTextarea from '@/components/common/AutoResizeTextarea'
 import { useToast } from '@/components/common/Toast'
 import { createGuestComment } from '@/lib/actions/guest-comments'
 import { trackEvent } from '@/lib/track'
+import { useCommentFunnel } from '@/hooks/useCommentFunnel'
 
 declare global {
   interface Window {
@@ -59,6 +60,16 @@ export default function GuestCommentInput({
 
   const isTopLevel = !parentId
   const showExtraFields = content.trim().length > 0
+
+  // [PR-C3] 성공 이전 단계 계측. 화면·문구·노출 타이밍·제출 로직은 건드리지 않는다.
+  const funnel = useCommentFunnel({ postId, parentId, userState: 'guest' })
+
+  // 등록 후 가입 유도 카드가 실제로 뜬 순간 (1회).
+  // 클릭은 새로 만들지 않는다 — KakaoSignupButton이 이미
+  // `kakao_button_click { from: 'guest_comment_success' }` 를 보내고 있어 그것이 이 카드의 클릭 이벤트다.
+  useEffect(() => {
+    if (showSignupPrompt) funnel.onSignupPromptShown()
+  }, [showSignupPrompt, funnel])
 
   // script preload — 마운트 시 inject, 네트워크 지연 흡수
   useEffect(() => {
@@ -128,6 +139,8 @@ export default function GuestCommentInput({
 
   async function handleSubmit() {
     if (!content.trim()) return
+    // 가드 통과 후에 보낸다 — 비활성 버튼 클릭이 시도로 잡히면 성공률 분모가 부풀려진다.
+    funnel.onSubmitAttempted()
     if (!nickname.trim()) { toast('댓글 남길 이름을 입력해 주세요', 'error'); return }
     if (password.length < 4) { toast('수정·삭제용 번호를 4자리로 입력해 주세요', 'error'); return }
 
@@ -140,6 +153,7 @@ export default function GuestCommentInput({
     try {
       const token = await waitForToken()
       if (!token) {
+        funnel.onSubmitFailed('turnstile_unavailable')
         toast('보안 확인 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.', 'error')
         return
       }
@@ -165,6 +179,8 @@ export default function GuestCommentInput({
             })
 
             if (result.error) {
+              // 사유 코드만 — 서버 원문 메시지는 문구 변경 시 집계가 깨지고 입력값이 섞일 수 있다.
+              funnel.onSubmitFailed('server_rejected')
               toast(result.error, 'error')
               tokenRef.current = ''
               if (window.turnstile && widgetIdRef.current) {
@@ -194,6 +210,7 @@ export default function GuestCommentInput({
               router.refresh()
             }
           } catch (error) {
+            funnel.onSubmitFailed('unexpected')
             console.error('[GuestCommentInput] submit failed', error)
             toast('댓글 등록 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.', 'error')
             tokenRef.current = ''
@@ -254,7 +271,7 @@ export default function GuestCommentInput({
   }
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-4 mt-4">
+    <div ref={funnel.viewRef} className="bg-card border border-border rounded-2xl p-4 mt-4">
       <p className="text-body font-bold text-foreground mb-3">
         {isGreeting ? '새 이웃을 환영해주세요' : isFeedback ? '의견을 남겨주세요' : '댓글을 남겨보세요'}
       </p>
@@ -262,7 +279,12 @@ export default function GuestCommentInput({
       <AutoResizeTextarea
         placeholder={resolvedPlaceholder}
         value={content}
-        onChange={(e) => setContent(e.target.value.slice(0, 500))}
+        onFocus={funnel.onInputFocus}
+        onChange={(e) => {
+          // 첫 글자에서만 1회 — 지웠다 다시 써도 재발화하지 않는다(훅이 보장).
+          if (e.target.value.trim()) funnel.onTextStarted()
+          setContent(e.target.value.slice(0, 500))
+        }}
         maxLength={500}
         rows={3}
         maxHeight={200}
@@ -278,6 +300,9 @@ export default function GuestCommentInput({
               type="text"
               placeholder="예: 또래친구"
               value={nickname}
+              // 신원 단계 "진입" = 이름·번호 칸을 실제로 눌렀을 때.
+              // showExtraFields가 켜지는 시점은 첫 글자와 같아 comment_text_started와 구분되지 않는다.
+              onFocus={funnel.onIdentityStarted}
               onChange={(e) => setNickname(e.target.value.slice(0, 10))}
               maxLength={10}
               className="w-full px-3 py-2 min-h-[52px] border border-border rounded-xl text-body text-foreground bg-background outline-none focus:border-primary transition-colors"
@@ -291,6 +316,7 @@ export default function GuestCommentInput({
               pattern="[0-9]*"
               placeholder="숫자 4자리"
               value={password}
+              onFocus={funnel.onIdentityStarted}
               onChange={(e) => setPassword(e.target.value.replace(/\D/g, '').slice(0, 4))}
               maxLength={4}
               className="w-full px-3 py-2 min-h-[52px] border border-border rounded-xl text-body text-foreground bg-background outline-none focus:border-primary transition-colors"

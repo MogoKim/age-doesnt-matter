@@ -45,7 +45,17 @@ export async function POST(request: NextRequest) {
   //  signup_banner_* 와 같은 시점에 발생하므로 같이 면제하지 않으면 429로 조용히 유실돼 실험 분모가 오염된다)
   // (inapp_redirect_*: 인앱→외부브라우저 유도 퍼널. signup_banner_clicked와 같은 클릭에서 함께 발생하므로
   //  같이 면제하지 않으면 page_view 버킷 공유로 429 유실 → attempted만 빠지고 opened만 남는 식으로 퍼널이 깨진다)
-  const CONVERSION_EVENTS = ['post_cta_clicked', 'sign_up', 'signup_step', 'identity_banner_view', 'related_post_click', 'exp1_exposure', 'signup_banner_eligible', 'signup_banner_shown', 'signup_banner_clicked', 'signup_banner_dismissed', 'related_recommend_view', 'top_promo_shown', 'top_promo_clicked', 'top_promo_dismissed', 'android_conversion_prompt_exposed', 'android_conversion_prompt_clicked', 'android_conversion_prompt_dismissed', 'inapp_redirect_attempted', 'inapp_redirect_opened', 'inapp_redirect_failed']
+  // (comment_*: 댓글 작성 퍼널 [PR-C3]. 두 가지 이유로 면제한다.
+  //  ① comment_input_view는 **글 상세를 볼 때마다** 발생해 page_view와 1:1로 늘어난다 →
+  //     면제하지 않으면 event:ip 버킷 소진이 빨라져, 지금까지 유실 0이던 comment_create까지 새로 깨진다.
+  //     (30일 실측: comment_create 112건 = DB 사람 댓글 112건. 이 무손실 상태를 이번 PR이 깨뜨리면 안 된다.)
+  //  ② 퍼널은 일부만 면제하면 단계 간 비율이 왜곡된다 — inapp_redirect_* 와 같은 이유다.
+  //     그래서 성공 이벤트인 comment_create까지 같은 계열로 묶어 함께 면제한다.
+  //  ⚠️ 무분별한 면제가 아님: view는 컴포넌트당 1회, focus·첫타이핑·신원단계도 각 1회로 클라에서 제한한다.
+  //     제출 시도·실패만 매번 보낸다(재시도 횟수 자체가 신호).
+  //  ⚠️ 알려진 공백: 가입 카드 클릭은 기존 kakao_button_click{from:'guest_comment_success'}가 담당하는데
+  //     이 이벤트는 댓글 전용이 아니라 전 서비스 공용이라 이번 PR 범위에서 면제하지 않았다.)
+  const CONVERSION_EVENTS = ['post_cta_clicked', 'sign_up', 'signup_step', 'identity_banner_view', 'related_post_click', 'exp1_exposure', 'signup_banner_eligible', 'signup_banner_shown', 'signup_banner_clicked', 'signup_banner_dismissed', 'related_recommend_view', 'top_promo_shown', 'top_promo_clicked', 'top_promo_dismissed', 'android_conversion_prompt_exposed', 'android_conversion_prompt_clicked', 'android_conversion_prompt_dismissed', 'inapp_redirect_attempted', 'inapp_redirect_opened', 'inapp_redirect_failed', 'comment_input_view', 'comment_input_focus', 'comment_text_started', 'comment_identity_started', 'comment_submit_attempted', 'comment_submit_failed', 'comment_signup_prompt_shown', 'comment_create']
   if (!CONVERSION_EVENTS.includes(body.eventName)) {
     const rl = await checkApiRateLimit(request, 'event', { max: 30 })
     if (rl) return rl
