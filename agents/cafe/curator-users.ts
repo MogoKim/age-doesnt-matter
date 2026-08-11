@@ -1,7 +1,8 @@
 // curator-users.ts — 큐레이터 봇 유저 DB 관리
 // curator-shared.ts는 순수함수만 유지 → DB 사이드이펙트는 이 파일에서만 처리
 import { prisma } from '../core/db.js'
-import { PERSONAS, type PersonaMatch } from './curator-shared.js'
+// curator persona 정본은 registry 경유(PR-5a). 원본 직접 import 금지 — CI 가드는 PR-7.
+import { PERSONAS, type PersonaMatch } from '../core/persona-registry.js'
 
 export const AUTHOR_DAILY_POST_CAP = 2
 

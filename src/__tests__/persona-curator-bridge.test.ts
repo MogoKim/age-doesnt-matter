@@ -1,0 +1,108 @@
+/**
+ * curator-users 경로 registry 전환 회귀 가드 (PR-5a / L-PERSONA-SSOT)
+ *
+ * curator-users.ts가 curator-shared.ts에서 PERSONAS/PersonaMatch를 직접 가져오던 경로를
+ * 끊고 registry를 통해 보게 바꿨다. registry는 변환하지 않고 원본을 그대로 재수출하므로
+ * 동일성은 "같은 참조"로 구조적으로 보장된다.
+ *
+ * ⚠️ PR-5a는 curator 계열 전체 전환이 아니다. content-curator · popular-curator는
+ * persona 외 텍스트 유틸·보드 라우팅도 함께 쓰기 때문에 PR-7(persona 블록 분리)에서 다룬다.
+ */
+import { describe, it, expect } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import * as registry from '../../agents/core/persona-registry'
+import * as curatorShared from '../../agents/cafe/curator-shared'
+
+const ROOT = join(__dirname, '../..')
+const curatorUsersSrc = readFileSync(join(ROOT, 'agents/cafe/curator-users.ts'), 'utf8')
+const registrySrc = readFileSync(join(ROOT, 'agents/core/persona-registry.ts'), 'utf8')
+
+describe('registry curator bridge — 원본과 동일', () => {
+  it('225명 전수 동일 (registry 경유 vs 원본 직접)', () => {
+    expect(curatorShared.PERSONAS).toHaveLength(225)
+    expect(registry.PERSONAS).toHaveLength(curatorShared.PERSONAS.length)
+    const diffs: string[] = []
+    for (let i = 0; i < curatorShared.PERSONAS.length; i++) {
+      const a = registry.PERSONAS[i]
+      const b = curatorShared.PERSONAS[i]
+      if (JSON.stringify(a) !== JSON.stringify(b)) diffs.push(`${b.id}(값)`)
+      if (a !== b) diffs.push(`${b.id}(참조)`)
+    }
+    expect(diffs).toEqual([])
+  })
+
+  it('PERSONAS 배열 참조 동일 (복사본 아님)', () => {
+    expect(registry.PERSONAS).toBe(curatorShared.PERSONAS)
+  })
+
+  it('id 목록·순서 동일', () => {
+    expect(registry.PERSONAS.map(p => p.id)).toEqual(curatorShared.PERSONAS.map(p => p.id))
+  })
+
+  it('PersonaMatch 타입 계약 유지 (필수 필드 존재)', () => {
+    const p = registry.PERSONAS[0]
+    for (const f of ['id', 'nickname', 'board', 'style', 'patterns', 'topics', 'quirks', 'examples'] as const) {
+      expect(p, f).toHaveProperty(f)
+    }
+    expect(typeof p.id).toBe('string')
+    expect(typeof p.nickname).toBe('string')
+    expect(Array.isArray(p.patterns)).toBe(true)
+  })
+})
+
+describe('id → nickname fallback (getCuratorBotUser 로직 보존)', () => {
+  /** curator-users.ts:11 과 동일한 식 — registry 경유로도 같은 값이 나와야 한다 */
+  const lookup = (src: typeof registry.PERSONAS, id: string) =>
+    src.find(p => p.id === id)?.nickname ?? id
+
+  it('알려진 id는 nickname 반환 — 전수 동일', () => {
+    const diffs: string[] = []
+    for (const p of curatorShared.PERSONAS) {
+      if (lookup(registry.PERSONAS, p.id) !== lookup(curatorShared.PERSONAS, p.id)) diffs.push(p.id)
+    }
+    expect(diffs).toEqual([])
+  })
+
+  it('알 수 없는 id는 id 자신으로 fallback — 양쪽 동일', () => {
+    for (const bogus of ['__NOPE__', 'ZZZ999', '']) {
+      expect(lookup(registry.PERSONAS, bogus)).toBe(lookup(curatorShared.PERSONAS, bogus))
+      expect(lookup(registry.PERSONAS, bogus)).toBe(bogus)
+    }
+  })
+})
+
+describe('curator-users 전환 — 직접 의존 제거', () => {
+  it("curator-users.ts에 './curator-shared' 직접 import 0", () => {
+    expect(curatorUsersSrc).not.toContain("from './curator-shared.js'")
+    expect(curatorUsersSrc).not.toContain('from "./curator-shared.js"')
+  })
+
+  it('registry를 통해 가져온다', () => {
+    expect(curatorUsersSrc).toMatch(
+      /import \{ PERSONAS, type PersonaMatch \} from '\.\.\/core\/persona-registry\.js'/,
+    )
+  })
+
+  it('DB 로직은 그대로다 (PR-5a 범위 밖)', () => {
+    for (const sym of [
+      'getCuratorBotUser', 'countTodayPostsByPersona', 'AUTHOR_DAILY_POST_CAP',
+      'prisma.user.upsert', 'P2002', 'nickname conflict',
+    ]) {
+      expect(curatorUsersSrc, sym).toContain(sym)
+    }
+  })
+})
+
+describe('임시 bridge임을 코드가 밝힌다', () => {
+  it('registry에 PR-5a / PR-7 제거 예정이 명시돼 있다', () => {
+    expect(registrySrc).toContain('Temporary bridge for PR-5a curator-users migration')
+    expect(registrySrc).toContain('removed in PR-7')
+  })
+
+  it('bridge는 변환하지 않는다 — 원본을 그대로 재수출', () => {
+    expect(registrySrc).toMatch(
+      /export \{ PERSONAS, type PersonaMatch \} from '\.\.\/cafe\/curator-shared\.js'/,
+    )
+  })
+})
