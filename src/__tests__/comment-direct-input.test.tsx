@@ -57,13 +57,23 @@ const dock = () => screen.queryByTestId('comment-dock')
 const openedPanel = () => document.querySelector(`.${CSS.escape(OPEN_CLASS)}`)
 const contentBox = () => screen.getByPlaceholderText('댓글을 남겨주세요... (최대 500자)') as HTMLTextAreaElement
 
-/** Dock이 뜨는 상태를 만든다: 입력 영역이 화면 아래 근접 + 화면 절반 스크롤 */
+/**
+ * Dock이 뜨는 상태를 만든다.
+ * 실제 화면과 같은 배치여야 한다 — **댓글 섹션은 화면 안, 입력 영역은 목록 아래(화면 밖)**.
+ * 둘을 같은 위치에 두면 입력창까지 화면 안이 되어 `input_in_view`로 Dock이 숨는다.
+ * (Dock 노출 기준이 섹션 시작 + 마진 0이므로 섹션이 실제로 화면에 들어와야 뜬다)
+ */
 function setupVisibleDock() {
   Object.defineProperty(window, 'innerHeight', { value: VH, configurable: true, writable: true })
   Object.defineProperty(document.documentElement, 'scrollHeight', { value: VH * 6, configurable: true })
   Object.defineProperty(window, 'scrollY', { value: VH, configurable: true, writable: true })
+  const rect = (top: number, height = 300) =>
+    ({ top, bottom: top + height, left: 0, right: 390, width: 390, height, x: 0, y: top, toJSON: () => ({}) }) as DOMRect
   Element.prototype.getBoundingClientRect = function () {
-    return { top: VH + 100, bottom: VH + 400, left: 0, right: 390, width: 390, height: 300, x: 0, y: VH + 100, toJSON: () => ({}) } as DOMRect
+    // 댓글 섹션 루트: 화면 안 → 근접 성립
+    if ((this as Element).tagName === 'SECTION') return rect(VH - 100)
+    // 그 외(입력 영역 등): 목록 아래 멀리 → input_in_view 아님
+    return rect(VH * 3)
   }
 }
 async function flushScroll() {

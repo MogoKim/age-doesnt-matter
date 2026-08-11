@@ -36,7 +36,7 @@ function at(o: Partial<Parameters<typeof resolveDockVisibility>[0]>) {
 describe('상수', () => {
   it('의도한 값으로 고정한다', () => {
     expect(MIN_SCROLL_RATIO).toBe(0.5)
-    expect(NEAR_VIEWPORT_RATIO).toBe(0.8)
+    expect(NEAR_VIEWPORT_RATIO).toBe(0)   // 0.8 → 0 (첫 광고를 덮던 회귀 보정)
     expect(LONG_DOC_MIN_SCREENS).toBe(3)
     expect(READ_PROGRESS_THRESHOLD).toBe(0.75)
   })
@@ -60,11 +60,11 @@ describe('글 초반 — 뜨지 않는다 (이번 보정의 핵심)', () => {
 
   it('화면 절반을 스크롤하기 전까지는 댓글이 가까워도 뜨지 않는다', () => {
     // 입력창이 바로 아래(근접)인데도 스크롤이 모자라면 안 뜬다
-    const justBefore = at({ scrollY: VH * MIN_SCROLL_RATIO - 1, inputTop: VH + 10, inputBottom: VH + 300 })
+    const justBefore = at({ scrollY: VH * MIN_SCROLL_RATIO - 1, sectionTop: VH - 10, inputTop: VH + 10, inputBottom: VH + 300 })
     expect(justBefore.visible).toBe(false)
     expect(justBefore.reason).toBe('too_early')
 
-    const justAfter = at({ scrollY: VH * MIN_SCROLL_RATIO, inputTop: VH + 10, inputBottom: VH + 300 })
+    const justAfter = at({ scrollY: VH * MIN_SCROLL_RATIO, sectionTop: VH - 10, inputTop: VH + 10, inputBottom: VH + 300 })
     expect(justAfter.visible).toBe(true)
     expect(justAfter.reason).toBe('near_comment')
   })
@@ -94,6 +94,7 @@ describe('짧은 글 — 즉시 노출되지 않는다', () => {
     const r = at({
       documentHeight: SHORT_DOC,
       scrollY: VH * MIN_SCROLL_RATIO + 10,
+      sectionTop: VH - 100,
       inputTop: VH + 100,
       inputBottom: VH + 400,
     })
@@ -151,12 +152,19 @@ describe('입력창 상태 우선순위', () => {
 })
 
 describe('경계', () => {
-  it('근접 경계는 화면 높이의 1.8배 지점이다', () => {
-    const base = { scrollY: VH, documentHeight: LONG_DOC }
-    const inside = at({ ...base, inputTop: VH * (1 + NEAR_VIEWPORT_RATIO), inputBottom: VH * 2.5 })
+  it('근접 경계는 화면 하단선이다 — 섹션이 화면에 들어오는 순간', () => {
+    const base = { scrollY: VH, documentHeight: LONG_DOC, inputTop: VH * 3, inputBottom: VH * 3 + 300 }
+    const inside = at({ ...base, sectionTop: VH * (1 + NEAR_VIEWPORT_RATIO) })      // = VH
     expect(inside.reason).toBe('near_comment')
-    const outside = at({ ...base, inputTop: VH * (1 + NEAR_VIEWPORT_RATIO) + 1, inputBottom: VH * 2.5 })
+    const outside = at({ ...base, sectionTop: VH * (1 + NEAR_VIEWPORT_RATIO) + 1 }) // 화면 밖 1px
     expect(outside.visible).toBe(false)
+  })
+
+  it('마진 0이라 "미리 당겨" 띄우지 않는다 — 광고를 덮던 원인', () => {
+    // 섹션이 화면 아래 100px에 있으면(예전 0.8 마진이면 근접) 이제는 뜨지 않는다
+    const r = at({ scrollY: VH, documentHeight: LONG_DOC, sectionTop: VH + 100, inputTop: VH * 3, inputBottom: VH * 3 + 300 })
+    expect(r.visible).toBe(false)
+    expect(r.reason).toBe('not_near_yet')
   })
 
   it('스크롤 불가 문서에서도 터지지 않는다', () => {
