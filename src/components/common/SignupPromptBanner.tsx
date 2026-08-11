@@ -20,6 +20,7 @@ import { trackEvent } from '@/lib/track'
 import { useAppEnvironment } from '@/hooks/useAppEnvironment'
 import { getExperimentVariant } from '@/lib/experiments/assign'
 import { buildPlayStoreUrl } from '@/lib/app-links'
+import { isCommentEntryActive, subscribeCommentEntryActive } from '@/lib/comment-entry-state'
 import {
   ANDROID_CONVERSION_CONTENT,
   ANDROID_CONVERSION_EVENTS,
@@ -297,6 +298,14 @@ export function SignupPromptBanner() {
       } else if (!timerFired && !scrolledRef.current) {
         return
       }
+      // [PR-C1] 댓글 입력이 화면에 있는 동안에는 **미룬다**(취소가 아니다).
+      //   배너는 정독 85%에 뜨는데 그 지점이 사용자가 댓글 입력에 닿는 순간이라, 함께 깔리는
+      //   `fixed inset-0` dim이 입력을 물리적으로 막아왔다. 글 상세에서는 댓글 입력이 우선이다.
+      //   ⚠️ alreadyFired를 세우기 **전에** 빠지므로 트리거가 소모되지 않는다 —
+      //      입력창이 화면을 벗어나면 아래 구독이 tryFire를 다시 부른다.
+      //   ⚠️ 문구·CTA·타깃·노출 횟수·실험 정의는 그대로다. 시점만 양보한다.
+      //      variant 분기 이전이라 A/B 두 팔에 동일하게 적용된다(비교 편향 없음).
+      if (isCommentEntryActive()) return
       if (!canShow()) return
       alreadyFired = true
       if (timerId) { clearTimeout(timerId); timerId = null }
@@ -352,9 +361,17 @@ export function SignupPromptBanner() {
     }
     document.addEventListener('visibilitychange', handleVisibility)
 
+    // [PR-C1] 댓글 입력이 화면을 벗어나면 즉시 재시도한다.
+    //   스크롤 핸들러는 85% 이상일 때만 tryFire를 부르므로, 위로 스크롤해 댓글창을 벗어난 경우
+    //   이 구독이 없으면 배너가 영영 미뤄진다.
+    const unsubscribe = subscribeCommentEntryActive((active) => {
+      if (!active) tryFire()
+    })
+
     return () => {
       if (timerId) clearTimeout(timerId)
       document.removeEventListener('visibilitychange', handleVisibility)
+      unsubscribe()
       tryFireRef.current = () => {}
     }
   }, [pathname, isLoggedIn, status, isTWA, isCapacitor])
