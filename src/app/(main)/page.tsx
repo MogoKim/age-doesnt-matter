@@ -162,7 +162,7 @@ export default function HomePage() {
     alternateName: '우나어',
     url: process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com',
     logo: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'}/logo.png`,
-    description: '우리 나이가 어때서 — 40대 50대 60대 여성 커뮤니티',
+    description: '우리 나이가 어때서 — 40대 50대 여성 커뮤니티',
     // [SEO 2026-07-21] "50대 커뮤니티" 쿼리 신호 보강 — 타깃 독자·주제 명시 (화면 비노출)
     audience: {
       '@type': 'PeopleAudience',
@@ -205,7 +205,7 @@ export default function HomePage() {
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteJsonLd) }}
         />
-        <h1 className="sr-only">우리 나이가 어때서 — 40대 50대 60대 여성 커뮤니티</h1>
+        <h1 className="sr-only">우리 나이가 어때서 — 40대 50대 여성 커뮤니티</h1>
         <div className="max-w-[1200px] mx-auto">
           <HeroSlider />
 
