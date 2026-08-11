@@ -13,9 +13,9 @@ const CANONICAL = `${BASE_URL}/topic/menopause`
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: '갱년기 — 폐경·완경부터 몸과 마음의 변화까지 | 40대 50대 60대 여성',
+  title: '갱년기 — 폐경·완경부터 몸과 마음의 변화까지',
   description:
-    '안면홍조와 불면, 관절 통증, 감정 기복, 병원과 호르몬 치료 선택까지. 갱년기를 지나는 40대 50대 60대 여성이 '
+    '안면홍조와 불면, 관절 통증, 감정 기복, 병원과 호르몬 치료 선택까지. 갱년기를 지나는 40대 50대 여성이 '
     + '실제로 묻고 답한 이야기와 정리된 정보를 주제별로 모았습니다.',
   alternates: { canonical: CANONICAL },
   robots: { index: true, follow: true },
