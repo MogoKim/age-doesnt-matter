@@ -40,15 +40,31 @@ export { getPersona, getAllPersonaIds, type Persona } from '../seed/persona-data
 export { PERSONAS as SEED_PERSONAS } from '../seed/persona-data.js'
 
 /**
- * Temporary bridge for PR-5a curator-users migration. Exposes the exact legacy curator
- * persona source (225 entries) through the registry so curator output stays byte-identical.
- * Direct legacy exports are removed in PR-7 (along with a CI guard).
+ * Temporary bridge for curator persona migration (PR-5a → PR-7c).
+ * Exposes the exact legacy curator persona source (225 entries) through the registry
+ * so curator output stays byte-identical. Direct legacy exports are removed in PR-7e.
  *
- * 변환하지 않는다 — 원본 배열/타입을 그대로 내보낸다. curator-shared.ts는 persona 정의뿐
- * 아니라 텍스트 유틸·보드 라우팅도 함께 갖고 있어, 나머지 소비자(content-curator ·
- * popular-curator)는 PR-7에서 persona 블록 분리와 함께 정리한다.
+ * 변환하지 않는다 — 원본 배열/함수를 그대로 내보낸다.
+ *
+ * PR-7b에서 persona 정의가 curator-personas.ts로 분리됐으므로, 여기서는 facade
+ * (curator-shared.ts)를 거치지 않고 **정의 원본을 직접** 재수출한다. facade는
+ * 소비자가 0이 되는 시점에 PR-7e에서 걷어낸다.
+ *
+ * 라우팅 헬퍼(matchPersona 등)까지 함께 내보내는 이유: content-curator ·
+ * popular-curator가 persona 선택에 이들을 쓰는데, 정본 진입점을 registry 하나로
+ * 유지하기 위해서다(PR-7c 창업자 결정). curator-personas.ts 직접 import는 금지다.
  */
-export { PERSONAS, type PersonaMatch } from '../cafe/curator-shared.js'
+export {
+  PERSONAS,
+  DESIRE_PERSONA_MAP,
+  MENOPAUSE_CURATOR_PERSONA_IDS,
+  isMenopauseCuratorPersona,
+  personasForRoutingBoard,
+  personaIdsForRoutingBoard,
+  personaBoardForRouting,
+  matchPersona,
+  type PersonaMatch,
+} from '../cafe/curator-personas.js'
 
 /**
  * author-reply 프롬프트 입력 형태. PR-3에서 author-reply-persona.ts가 registry를

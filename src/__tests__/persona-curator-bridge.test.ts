@@ -95,14 +95,42 @@ describe('curator-users 전환 — 직접 의존 제거', () => {
 })
 
 describe('임시 bridge임을 코드가 밝힌다', () => {
-  it('registry에 PR-5a / PR-7 제거 예정이 명시돼 있다', () => {
-    expect(registrySrc).toContain('Temporary bridge for PR-5a curator-users migration')
-    expect(registrySrc).toContain('removed in PR-7')
+  it('registry에 임시 bridge / 제거 예정이 명시돼 있다', () => {
+    expect(registrySrc).toContain('Temporary bridge for curator persona migration')
+    expect(registrySrc).toContain('removed in PR-7e')
   })
 
-  it('bridge는 변환하지 않는다 — 원본을 그대로 재수출', () => {
-    expect(registrySrc).toMatch(
-      /export \{ PERSONAS, type PersonaMatch \} from '\.\.\/cafe\/curator-shared\.js'/,
-    )
+  it('bridge는 변환하지 않는다 — 정의 원본(curator-personas)을 그대로 재수출', () => {
+    // PR-7c: facade(curator-shared)를 거치지 않고 정의 원본에서 직접 재수출한다.
+    expect(registrySrc).toMatch(/from '\.\.\/cafe\/curator-personas\.js'/)
+    // 재수출 블록 안에 PR-7c가 요구한 9심볼이 전부 있다
+    const block = registrySrc.match(/export \{([^}]*)\} from '\.\.\/cafe\/curator-personas\.js'/)
+    expect(block).not.toBeNull()
+    const names = (block![1]).split(',').map(x => x.trim().replace(/^type /, '')).filter(Boolean)
+    for (const sym of [
+      'PERSONAS', 'PersonaMatch', 'DESIRE_PERSONA_MAP', 'MENOPAUSE_CURATOR_PERSONA_IDS',
+      'isMenopauseCuratorPersona', 'personasForRoutingBoard', 'personaIdsForRoutingBoard',
+      'personaBoardForRouting', 'matchPersona',
+    ]) {
+      expect(names).toContain(sym)
+    }
+  })
+
+  it('발행 경로(content/popular-curator)는 persona를 registry에서만 가져온다', () => {
+    // PR-7c 회귀 가드: curator-shared로 되돌아가면 여기서 잡힌다
+    const PERSONA_SYMS = [
+      'PERSONAS', 'PersonaMatch', 'DESIRE_PERSONA_MAP', 'matchPersona',
+      'personaBoardForRouting', 'personaIdsForRoutingBoard', 'personasForRoutingBoard',
+    ]
+    for (const f of ['agents/cafe/content-curator.ts', 'agents/cafe/popular-curator.ts']) {
+      const src = readFileSync(join(process.cwd(), f), 'utf8')
+      for (const m of src.matchAll(/import\s*\{([^}]*)\}\s*from\s*'([^']+)'/g)) {
+        const names = m[1].split(',').map(x => x.trim().replace(/^type /, '')).filter(Boolean)
+        const hit = names.filter(n => PERSONA_SYMS.includes(n))
+        if (m[2].includes('curator-shared')) expect(hit).toEqual([])
+        // 정의 원본 직접 import도 금지 — registry가 유일한 진입점이다
+        if (m[2].includes('curator-personas')) expect(hit).toEqual([])
+      }
+    }
   })
 })
