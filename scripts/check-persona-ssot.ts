@@ -7,6 +7,10 @@
  *    **새 위반이 생기면 실패**한다. 원본 export 제거와 전면 차단은 PR-7e에서 한다.
  *    baseline 항목이 전환되면 이 목록에서 지운다 — 줄어들기만 해야 한다.
  *
+ * 감지 형태 4종 — named import / named re-export / namespace import / star re-export.
+ * namespace·star는 심볼을 특정할 수 없어 persona 정의 전체에 접근이 열리므로,
+ * curator-shared라도 위반으로 본다(텍스트 유틸만 쓸 거면 named import를 쓰면 된다).
+ *
  * 실행: npx tsx scripts/check-persona-ssot.ts
  */
 import { execFileSync } from 'node:child_process'
@@ -46,7 +50,8 @@ const BASELINE = new Map<string, string>([
   ['src/__tests__/curator-menopause-persona.test.ts', 'PR-7c — curator 라우팅 테스트, 전환과 함께 이동'],
 ])
 
-type Violation = { file: string; module: string; symbols: string[] }
+type AccessKind = 'named-import' | 'namespace-import' | 'named-reexport' | 'star-reexport'
+type Violation = { file: string; module: string; kind: AccessKind; symbols: string[] }
 
 function gitFiles(): string[] {
   return execFileSync('git', ['ls-files', 'agents', 'src', 'scripts'], { encoding: 'utf8' })
@@ -70,16 +75,37 @@ function findViolations(): Violation[] {
     try { src = readFile(file) } catch { continue }
 
     for (const mod of ORIGIN_MODULES) {
-      // import { A, B } from '...seed/persona-data.js'  (multi-line 포함)
-      const re = new RegExp(String.raw`import\s*(?:type\s*)?\{([^}]*)\}\s*from\s*['"][^'"]*${mod}(?:\.js)?['"]`, 'gs')
-      for (const m of src.matchAll(re)) {
-        const syms = m[1].split(',').map(s => s.trim().replace(/^type\s+/, '').split(/\s+as\s+/)[0].trim()).filter(Boolean)
-        if (syms.length === 0) continue
-        // curator-shared는 persona 심볼을 가져갈 때만 위반
-        const hit = mod === 'curator-shared'
-          ? syms.filter(s => CURATOR_PERSONA_SYMBOLS.includes(s))
-          : syms
-        if (hit.length > 0) out.push({ file, module: mod, symbols: hit })
+      const FROM = String.raw`from\s*['"][^'"]*${mod}(?:\.js)?['"]`
+
+      /** 심볼 목록을 가져가는 형태 — curator-shared는 persona 심볼일 때만 위반 */
+      const named = (re: RegExp, kind: AccessKind) => {
+        for (const m of src.matchAll(re)) {
+          const syms = m[1].split(',')
+            .map(x => x.trim().replace(/^type\s+/, '').split(/\s+as\s+/)[0].trim())
+            .filter(Boolean)
+          if (syms.length === 0) continue
+          const hit = mod === 'curator-shared'
+            ? syms.filter(x => CURATOR_PERSONA_SYMBOLS.includes(x))
+            : syms
+          if (hit.length > 0) out.push({ file, module: mod, kind, symbols: hit })
+        }
+      }
+
+      // ① import { A, B } from '…'        (multi-line 포함)
+      named(new RegExp(String.raw`import\s*(?:type\s*)?\{([^}]*)\}\s*${FROM}`, 'gs'), 'named-import')
+      // ② export { A, B } from '…'        re-export 우회
+      named(new RegExp(String.raw`export\s*(?:type\s*)?\{([^}]*)\}\s*${FROM}`, 'gs'), 'named-reexport')
+
+      // ③ import * as X from '…'  ④ export * (as X) from '…'
+      //    심볼을 특정할 수 없다 = persona 정의 전체에 접근이 열린다 → 원본 종류와 무관하게 위반.
+      //    curator-shared도 마찬가지다. 텍스트 유틸만 쓰려면 named import를 쓰면 된다.
+      for (const [re, kind] of [
+        [new RegExp(String.raw`import\s*\*\s*as\s+(\w+)\s*${FROM}`, 'gs'), 'namespace-import'],
+        [new RegExp(String.raw`export\s*\*\s*(?:as\s+(\w+)\s*)?${FROM}`, 'gs'), 'star-reexport'],
+      ] as [RegExp, AccessKind][]) {
+        for (const m of src.matchAll(re)) {
+          out.push({ file, module: mod, kind, symbols: [m[1] ? `* as ${m[1]}` : '*'] })
+        }
       }
     }
   }
@@ -104,8 +130,10 @@ function main(): void {
   console.log(`  허용(ALLOW)     ${ALLOW.size}건 — registry 진입점 + 원본 비교 테스트`)
   console.log(`  baseline 잔존   ${knownFiles.length}/${BASELINE.size}건`)
   for (const f of knownFiles) {
-    const syms = offenders.get(f)!.flatMap(v => v.symbols)
-    console.log(`     ${f}  [${[...new Set(syms)].join(', ')}]  → ${BASELINE.get(f)}`)
+    const vs = offenders.get(f)!
+    const syms = vs.flatMap(v => v.symbols)
+    const kinds = [...new Set(vs.map(v => v.kind))].join('/')
+    console.log(`     ${f}  [${[...new Set(syms)].join(', ')}] (${kinds})  → ${BASELINE.get(f)}`)
   }
   if (fixedFiles.length > 0) {
     console.log(`\n  ✅ 전환 완료(baseline에서 지워도 됨) ${fixedFiles.length}건`)
@@ -115,8 +143,10 @@ function main(): void {
   if (newFiles.length > 0) {
     console.log(`\n  ❌ FAIL — 새 위반 ${newFiles.length}건`)
     for (const f of newFiles) {
-      const syms = offenders.get(f)!.flatMap(v => v.symbols)
-      console.log(`     ${f}  [${[...new Set(syms)].join(', ')}]`)
+      const vs = offenders.get(f)!
+      const syms = vs.flatMap(v => v.symbols)
+      const kinds = [...new Set(vs.map(v => v.kind))].join('/')
+      console.log(`     ${f}  [${[...new Set(syms)].join(', ')}] (${kinds})`)
     }
     console.log('\n  persona 원본을 직접 import하지 말고 agents/core/persona-registry.ts를 경유하세요.')
     console.log('  의도적으로 필요하면 ALLOW 또는 BASELINE에 사유와 함께 추가하세요.\n')
