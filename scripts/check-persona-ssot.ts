@@ -40,15 +40,58 @@ const ALLOW = new Set([
 ])
 
 /**
- * 아직 전환하지 못한 기존 위반 — 통과시키되 줄어들기만 해야 한다.
- * 각 항목에 어느 PR에서 없앨지 적어 둔다.
+ * 아직 전환하지 못한 기존 위반 — 통과시키되 **줄어들기만** 해야 한다.
+ *
+ * ⚠️ 파일 단위가 아니라 **file + module + kind + symbols** 단위로 고정한다.
+ *    파일 단위면 baseline 파일 안에서 새 심볼·namespace import·star re-export가
+ *    추가돼도 통과해 버린다. 아래 symbols에 없는 접근은 같은 파일이어도 FAIL이다.
  */
-const BASELINE = new Map<string, string>([
-  ['agents/coo/persona-matcher-profiles.ts', 'PR-7d — registry로 흡수'],
-  ['agents/cafe/content-curator.ts', 'PR-7c — curator-shared persona 블록 분리 후 전환'],
-  ['agents/cafe/popular-curator.ts', 'PR-7c — 동일'],
-  ['src/__tests__/curator-menopause-persona.test.ts', 'PR-7c — curator 라우팅 테스트, 전환과 함께 이동'],
-])
+type BaselineEntry = {
+  file: string
+  module: (typeof ORIGIN_MODULES)[number]
+  kind: AccessKind
+  /** 정확히 이 심볼들만 허용. 하나라도 더 늘면 FAIL */
+  symbols: string[]
+  reason: string
+}
+
+const BASELINE: BaselineEntry[] = [
+  {
+    file: 'agents/cafe/content-curator.ts',
+    module: 'curator-shared', kind: 'named-import',
+    symbols: ['PersonaMatch', 'PERSONAS', 'DESIRE_PERSONA_MAP', 'matchPersona', 'personaBoardForRouting', 'personaIdsForRoutingBoard'],
+    reason: 'PR-7c — curator-shared persona 블록 분리 후 전환',
+  },
+  {
+    file: 'agents/cafe/popular-curator.ts',
+    module: 'curator-shared', kind: 'named-import',
+    symbols: ['matchPersona', 'personaBoardForRouting', 'personasForRoutingBoard'],
+    reason: 'PR-7c — 동일',
+  },
+  {
+    file: 'agents/coo/persona-matcher-profiles.ts',
+    module: 'persona-data', kind: 'named-import',
+    symbols: ['PERSONAS'],
+    reason: 'PR-7d — registry로 흡수',
+  },
+  {
+    file: 'agents/coo/persona-matcher-profiles.ts',
+    module: 'curator-shared', kind: 'named-import',
+    symbols: ['PERSONAS'],
+    reason: 'PR-7d — registry로 흡수',
+  },
+  {
+    file: 'src/__tests__/curator-menopause-persona.test.ts',
+    module: 'curator-shared', kind: 'named-import',
+    symbols: ['MENOPAUSE_CURATOR_PERSONA_IDS', 'isMenopauseCuratorPersona', 'matchPersona', 'personaBoardForRouting', 'personaIdsForRoutingBoard', 'personasForRoutingBoard'],
+    reason: 'PR-7c — curator 라우팅 테스트, 전환과 함께 이동',
+  },
+]
+
+/** (file, module, kind)로 baseline 엔트리를 찾는다 */
+function findBaseline(v: Violation): BaselineEntry | undefined {
+  return BASELINE.find(b => b.file === v.file && b.module === v.module && b.kind === v.kind)
+}
 
 type AccessKind = 'named-import' | 'namespace-import' | 'named-reexport' | 'star-reexport'
 type Violation = { file: string; module: string; kind: AccessKind; symbols: string[] }
@@ -113,40 +156,49 @@ function findViolations(): Violation[] {
 }
 
 function main(): void {
-  const violations = findViolations()
-  const offenders = new Map<string, Violation[]>()
+  const violations = findViolations().filter(v => !ALLOW.has(v.file))
+
+  /** baseline에 등재됐고 심볼도 범위 안 */
+  const known: Violation[] = []
+  /** baseline 밖이거나, 등재됐어도 심볼이 늘어난 것 */
+  const offending: { v: Violation; why: string }[] = []
+
   for (const v of violations) {
-    if (ALLOW.has(v.file)) continue
-    const list = offenders.get(v.file) ?? []
-    list.push(v)
-    offenders.set(v.file, list)
+    const b = findBaseline(v)
+    if (!b) {
+      offending.push({ v, why: BASELINE.some(x => x.file === v.file)
+        ? `baseline 파일이지만 새 ${v.kind === 'named-import' ? 'module' : v.kind} 접근`
+        : '새 파일' })
+      continue
+    }
+    const extra = v.symbols.filter(s => !b.symbols.includes(s))
+    if (extra.length > 0) {
+      offending.push({ v, why: `baseline에 없는 심볼: ${extra.join(', ')}` })
+      continue
+    }
+    known.push(v)
   }
 
-  const knownFiles = [...offenders.keys()].filter(f => BASELINE.has(f)).sort()
-  const newFiles = [...offenders.keys()].filter(f => !BASELINE.has(f)).sort()
-  const fixedFiles = [...BASELINE.keys()].filter(f => !offenders.has(f)).sort()
+  const seen = new Set(known.map(v => `${v.file}|${v.module}|${v.kind}`))
+  const fixed = BASELINE.filter(b => !seen.has(`${b.file}|${b.module}|${b.kind}`))
 
   console.log('\n  ── persona SSoT 가드 (baseline) ──\n')
   console.log(`  허용(ALLOW)     ${ALLOW.size}건 — registry 진입점 + 원본 비교 테스트`)
-  console.log(`  baseline 잔존   ${knownFiles.length}/${BASELINE.size}건`)
-  for (const f of knownFiles) {
-    const vs = offenders.get(f)!
-    const syms = vs.flatMap(v => v.symbols)
-    const kinds = [...new Set(vs.map(v => v.kind))].join('/')
-    console.log(`     ${f}  [${[...new Set(syms)].join(', ')}] (${kinds})  → ${BASELINE.get(f)}`)
+  console.log(`  baseline 잔존   ${known.length}/${BASELINE.length}건  (file+module+kind+symbols 단위 고정)`)
+  for (const v of known.sort((a, b) => a.file.localeCompare(b.file))) {
+    console.log(`     ${v.file}  ${v.module}/${v.kind}  [${v.symbols.join(', ')}]`)
+    console.log(`        → ${findBaseline(v)!.reason}`)
   }
-  if (fixedFiles.length > 0) {
-    console.log(`\n  ✅ 전환 완료(baseline에서 지워도 됨) ${fixedFiles.length}건`)
-    for (const f of fixedFiles) console.log(`     ${f}`)
+  if (fixed.length > 0) {
+    console.log(`\n  ✅ 전환 완료(baseline에서 지워도 됨) ${fixed.length}건`)
+    for (const b of fixed) console.log(`     ${b.file}  ${b.module}/${b.kind}`)
   }
 
-  if (newFiles.length > 0) {
-    console.log(`\n  ❌ FAIL — 새 위반 ${newFiles.length}건`)
-    for (const f of newFiles) {
-      const vs = offenders.get(f)!
-      const syms = vs.flatMap(v => v.symbols)
-      const kinds = [...new Set(vs.map(v => v.kind))].join('/')
-      console.log(`     ${f}  [${[...new Set(syms)].join(', ')}] (${kinds})`)
+  if (offending.length > 0) {
+    console.log(`\n  ❌ FAIL — 새 위반 ${offending.length}건`)
+    for (const { v, why } of offending) {
+      console.log(`     ${v.file}  ${v.module}/${v.kind}  [${v.symbols.join(', ')}]`)
+      console.log(`        사유: ${why}`)
     }
     console.log('\n  persona 원본을 직접 import하지 말고 agents/core/persona-registry.ts를 경유하세요.')
     console.log('  의도적으로 필요하면 ALLOW 또는 BASELINE에 사유와 함께 추가하세요.\n')
