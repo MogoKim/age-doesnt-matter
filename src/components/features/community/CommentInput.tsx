@@ -5,6 +5,7 @@ import AutoResizeTextarea from '@/components/common/AutoResizeTextarea'
 import { createComment } from '@/lib/actions/comments'
 import { gtmCommentCreate } from '@/lib/gtm'
 import { trackEvent } from '@/lib/track'
+import { useCommentFunnel } from '@/hooks/useCommentFunnel'
 import { setPushToastTrigger } from '@/components/common/PushPermissionToast'
 import { useToast } from '@/components/common/Toast'
 
@@ -21,15 +22,21 @@ export default function CommentInput({ postId, parentId, onCancel, placeholder, 
   const [value, setValue] = useState('')
   const [error, setError] = useState('')
   const [isPending, startTransition] = useTransition()
+  // [PR-C3] 성공 이전 단계 계측. 화면·문구·제출 로직은 건드리지 않는다.
+  const funnel = useCommentFunnel({ postId, parentId, userState: 'member' })
 
   function handleSubmit() {
     if (!value.trim() || isPending) return
+    // 가드 통과 후에 보낸다 — 비활성 버튼 클릭이 시도로 잡히면 성공률 분모가 부풀려진다.
+    funnel.onSubmitAttempted()
     setError('')
 
     startTransition(async () => {
       onOptimisticAdd?.(value)
       const result = await createComment(postId, value, parentId)
       if (result.error) {
+        // 사유 코드만 남긴다 — 서버 원문 메시지는 문구 변경 시 집계가 깨지고 입력값이 섞일 수 있다.
+        funnel.onSubmitFailed('server_rejected')
         setError(result.error)
       } else {
         gtmCommentCreate(parentId ? 'reply' : 'comment')
@@ -44,7 +51,7 @@ export default function CommentInput({ postId, parentId, onCancel, placeholder, 
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div ref={funnel.viewRef} className="flex flex-col gap-2">
       {error && (
         <p className="text-caption text-destructive font-medium px-1">{error}</p>
       )}
@@ -53,7 +60,12 @@ export default function CommentInput({ postId, parentId, onCancel, placeholder, 
           className="flex-1 min-h-[52px] px-4 py-2.5 border border-border rounded-xl text-body text-foreground bg-background outline-none transition-colors focus:border-primary focus:shadow-[0_0_0_3px_rgba(255,111,97,0.1)] placeholder:text-muted-foreground"
           placeholder={placeholder || '댓글을 남겨주세요...'}
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onFocus={funnel.onInputFocus}
+          onChange={(e) => {
+            // 첫 글자에서만 1회 — 지웠다 다시 써도 재발화하지 않는다(훅이 보장).
+            if (e.target.value.trim()) funnel.onTextStarted()
+            setValue(e.target.value)
+          }}
           maxLength={500}
           maxHeight={160}
           rows={1}
