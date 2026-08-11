@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo, useOptimistic, useCallback } from 'react'
+import { useEffect, useState, useMemo, useOptimistic, useCallback, useRef } from 'react'
 import { useAppSession } from '@/components/common/AppSessionProvider'
 import type { CommentItem as CommentItemType } from '@/types/api'
 import type { Grade } from '@/generated/prisma/client'
@@ -11,6 +11,7 @@ const GRADE_EMOJI: Record<string, string> = {
 import CommentItemComponent from './CommentItem'
 import CommentInput from './CommentInput'
 import GuestCommentInput from './GuestCommentInput'
+import CommentDock from './CommentDock'
 import { campLabel, campPhrase } from '@/components/features/vote/option-label'
 
 interface CommentSectionProps {
@@ -53,6 +54,8 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
   const [personalizedComments, setPersonalizedComments] = useState(comments)
   const [sort, setSort] = useState<'oldest' | 'likes'>('oldest')
   const [voteBadges, setVoteBadges] = useState<VoteBadges | null>(null)
+  // [PR-C1] 하단 진입점이 스크롤·포커스로 데려갈 대상
+  const inputAreaRef = useRef<HTMLDivElement>(null)
 
   // 진영 배지 — 이 글에 연동된 투표가 있을 때만 값이 옴 (1회 fetch)
   useEffect(() => {
@@ -285,11 +288,23 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
         </p>
       ) : !authKnown ? (
         <div className="h-24 bg-muted rounded-2xl animate-pulse" aria-hidden="true" />
-      ) : resolvedIsLoggedIn ? (
-        <CommentInput postId={postId} onOptimisticAdd={resolvedCurrentUser ? handleOptimisticAdd : undefined} />
       ) : (
-        <GuestCommentInput postId={postId} onOptimisticAdd={handleGuestOptimisticAdd} isGreeting={isGreeting} isFeedback={isFeedback} />
+        // [PR-C1] 입력 영역을 감싸 하단 진입점(CommentDock)이 여기로 데려올 수 있게 한다.
+        //   래퍼 div는 스타일이 없다 — 기존 레이아웃·간격을 바꾸지 않기 위해서다.
+        <div ref={inputAreaRef}>
+          {resolvedIsLoggedIn ? (
+            <CommentInput postId={postId} onOptimisticAdd={resolvedCurrentUser ? handleOptimisticAdd : undefined} />
+          ) : (
+            <GuestCommentInput postId={postId} onOptimisticAdd={handleGuestOptimisticAdd} isGreeting={isGreeting} isFeedback={isFeedback} />
+          )}
+        </div>
       )}
+
+      {/*
+        하단 댓글 진입점 — 모바일 전용. 입력창이 화면 밖일 때만 뜬다.
+        readOnly(마감)·인증 확인 전에는 띄우지 않는다: 눌러도 갈 곳이 없기 때문이다.
+      */}
+      {!readOnly && authKnown && <CommentDock targetRef={inputAreaRef} isFeedback={isFeedback} />}
     </section>
   )
 }
