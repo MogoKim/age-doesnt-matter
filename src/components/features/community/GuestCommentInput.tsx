@@ -31,6 +31,11 @@ interface GuestCommentInputProps {
   isGreeting?: boolean
   /** 의견수렴형(FEEDBACK) 이벤트면 '댓글'→'의견' 문구로(Phase 3a). 기능/허용범위 무변경 */
   isFeedback?: boolean
+  /**
+   * [B안] 하단 작성 패널로 전환된 상태에서는 패널 헤더가 제목을 맡는다.
+   * 자체 제목을 모바일에서만 접어 같은 말이 두 번 나오지 않게 한다. 문구·기능은 그대로다.
+   */
+  hideHeading?: boolean
 }
 
 export default function GuestCommentInput({
@@ -42,6 +47,7 @@ export default function GuestCommentInput({
   onOptimisticAdd,
   isGreeting,
   isFeedback,
+  hideHeading,
 }: GuestCommentInputProps) {
   const resolvedPlaceholder = placeholder ?? (isFeedback ? '의견을 남겨주세요... (최대 500자)' : '댓글을 남겨주세요... (최대 500자)')
   const { toast } = useToast()
@@ -272,7 +278,8 @@ export default function GuestCommentInput({
 
   return (
     <div ref={funnel.viewRef} className="bg-card border border-border rounded-2xl p-4 mt-4">
-      <p className="text-body font-bold text-foreground mb-3">
+      {/* hideHeading은 모바일에서만 접는다 — 하단 패널 헤더가 md:hidden이라 데스크탑에는 제목이 남아야 한다. */}
+      <p className={`text-body font-bold text-foreground mb-3${hideHeading ? ' max-md:hidden' : ''}`}>
         {isGreeting ? '새 이웃을 환영해주세요' : isFeedback ? '의견을 남겨주세요' : '댓글을 남겨보세요'}
       </p>
 

@@ -121,13 +121,22 @@ export default function CommentDock({ targetRef, sectionRef, isFeedback, composi
         댓글 입력 맥락에서 미루므로(comment-entry-state) 입력이 막히지 않는다.
         ⚠️ 광고를 덮는 문제를 z-index로 풀지 않는다. 문제는 레이어가 아니라 **점유 시간**이었다.
       */
-      className="fixed bottom-0 left-0 right-0 z-[96] border-t border-border bg-card px-4 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 shadow-[0_-2px_10px_rgba(0,0,0,0.08)] md:hidden"
+      className="fixed bottom-0 left-0 right-0 z-[96] border-t border-border bg-card px-4 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 shadow-[0_-4px_16px_rgba(15,23,42,0.13)] md:hidden"
     >
       <button
         type="button"
         onClick={handleTap}
         aria-label={label}
-        className="flex min-h-[52px] w-full items-center gap-3 rounded-full border border-border bg-background px-4 text-left text-body text-muted-foreground transition-colors active:bg-muted"
+        /*
+          [B안] 대비를 만든다 — 크기가 아니라 대비가 문제였다.
+          이전에는 흰 Dock(bg-card #FFF) 위에 bg-background(#F9FAFB) 버튼이라 명도차가 거의 없었고,
+          글자도 muted-foreground여서 "누를 수 있는 것"이 아니라 안내 문구 한 줄로 읽혔다.
+          bg-muted(#F1F3F5) + text-muted-strong으로 배경·글자 대비를 동시에 올린다.
+          ⚠️ min-h-[52px]와 바깥 패딩은 그대로다 — Dock 높이가 커지면 PR #333/#339에서 되돌린
+             광고 겹침(0/41)과 노출 타이밍이 다시 흔들린다.
+          ⚠️ 코랄(primary)은 쓰지 않는다. 상시 노출되는 하단 띠에 브랜드색을 얹으면 가입 배너로 읽힌다.
+        */
+        className="flex min-h-[52px] w-full items-center gap-3 rounded-full border border-border bg-muted px-4 text-left text-body text-muted-strong transition-[filter,background-color] active:brightness-95"
       >
         <svg
           width="22"
@@ -144,6 +153,16 @@ export default function CommentDock({ targetRef, sectionRef, isFeedback, composi
           <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
         </svg>
         <span className="truncate">{label}</span>
+        {/*
+          말풍선 아이콘만으로는 "여기서 쓸 수 있다"가 전달되지 않는다 — 한 단어로 행동을 못 박는다.
+          흰 알약으로 두어 회색 버튼 안에서 도드라지되, 강조는 여기까지다(색 없음).
+        */}
+        <span
+          aria-hidden="true"
+          className="ml-auto shrink-0 rounded-full border border-border bg-card px-3 py-1 text-caption font-bold text-muted-strong"
+        >
+          쓰기
+        </span>
       </button>
     </div>
   )

@@ -55,7 +55,16 @@ import CommentSection from '@/components/features/community/CommentSection'
 const OPEN_CLASS = 'max-md:fixed'
 const dock = () => screen.queryByTestId('comment-dock')
 const openedPanel = () => document.querySelector(`.${CSS.escape(OPEN_CLASS)}`)
-const contentBox = () => screen.getByPlaceholderText('댓글을 남겨주세요... (최대 500자)') as HTMLTextAreaElement
+/*
+  placeholder로 찾지 않는다 — 하단 패널이 열리면 문구가 '생각을 자유롭게 적어주세요'로 바뀐다(B안).
+  이 파일이 검증하려는 건 "인스턴스가 하나뿐"이라는 사실이므로, 열림/닫힘과 무관한 특징으로 잡는다.
+  (CommentItem이 mock이라 답글 입력이 없어 본문 textarea는 항상 하나다)
+*/
+const contentBox = () => {
+  const el = document.querySelector('textarea[maxlength="500"]')
+  if (!el) throw new Error('본문 textarea를 찾지 못했다')
+  return el as HTMLTextAreaElement
+}
 
 /**
  * Dock이 뜨는 상태를 만든다.
@@ -353,5 +362,56 @@ describe('[닫기 확인 · H2] 쓰던 내용이 있을 때만 묻는다', () =>
 
     expect(sheet()!.className).toContain('z-[98]')
     expect(document.querySelector('.z-\\[97\\]')).toBeTruthy()   // dim
+  })
+})
+
+/*
+  [B안] 열린 패널의 문구.
+  이전에는 제목 '댓글을 남겨보세요'와 placeholder '댓글을 남겨주세요...'가 같은 말을 두 번 해서
+  모드가 바뀐 느낌이 없었다. 제목은 **지금 무엇을 하는 중인지**, placeholder는 **무엇을 쓸지**만 맡는다.
+*/
+describe('[B안] 작성 패널 제목과 placeholder', () => {
+  const heading = () => screen.queryByTestId('comment-compose-heading')
+
+  it('열면 제목이 "댓글 쓰는 중"이다', async () => {
+    await renderAndOpen()
+    expect(heading()?.textContent).toBe('댓글 쓰는 중')
+  })
+
+  it('닫혀 있을 때는 패널 제목이 없다 — 인라인 상태의 화면을 바꾸지 않는다', async () => {
+    render(<CommentSection postId="post-abc" comments={[]} isLoggedIn={false} />)
+    await flushScroll()
+    expect(heading()).toBeNull()
+  })
+
+  it('제목과 placeholder가 같은 말을 반복하지 않는다', async () => {
+    await renderAndOpen()
+    const ph = contentBox().placeholder
+    expect(ph).toBe('생각을 자유롭게 적어주세요')
+    expect(ph).not.toContain('댓글')
+    expect(heading()!.textContent).not.toContain(ph)
+  })
+
+  it('닫으면 원래 placeholder로 돌아온다 — 인라인 문구는 그대로다', async () => {
+    await renderAndOpen()
+    fireEvent.click(screen.getByTestId('comment-compose-close'))
+    await act(async () => { await new Promise((r) => setTimeout(r, 60)) })
+    expect(contentBox().placeholder).toBe('댓글을 남겨주세요... (최대 500자)')
+  })
+
+  it('열린 동안 비회원 입력의 자체 제목은 접힌다 — 제목이 둘이 되지 않는다', async () => {
+    await renderAndOpen()
+    const own = Array.from(document.querySelectorAll('p')).find((p) => p.textContent === '댓글을 남겨보세요')
+    expect(own).toBeTruthy()                          // 데스크탑용으로 DOM에는 남는다
+    expect(own!.className).toContain('max-md:hidden') // 모바일에서만 접는다
+  })
+
+  it('회원도 같은 제목을 본다 — 경로별로 다르게 보이지 않는다', async () => {
+    mock.loggedIn = true
+    render(<CommentSection postId="post-abc" comments={[]} isLoggedIn />)
+    await flushScroll()
+    fireEvent.click(dock()!.querySelector('button')!)
+    await act(async () => { await new Promise((r) => setTimeout(r, 100)) })
+    expect(heading()?.textContent).toBe('댓글 쓰는 중')
   })
 })
