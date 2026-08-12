@@ -1,8 +1,5 @@
 ---
-paths:
-  - "src/**"
-  - "agents/**"
-globs: ["src/**", "agents/**"]
+description: 파이프라인 묵시적 실패(Silent Failure) 디버깅 방법론 상세 — /investigate에서 참조
 ---
 
 # 파이프라인 묵시적 실패 디버깅 방법론

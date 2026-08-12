@@ -116,12 +116,12 @@
 - "아키텍처 검토", "코딩 전 확인", "설계 검토" → `/plan-eng-review`
 - "레거시 영향", "하네스 영향", "CTO 관점", "설계 결정" → `/cto-arch`
 - "버그", "에러", "왜 안되지", "자꾸 실패해" → `/investigate`
-- "에러 없는데 이상해", "됐는데 안 보여" → `/investigate` (Silent Failure 섹션)
+- "에러 없는데 이상해", "됐는데 안 보여" → `/investigate` (상세: `.claude/commands/investigate/silent-failure.md`)
 - "코드 리뷰", "PR 전 확인" → `/code-review`
 - DB 마이그레이션, force push, 에이전트 구조 변경, rm -rf → `/careful`
 - "혼자 처리해", "자율로", "/goal처럼", "알아서 끝내고 보고" → `.claude/rules/autonomy.md` (AUTO/HANDOFF/WAIT 3-tier 자가 분류)
 - 에이전트 기능 추가·수정 전 → `.claude/rules/agent-code-review.md` 체크리스트 먼저 (이미 구현된 기능 중복 작업 방지)
-- 참여 이벤트(VOTE·FEEDBACK·SURVEY/1분 의견함·팝업·HERO·/events) 구현·수정 후 → `.claude/rules/participation-events-qa.md` 필수 10항목 QA (모바일 375 실측·입구 전용·한글 입력·회귀·누수). QA는 `npx playwright test --project=qa-participation-events`(노출 리스크 0 격리)
+- 참여 이벤트(VOTE·FEEDBACK·SURVEY/1분 의견함·팝업·HERO·/events) 구현·수정 후 → `.claude/commands/qa/participation-events.md` 필수 10항목 QA (모바일 375 실측·입구 전용·한글 입력·회귀·누수). QA는 `npx playwright test --project=qa-participation-events`(노출 리스크 0 격리)
 - "회고", "주간 리뷰" → `/retro`
 - "iPhone으로", "iOS로", "Safari로", "WebKit으로" → `npx playwright test --project=qa-ios-webkit` (WebKit 엔진)
 - "갤럭시로", "안드로이드로" → MCP Chromium 412×915 또는 `--project=qa-write-s24ultra`
