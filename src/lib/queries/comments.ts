@@ -107,11 +107,21 @@ async function _getCommentsByPostId(
  * 다만 댓글 작성·수정·삭제 경로는 이 글 단위 태그만 무효화해서, 댓글 1건 때문에
  * 다른 글 9천여 건의 댓글 캐시까지 함께 날아가던 문제를 없앤다.
  *
- * 인자는 항상 Post.id(CUID)다 — Comment.postId가 FK라 slug로는 조회 자체가 성립하지 않는다.
- * (호출부: CommentsLoader가 resolvedId = post.id를 넘긴다)
+ * 인자는 정상 경로에서는 항상 Post.id(CUID)다 — Comment.postId가 FK라 slug로는 조회 자체가
+ * 성립하지 않는다. CUID는 그대로 쓰고, 혹시 비ASCII 값이 들어와도 x-next-cache-tags 헤더가
+ * 깨지지 않도록 ASCII 안전 토큰으로 정규화한다.
  */
 export function commentsCacheTag(postId: string): string {
-  return `comments-post-${postId}`
+  if (/^[A-Za-z0-9:_-]+$/.test(postId) && postId.length <= 120) return `comments-post-${postId}`
+
+  let h1 = 0x811c9dc5
+  let h2 = 0x811c9dc5 ^ postId.length
+  for (let i = 0; i < postId.length; i += 1) {
+    const code = postId.charCodeAt(i)
+    h1 = Math.imul(h1 ^ code, 16777619)
+    h2 = Math.imul(h2 ^ code, 2246822519)
+  }
+  return `comments-post-${(h1 >>> 0).toString(36)}-${(h2 >>> 0).toString(36)}`
 }
 
 /**

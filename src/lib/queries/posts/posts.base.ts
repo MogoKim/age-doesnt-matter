@@ -161,6 +161,19 @@ export const getPostMeta = unstable_cache(
 
 /* ── 게시글 상세 ── */
 
+function cacheTagToken(value: string): string {
+  if (/^[A-Za-z0-9:_-]+$/.test(value) && value.length <= 120) return value
+
+  let h1 = 0x811c9dc5
+  let h2 = 0x811c9dc5 ^ value.length
+  for (let i = 0; i < value.length; i += 1) {
+    const code = value.charCodeAt(i)
+    h1 = Math.imul(h1 ^ code, 16777619)
+    h2 = Math.imul(h2 ^ code, 2246822519)
+  }
+  return `${(h1 >>> 0).toString(36)}-${(h2 >>> 0).toString(36)}`
+}
+
 /**
  * 글 단위 상세 캐시 태그.
  *
@@ -171,9 +184,12 @@ export const getPostMeta = unstable_cache(
  * ⚠️ 인자는 CUID일 수도 slug일 수도 있다 — 상세 페이지는 정본 URL(slug)로,
  * opengraph-image·/api/posts/[postId]는 CUID로 호출한다. 즉 한 글이 두 개의 캐시 엔트리를
  * 가질 수 있으므로, 무효화하는 쪽에서 두 키의 태그를 모두 지워야 한다.
+ *
+ * Next는 캐시 태그를 x-next-cache-tags 헤더에 싣기 때문에 한글 slug를 그대로 태그에 넣으면
+ * ERR_INVALID_CHAR 500이 난다. 태그 값은 ASCII 안전 토큰으로 정규화한다.
  */
 export function postDetailCacheTag(postIdOrSlug: string): string {
-  return `post-detail-${postIdOrSlug}`
+  return `post-detail-${cacheTagToken(postIdOrSlug)}`
 }
 
 async function _getPostDetail(postId: string): Promise<PostDetail | null> {
