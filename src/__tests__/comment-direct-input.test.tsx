@@ -220,3 +220,138 @@ describe('회원 경로', () => {
     expect(mock.turnstileRender).not.toHaveBeenCalled()
   })
 })
+
+
+describe('[닫기 확인 · H2] 쓰던 내용이 있을 때만 묻는다', () => {
+  const sheet = () => screen.queryByTestId('comment-close-confirm')
+
+  it('빈 입력에서 ✕를 누르면 확인 없이 바로 닫힌다', async () => {
+    await renderAndOpen()
+    expect(contentBox().value).toBe('')
+
+    fireEvent.click(screen.getByTestId('comment-compose-close'))
+    await act(async () => { await new Promise((r) => setTimeout(r, 60)) })
+
+    expect(sheet()).toBeNull()
+    expect(openedPanel()).toBeNull()   // 패널도 닫혔다
+  })
+
+  it('내용이 있을 때 ✕를 누르면 확인 시트가 뜨고, 패널은 아직 닫히지 않는다', async () => {
+    await renderAndOpen()
+    fireEvent.change(contentBox(), { target: { value: '우리 나이엔 정말 그렇더라고요' } })
+
+    fireEvent.click(screen.getByTestId('comment-compose-close'))
+    await act(async () => { await new Promise((r) => setTimeout(r, 60)) })
+
+    expect(sheet()).toBeTruthy()
+    expect(openedPanel()).toBeTruthy()
+    expect(sheet()!.textContent).toContain('댓글 작성을 멈출까요?')
+    expect(sheet()!.textContent).toContain('쓰던 내용은 그대로 있어요')
+  })
+
+  it('공백만 있으면 내용으로 치지 않는다 — 바로 닫힌다', async () => {
+    await renderAndOpen()
+    fireEvent.change(contentBox(), { target: { value: '   ' } })
+
+    fireEvent.click(screen.getByTestId('comment-compose-close'))
+    await act(async () => { await new Promise((r) => setTimeout(r, 60)) })
+
+    expect(sheet()).toBeNull()
+    expect(openedPanel()).toBeNull()
+  })
+
+  it('"계속 쓰기"를 고르면 시트만 닫히고 입력 내용이 그대로 남는다', async () => {
+    await renderAndOpen()
+    fireEvent.change(contentBox(), { target: { value: '쓰던 내용' } })
+    fireEvent.click(screen.getByTestId('comment-compose-close'))
+    await act(async () => { await new Promise((r) => setTimeout(r, 60)) })
+
+    fireEvent.click(screen.getByTestId('comment-close-confirm-keep'))
+    await act(async () => { await new Promise((r) => setTimeout(r, 120)) })
+
+    expect(sheet()).toBeNull()
+    expect(openedPanel()).toBeTruthy()      // 패널은 열린 채로
+    expect(contentBox().value).toBe('쓰던 내용')
+  })
+
+  it('"닫기"를 고르면 패널이 닫히고, 다시 열어도 내용이 살아 있다', async () => {
+    await renderAndOpen()
+    fireEvent.change(contentBox(), { target: { value: '쓰던 내용' } })
+    fireEvent.click(screen.getByTestId('comment-compose-close'))
+    await act(async () => { await new Promise((r) => setTimeout(r, 60)) })
+
+    fireEvent.click(screen.getByTestId('comment-close-confirm-close'))
+    await flushScroll()
+
+    expect(sheet()).toBeNull()
+    expect(openedPanel()).toBeNull()
+    // 인스턴스가 그대로라 내용이 남는다 (C1-B 전제)
+    expect(contentBox().value).toBe('쓰던 내용')
+  })
+
+  it('불안 문구를 쓰지 않는다 — 실제로 내용이 보존되기 때문', async () => {
+    await renderAndOpen()
+    fireEvent.change(contentBox(), { target: { value: '내용' } })
+    fireEvent.click(screen.getByTestId('comment-compose-close'))
+    await act(async () => { await new Promise((r) => setTimeout(r, 60)) })
+
+    const text = sheet()!.textContent ?? ''
+    for (const banned of ['사라', '없어', '삭제', '되돌릴', '저장되지']) {
+      expect(text).not.toContain(banned)
+    }
+  })
+
+  it('확인 중에도 입력 인스턴스는 그대로다 — Turnstile 위젯이 둘이 되면 안 된다', async () => {
+    render(<CommentSection postId="post-abc" comments={[]} isLoggedIn={false} />)
+    await flushScroll()
+    fireEvent.change(contentBox(), { target: { value: '내용' } })
+    await act(async () => { await new Promise((r) => setTimeout(r, 350)) })
+    expect(mock.turnstileRender.mock.calls.length).toBe(1)
+
+    fireEvent.click(dock()!.querySelector('button')!)
+    await act(async () => { await new Promise((r) => setTimeout(r, 100)) })
+    fireEvent.click(screen.getByTestId('comment-compose-close'))
+    await act(async () => { await new Promise((r) => setTimeout(r, 350)) })
+    fireEvent.click(screen.getByTestId('comment-close-confirm-keep'))
+    await act(async () => { await new Promise((r) => setTimeout(r, 350)) })
+
+    expect(mock.turnstileRender.mock.calls.length).toBe(1)
+    expect(document.querySelectorAll('textarea')).toHaveLength(1)
+  })
+
+  /**
+   * ⚠️ happy-dom은 `focus()`가 커서를 글 끝으로 보내지 않는다(실브라우저와 다르다).
+   *   그래서 "커서가 튀었는지"를 값으로 확인할 수 없다.
+   *   대신 **복원 호출이 저장된 위치로 실제 일어나는지**를 감시한다.
+   *   실화면 확인은 브라우저 QA에서 따로 한다.
+   */
+  it('"계속 쓰기" 후 포커스와 커서 위치를 되돌린다', async () => {
+    await renderAndOpen()
+    const ta = contentBox()
+    fireEvent.change(ta, { target: { value: '우리 나이엔 정말 그렇더라고요' } })
+    ta.setSelectionRange(5, 5)          // 문장 중간에 커서를 둔다
+
+    const focusSpy = vi.spyOn(ta, 'focus')
+    const caretSpy = vi.spyOn(ta, 'setSelectionRange')
+
+    fireEvent.click(screen.getByTestId('comment-compose-close'))
+    await act(async () => { await new Promise((r) => setTimeout(r, 60)) })
+    focusSpy.mockClear(); caretSpy.mockClear()
+
+    fireEvent.click(screen.getByTestId('comment-close-confirm-keep'))
+    await act(async () => { await new Promise((r) => setTimeout(r, 150)) })
+
+    expect(focusSpy).toHaveBeenCalledWith({ preventScroll: true })
+    expect(caretSpy).toHaveBeenCalledWith(5, 5)   // 글 끝(14)이 아니라 원래 자리로
+  })
+
+  it('가입 배너(150)·팝업(200)보다 아래 층만 쓴다', async () => {
+    await renderAndOpen()
+    fireEvent.change(contentBox(), { target: { value: '내용' } })
+    fireEvent.click(screen.getByTestId('comment-compose-close'))
+    await act(async () => { await new Promise((r) => setTimeout(r, 60)) })
+
+    expect(sheet()!.className).toContain('z-[98]')
+    expect(document.querySelector('.z-\\[97\\]')).toBeTruthy()   // dim
+  })
+})
