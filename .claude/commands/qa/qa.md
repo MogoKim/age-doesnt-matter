@@ -1,5 +1,7 @@
 배포 QA 검증 — 프로덕션 smoke test + 크론 연결 검증을 실행합니다. '배포 검증', 'QA 돌려줘' 등을 말할 때 사용합니다.
 
+> 참여 이벤트(VOTE·FEEDBACK·SURVEY) QA는 별도다 — `participation-events.md` 필수 10항목 참조.
+
 ## 실행 순서
 
 1. 프로덕션 Smoke Test 실행

@@ -1,13 +1,5 @@
 ---
-paths:
-  - "src/components/features/event/**"
-  - "src/app/(main)/events/**"
-  - "src/app/api/events/**"
-  - "src/app/api/votes/**"
-  - "src/app/dev/event-preview/**"
-  - "src/app/admin/(panel)/vote-events/**"
-  - "scripts/qa-event-fixture.ts"
-  - "e2e/qa/*participation-events*.spec.ts"
+description: 참여 이벤트(VOTE·FEEDBACK·SURVEY) 필수 10항목 QA 절차 — /qa에서 참조
 ---
 
 # 참여 이벤트 QA 체크리스트 (절대 준수 — 기능 구현 후 필수)
