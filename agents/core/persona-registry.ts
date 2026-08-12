@@ -18,7 +18,7 @@
  * 재현 검증: src/__tests__/persona-registry.test.ts (304건 전수)
  */
 import { PERSONAS as BOT_PERSONAS, type Persona } from '../seed/persona-data.js'
-import { PERSONAS as CURATOR_PERSONAS } from '../cafe/curator-shared.js'
+import { PERSONAS as CURATOR_PERSONAS } from '../cafe/curator-personas.js'
 import { CURATOR_PERSONA_META } from '../cafe/curator-persona-meta.js'
 import { classifyTopicGroups, type TopicGroup } from '../coo/persona-matcher-policy.js'
 

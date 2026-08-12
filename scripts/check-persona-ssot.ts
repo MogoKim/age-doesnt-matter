@@ -55,17 +55,12 @@ type BaselineEntry = {
   reason: string
 }
 
-const BASELINE: BaselineEntry[] = [
-  {
-    // PR-7b: persona 정의를 curator-personas.ts로 분리하면서, 기존 소비자가 깨지지 않도록
-    // curator-shared.ts가 facade로 re-export한다. PR-7c에서 소비자를 옮기고 PR-7e에서 걷어낸다.
-    file: 'agents/cafe/curator-shared.ts',
-    module: 'curator-personas', kind: 'named-reexport',
-    symbols: ['PERSONAS', 'DESIRE_PERSONA_MAP', 'MENOPAUSE_CURATOR_PERSONA_IDS', 'isMenopauseCuratorPersona',
-              'personasForRoutingBoard', 'personaIdsForRoutingBoard', 'personaBoardForRouting', 'matchPersona', 'PersonaMatch'],
-    reason: 'PR-7c/7e — 전환용 facade. 소비자 이전 후 제거',
-  },
-]
+/**
+ * PR-7e: 전환용 예외를 전부 걷어냈다. **baseline 0 = 차단 모드.**
+ * 이제 persona 원본을 직접 보는 새 코드는 ALLOW에 없는 한 즉시 FAIL한다.
+ * 다시 채우지 말 것 — 예외가 필요하면 왜 registry를 경유할 수 없는지부터 따진다.
+ */
+const BASELINE: BaselineEntry[] = []
 
 /** (file, module, kind)로 baseline 엔트리를 찾는다 */
 function findBaseline(v: Violation): BaselineEntry | undefined {
@@ -184,7 +179,7 @@ function main(): void {
     process.exit(1)
   }
 
-  console.log('\n  ✅ PASS — 새 위반 없음 (baseline은 PR-7b~e에서 순차 제거)\n')
+  console.log('\n  ✅ PASS — persona 원본 직접 접근 0 (baseline 0 · 차단 모드)\n')
 }
 
 main()
