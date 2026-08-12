@@ -1,4 +1,7 @@
 ---
+paths:
+  - "src/**"
+  - "agents/**"
 globs: ["src/**", "agents/**"]
 ---
 

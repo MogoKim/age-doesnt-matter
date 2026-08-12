@@ -1,4 +1,6 @@
 ---
+paths:
+  - "src/app/api/**/*.ts"
 globs: src/app/api/**/*.ts
 ---
 

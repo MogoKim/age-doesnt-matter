@@ -1,4 +1,7 @@
 ---
+paths:
+  - "memory/**"
+  - ".claude/**"
 globs: ["memory/**", ".claude/**"]
 ---
 
