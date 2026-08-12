@@ -12,14 +12,17 @@ globs: ["memory/**", ".claude/**"]
 ### CLAUDE.md (프로젝트 루트)
 - **언제**: Claude가 **매 세션 항상** 알아야 할 행동 규칙
 - **무엇**: 위반 시 즉각 문제가 되는 금지 사항, 코딩 원칙, 스킬 라우팅
-- **한도**: 200줄 이하 — 초과 시 .claude/rules/ 하위 파일로 분리
+- **한도**: 200줄 이하(공식 권장). ⚠️ rules로 쪼개도 **자동 로드 총량은 줄지 않는다** — 아래 참조
 - **갱신 시점**: Claude가 실수할 때마다 한 줄 추가 (팀 PR 리뷰 방식)
 
 ### .claude/rules/*.md
 - **언제**: 특정 도메인 작업 시에만 참조하면 되는 것
 - **무엇**: UI 규칙, API 패턴, 에이전트 규칙, Figma 워크플로우, QA 절차
-- **원칙**: CLAUDE.md에서 `@.claude/rules/파일.md` 형식으로 참조
-- **현재 파일 목록**: agents.md / api-routes.md / ui-components.md / agent-lifecycle.md / qa-deploy.md / figma-first.md / debug-silent-failure.md / context-management.md(본 파일)
+- **로딩**: `paths:` frontmatter가 **있으면** 매칭 파일 작업 시에만, **없으면 매 세션 전량** 로드된다.
+  즉 `paths`가 사실상 유일한 컨텍스트 절감 수단이다. `@import`는 조직화일 뿐 절감이 아니다(공식 문서).
+  경로와 무관한 절차서는 rules가 아니라 `.claude/commands/`에 둔다.
+- **현재 파일 목록**: `ls .claude/rules/*.md`로 확인한다(목록을 여기 적으면 곧 낡는다).
+  항상 로드되는 것은 `paths`가 없는 파일뿐이다: `grep -L "^paths:" .claude/rules/*.md`
 
 ### memory/MEMORY.md (자동 로드 인덱스)
 - **언제**: 현재 상태 + 서브파일 포인터 — **매 대화 자동 로드**
