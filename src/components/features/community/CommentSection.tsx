@@ -75,7 +75,29 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
 
   const closeCompose = useCallback(() => {
     setComposing(false)
+    setConfirmingClose(false)
     setPlaceholderHeight(undefined)
+  }, [])
+
+  // [닫기 확인 · H2] 쓰던 내용이 있는데 그냥 닫으면, 실제로는 보존되는데도 사용자는 잃었다고 느낀다.
+  //   그래서 내용이 있을 때만 한 번 묻는다. 빈 입력에까지 물으면 그냥 성가신 앱이 된다.
+  const [confirmingClose, setConfirmingClose] = useState(false)
+  //   "계속 쓰기"로 돌아왔을 때 커서를 원래 자리에 돌려놓기 위해 저장해 둔다.
+  //   focus()만 하면 커서가 글 끝으로 튀어, 문장 중간을 고치던 사람은 위치를 잃는다.
+  const caretRef = useRef<{ start: number; end: number } | null>(null)
+
+  const requestClose = useCallback(() => {
+    const field = inputAreaRef.current?.querySelector('textarea')
+    if (field?.value.trim()) {
+      caretRef.current = { start: field.selectionStart ?? 0, end: field.selectionEnd ?? 0 }
+      setConfirmingClose(true)
+      return
+    }
+    closeCompose()
+  }, [closeCompose])
+
+  const keepWriting = useCallback(() => {
+    setConfirmingClose(false)
   }, [])
 
   // 열린 뒤 포커스한다. 전환 렌더가 끝난 다음이어야 커서가 잡힌다.
@@ -86,6 +108,21 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
     }, 60)
     return () => window.clearTimeout(id)
   }, [composing])
+
+  // 확인 시트를 닫고 돌아오면 포커스와 **커서 위치**까지 되돌린다.
+  useEffect(() => {
+    if (!composing || confirmingClose) return
+    const caret = caretRef.current
+    if (!caret) return
+    caretRef.current = null
+    const id = window.setTimeout(() => {
+      const field = inputAreaRef.current?.querySelector('textarea')
+      if (!field) return
+      field.focus({ preventScroll: true })
+      try { field.setSelectionRange(caret.start, caret.end) } catch { /* 일부 입력 타입은 지원 안 함 */ }
+    }, 60)
+    return () => window.clearTimeout(id)
+  }, [composing, confirmingClose])
 
   // 진영 배지 — 이 글에 연동된 투표가 있을 때만 값이 옴 (1회 fetch)
   useEffect(() => {
@@ -338,7 +375,7 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
               <div className="sticky top-0 z-10 -mx-3 mb-1 flex justify-end bg-card px-3 pt-1 md:hidden">
                 <button
                   type="button"
-                  onClick={closeCompose}
+                  onClick={requestClose}
                   aria-label="댓글 입력 닫기"
                   data-testid="comment-compose-close"
                   className="flex min-h-[52px] min-w-[52px] items-center justify-center rounded-full text-muted-foreground transition-colors active:bg-muted"
@@ -355,6 +392,53 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
               <GuestCommentInput postId={postId} onOptimisticAdd={handleGuestOptimisticAdd} isGreeting={isGreeting} isFeedback={isFeedback} />
             )}
           </div>
+
+          {/*
+            [닫기 확인 · H2] 쓰던 내용이 있을 때만 뜬다.
+            입력 패널(z-96) 바로 위 두 층만 쓴다 — 가입 배너(150)·팝업(200)보다 한참 아래라
+            기존 레이어 정책을 흔들지 않는다. 화면을 덮지 않도록 dim은 10%다.
+          */}
+          {composing && confirmingClose && (
+            <div className="md:hidden">
+              <div
+                className="fixed inset-0 z-[97] bg-black/10"
+                aria-hidden="true"
+                onClick={keepWriting}
+              />
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="comment-close-confirm-title"
+                data-testid="comment-close-confirm"
+                className="fixed inset-x-2 bottom-2 z-[98] rounded-2xl border border-border bg-card p-4 pb-[max(16px,env(safe-area-inset-bottom))] shadow-[0_-6px_22px_rgba(0,0,0,0.14)]"
+              >
+                <p id="comment-close-confirm-title" className="text-body font-bold text-foreground">
+                  댓글 작성을 멈출까요?
+                </p>
+                <p className="mt-1 text-caption text-muted-foreground">쓰던 내용은 그대로 있어요</p>
+                <div className="mt-4 flex gap-2">
+                  {/* 왼쪽은 약한 톤 — 가능하되 눈에 덜 띈다 */}
+                  <button
+                    type="button"
+                    onClick={closeCompose}
+                    data-testid="comment-close-confirm-close"
+                    className="min-h-[52px] flex-1 rounded-xl border border-border bg-card text-caption font-bold text-muted-foreground transition-colors active:bg-muted"
+                  >
+                    닫기
+                  </button>
+                  {/* 오른쪽이 기본값 — 안전한 쪽에 강조를 준다 */}
+                  <button
+                    type="button"
+                    onClick={keepWriting}
+                    data-testid="comment-close-confirm-keep"
+                    className="min-h-[52px] flex-1 rounded-xl bg-primary text-caption font-bold text-white transition-colors hover:bg-primary/90"
+                  >
+                    계속 쓰기
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
