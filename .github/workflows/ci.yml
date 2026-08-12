@@ -250,6 +250,7 @@ jobs:
           npx vitest run \
             src/__tests__/persona-curator-bridge.test.ts \
             src/__tests__/persona-registry.test.ts \
+            src/__tests__/persona-matcher-profiles-registry.test.ts \
             src/__tests__/persona-matcher-shadow.test.ts \
             src/__tests__/curator-menopause-persona.test.ts \
             src/__tests__/board-routing.test.ts \

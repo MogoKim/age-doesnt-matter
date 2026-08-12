@@ -65,18 +65,6 @@ const BASELINE: BaselineEntry[] = [
               'personasForRoutingBoard', 'personaIdsForRoutingBoard', 'personaBoardForRouting', 'matchPersona', 'PersonaMatch'],
     reason: 'PR-7c/7e — 전환용 facade. 소비자 이전 후 제거',
   },
-  {
-    file: 'agents/coo/persona-matcher-profiles.ts',
-    module: 'persona-data', kind: 'named-import',
-    symbols: ['PERSONAS'],
-    reason: 'PR-7d — registry로 흡수',
-  },
-  {
-    file: 'agents/coo/persona-matcher-profiles.ts',
-    module: 'curator-shared', kind: 'named-import',
-    symbols: ['PERSONAS'],
-    reason: 'PR-7d — registry로 흡수',
-  },
 ]
 
 /** (file, module, kind)로 baseline 엔트리를 찾는다 */

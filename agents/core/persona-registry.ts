@@ -21,7 +21,53 @@ import { PERSONAS as BOT_PERSONAS, type Persona } from '../seed/persona-data.js'
 import { PERSONAS as CURATOR_PERSONAS } from '../cafe/curator-shared.js'
 import { CURATOR_PERSONA_META } from '../cafe/curator-persona-meta.js'
 import { classifyTopicGroups, type TopicGroup } from '../coo/persona-matcher-policy.js'
-import { inferFamilyStatus, type FamilyStatus, type PersonaProfile } from '../coo/persona-matcher-profiles.js'
+
+/**
+ * PR-7d: 어댑터2(persona-matcher-profiles.ts)에 있던 정체성 타입·휴리스틱을 registry로 흡수했다.
+ * 이전에는 registry가 어댑터의 inferFamilyStatus를 **값으로** 불러 썼는데, 그 상태에서
+ * 어댑터를 registry 소비자로 바꾸면 런타임 순환(registry ↔ profiles)이 생긴다.
+ * 방향을 먼저 끊고(여기서 자체 보유) 어댑터가 registry를 보게 한다 — 단방향 유지.
+ * persona-matcher-profiles.ts가 아래 셋을 그대로 재수출하므로 기존 import 경로는 안 바뀐다.
+ */
+export type FamilyStatus = 'married' | 'widowed' | 'divorced' | 'solo' | 'unknown'
+
+export function inferFamilyStatus(text: string): FamilyStatus {
+  if (/사별|남편[을이가]?\s?(먼저|일찍)?\s?(보내|떠나|여의)|미망인/.test(text)) return 'widowed'
+  if (/이혼/.test(text)) return 'divorced'
+  if (/혼자\s?(산|살|지내)|독거|1인\s?가구|싱글/.test(text)) return 'solo'
+  if (/남편|신랑|그이|영감|부부|시댁|시어머니|며느리|사위/.test(text)) return 'married' // 시댁·며느리 화자는 기혼 신호
+  if (/아들|딸|자녀|애들|손주|손녀|손자|시집|장가/.test(text)) return 'married' // 자녀·손주 존재 = 기혼 추론 강화(calibration 5 — 사별/이혼/혼자 신호 선순위 유지)
+  return 'unknown'
+}
+
+/** matcher가 쓰는 프로필 형태. 어댑터2에서 옮겨왔다(PR-7d) — 값 변환은 toPersonaProfile이 담당한다. */
+export interface PersonaProfile {
+  /** 관측 key — bot은 대문자 id('A'), curator는 'curator-A' */
+  key: string
+  authorEmail: string
+  nickname: string
+  origin: 'bot' | 'curator'
+  board: string
+  /** core 주제군 (텍스트 분류) */
+  topicGroups: TopicGroup[]
+  familyStatus: FamilyStatus
+  hasGrandchildren: boolean
+  /** wave 전용(BI~BW) — 원글 작성 배정 절대 불가 */
+  reactionOnly: boolean
+  /** 정체성이 가벼운 리액션/짤/유머형 — 건강 글 배정 금지, 은퇴/돈 글 감점 (calibration 2026-07-16) */
+  lightTone: boolean
+  /** 닉네임만 유머형(웃음○○ 등) — 정체성이 정상이면 배정 가능하되 nicknameToneMismatch flag */
+  nicknameLightTone: boolean
+  /** 정체성이 건강/공감형 — 건강 글에서 유머형 닉네임이라도 예외 허용되는 유일 조건 (calibration 1) */
+  empathyTone: boolean
+  /** 무거운 사연(간병/사별/학대 등) 배정 가능 — 메타 명시 없으면 true (2026-07-19 shadow 보강) */
+  heavyOk: boolean
+  /** 페르소나 원본 토픽 텍스트 — 글 키워드 겹침 보너스용 */
+  rawTopics: string
+  /** GENERAL/동네일상 위주의 범용 성향 — reserve fallback 후보 근사 */
+  reserveCandidate: boolean
+  depth: 'deep' | 'shallow'
+}
 
 /**
  * Temporary bridge for PR-4 seed migration. Exposes the exact legacy seed functions
