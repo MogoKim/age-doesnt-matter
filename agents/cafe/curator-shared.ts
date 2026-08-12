@@ -138,21 +138,11 @@ export function getKstContext(): string {
 }
 
 /**
- * curator 페르소나 정의는 agents/cafe/curator-personas.ts로 분리했다 (PR-7b).
- * 기존 소비자가 깨지지 않도록 여기서 그대로 re-export한다 — PR-7c에서 소비자를
- * curator-personas.ts(또는 registry)로 옮기고, PR-7e에서 이 facade를 걷어낸다.
+ * curator 페르소나 정의는 agents/cafe/curator-personas.ts에 있고,
+ * 소비 진입점은 agents/core/persona-registry.ts 하나다 (PR-7e에서 전환용 facade 제거).
+ * 이 파일은 텍스트 유틸·보드 라우팅만 담당한다 — persona 심볼을 여기서 다시 내보내지 않는다.
+ * (scripts/check-persona-ssot.ts가 재도입을 차단한다)
  */
-export {
-  PERSONAS,
-  DESIRE_PERSONA_MAP,
-  MENOPAUSE_CURATOR_PERSONA_IDS,
-  isMenopauseCuratorPersona,
-  personasForRoutingBoard,
-  personaIdsForRoutingBoard,
-  personaBoardForRouting,
-  matchPersona,
-  type PersonaMatch,
-} from './curator-personas.js'
 
 
 

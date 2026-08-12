@@ -12,7 +12,9 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import * as registry from '../../agents/core/persona-registry'
-import * as curatorShared from '../../agents/cafe/curator-shared'
+// PR-7e: facade(curator-shared) 제거. 비교 대상은 정의 원본이다.
+// namespace import는 ALLOW — 'registry vs 원본 동일성' 증명이 이 파일의 존재 이유다.
+import * as curatorPersonas from '../../agents/cafe/curator-personas'
 
 const ROOT = join(__dirname, '../..')
 const curatorUsersSrc = readFileSync(join(ROOT, 'agents/cafe/curator-users.ts'), 'utf8')
@@ -20,12 +22,12 @@ const registrySrc = readFileSync(join(ROOT, 'agents/core/persona-registry.ts'), 
 
 describe('registry curator bridge — 원본과 동일', () => {
   it('225명 전수 동일 (registry 경유 vs 원본 직접)', () => {
-    expect(curatorShared.PERSONAS).toHaveLength(225)
-    expect(registry.PERSONAS).toHaveLength(curatorShared.PERSONAS.length)
+    expect(curatorPersonas.PERSONAS).toHaveLength(225)
+    expect(registry.PERSONAS).toHaveLength(curatorPersonas.PERSONAS.length)
     const diffs: string[] = []
-    for (let i = 0; i < curatorShared.PERSONAS.length; i++) {
+    for (let i = 0; i < curatorPersonas.PERSONAS.length; i++) {
       const a = registry.PERSONAS[i]
-      const b = curatorShared.PERSONAS[i]
+      const b = curatorPersonas.PERSONAS[i]
       if (JSON.stringify(a) !== JSON.stringify(b)) diffs.push(`${b.id}(값)`)
       if (a !== b) diffs.push(`${b.id}(참조)`)
     }
@@ -33,11 +35,11 @@ describe('registry curator bridge — 원본과 동일', () => {
   })
 
   it('PERSONAS 배열 참조 동일 (복사본 아님)', () => {
-    expect(registry.PERSONAS).toBe(curatorShared.PERSONAS)
+    expect(registry.PERSONAS).toBe(curatorPersonas.PERSONAS)
   })
 
   it('id 목록·순서 동일', () => {
-    expect(registry.PERSONAS.map(p => p.id)).toEqual(curatorShared.PERSONAS.map(p => p.id))
+    expect(registry.PERSONAS.map(p => p.id)).toEqual(curatorPersonas.PERSONAS.map(p => p.id))
   })
 
   it('PersonaMatch 타입 계약 유지 (필수 필드 존재)', () => {
@@ -58,15 +60,15 @@ describe('id → nickname fallback (getCuratorBotUser 로직 보존)', () => {
 
   it('알려진 id는 nickname 반환 — 전수 동일', () => {
     const diffs: string[] = []
-    for (const p of curatorShared.PERSONAS) {
-      if (lookup(registry.PERSONAS, p.id) !== lookup(curatorShared.PERSONAS, p.id)) diffs.push(p.id)
+    for (const p of curatorPersonas.PERSONAS) {
+      if (lookup(registry.PERSONAS, p.id) !== lookup(curatorPersonas.PERSONAS, p.id)) diffs.push(p.id)
     }
     expect(diffs).toEqual([])
   })
 
   it('알 수 없는 id는 id 자신으로 fallback — 양쪽 동일', () => {
     for (const bogus of ['__NOPE__', 'ZZZ999', '']) {
-      expect(lookup(registry.PERSONAS, bogus)).toBe(lookup(curatorShared.PERSONAS, bogus))
+      expect(lookup(registry.PERSONAS, bogus)).toBe(lookup(curatorPersonas.PERSONAS, bogus))
       expect(lookup(registry.PERSONAS, bogus)).toBe(bogus)
     }
   })
@@ -98,6 +100,30 @@ describe('임시 bridge임을 코드가 밝힌다', () => {
   it('registry에 임시 bridge / 제거 예정이 명시돼 있다', () => {
     expect(registrySrc).toContain('Temporary bridge for curator persona migration')
     expect(registrySrc).toContain('removed in PR-7e')
+  })
+
+  it('curator-shared에는 persona 심볼 re-export가 없다 (PR-7e 회귀 가드)', () => {
+    const sharedSrc = readFileSync(join(ROOT, 'agents/cafe/curator-shared.ts'), 'utf8')
+    const PERSONA_SYMS = [
+      'PERSONAS', 'PersonaMatch', 'DESIRE_PERSONA_MAP', 'MENOPAUSE_CURATOR_PERSONA_IDS',
+      'isMenopauseCuratorPersona', 'personasForRoutingBoard', 'personaIdsForRoutingBoard',
+      'personaBoardForRouting', 'matchPersona',
+    ]
+    // export { … } from './curator-personas.js' 형태가 남아 있으면 facade가 되살아난 것
+    for (const m of sharedSrc.matchAll(/export\s*\{([^}]*)\}\s*from\s*'([^']+)'/g)) {
+      const names = m[1].split(',').map(x => x.trim().replace(/^type /, '')).filter(Boolean)
+      expect(names.filter(n => PERSONA_SYMS.includes(n))).toEqual([])
+    }
+    // star re-export도 금지 — 심볼을 숨긴 채 같은 효과를 낸다
+    expect(sharedSrc).not.toMatch(/export\s*\*\s*from\s*'\.\/curator-personas\.js'/)
+  })
+
+  it('registry는 조립·재수출 모두 정의 원본을 본다 (facade 경유 0)', () => {
+    // 멀티라인 `export { … } from '…'` 블록까지 잡으려면 줄바꿈을 넘어야 한다
+    const mods = [...registrySrc.matchAll(/(?:import|export)\s[\s\S]*?from\s*'([^']+)'/g)].map(m => m[1])
+    expect(mods.filter(m => m.includes('curator-shared'))).toEqual([])
+    // 조립용 import(L21) + 재수출 블록 = 최소 2회
+    expect(mods.filter(m => m.includes('curator-personas')).length).toBeGreaterThanOrEqual(2)
   })
 
   it('bridge는 변환하지 않는다 — 정의 원본(curator-personas)을 그대로 재수출', () => {
