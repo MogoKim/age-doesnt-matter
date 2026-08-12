@@ -8,6 +8,13 @@ import type { Grade } from '@/generated/prisma/client'
 const GRADE_EMOJI: Record<string, string> = {
   SPROUT: '🌱', REGULAR: '🌿', WARM_NEIGHBOR: '☀️', HONORARY: '🏅',
 }
+
+/**
+ * [B안] 하단 작성 패널이 열렸을 때의 placeholder.
+ * 인라인 상태의 '댓글을 남겨주세요...'를 그대로 두면 패널 제목('댓글 쓰는 중')과 같은 말이 두 번 나온다.
+ * 제목이 무엇을 하는 중인지 말하므로, placeholder는 **무엇을 쓸지**만 안내한다.
+ */
+const COMPOSE_PLACEHOLDER = '생각을 자유롭게 적어주세요'
 import CommentItemComponent from './CommentItem'
 import CommentInput from './CommentInput'
 import GuestCommentInput from './GuestCommentInput'
@@ -47,6 +54,8 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
   const L = isFeedback
     ? { unit: '의견', popular: '많이 공감한 의견', emptyTitle: '아직 의견이 없어요', emptyBody: '첫 의견을 남겨주세요!' }
     : { unit: '댓글', popular: '인기 댓글', emptyTitle: '아직 댓글이 없어요', emptyBody: '따뜻한 한마디를 남겨보세요!' }
+  // [B안] 하단 작성 패널 헤더. 기존 '댓글→의견' 문구 정책을 그대로 따른다.
+  const composeHeading = isGreeting ? '환영 인사 쓰는 중' : isFeedback ? '의견 쓰는 중' : '댓글 쓰는 중'
   const { user, status } = useAppSession()
   const authKnown = typeof isLoggedIn === 'boolean' || status !== 'loading'
   const resolvedIsLoggedIn = isLoggedIn ?? status === 'authenticated'
@@ -372,7 +381,12 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
           >
             {composing && (
               // 닫기는 ✕ 버튼만이다. 바깥 탭으로 닫으면 쓰던 글이 실수로 사라진다.
-              <div className="sticky top-0 z-10 -mx-3 mb-1 flex justify-end bg-card px-3 pt-1 md:hidden">
+              // [B안] 왼쪽에 상태 제목을 둔다 — 패널이 열렸다는 것과 지금이 '쓰는 중'이라는 것을 알린다.
+              //   입력 컴포넌트(회원/비회원)가 각자 갖던 제목 대신 여기 하나로 모아 중복을 없앤다.
+              <div className="sticky top-0 z-10 -mx-3 mb-1 flex items-center justify-between bg-card px-3 pt-1 md:hidden">
+                <span data-testid="comment-compose-heading" className="text-body font-bold text-foreground">
+                  {composeHeading}
+                </span>
                 <button
                   type="button"
                   onClick={requestClose}
@@ -387,9 +401,20 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
               </div>
             )}
             {resolvedIsLoggedIn ? (
-              <CommentInput postId={postId} onOptimisticAdd={resolvedCurrentUser ? handleOptimisticAdd : undefined} />
+              <CommentInput
+                postId={postId}
+                onOptimisticAdd={resolvedCurrentUser ? handleOptimisticAdd : undefined}
+                placeholder={composing ? COMPOSE_PLACEHOLDER : undefined}
+              />
             ) : (
-              <GuestCommentInput postId={postId} onOptimisticAdd={handleGuestOptimisticAdd} isGreeting={isGreeting} isFeedback={isFeedback} />
+              <GuestCommentInput
+                postId={postId}
+                onOptimisticAdd={handleGuestOptimisticAdd}
+                isGreeting={isGreeting}
+                isFeedback={isFeedback}
+                placeholder={composing ? COMPOSE_PLACEHOLDER : undefined}
+                hideHeading={composing}
+              />
             )}
           </div>
 

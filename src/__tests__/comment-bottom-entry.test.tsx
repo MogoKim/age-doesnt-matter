@@ -148,13 +148,48 @@ describe('CommentDock — 생김새', () => {
   it('댓글 수를 표시하지 않는다', async () => {
     await renderNearComment()
     const text = screen.getByTestId('comment-dock').textContent ?? ''
-    expect(text).toBe('댓글을 남겨주세요')
+    expect(text).toContain('댓글을 남겨주세요')
+    // 숫자가 한 글자도 없어야 한다 — 개수를 보여주면 "댓글이 많네"로 읽혀 진입을 막는다.
     expect(text).not.toMatch(/\d/)
   })
 
   it('의견수렴형이면 문구가 의견으로 바뀐다', async () => {
     await renderNearComment(true)
-    expect(screen.getByTestId('comment-dock').textContent).toBe('의견을 남겨주세요')
+    expect(screen.getByTestId('comment-dock').textContent).toContain('의견을 남겨주세요')
+  })
+
+  /*
+    [B안] 아래 세 가지가 이번 변경의 핵심이다.
+    Dock은 이미 52px·20px이라 크기는 충분했다 — 문제는 흰 Dock 위 거의 흰 버튼이라
+    "누를 수 있는 것"으로 읽히지 않는다는 점이었다.
+  */
+  it('오른쪽에 행동을 말하는 "쓰기"가 있다 — 아이콘만으로는 의미가 약하다', async () => {
+    await renderNearComment()
+    expect(screen.getByTestId('comment-dock').textContent).toContain('쓰기')
+  })
+
+  it('버튼이 배경과 대비된다 — Dock은 흰색(card), 버튼은 회색(muted)', async () => {
+    await renderNearComment()
+    const dockEl = screen.getByTestId('comment-dock')
+    expect(dockEl.className).toContain('bg-card')
+    const btn = dockEl.querySelector('button')!
+    expect(btn.className).toContain('bg-muted')
+    // 회귀 방지: 예전의 bg-background(#F9FAFB)는 흰 Dock과 명도차가 거의 없었다.
+    expect(btn.className).not.toContain('bg-background')
+  })
+
+  it('브랜드 색을 쓰지 않는다 — 상시 노출 띠에 코랄을 얹으면 가입 배너로 읽힌다', async () => {
+    await renderNearComment()
+    expect(screen.getByTestId('comment-dock').outerHTML).not.toMatch(/primary|#FF6F61|#E85D50/i)
+  })
+
+  it('높이를 키우지 않는다 — 광고 겹침 0/41과 노출 타이밍이 여기에 걸려 있다', async () => {
+    await renderNearComment()
+    const dockEl = screen.getByTestId('comment-dock')
+    // 바깥 패딩(pt-2 + safe-area)과 버튼 최소 높이가 Dock 전체 높이를 결정한다.
+    expect(dockEl.className).toContain('pt-2')
+    expect(dockEl.className).toContain('pb-[max(8px,env(safe-area-inset-bottom))]')
+    expect(dockEl.querySelector('button')!.className).toContain('min-h-[52px]')
   })
 
   it('Dock 안에 입력 필드를 만들지 않는다 — 진입점이지 입력창이 아니다', async () => {
