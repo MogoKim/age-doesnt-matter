@@ -65,7 +65,7 @@
 - Codex=운영 마스터(방향·검증) / Claude=실행(진단·구현). read-only 진단 → 승인 → 구현 순서를 지킨다
 - merge는 창업자 승인 전 금지. PR 제목에 `[merge 금지]` 유지
 - 이전 보고와 실측이 어긋나면 정정부터 하고 진행한다
-- 상세: `docs/ops/OPERATING_MASTER_HARNESS.md` (PR-B3에서 신설 예정)
+- 상세: `docs/ops/OPERATING_MASTER_HARNESS.md`
 
 ## 수정 범위 최소화 (멀티 AI 세션 대응)
 Claude Code + Codex 등 여러 AI 세션이 동시에 작업한다. 세션 간 충돌 방지를 위해 반드시 준수.
