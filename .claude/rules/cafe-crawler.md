@@ -1,4 +1,7 @@
 ---
+paths:
+  - "agents/cafe/**/*.ts"
+  - "agents/cafe/**/*.js"
 globs: ["agents/cafe/**/*.ts", "agents/cafe/**/*.js"]
 ---
 

@@ -1,4 +1,9 @@
 ---
+paths:
+  - "src/components/ad/**"
+  - "src/app/layout.tsx"
+  - "agents/**/*.ts"
+  - ".github/workflows/**"
 globs: ["src/components/ad/**", "src/app/layout.tsx", "agents/**/*.ts", ".github/workflows/**"]
 description: 배포 QA 규칙 — 광고/에이전트/워크플로우 변경 시 자동 안내
 ---

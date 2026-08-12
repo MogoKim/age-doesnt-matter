@@ -1,4 +1,6 @@
 ---
+paths:
+  - "src/components/**/*.tsx"
 globs: src/components/**/*.tsx
 ---
 

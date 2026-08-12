@@ -1,4 +1,8 @@
 ---
+paths:
+  - "docs/features/**"
+  - "agents/**/*.ts"
+  - ".github/workflows/agents-*.yml"
 globs: ["docs/features/**", "agents/**/*.ts", ".github/workflows/agents-*.yml"]
 ---
 

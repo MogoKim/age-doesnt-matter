@@ -1,4 +1,6 @@
 ---
+paths:
+  - "agents/**/*.ts"
 globs: agents/**/*.ts
 ---
 

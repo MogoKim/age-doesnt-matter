@@ -1,3 +1,15 @@
+---
+paths:
+  - "src/components/features/event/**"
+  - "src/app/(main)/events/**"
+  - "src/app/api/events/**"
+  - "src/app/api/votes/**"
+  - "src/app/dev/event-preview/**"
+  - "src/app/admin/(panel)/vote-events/**"
+  - "scripts/qa-event-fixture.ts"
+  - "e2e/qa/*participation-events*.spec.ts"
+---
+
 # 참여 이벤트 QA 체크리스트 (절대 준수 — 기능 구현 후 필수)
 
 > 대상: **참여 이벤트 3종 = VOTE(투표형) / FEEDBACK(의견수렴형) / SURVEY(1분 의견함)** 및 그 노출 계층(Event·팝업·HERO·/events 상세).
