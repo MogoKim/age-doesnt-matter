@@ -104,8 +104,13 @@ WAIT 예: 에이전트 안정성 누적 관찰, 24h 검증, 백로그 운영 게
 
 ## 6. 안전장치 (이미 존재 — 재사용)
 - `/done` Gate 1: tsc + build + cron-links + 아키텍처 검토 → 브랜치 push + `[merge 금지]` PR까지만
-- `.claude/settings.json` PreToolUse: **3종만** 차단 — `rm -rf /`(루트 한정) · `git push -f|--force origin main` · `git reset --hard`
-  - ⚠️ force가 아닌 **평문 main push**와 `rm -rf <임의경로>`는 **차단되지 않는다.** 이 훅을 안전망으로 믿고 AUTO 경계를 넓히지 마라
+- `.claude/settings.json` PreToolUse가 차단하는 것 (실측 기준):
+  - **`main` 대상 push 전면** — force 유무 무관. `origin main` · `-u origin main` · `origin HEAD:main` · `origin +main` · `--force-with-lease origin main` 전부 차단
+  - **`git reset --hard`** (모든 형태)
+  - **`rm -rf` 계열 + `/`로 시작하는 절대경로** — 루트뿐 아니라 `/Users/...` 같은 모든 절대경로. 플래그 변형(`-rf`·`-fr`·`-r -f`)도 포함
+  - ⚠️ **사각지대**: `rm -rf`의 **상대경로**(`rm -rf src/`)와 **`~/` 경로**는 차단되지 않는다(`rm -rf .next` 같은 정상 작업을 막지 않기 위한 의도적 범위)
+  - ⚠️ `gh pr merge` · `gh workflow run` · `prisma migrate deploy` · `launchctl`은 **훅이 막지 않는다.** 승인 후 Claude가 대행해야 하는 명령이라 하드 블록 대상에서 제외했다 — 규칙(§0-A·2-B)으로만 통제된다
+  - 이 훅은 문자열 매칭이라 우회가 가능하다. **안전망으로 과신하지 말고 AUTO 경계를 넓히지 마라**
 - `.claude/sessions/domain-map.json`: 멀티 AI 도메인 침범 경고
 - `agents/core/constitution.yaml` `automation_status`: 에이전트 자동화 ON/OFF
 - `/careful`: 되돌리기 어려운 작업 전 게이트
