@@ -142,21 +142,30 @@ async function processUserWave(
     }
     priorCommentTexts.push(commentText)
 
-    await prisma.$transaction([
+    // createdComment: 알림 앵커(#comment-{id})용으로 새 댓글 id만 받는다.
+    // 트랜잭션 구성·commentCount 증가·성공/실패 조건은 그대로다(select 추가만).
+    const [createdComment] = (await prisma.$transaction([
       prisma.comment.create({
         data: { postId: queue.postId, authorId: userId, content: commentText, status: 'ACTIVE' },
+        select: { id: true },
       }),
       prisma.post.update({
         where: { id: queue.postId },
         data: { commentCount: { increment: 1 } },
       }),
-    ])
+    ])) as [{ id: string } | undefined, unknown]
 
     successCount++
     console.log(`[UserPostWave] wave${waveNum} 자연 댓글 게시: postId=${queue.postId}, persona=${personaId}, nickname=${getPersona(personaId).nickname}`)
 
     // 봇 댓글 → 실고객 글쓴이에게 종 알림 (봇 글쓴이는 헬퍼에서 자동 제외)
-    await notifyAuthorOfBotComment({ recipientUserId: queue.authorId, postId: queue.postId, botUserId: userId })
+    // commentId를 넘겨 알림이 글 상단이 아니라 이 댓글 위치로 이동하게 한다(없으면 기존 동작).
+    await notifyAuthorOfBotComment({
+      recipientUserId: queue.authorId,
+      postId: queue.postId,
+      botUserId: userId,
+      commentId: createdComment?.id ?? null,
+    })
   }
 
   return successCount
