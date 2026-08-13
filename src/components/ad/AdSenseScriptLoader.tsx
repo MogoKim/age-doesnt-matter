@@ -10,6 +10,32 @@ const INTERACTION_EVENTS = ['pointerdown', 'keydown', 'touchstart'] as const
 const IDLE_AFTER_LOAD_MS = 4000
 const BACKSTOP_MS = 8000
 
+/**
+ * 입력 요소 선택자 — 댓글·검색·닉네임/비밀번호처럼 고객이 글자를 치는 지점.
+ * GtagLoader와 동일한 목록을 쓴다(두 로더의 트리거 정책 일치).
+ * button은 넣지 않는다 — 로그인·가입 CTA·글쓰기 FAB·공감·정렬처럼 글자를 치는 게 아니라
+ * 탐색/전환 액션이라, 제외하면 광고·분석 로딩이 불필요하게 늦어진다.
+ */
+const EDITABLE_SELECTOR = [
+  'textarea',
+  'input',
+  'select',
+  '[contenteditable]',
+  '[contenteditable="true"]',
+  '[role="textbox"]',
+  '[aria-multiline="true"]',
+].join(',')
+
+/**
+ * 입력 이벤트는 고객이 글자를 치는 순간이므로 첫 광고 로딩 트리거에서 제외한다.
+ * 로딩을 막는 게 아니라 미루는 것 — idle/backstop이 노출을 보장한다.
+ */
+function isFromEditable(event: Event): boolean {
+  const target = event.target
+  if (!(target instanceof Element)) return false
+  return target.closest(EDITABLE_SELECTOR) !== null
+}
+
 type AdSenseWindow = Window & {
   adsbygoogle?: Record<string, unknown>[]
   __unaoAdsenseLoaded?: boolean
@@ -77,10 +103,16 @@ export default function AdSenseScriptLoader() {
     const cap = (window as Window & { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor
     if (cap?.isNativePlatform?.() === true) return
 
-    // 트리거 ①: 첫 사용자 상호작용
-    const onInteract = () => loadAdSenseOnce()
+    // 트리거 ①: 첫 사용자 상호작용 (읽기·탐색 행위)
+    // 입력 요소에서 시작된 이벤트는 건너뛴다 — once 대신 직접 해제하므로, 입력 탭을
+    // 흘려보낸 뒤에도 리스너가 살아 있어 이후 읽기·탐색 상호작용에서 기존처럼 즉시 로드된다.
+    const onInteract = (event: Event) => {
+      if (isFromEditable(event)) return
+      INTERACTION_EVENTS.forEach((e) => window.removeEventListener(e, onInteract))
+      loadAdSenseOnce()
+    }
     INTERACTION_EVENTS.forEach((e) =>
-      window.addEventListener(e, onInteract, { once: true, passive: true }),
+      window.addEventListener(e, onInteract, { passive: true }),
     )
 
     // 트리거 ②: load 이후 idle (첫 화면 렌더와 경쟁하지 않게 후행)
