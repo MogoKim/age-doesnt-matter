@@ -2,8 +2,32 @@
 # 크롤러 상태 일괄 진단 스크립트
 # 사용법: bash .claude/commands/runbook-crawler/scripts/diagnose.sh
 
-PROJECT_DIR="/Users/yanadoo/Documents/New_Claude_agenotmatter"
-LOG_FILE="$PROJECT_DIR/logs/cafe-crawler.log"
+# 크롤러 실행 워크스페이스 해석 (하드코딩 금지).
+# 크롤러는 launchd로 로컬 Mac에서 돌고, 그 WorkingDirectory가 로그·쿠키의 기준이다.
+# 순서: 명시 override → 현재 repo(logs 있을 때) → launchd plist의 WorkingDirectory → 현재 repo
+resolve_project_dir() {
+  if [ -n "$UNAO_CRAWLER_DIR" ]; then echo "$UNAO_CRAWLER_DIR"; return; fi
+
+  local repo="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}"
+  if [ -n "$repo" ] && [ -d "$repo/logs" ]; then echo "$repo"; return; fi
+
+  local plist
+  plist=$(ls "$HOME"/Library/LaunchAgents/com.unao.cafe-crawler-*.plist 2>/dev/null | head -1)
+  if [ -n "$plist" ]; then
+    local wd
+    wd=$(/usr/libexec/PlistBuddy -c "Print :WorkingDirectory" "$plist" 2>/dev/null)
+    if [ -n "$wd" ] && [ -d "$wd" ]; then echo "$wd"; return; fi
+  fi
+
+  echo "$repo"
+}
+
+PROJECT_DIR="$(resolve_project_dir)"
+# 시간대별 로그가 여러 개다(morning/lunch/…). 가장 최근 것을 본다.
+LOG_FILE=$(ls -t "$PROJECT_DIR"/logs/cafe-crawler*.log 2>/dev/null | head -1)
+[ -z "$LOG_FILE" ] && LOG_FILE="$PROJECT_DIR/logs/cafe-crawler.log"
+
+echo "크롤러 워크스페이스: $PROJECT_DIR"
 
 echo "=== 크롤러 진단 시작 ==="
 echo ""
