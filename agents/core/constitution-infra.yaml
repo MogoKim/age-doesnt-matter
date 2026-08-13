@@ -58,7 +58,7 @@ qa_agent:
         - "크론 연결 무결성: check-cron-links.ts (orphaned 핸들러 없음)"
         - "빌드: npm run build (agents/workflows/prisma 변경 시만)"
         - "AI 아키텍처: Haiku가 constitution 규칙 위반 여부 판단"
-      pass_action: "자동으로 git commit + git push origin main (묻지 않음)"
+      pass_action: "git commit + 작업 브랜치 push + '[merge 금지]' PR 생성까지. main 직접 push 금지 · merge와 배포는 창업자 승인 후 별도 진행"
       fail_action: "Claude 대화창 오류 표시 + Slack #qa 상세 알림 + 커밋 중단"
       slack_format: "프로젝트명 우나어(age-doesnt-matter) + 구분선 + 각 체크 결과 + 행동 지침"
     gate2:
