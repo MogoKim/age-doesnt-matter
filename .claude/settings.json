@@ -29,7 +29,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'INPUT=$(cat); CMD=$(echo \"$INPUT\" | jq -r \".tool_input.command // empty\"); if echo \"$CMD\" | grep -qE \"rm\\s+-rf\\s+/|git\\s+push\\s+(-f|--force)\\s+(origin\\s+)?main|git\\s+reset\\s+--hard\"; then echo \"BLOCKED: 위험한 명령입니다.\" >&2; exit 2; fi'"
+            "command": "bash -c 'INPUT=$(cat); CMD=$(echo \"$INPUT\" | jq -r \".tool_input.command // empty\"); if echo \"$CMD \" | grep -qE \"rm\\s+(-rf|-fr|-r\\s+-f|-f\\s+-r)\\s+/|git\\s+reset\\s+--hard|git\\s+push\\s+([^;&|]*\\s+)?origin\\s+\\+?(HEAD:)?main[^A-Za-z0-9._/-]|git\\s+push\\s+[^;&|]*(-f|--force)[^;&|]*\\s+main[^A-Za-z0-9._/-]\"; then echo \"BLOCKED: 위험한 명령입니다. main 직접 push 금지 — 작업 브랜치 push + PR 경로를 사용하세요.\" >&2; exit 2; fi'"
           }
         ]
       }
