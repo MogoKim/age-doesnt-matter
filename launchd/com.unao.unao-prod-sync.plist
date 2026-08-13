@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>HOME</key>
+		<string>/Users/yanadoo</string>
+		<key>PATH</key>
+		<string>/Users/yanadoo/.nvm/versions/node/v24.14.0/bin:/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin</string>
+		<key>UNAO_WORKDIR</key>
+		<string>/Users/yanadoo/Documents/unao-prod</string>
+	</dict>
+	<key>Label</key>
+	<string>com.unao.unao-prod-sync</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/Users/yanadoo/.nvm/versions/node/v24.14.0/bin/node</string>
+		<string>/Users/yanadoo/Documents/unao-prod/scripts/launchd-wrapper.mjs</string>
+		<string>unao-prod-sync</string>
+		<string>/usr/bin/git</string>
+		<string>-C</string>
+		<string>/Users/yanadoo/Documents/unao-prod</string>
+		<string>pull</string>
+		<string>--ff-only</string>
+	</array>
+	<key>RunAtLoad</key>
+	<false/>
+	<key>StandardErrorPath</key>
+	<string>/Users/yanadoo/Documents/unao-prod/logs/unao-prod-sync-error.log</string>
+	<key>StandardOutPath</key>
+	<string>/Users/yanadoo/Documents/unao-prod/logs/unao-prod-sync.log</string>
+	<key>StartCalendarInterval</key>
+	<dict>
+		<key>Hour</key>
+		<integer>3</integer>
+		<key>Minute</key>
+		<integer>0</integer>
+	</dict>
+	<key>WorkingDirectory</key>
+	<string>/Users/yanadoo/Documents/unao-prod</string>
+</dict>
+</plist>

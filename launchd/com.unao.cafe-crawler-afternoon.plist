@@ -10,11 +10,11 @@
         <!-- node 사용 이유: /bin/bash는 kTCCServiceSystemPolicyDocumentsFolder TCC 미승인 →
              launchd에서 ~/Documents/ 접근 불가. node는 TCC 승인됨. -->
         <string>/Users/yanadoo/.nvm/versions/node/v24.14.0/bin/node</string>
-        <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/scripts/launchd-wrapper.mjs</string>
+        <string>/Users/yanadoo/Documents/unao-prod/scripts/launchd-wrapper.mjs</string>
         <string>cafe-crawler-afternoon</string>
         <string>/Users/yanadoo/.nvm/versions/node/v24.14.0/bin/npx</string>
         <string>tsx</string>
-        <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/agents/cafe/run-pipeline.ts</string>
+        <string>/Users/yanadoo/Documents/unao-prod/agents/cafe/run-pipeline.ts</string>
         <string>crawl-only</string>
     </array>
 
@@ -28,13 +28,13 @@
     </dict>
 
     <key>WorkingDirectory</key>
-    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter</string>
+    <string>/Users/yanadoo/Documents/unao-prod</string>
 
     <key>StandardOutPath</key>
-    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/logs/cafe-crawler-afternoon.log</string>
+    <string>/Users/yanadoo/Documents/unao-prod/logs/cafe-crawler-afternoon.log</string>
 
     <key>StandardErrorPath</key>
-    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/logs/cafe-crawler-afternoon-error.log</string>
+    <string>/Users/yanadoo/Documents/unao-prod/logs/cafe-crawler-afternoon-error.log</string>
 
     <key>EnvironmentVariables</key>
     <dict>
