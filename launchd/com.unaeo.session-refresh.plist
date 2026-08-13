@@ -43,6 +43,8 @@
         <string>/Users/yanadoo/.nvm/versions/node/v24.14.0/bin:/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin</string>
         <key>HOME</key>
         <string>/Users/yanadoo</string>
+        <key>UNAO_WORKDIR</key>
+        <string>/Users/yanadoo/Documents/unao-prod</string>
     </dict>
 </dict>
 </plist>
