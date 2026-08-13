@@ -8,6 +8,7 @@ import { calculateTrendingScore } from '@/lib/utils/trending'
 import { notifyUser } from '@/lib/notify'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import { normalizeCommentBody, toNotificationPreview } from '@/lib/comment-normalize'
+import { revalidatePostComments } from '@/lib/queries/comments'
 
 interface GuestCommentResult {
   error?: string
@@ -56,7 +57,8 @@ export async function createGuestComment({
 
   const post = await prisma.post.findUnique({
     where: { id: postId, status: 'PUBLISHED' },
-    select: { id: true, boardType: true },
+    // slug: 캐시 무효화 대상 경로/태그를 정본 URL 기준으로도 만들기 위해 함께 조회 (추가 쿼리 없음)
+    select: { id: true, boardType: true, slug: true },
   })
   if (!post) return { error: '존재하지 않는 게시글입니다' }
 
@@ -140,9 +142,8 @@ export async function createGuestComment({
   })().catch(() => {})
 
   revalidatePath('/community')
-  revalidatePath('/community/[boardSlug]/[postId]', 'page')
-  revalidateTag('comments-by-post')
-  revalidateTag('post-detail')
+  revalidatePostComments(postId, post)
+  // 홈 노출 갱신 — 이번 변경 범위 밖(홈 무효화 축소는 별도 PR)이라 그대로 둔다.
   revalidateTag('home-trending')
   return { id: comment.id }
 }
@@ -208,15 +209,15 @@ export async function editGuestComment(
   const { ok, error } = await verifyGuestPassword(commentId, password)
   if (!ok) return { error }
 
-  await prisma.comment.update({
+  // update 결과로 글 정보를 함께 받아 무효화 범위를 이 글 하나로 좁힌다 (추가 쿼리 없음)
+  const updated = await prisma.comment.update({
     where: { id: commentId },
     data: { content: trimmedContent },
+    select: { postId: true, post: { select: { boardType: true, slug: true } } },
   })
 
   revalidatePath('/community')
-  revalidatePath('/community/[boardSlug]/[postId]', 'page')
-  revalidateTag('comments-by-post')
-  revalidateTag('post-detail')
+  revalidatePostComments(updated.postId, updated.post)
   return {}
 }
 
@@ -227,10 +228,11 @@ export async function deleteGuestComment(
   const { ok, error } = await verifyGuestPassword(commentId, password)
   if (!ok) return { error }
 
-  await prisma.$transaction(async (tx) => {
+  // 트랜잭션에서 이미 조회하던 댓글에 글 정보를 얹어 돌려받는다 — 무효화 범위를 이 글 하나로 좁히기 위함
+  const target = await prisma.$transaction(async (tx) => {
     const comment = await tx.comment.findUnique({
       where: { id: commentId },
-      select: { postId: true },
+      select: { postId: true, post: { select: { boardType: true, slug: true } } },
     })
     await tx.comment.update({
       where: { id: commentId },
@@ -242,11 +244,10 @@ export async function deleteGuestComment(
         data: { commentCount: { decrement: 1 } },
       })
     }
+    return comment
   })
 
   revalidatePath('/community')
-  revalidatePath('/community/[boardSlug]/[postId]', 'page')
-  revalidateTag('comments-by-post')
-  revalidateTag('post-detail')
+  if (target) revalidatePostComments(target.postId, target.post)
   return {}
 }

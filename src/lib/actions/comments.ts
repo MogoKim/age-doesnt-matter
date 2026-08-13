@@ -1,6 +1,5 @@
 'use server'
 
-import { revalidatePath, revalidateTag } from 'next/cache'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { checkBannedWords } from '@/lib/banned-words'
@@ -12,6 +11,7 @@ import { calculateTrendingScore } from '@/lib/utils/trending'
 import { notifyUser } from '@/lib/notify'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import { getWriteBlockReason } from '@/lib/sanctions'
+import { revalidatePostComments } from '@/lib/queries/comments'
 
 interface CommentResult {
   error?: string
@@ -52,7 +52,8 @@ export async function createComment(
   // 게시글 존재 확인
   const post = await prisma.post.findUnique({
     where: { id: postId, status: 'PUBLISHED' },
-    select: { id: true, boardType: true, authorId: true, likeCount: true },
+    // slug: 캐시 무효화 대상 경로/태그를 정본 URL 기준으로도 만들기 위해 함께 조회 (추가 쿼리 없음)
+    select: { id: true, boardType: true, authorId: true, likeCount: true, slug: true },
   })
   if (!post) {
     return { error: '존재하지 않는 게시글입니다' }
@@ -140,9 +141,7 @@ export async function createComment(
     })
   }
 
-  revalidatePath('/community/[boardSlug]/[postId]', 'page')
-  revalidateTag('comments-by-post')
-  revalidateTag('post-detail')
+  revalidatePostComments(postId, post)
   return {}
 }
 
@@ -164,7 +163,14 @@ export async function editComment(
 
   const comment = await prisma.comment.findUnique({
     where: { id: commentId },
-    select: { authorId: true, createdAt: true, status: true },
+    // postId·post: 무효화 대상을 이 글 하나로 좁히기 위해 함께 조회 (관계 조인 1회, 추가 왕복 없음)
+    select: {
+      authorId: true,
+      createdAt: true,
+      status: true,
+      postId: true,
+      post: { select: { boardType: true, slug: true } },
+    },
   })
   if (!comment || comment.status !== 'ACTIVE') {
     return { error: '존재하지 않는 댓글입니다' }
@@ -181,8 +187,7 @@ export async function editComment(
     data: { content: sanitizeHtml(trimmed) },
   })
 
-  revalidatePath('/community/[boardSlug]/[postId]', 'page')
-  revalidateTag('comments-by-post')
+  revalidatePostComments(comment.postId, comment.post)
   return {}
 }
 
@@ -192,7 +197,14 @@ export async function deleteComment(commentId: string): Promise<CommentResult> {
 
   const comment = await prisma.comment.findUnique({
     where: { id: commentId },
-    select: { authorId: true, postId: true, status: true, _count: { select: { replies: true } } },
+    select: {
+      authorId: true,
+      postId: true,
+      status: true,
+      _count: { select: { replies: true } },
+      // 무효화 대상을 이 글 하나로 좁히기 위해 함께 조회
+      post: { select: { boardType: true, slug: true } },
+    },
   })
   if (!comment || comment.status !== 'ACTIVE') {
     return { error: '존재하지 않는 댓글입니다' }
@@ -230,7 +242,6 @@ export async function deleteComment(commentId: string): Promise<CommentResult> {
     })
   })().catch(() => {})
 
-  revalidatePath('/community/[boardSlug]/[postId]', 'page')
-  revalidateTag('comments-by-post')
+  revalidatePostComments(comment.postId, comment.post)
   return {}
 }
