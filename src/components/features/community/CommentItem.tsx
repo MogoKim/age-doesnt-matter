@@ -288,20 +288,26 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
         )}
       </div>
 
+      {/*
+        작성 흐름의 사용자 문구는 "댓글"로 통일한다 — 답글 입력창도 placeholder가 "댓글"이다.
+        입력창 안(제목·placeholder·등록 버튼·성공 토스트)은 **무엇을 쓰는지**를 말하고,
+        위 액션 버튼 "답글"은 **어디에 쓰는지**(이 댓글 아래)를 말한다. 그래서 버튼만 "답글"로 남긴다.
+        기능은 그대로 parentId로 답글 저장되며, 계측도 parentId 기준(comment_target='reply')이라 무영향.
+      */}
       {showReplyInput && (
         <div className="mt-2">
           {isLoggedIn ? (
             <CommentInput
               postId={postId}
               parentId={comment.id}
-              placeholder="답글을 남겨주세요..."
+              placeholder="댓글을 남겨주세요..."
               onCancel={() => setShowReplyInput(false)}
             />
           ) : (
             <GuestCommentInput
               postId={postId}
               parentId={comment.id}
-              placeholder="답글을 남겨주세요... (최대 500자)"
+              placeholder="댓글을 남겨주세요... (최대 500자)"
               onCancel={() => setShowReplyInput(false)}
               onSuccess={() => setShowReplyInput(false)}
             />
