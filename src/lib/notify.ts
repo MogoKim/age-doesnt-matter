@@ -20,6 +20,11 @@ interface NotifyUserParams {
   campaign?: string
   postId?: string | null
   fromUserId?: string | null
+  /**
+   * 알림 클릭 시 이동할 경로(예: 댓글 앵커 `/community/stories/{slug}#comment-{id}`).
+   * 생략하면 저장하지 않는다 → 조회 시 buildNotificationLinkUrl이 postId 기반 글 URL을 만든다(기존 동작).
+   */
+  linkUrl?: string | null
 }
 
 /**
@@ -44,6 +49,7 @@ export async function notifyUser(userId: string, params: NotifyUserParams): Prom
           type: params.type,
           content: params.bellContent,
           postId: params.postId ?? undefined,
+          linkUrl: params.linkUrl ?? undefined,
           fromUserId: params.fromUserId ?? undefined,
         },
       })

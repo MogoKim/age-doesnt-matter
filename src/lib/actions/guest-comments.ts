@@ -6,7 +6,7 @@ import { revalidatePath, revalidateTag } from 'next/cache'
 import bcrypt from 'bcryptjs'
 import { calculateTrendingScore } from '@/lib/utils/trending'
 import { notifyUser } from '@/lib/notify'
-import { BOARD_TYPE_TO_SLUG } from '@/types/api'
+import { buildCommentAnchorUrl, buildNotificationLinkUrl } from '@/lib/notifications/link'
 import { normalizeCommentBody, toNotificationPreview } from '@/lib/comment-normalize'
 import { revalidatePostComments } from '@/lib/queries/comments'
 
@@ -116,14 +116,24 @@ export async function createGuestComment({
   // 비회원 답글 → 부모(회원) 댓글 작성자에게 종 알림 + OS 푸시.
   // notifyUser가 봇 수신자(providerId 비숫자)는 자동 제외 → 봇 댓글에 단 답글은 알림 안 감.
   if (parentAuthorId) {
+    // [C5] 방금 단 답글 위치(#comment-{id})로 이동. 회원 경로(comments.ts)와 동일 helper·동일 규격.
+    const anchorUrl = buildCommentAnchorUrl({
+      boardType: post.boardType,
+      slug: post.slug,
+      postId,
+      commentId: comment.id,
+    })
     void notifyUser(parentAuthorId, {
       type: 'COMMENT',
       bellContent: `${trimmedNickname}(비회원)님이 회원님의 댓글에 답글을 남겼어요`,
       postId,
+      linkUrl: anchorUrl,
       push: {
         title: '새 답글이 달렸어요',
         body: `${trimmedNickname}(비회원): ${toNotificationPreview(trimmedContent)}`,
-        url: `/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${postId}`,
+        url:
+          anchorUrl ??
+          buildNotificationLinkUrl({ linkUrl: null, postId, boardType: post.boardType, slug: post.slug }),
         tag: `comment-${postId}`,
       },
       campaign: 'comment',

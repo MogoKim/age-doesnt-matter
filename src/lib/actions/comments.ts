@@ -9,7 +9,7 @@ import { checkAndPromote } from '@/lib/grade'
 import { checkAndPromotePost } from '@/lib/actions/promotion'
 import { calculateTrendingScore } from '@/lib/utils/trending'
 import { notifyUser } from '@/lib/notify'
-import { BOARD_TYPE_TO_SLUG } from '@/types/api'
+import { buildCommentAnchorUrl, buildNotificationLinkUrl } from '@/lib/notifications/link'
 import { getWriteBlockReason } from '@/lib/sanctions'
 import { revalidatePostComments } from '@/lib/queries/comments'
 
@@ -78,7 +78,9 @@ export async function createComment(
 
   const safeContent = sanitizeHtml(trimmed)
 
-  const [, updatedPost] = await prisma.$transaction([
+  // createdComment: 알림 앵커(#comment-{id})용으로 새 댓글 id만 받는다.
+  // 트랜잭션 구성·카운트 증가·성공/실패 조건은 그대로다(select 추가만).
+  const [createdComment, updatedPost] = await prisma.$transaction([
     prisma.comment.create({
       data: {
         postId,
@@ -86,6 +88,7 @@ export async function createComment(
         content: safeContent,
         parentId: parentId || null,
       },
+      select: { id: true },
     }),
     prisma.post.update({
       where: { id: postId },
@@ -117,7 +120,16 @@ export async function createComment(
   // 알림 생성 (본인에게는 보내지 않음)
   const nickname = session.user.nickname ?? '회원'
 
-  const postUrl = `/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${postId}`
+  // [C5] 방금 단 댓글 위치(#comment-{id})로 바로 이동시킨다. 종 알림 linkUrl과 OS 푸시 url 동일.
+  // 앵커를 못 만들면(이론상 id 없음) 기존 글 URL로 조용히 fallback — 알림은 부가 기능이라 실패시키지 않는다.
+  const anchorUrl = buildCommentAnchorUrl({
+    boardType: post.boardType,
+    slug: post.slug,
+    postId,
+    commentId: createdComment.id,
+  })
+  const postUrl =
+    anchorUrl ?? buildNotificationLinkUrl({ linkUrl: null, postId, boardType: post.boardType, slug: post.slug })
 
   if (parentId && parentAuthorId && parentAuthorId !== session.user.id) {
     // 대댓글 → 부모 댓글 작성자에게 알림 (봇 수신자는 notifyUser에서 자동 제외)
@@ -125,6 +137,7 @@ export async function createComment(
       type: 'COMMENT',
       bellContent: `${nickname}님이 회원님의 댓글에 답글을 남겼어요`,
       postId,
+      linkUrl: anchorUrl,
       fromUserId: session.user.id,
       push: { title: '새 답글이 달렸어요', body: `${nickname}: ${toNotificationPreview(trimmed)}`, url: postUrl, tag: `comment-${postId}` },
       campaign: 'comment',
@@ -135,6 +148,7 @@ export async function createComment(
       type: 'COMMENT',
       bellContent: `${nickname}님이 회원님의 글에 댓글을 남겼어요`,
       postId,
+      linkUrl: anchorUrl,
       fromUserId: session.user.id,
       push: { title: '새 댓글이 달렸어요', body: `${nickname}: ${toNotificationPreview(trimmed)}`, url: postUrl, tag: `comment-${postId}` },
       campaign: 'comment',
