@@ -2,9 +2,12 @@
 
 ## 진단 순서
 
-1. **로그 확인**: `cat /Users/yanadoo/Documents/New_Claude_agenotmatter/logs/cafe-crawler.log | tail -50`
+0. **일괄 진단**: `bash .claude/commands/runbook-crawler/scripts/diagnose.sh`
+   크롤러 워크스페이스·로그·쿠키·네트워크를 한 번에 본다. 아래 1~4는 개별 확인용.
+1. **로그 확인**: 위 스크립트가 출력한 워크스페이스의 `logs/cafe-crawler*.log` 최신 파일 tail
+   ⚠️ 경로를 하드코딩하지 마라. 크롤러는 이 repo가 아니라 launchd `WorkingDirectory`에서 돈다.
 2. **프로세스 확인**: `launchctl list | grep unao`
-3. **storage-state 쿠키 만료 확인**: `agents/cafe/storage-state.json`의 쿠키 expires 날짜
+3. **storage-state 쿠키 만료 확인**: 크롤러 워크스페이스의 `agents/cafe/storage-state.json` 쿠키 expires
 4. **네트워크 확인**: `curl -I https://cafe.naver.com`
 
 ## 주요 장애 유형

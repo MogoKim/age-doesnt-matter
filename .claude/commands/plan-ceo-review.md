@@ -19,10 +19,10 @@ git log --oneline -20
 git diff main --stat 2>/dev/null || git diff HEAD --stat
 ```
 
-다음 파일도 읽기:
+다음도 확인 (repo `memory/`는 stale 잔재 — 읽지 않는다):
 - `CLAUDE.md` — 현재 규칙 + 스킬 목록
-- `memory/project_status.md` — 진행 중인 작업 현황
-- `memory/project_deferred_tasks.md` — 보류 중인 작업
+- `gh pr list --state open` — 진행 중·대기 중인 작업
+- CC auto-memory(`/memory`) — 보류 항목과 장기 컨텍스트
 
 **감사 질문:**
 - 지금 진행 중인 작업과 충돌하는가?
@@ -80,7 +80,7 @@ git diff main --stat 2>/dev/null || git diff HEAD --stat
 4. **User interactions have edge cases** — 빠른 클릭, 뒤로가기, 느린 연결, 만료된 세션 처리?
 5. **Observability is scope** — 모니터링은 afterthought이 아닌 필수 구현 항목으로 포함됐는가?
 6. **Diagrams are mandatory** — 복잡한 데이터 흐름이면 ASCII 다이어그램 포함할 것
-7. **Everything deferred must be written** — 보류 결정은 `memory/project_deferred_tasks.md`에 기록
+7. **Everything deferred must be written** — 보류 결정은 CC auto-memory(`/memory`)에 기록
 8. **Optimize for 6 months** — 오늘 문제 해결 + 3개월 후 이 코드가 악몽이 되지 않는가?
 
 ---

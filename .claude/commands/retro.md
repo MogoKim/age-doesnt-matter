@@ -46,9 +46,11 @@ Object.entries(summary).sort().forEach(([k,v]) =>
 await prisma.\$disconnect();
 " 2>/dev/null || echo "BotLog 조회 불가"
 
-# 6. 보류 중인 작업 확인
-cat memory/project_deferred_tasks.md 2>/dev/null || echo "보류 작업 없음"
+# 6. 열린 작업 확인 (repo memory/는 stale — 읽지 않는다)
+gh pr list --state open --limit 10 2>/dev/null || echo "열린 PR 없음"
 ```
+
+보류 중인 작업은 CC auto-memory(`/memory`)의 대기·보류 항목에서 확인한다.
 
 ---
 
@@ -102,7 +104,7 @@ await prisma.\$disconnect();
 - [있으면 명시 / 없으면 "없음"]
 
 ### 보류 중인 작업
-[project_deferred_tasks.md 내용 요약]
+[CC auto-memory의 대기·보류 항목 + 열린 PR 요약]
 
 ### 다음 주 집중 사항
 1. [가장 중요한 것]
