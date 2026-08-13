@@ -188,7 +188,13 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
             })()}
           </>
         ) : null}
-        <span className="text-caption text-muted-foreground">· {formatTimeAgo(comment.createdAt)}</span>
+        {/*
+          suppressHydrationWarning: 상대시각은 렌더 시점의 now 기준이라 서버 HTML과 하이드레이션 시점 값이
+          다를 수 있다(캐시된 HTML "16시간 전" vs 브라우저 "17시간 전"). 이 텍스트 mismatch가 React #425를 내고,
+          댓글 섹션이 Suspense 경계 안이라 경계 전체가 클라이언트 렌더로 전환되며(#422) 댓글 영역이 깜빡였다.
+          표시 문구·계산 방식은 그대로 두고 이 한 노드의 mismatch 경고만 끈다.
+        */}
+        <span className="text-caption text-muted-foreground" suppressHydrationWarning>· {formatTimeAgo(comment.createdAt)}</span>
 
         {/* 회원 본인 댓글 수정/삭제 */}
         {comment.isOwn && !comment.isGuest && (
