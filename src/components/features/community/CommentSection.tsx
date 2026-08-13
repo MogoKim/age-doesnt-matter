@@ -407,6 +407,9 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
                 placeholder={composing ? COMPOSE_PLACEHOLDER : undefined}
               />
             ) : (
+              // [C2-B] stickySubmit: 패널이 열린 동안만 등록 버튼을 패널 하단에 고정한다.
+              //   hideHeading과 값이 같지만 재사용하지 않는다 — 나중에 한쪽만 끄고 싶을 때 두 동작이 묶인다.
+              //   답글 입력(CommentItem)에는 넘기지 않으므로 인라인 답글에는 sticky가 생기지 않는다.
               <GuestCommentInput
                 postId={postId}
                 onOptimisticAdd={handleGuestOptimisticAdd}
@@ -414,6 +417,7 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
                 isFeedback={isFeedback}
                 placeholder={composing ? COMPOSE_PLACEHOLDER : undefined}
                 hideHeading={composing}
+                stickySubmit={composing}
               />
             )}
           </div>
