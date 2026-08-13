@@ -199,6 +199,71 @@ describe('입력 인스턴스가 하나뿐임을 증명', () => {
   })
 })
 
+/**
+ * [C2-B] 등록 버튼 가시성.
+ *
+ * 프로덕션 실측(390x844): 패널 내용 579px vs 표시 463px → 넘침 116px로 등록 버튼이
+ * 활성화된 순간에 화면 밖(패널 하단 +38px)에 있었다. 390x667에서는 넘침 213px.
+ * 그래서 패널이 열린 동안만 버튼 줄을 패널 스크롤포트 하단에 고정한다.
+ *
+ * 여기서 반드시 고정해야 하는 것은 **인라인에 새지 않는다**는 쪽이다:
+ * 인라인에는 스크롤 조상이 없어 sticky가 뷰포트 기준으로 붙고, 그러면 Dock(z-96)과
+ * 하단을 다투며 PR #333/#339에서 되돌린 광고 겹침이 재발한다.
+ */
+describe('[C2-B] 등록 버튼 하단 고정 — 패널에서만', () => {
+  const submitRow = () => screen.getByRole('button', { name: '댓글 남기기' }).parentElement!
+
+  it('패널이 열리면 등록 버튼 줄이 패널 하단에 고정된다', async () => {
+    await renderAndOpen()
+    const cls = submitRow().className
+    expect(cls).toContain('max-md:sticky')
+    expect(cls).toContain('max-md:bottom-0')
+    expect(cls).toContain('max-md:bg-card')   // 뒤 입력칸이 비쳐 보이지 않게
+  })
+
+  it('인라인 상태에는 sticky가 새지 않는다 (광고 겹침 재발 방지)', async () => {
+    render(<CommentSection postId="post-abc" comments={[]} isLoggedIn={false} />)
+    await flushScroll()
+    expect(submitRow().className).not.toContain('sticky')
+  })
+
+  it('패널을 닫으면 sticky가 풀린다', async () => {
+    await renderAndOpen()
+    expect(submitRow().className).toContain('max-md:sticky')
+    fireEvent.click(screen.getByTestId('comment-compose-close'))
+    await flushScroll()
+    expect(submitRow().className).not.toContain('sticky')
+  })
+
+  it('Turnstile 위젯은 여전히 1개다 — 버튼 줄 클래스 변경이 리마운트를 만들지 않는다', async () => {
+    render(<CommentSection postId="post-abc" comments={[]} isLoggedIn={false} />)
+    await flushScroll()
+    fireEvent.change(contentBox(), { target: { value: '내용' } })
+    await act(async () => { await new Promise((r) => setTimeout(r, 350)) })
+    expect(mock.turnstileRender.mock.calls.length).toBe(1)
+
+    fireEvent.click(dock()!.querySelector('button')!)   // sticky 켜짐
+    await act(async () => { await new Promise((r) => setTimeout(r, 350)) })
+
+    expect(mock.turnstileRender.mock.calls.length).toBe(1)
+    expect(mock.turnstileRemove).not.toHaveBeenCalled()
+    expect(document.querySelectorAll('textarea')).toHaveLength(1)
+  })
+
+  it('회원 입력에는 이 고정을 넣지 않는다 (비회원 전용)', async () => {
+    mock.loggedIn = true
+    render(<CommentSection postId="post-abc" comments={[]} isLoggedIn />)
+    await flushScroll()
+    fireEvent.click(dock()!.querySelector('button')!)
+    await act(async () => { await new Promise((r) => setTimeout(r, 100)) })
+    // 패널 컨테이너 자체가 max-md:bottom-0을 갖고 있으므로 문서 전체로 보면 안 된다.
+    // 회원 '등록' 버튼 줄만 본다 — 회원 입력은 자체 sticky(bottom-[72px])를 이미 갖는 별개 구조다.
+    const memberRow = screen.getByRole('button', { name: '등록' }).parentElement!
+    expect(memberRow.className).not.toContain('max-md:bottom-0')
+    expect(memberRow.className).not.toContain('max-md:sticky')
+  })
+})
+
 describe('비회원 점진 노출 — 타이밍 무변경', () => {
   it('내용을 쓰기 전에는 이름·번호 칸이 없다 (열린 상태에서도)', async () => {
     await renderAndOpen()

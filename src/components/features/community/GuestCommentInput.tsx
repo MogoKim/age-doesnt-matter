@@ -36,6 +36,22 @@ interface GuestCommentInputProps {
    * 자체 제목을 모바일에서만 접어 같은 말이 두 번 나오지 않게 한다. 문구·기능은 그대로다.
    */
   hideHeading?: boolean
+  /**
+   * [C2-B] 하단 작성 패널이 열린 동안만 등록 버튼 줄을 패널 하단에 고정한다.
+   *
+   * 왜 필요한가: 비회원 입력은 본문 아래로 이름·번호·Turnstile이 순차로 열려 내용 높이가
+   * 패널 상한(55dvh)을 넘는다. 실측(390x844) 내용 579px vs 표시 463px — 넘침 116px이라
+   * **등록 버튼이 활성화된 순간에 화면 밖(패널 하단 +38px)에 있었다.** 390x667에서는 넘침이
+   * 213px로 커져 번호 칸까지 사라졌다. 화면 최하단이 번호 도움말 문장으로 끝나 사용자에게는
+   * 양식이 끝난 것처럼 보이고, 내부 스크롤 단서(그림자·페이드)도 없다.
+   *
+   * ⚠️ 반드시 패널이 열린 동안(composing)만 켠다. 인라인 상태에는 스크롤 조상이 없어(실측 확인)
+   *    sticky가 **뷰포트** 기준으로 붙는다 → 글을 읽는 내내 버튼이 하단에 떠 Dock(z-96)과
+   *    하단을 다투고, PR #333/#339에서 되돌린 광고 겹침이 재발한다.
+   * ⚠️ 패널 높이(55dvh)·Dock 높이·z-index 정책은 건드리지 않는다. 스크롤 기준이 패널
+   *    스크롤포트라 패널 **밖** 좌표는 하나도 바뀌지 않는다(헤더의 sticky top-0과 대칭).
+   */
+  stickySubmit?: boolean
 }
 
 export default function GuestCommentInput({
@@ -48,6 +64,7 @@ export default function GuestCommentInput({
   isGreeting,
   isFeedback,
   hideHeading,
+  stickySubmit,
 }: GuestCommentInputProps) {
   const resolvedPlaceholder = placeholder ?? (isFeedback ? '의견을 남겨주세요... (최대 500자)' : '댓글을 남겨주세요... (최대 500자)')
   const { toast } = useToast()
@@ -335,7 +352,13 @@ export default function GuestCommentInput({
         </div>
       )}
 
-      <div className="flex items-center gap-2">
+      {/*
+        [C2-B] stickySubmit이면 이 줄만 패널 스크롤포트 하단에 붙는다.
+        bg-card: 뒤로 지나가는 입력칸이 비쳐 보이지 않게. pt-2: 위 요소와 붙지 않게.
+        새 wrapper를 만들지 않는다 — 조건부로 부모 element가 생기면 형제인 Turnstile div가
+        unmount되어 토큰이 소실되고 제출이 15초 뒤 조용히 실패한다. className만 바꾼다.
+      */}
+      <div className={`flex items-center gap-2${stickySubmit ? ' max-md:sticky max-md:bottom-0 max-md:z-10 max-md:bg-card max-md:pt-2' : ''}`}>
         <button
           type="button"
           onClick={handleSubmit}
