@@ -81,6 +81,9 @@ cat > "$PLIST_PATH" << EOF
         <string>${NODE_DIR}:/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin</string>
         <key>HOME</key>
         <string>${HOME}</string>
+        <!-- 필수. 없으면 래퍼가 exit 78로 즉시 실패한다(옛 작업트리 fallback 방지). -->
+        <key>UNAO_WORKDIR</key>
+        <string>${PROJECT_DIR}</string>
     </dict>
 </dict>
 </plist>
