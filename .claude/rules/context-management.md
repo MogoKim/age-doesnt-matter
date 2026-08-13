@@ -24,19 +24,21 @@ globs: ["memory/**", ".claude/**"]
 - **현재 파일 목록**: `ls .claude/rules/*.md`로 확인한다(목록을 여기 적으면 곧 낡는다).
   항상 로드되는 것은 `paths`가 없는 파일뿐이다: `grep -L "^paths:" .claude/rules/*.md`
 
-### memory/MEMORY.md (자동 로드 인덱스)
-- **언제**: 현재 상태 + 서브파일 포인터 — **매 대화 자동 로드**
-- **무엇**: 지금 켜져있는 시스템, 최근 완료 항목, 인덱스 링크
-- **한도**: 40줄 이하 (넘으면 내용을 서브파일로 이동)
+### CC auto-memory — 실제로 자동 로드되는 유일한 memory
+- **위치**: `~/.claude/projects/<slug>/memory/` — **repo 안이 아니다.** `/memory` 명령으로 관리한다.
+  ⚠️ slug가 현재 워크스페이스 이름과 어긋나 있을 수 있으므로, 경로를 추측하지 말고 `/memory`로 확인한다.
+- **언제**: `MEMORY.md`(인덱스)만 **세션 시작 시 자동 로드**된다. 서브파일은 필요할 때 파일명으로 찾아 읽는다.
+- **무엇**: 현재 상태, 창업자 핸드오프, 불변 교훈, 서브파일 포인터
+- **한도**: `MEMORY.md` 40줄 이하 (넘으면 내용을 서브파일로 이동)
 - **갱신 주기**: 매 작업 완료 시 "현재 상태" 섹션만 업데이트
+- **서브파일 분류**(변경 빈도별): `project_status.md`(격주) · `project_strategy.md`(거의 불변) ·
+  `project_roadmap.md`(주간) · `feedback_*.md`(실수 시마다) · `reference_*.md`(거의 불변)
 
-### memory/*.md (서브파일 — 필요 시에만 읽기)
-- **변경 빈도별 분류**:
-  - `project_status.md` — 완료 개발 목록, 자동화 현황 (격주 업데이트)
-  - `project_strategy.md` — 전략/포지셔닝/카테고리 결정 (한번 확정 후 거의 불변)
-  - `project_roadmap.md` — 앞으로 할 작업 P1/P2/P3 (주간 업데이트)
-  - `feedback_*.md` — Claude 실수→규칙 학습 기록 (실수 시마다 추가)
-  - `reference_*.md` — API 키 위치, OAuth 설정 (설치 후 거의 변경 없음)
+### ⛔ repo `<repo>/memory/` — 자동 로드되지 않는다
+- **자동 로드 대상이 아니다.** git에 추적되는 stale 잔재이며 CC auto-memory 도입 전 유물이다.
+- **읽지도 갱신하지도 않는다** (CLAUDE.md 「컨텍스트 관리」 조항 · `.claude/rules/autonomy.md` §0).
+- 상태·핸드오프 기록은 **항상 CC auto-memory 쪽**에 한다. 이 폴더에 쓰면 아무도 읽지 않는다.
+- 이 폴더의 내용을 "현재 상태"의 근거로 삼지 마라. 판단은 실측(git·curl·스케줄러)으로 한다.
 
 ## 저장하지 않는 것
 

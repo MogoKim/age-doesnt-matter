@@ -1,6 +1,7 @@
-# /done — Gate 1 QA + 자동 커밋+푸시
+# /done — Gate 1 QA + 작업 브랜치 push + PR 생성
 
-작업 완료 시 호출. Gate 1 검증이 **전부 통과**하면 자동으로 커밋+푸시까지 완료한다.
+작업 완료 시 호출. Gate 1 검증이 **전부 통과**하면 커밋 → **작업 브랜치 push** → **`[merge 금지]` PR 생성**까지 진행한다.
+**merge·배포는 창업자 승인 후 별도 단계다. Claude는 merge하지 않고, `main`에 직접 push하지 않는다.**
 이슈 발생 시 **Claude 대화창 + Slack #qa 알림** 후 중단.
 
 사용법: /done [완료한 작업 설명]
@@ -124,13 +125,29 @@ cd ..
 
 ---
 
-## STEP 4: 전체 PASS → 자동 커밋+푸시
+## STEP 4: 전체 PASS → 커밋 + 작업 브랜치 push + PR 생성
 
-Gate 1이 전부 통과하면 **묻지 않고** 즉시 커밋+푸시한다.
+Gate 1이 전부 통과하면 아래를 순서대로 진행한다. **merge는 하지 않는다.**
+
+### 4-A. 현재 브랜치 확인 (필수 선행)
 
 ```bash
-# 변경 파일만 명시적으로 스테이징 (git add . 금지)
+git branch --show-current
+```
+
+- ✅ 작업 브랜치(`feat/*` · `fix/*` · `chore/*` 등) → 계속 진행
+- ❌ `main` → **여기서 중단.** main에서 직접 작업하지 않는다.
+  `git switch -c <새브랜치명> origin/main`으로 작업 브랜치를 만든 뒤 다시 시작한다.
+  (로컬 `main`은 다른 worktree가 점유 중이라 checkout이 실패하는 것이 정상이다)
+
+### 4-B. 커밋 (변경 파일 명시)
+
+```bash
+# 변경 파일만 명시적으로 스테이징 (git add . / git add -A 금지)
 git add [변경된 파일들 나열]
+
+# 커밋 직전 재확인 — 모르는 파일이 1개라도 있으면 중단
+git diff --cached --name-only
 
 # 커밋 메시지 작성 (50자 이내, 한국어, feat/fix/refine/perf 접두사)
 git commit -m "$(cat <<'EOF'
@@ -139,9 +156,27 @@ git commit -m "$(cat <<'EOF'
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 EOF
 )"
-
-git push origin main
 ```
+
+### 4-C. 작업 브랜치에만 push
+
+```bash
+git push -u origin "$(git branch --show-current)"
+```
+
+🚫 **`main`으로의 직접 push 금지.** main 반영은 PR merge 경로로만 이루어진다.
+
+### 4-D. PR 생성 (제목에 `[merge 금지]` 유지)
+
+```bash
+# 이미 열린 PR이 있으면 생성하지 않고 push만으로 갱신된다
+gh pr view --json url 2>/dev/null || gh pr create --base main \
+  --title "[merge 금지] [한 줄 요약]" \
+  --body "[변경 요약 / 검증 결과 / 창업자 액션]"
+```
+
+- `[merge 금지]`는 **창업자가 승인 시 직접 제거**한다. Claude가 지우지 않는다.
+- merge · production 배포 · workflow dispatch는 이 커맨드의 범위가 아니다.
 
 ---
 
@@ -149,11 +184,12 @@ git push origin main
 
 **원칙: 성공은 조용히, 실패만 시끄럽게.**
 
-커밋+푸시 완료 후 아래 형식으로 보고한다:
+커밋 + 브랜치 push + PR 생성 완료 후 아래 형식으로 보고한다:
 
 ```
 [커밋 메시지] — `[SHA]`
-Gates: all passed | 배포: Vercel 자동 진행 중
+Gates: all passed | 브랜치: [브랜치명] | PR: [URL] (`[merge 금지]`)
+merge·배포: 창업자 승인 대기 (Claude는 merge하지 않음)
 앞으로 달라지는 것: [한 줄]
 어드민 영향: 없음 / 있음(내용)  ← src 변경 시만
 Feature 문서: [ID] [기능명] — [신규생성 / 수정이력추가 / ARCHIVED / 해당없음]
@@ -177,11 +213,11 @@ Slack에 별도 알림 불필요 (Gate 2가 배포 후 자동으로 #qa에 결�
 
 **원칙: 창업자가 물어볼 때까지 기다리지 않는다. 먼저 요청한다.**
 
-커밋+푸시 후, 이번 작업에서 아래 조건 중 하나라도 해당하면 즉시 출력:
+브랜치 push + PR 생성 후, 이번 작업에서 아래 조건 중 하나라도 해당하면 즉시 출력:
 
 | 감지 조건 | 요청 내용 |
 |---------|---------|
-| 이번 세션에서 `gh pr create` 실행됨 | PR #{번호} merge — 링크 제공 |
+| **항상** (STEP 4-D에서 PR이 생성되므로) | PR #{번호} 검토 후 merge — 링크 제공. 승인 시 제목의 `[merge 금지]` 제거 |
 | `prisma/migrations/` 신규 파일 있음 | `npx prisma migrate deploy` 실행 |
 | `.env.example` 변경됨 | `.env.local`에 [추가된 KEY] 추가 |
 | 워크플로우에 신규 `secrets.*` 참조 추가됨 | GitHub Secrets 추가 |
@@ -211,6 +247,8 @@ Slack에 별도 알림 불필요 (Gate 2가 배포 후 자동으로 #qa에 결�
 
 ## 예외 처리
 
-- **창업자가 "커밋만"** 요청한 경우 → STEP 4에서 push 생략
-- **긴급 핫픽스** (창업자가 "지금 바로 push해" 명시) → Gate 1 스킵 가능. 단 대화창에 "Gate 1 스킵됨" 명시
-- **문서/메모리 파일만 변경** → Gate 1 STEP 2-A(tsc)만 실행
+- **창업자가 "커밋만"** 요청한 경우 → STEP 4-C/4-D(push·PR) 생략
+- **긴급 핫픽스** (창업자가 "지금 바로 push해" 명시) → Gate 1 스킵 가능. 단 대화창에 "Gate 1 스킵됨" 명시.
+  이 경우에도 **작업 브랜치 push + PR 경로는 유지**한다. main 직접 push는 어떤 경우에도 하지 않는다.
+- **문서/메모리 파일만 변경** → Gate 1 STEP 2-A(tsc)만 실행.
+  여기서 "메모리"는 **CC auto-memory**를 뜻한다 (repo `memory/`는 stale 잔재이므로 갱신 대상이 아니다)
