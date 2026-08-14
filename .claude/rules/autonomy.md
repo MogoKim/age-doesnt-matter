@@ -75,7 +75,7 @@ CLAUDE.md 민감영역. 게이트를 통과해도 자동 진행하지 않는다.
 3. 대화창에 `🔔 지금 해주세요` 블록 출력 (done.md STEP 6 형식).
 4. 창업자가 완료 확인 시 해당 행을 `✅ 완료`로 갱신.
 
-HANDOFF 트리거 예: PR merge, `prisma migrate deploy`, `.env.local` 키 추가, GitHub Secrets, launchd reload, 외부 콘솔 설정, **DB read-only role 발급**(board 2단계).
+HANDOFF 트리거 예: PR merge, **DB 스키마 반영**(`/prisma-guide` 절차 — pg 모듈 직접 SQL, Prisma CLI 금지), `.env.local` 키 추가, GitHub Secrets, launchd reload, 외부 콘솔 설정, **DB read-only role 발급**(board 2단계).
 
 ---
 
@@ -109,7 +109,8 @@ WAIT 예: 에이전트 안정성 누적 관찰, 24h 검증, 백로그 운영 게
   - **`git reset --hard`** (모든 형태)
   - **`rm -rf` 계열 + `/`로 시작하는 절대경로** — 루트뿐 아니라 `/Users/...` 같은 모든 절대경로. 플래그 변형(`-rf`·`-fr`·`-r -f`)도 포함
   - ⚠️ **사각지대**: `rm -rf`의 **상대경로**(`rm -rf src/`)와 **`~/` 경로**는 차단되지 않는다(`rm -rf .next` 같은 정상 작업을 막지 않기 위한 의도적 범위)
-  - ⚠️ `gh pr merge` · `gh workflow run` · `prisma migrate deploy` · `launchctl`은 **훅이 막지 않는다.** 승인 후 Claude가 대행해야 하는 명령이라 하드 블록 대상에서 제외했다 — 규칙(§0-A·2-B)으로만 통제된다
+  - ⚠️ `gh pr merge` · `gh workflow run` · `launchctl`은 **훅이 막지 않는다.** 승인 후 Claude가 대행해야 하는 명령이라 하드 블록 대상에서 제외했다 — 규칙(§0-A·2-B)으로만 통제된다
+  - ⚠️ `prisma migrate deploy`·`db push`·`db seed`도 훅이 막지 않지만, 이쪽은 **승인 후에도 실행 금지**다(이 프로젝트는 Prisma CLI 마이그레이션을 쓰지 않는다 — `/prisma-guide` 참조)
   - 이 훅은 문자열 매칭이라 우회가 가능하다. **안전망으로 과신하지 말고 AUTO 경계를 넓히지 마라**
 - `.claude/sessions/domain-map.json`: 멀티 AI 도메인 침범 경고
 - `agents/core/constitution.yaml` `automation_status`: 에이전트 자동화 ON/OFF
