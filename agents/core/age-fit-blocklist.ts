@@ -100,6 +100,63 @@ export function findLocalTradeSignal(title: string, content: string): string | n
   return null
 }
 
+// ── 6) MEDICAL_AD — 병원 홍보/의료광고/단축링크 (2026-08-14, 뷰티 카페 온보딩 대비 — cafeId 무관 전역) ──
+// 배경: 성형/뷰티 카페는 글마다 "게시판 안내" 박스와 *의료광고 배너를 자동 삽입한다. 회원이 쓴 본문이
+//       아니라 카페가 끼워 넣는 홍보 블록이므로, 이게 우리 DB·발행 글에 들어오면 커뮤니티 신뢰가 무너진다.
+//
+// ⚠️ 핵심 원칙: "시술 단어"가 아니라 "광고 구조"를 본다. 아래는 모두 **허용**한다:
+//      - "병원 다녀왔는데 갱년기래요"          (경험담 — P2 정희씨 핵심 주제)
+//      - "피부가 푸석해서 고민이에요"           (자기관리 고민)
+//      - "보톡스 고민 중인데 무서워요"          (시술 고민 = 우리가 원하는 대화)
+//      - "화장품 바꿨는데 괜찮네요"             (후기)
+//      - "나이 드니까 얼굴살이 빠지는 것 같아요" (외모 변화에 대한 마음)
+//    차단하는 건 오직 "광고임을 드러내는 구조적 신호"다 — 의료광고 라벨·게시판 안내 박스·
+//    단축 URL·시술명+가격/이벤트/예약 결합.
+//
+// ⚠️ bare 단어(보톡스·병원·필러·리프팅) 단독 매칭 절대 금지 — 반드시 광고 신호와 결합.
+
+/** 광고임이 문서 구조로 확정되는 신호. 1개만 걸려도 광고로 본다. */
+export const MEDICAL_AD_STRONG_PATTERNS: readonly RegExp[] = [
+  /\*\s*의료광고/,                          // 네이버가 법적 표기로 강제하는 배너 라벨 — 가장 확실
+  /게시판 ?안내를 ?확인해 ?주세요/,          // 카페가 전 글에 삽입하는 홍보 박스 시그니처
+  /\b(bit\.ly|han\.gl|url\.kr|vo\.la|buly\.kr|abit\.ly)\/\S+/i, // 단축 URL = 광고 추적 링크
+  /병원 ?이벤트|이벤트 ?당첨자 ?발표|제휴 ?및 ?체험단/,          // 카페 홍보 게시판 유입
+] as const
+
+/** 시술·병원 어휘 (단독으로는 차단하지 않음 — 아래 COMMERCE와 결합될 때만) */
+const MEDICAL_TERMS = [
+  '성형외과', '피부과', '의원', '병원',
+  '양악', '윤곽', '광대', '사각턱', '턱끝', '가슴성형', '지방흡입', '지흡',
+  '보톡스', '필러', '리프팅', '레이저제모', '눈코', '쁘띠', '스킨부스터', '비아핀',
+] as const
+
+/** 상거래 신호 (가격·이벤트·예약·상담). 시술 어휘와 같은 글에 있으면 광고로 본다. */
+const COMMERCE_SIGNALS: readonly RegExp[] = [
+  /\d{1,3}(,\d{3})+ ?원|\d+ ?만원|\d+ ?원부터/,   // 900원 / 39,000원 / 3만원 / 300원부터
+  /이벤트가|특가|할인|프로모션|최저가|한정 ?특가/,
+  /상담 ?(문의|예약|신청)|예약 ?(문의|하기|신청)|카톡 ?문의|전화 ?문의/,
+  /지금 ?바로|선착순|마감 ?임박|무료 ?상담/,
+] as const
+
+/**
+ * 의료광고/병원 홍보 검사. 위반 시 "MEDICAL_AD:매칭어", 통과 시 null.
+ * strong 신호는 단독 차단, 시술 어휘는 상거래 신호와 결합될 때만 차단(경험담 보호).
+ */
+export function findMedicalAdSignal(title: string, content: string): string | null {
+  const flat = `${title} ${content}`.replace(/\n/g, ' ')
+  for (const re of MEDICAL_AD_STRONG_PATTERNS) {
+    const m = flat.match(re)
+    if (m) return `MEDICAL_AD:${m[0].slice(0, 40)}`
+  }
+  const term = MEDICAL_TERMS.find(t => flat.includes(t))
+  if (!term) return null
+  for (const re of COMMERCE_SIGNALS) {
+    const m = flat.match(re)
+    if (m) return `MEDICAL_AD:${term}+${m[0].slice(0, 20)}`
+  }
+  return null
+}
+
 /**
  * 발화자 타깃 부적합 검사. 위반 시 "카테고리:매칭어" 문자열, 통과 시 null.
  * 카테고리: AGE(연령 자기언급) / PARENT(저연령 육아) / STUDENT(입시 학부모) / ROMANCE(미혼 연애) / TRADE(지역 거래·홍보)

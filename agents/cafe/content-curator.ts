@@ -8,7 +8,7 @@ import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack, sendSlackMessage } from '../core/notifier.js'
 import { findPoliticalKeyword, hasPoliticalKeyword } from '../core/political-blocklist.js'
-import { findAgeFitViolation } from '../core/age-fit-blocklist.js'
+import { findAgeFitViolation, findMedicalAdSignal } from '../core/age-fit-blocklist.js'
 import { evaluateContentQualityWithHaiku, summarizeHaikuResult, resolveHaikuGateMode, shouldBlockPublish, recordHaikuBlocked, type HaikuQualityResult } from './haiku-quality-gate.js'
 import type { CuratedContent } from './types.js'
 
@@ -355,6 +355,12 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
       const flat = p.content.replace(/\n/g, ' ') // R1: 본문 줄바꿈 보존 후에도 시그널 매칭 유지
       const blocked = ACCESS_BLOCKED_SIGNALS_CC.some(s => flat.includes(s))
       if (blocked) { console.log(`[ContentCurator] 접근 차단 안내문 2차 필터 skip: "${p.title.slice(0, 30)}"`)
+        return false }
+      // [의료광고 방어 2026-08-14] 뷰티 카페는 글마다 "게시판 안내" 박스와 *의료광고 배너를 자동 삽입한다.
+      // 회원 본문이 아니라 카페가 끼워 넣는 홍보 블록이므로 reference 후보에서 제외한다.
+      // 시술 단어 단독은 막지 않는다 — "보톡스 고민 중인데 무서워요"는 우리가 원하는 대화다(findMedicalAdSignal 참조).
+      const medicalAd = findMedicalAdSignal(p.title, p.content)
+      if (medicalAd) { console.log(`[ContentCurator] 의료광고/병원홍보 2차 필터 skip (${medicalAd}): "${p.title.slice(0, 30)}"`)
         return false }
       const hasStrongPzp = STRONG_PZP_SIGNALS_CC.some(s => flat.includes(s))
       const weakPzpCount = WEAK_PZP_SIGNALS_CC.filter(s => flat.includes(s)).length
