@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildHaikuQualityPrompt, parseHaikuQualityDecision, resolveHaikuGateMode, shouldBlockPublish } from '../../agents/cafe/haiku-quality-prompt'
+import { BLOCKING_RISKS, buildHaikuQualityPrompt, parseHaikuQualityDecision, resolveHaikuGateMode, shouldBlockPublish } from '../../agents/cafe/haiku-quality-prompt'
 
 /** Haiku 품질 게이트 dry-run (PR-2) — 순수부(프롬프트 빌더·파서) 고정. API 호출은 mock 없이 범위 밖 */
 
@@ -103,6 +103,58 @@ describe('buildHaikuQualityPrompt — 판정 기준 고정', () => {
     expect(prompt).toContain('구몬')
     expect(prompt).toContain('초1,초3 애둘')
     expect(prompt).toContain('가족 갈등이라는 이유로 PASS시키지 마라')
+  })
+  // ── [2026-08-14] parenting_current 오탐 완화 — 차단 로그 90일 감사 결과 ──
+  // 감사 사실: 차단 1,929건 중 parenting_current 68건(7일 표본)은 71%가 정탐이었다.
+  // 명확한 오탐은 "고2 아이 여행 보내도 될까요"류 — 프롬프트에 이미 고등 예외가 있는데도 REJECT됐다.
+  // 그래서 규칙을 뒤집지 않고 **경계만** 명확히 한다. BLOCKING_RISKS·차단 구조는 그대로다.
+  it('[관계 보호 2026-08-14] 타인의 자녀·조카·손주는 화자 본인 양육이 아니다', () => {
+    const prompt = buildHaikuQualityPrompt({ cafePostId: 'x', title: 't', content: 'c', boardType: 'STORY' })
+    expect(prompt).toContain('적용 주체 한정')
+    expect(prompt).toContain('화자 본인이 양육 중일 때만')
+    expect(prompt).toContain('타인의 자녀·조카·손주')
+    expect(prompt).toContain('parenting_current를 붙이지 마라')
+    // 시누·올케·동서는 관계축 — 50대 여성 커뮤니티 핵심 콘텐츠다
+    expect(prompt).toContain('시누·올케·동서')
+    expect(prompt).toContain('관계글로 PASS 후보')
+    // 단, 본인 자녀 신호가 별도로 있으면 기존 원칙 유지 (정탐 71%를 흔들지 않는다)
+    expect(prompt).toContain('화자 본인의 영유아~중등 자녀 신호가 별도로 있으면')
+  })
+  it('[고등 예외 경계 2026-08-14] 외출·독립 고민은 PASS, 입시·학원 관리는 REJECT 유지', () => {
+    const prompt = buildHaikuQualityPrompt({ cafePostId: 'x', title: 't', content: 'c', boardType: 'STORY' })
+    expect(prompt).toContain('예외의 경계 명확화')
+    // 살리는 쪽 — 정답 표본("여고딩끼리 가평 빠지")과 같은 유형
+    expect(prompt).toContain('외출·여행·친구관계·독립·간섭 고민')
+    expect(prompt).toContain('고2 아이 1박2일 여행')
+    // 계속 막는 쪽 — 교육 관리 주체
+    expect(prompt).toContain('입시·학원·과외·성적 관리 현재형')
+    expect(prompt).toContain('parenting_current REJECT 유지')
+    // 애매하면 차단이 아니라 보류 — 좋은 관계글 손실이 더 크다
+    expect(prompt).toContain('REJECT가 아니라 NEEDS_REVIEW로 두어라')
+  })
+  it('[구조 불변 2026-08-14] BLOCKING_RISKS에 parenting_current 유지 · thin_or_contextless 미포함', () => {
+    // 이번 보정은 프롬프트 문구만 건드린다. 차단 구조는 그대로여야 한다.
+    expect(BLOCKING_RISKS).toContain('parenting_current')
+    expect(BLOCKING_RISKS).not.toContain('thin_or_contextless')
+    expect(BLOCKING_RISKS).not.toContain('board_mismatch')
+  })
+  it('[구조 불변 2026-08-14] 학령기 육아는 계속 차단된다 (고신뢰 + 차단축)', () => {
+    const kid = parseHaikuQualityDecision(
+      '{"decision":"REJECT","confidence":0.95,"speakerRole":"parenting_current","risks":["parenting_current"],"reason":"초2 자녀 현재 양육"}',
+    )!
+    expect(shouldBlockPublish({ haikuStatus: 'OK', wouldReject: true, ...kid }, 'enforce')).toBe(true)
+  })
+  it('[구조 불변 2026-08-14] 관계글이 PASS면 차단되지 않는다', () => {
+    const rel = parseHaikuQualityDecision(
+      '{"decision":"PASS","confidence":0.9,"speakerRole":"target_woman_45_60","risks":[],"reason":"시누 관계 갈등"}',
+    )!
+    expect(shouldBlockPublish({ haikuStatus: 'OK', wouldReject: false, ...rel }, 'enforce')).toBe(false)
+  })
+  it('[구조 불변 2026-08-14] NEEDS_REVIEW는 차단하지 않는다 (경계 사례 보호)', () => {
+    const amb = parseHaikuQualityDecision(
+      '{"decision":"NEEDS_REVIEW","confidence":0.95,"speakerRole":"unknown","risks":["parenting_current"],"reason":"경계"}',
+    )!
+    expect(shouldBlockPublish({ haikuStatus: 'OK', wouldReject: false, ...amb }, 'enforce')).toBe(false)
   })
   it('[보정2 2026-07-16] 원카페 호칭·맥락 신호 — 레테님들 등, 일반 님 단독 금지', () => {
     const prompt = buildHaikuQualityPrompt({ cafePostId: 'x', title: 't', content: 'c', boardType: 'STORY' })
