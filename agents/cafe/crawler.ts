@@ -18,12 +18,12 @@ import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
-import { PARENTING_HARD_KEYWORDS } from '../core/age-fit-blocklist.js'
+import { PARENTING_HARD_KEYWORDS, findMedicalAdSignal } from '../core/age-fit-blocklist.js'
 import { classifyShadowAge } from './shadow-age-policy.js'
 import { ensureSession, SESSION_HALTED_FLAG } from './session-manager.js'
 // SECONDARY_CAFE_IDS(shadow+publishable): 크롤 전략(페이지 루프·pre-visit·연령필터·detailCap)은
 // 발행 정책(sourceStage)과 별개 축 — publishable 승격 후에도 크롤 방식은 유지된다 (Phase 1-a-①).
-import { CAFE_CONFIGS, CRAWL_LIMITS, BOARD_BLACKLIST, TOPIC_BLACKLIST, QUALITY_THRESHOLDS, COMPETITOR_KEYWORDS, SECONDARY_CAFE_IDS } from './config.js'
+import { CAFE_CONFIGS, CRAWL_LIMITS, BOARD_BLACKLIST, TOPIC_BLACKLIST, QUALITY_THRESHOLDS, COMPETITOR_KEYWORDS, SECONDARY_CAFE_IDS, SHADOW_CAFE_IDS } from './config.js'
 import type { RawCafePost, CafeConfig, ContentCategory, CommentData } from './types.js'
 import { calculateQualityScore, calculateKillerScore } from './quality-scorer.js'
 import { computeUsableCount } from './compute-usable-count.js'
@@ -1390,6 +1390,22 @@ async function savePosts(posts: RawCafePost[]): Promise<number> {
       if (shouldSkipWgangMediaPost(post)) {
         console.log(`[CafeCrawler] wgang 미디어 글 전체 차단(저작권): img=${post.imageUrls.length} vid=${post.videoUrls.length} "${post.title.slice(0, 25)}"`)
         continue
+      }
+
+      // 5.2. [의료광고 안전장치 2026-08-14] shadow 소스 전용 — 명백한 광고/홍보 글은 저장 자체를 skip.
+      // 배경: 뷰티 카페(여우야)는 글마다 "게시판 안내" 박스와 *의료광고 배너를 자동 삽입한다.
+      //       회원이 쓴 본문이 아니라 카페가 끼워 넣는 홍보 블록이므로 DB에 남기지 않는다
+      //       (isUsable=false로 두면 CafePost가 병원 광고로 오염된다).
+      // ⚠️ 적용 범위: SHADOW_CAFE_IDS 한정. production/core/publishable(wgang·dlxogns01·remonterrace·
+      //    goondae·masanmam)에는 호출되지 않아 기존 5개 카페 저장 동작은 바이트 단위로 동일하다.
+      // ⚠️ 시술 단어 단독은 차단하지 않는다 — "보톡스 고민 중인데 무서워요"·"병원 다녀왔는데 갱년기래요"는
+      //    우리가 원하는 대화다. 광고 구조(의료광고 라벨·안내박스·단축URL·시술어휘+가격/이벤트/예약)만 본다.
+      if (SHADOW_CAFE_IDS.includes(post.cafeId)) {
+        const medicalAd = findMedicalAdSignal(post.title, post.content)
+        if (medicalAd) {
+          console.log(`[CafeCrawler] 의료광고/병원홍보 저장 skip (${medicalAd}): "${post.title.slice(0, 25)}"`)
+          continue
+        }
       }
 
       // 5.5. 이미지 의존·공지문·접근 차단·동영상 필터

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { findAgeFitViolation } from '../../agents/core/age-fit-blocklist'
+import { findAgeFitViolation, findMedicalAdSignal } from '../../agents/core/age-fit-blocklist'
 
 /** age-fit 기계 필터 — 차단(발화자 타깃 부적합) / 통과(자녀·손주·회상·직업 맥락 오탐 방지) 고정 */
 
@@ -112,5 +112,79 @@ describe('TRADE — 지역 거래/홍보/공구/동네 Q&A (2026-07-12 맘카페
   ]
   it.each(passed)('"%s" → 통과', (t) => {
     expect(findAgeFitViolation(t, '')).toBeNull()
+  })
+})
+
+/**
+ * MEDICAL_AD — 병원 홍보/의료광고/단축링크 (2026-08-14, 뷰티 카페 온보딩 대비)
+ *
+ * 원칙: "시술 단어"가 아니라 "광고 구조"를 본다.
+ *   우리가 원하는 것 = 여성의 자기관리 이야기 / 원하지 않는 것 = 병원 광고.
+ *   따라서 시술 고민·경험담은 반드시 통과해야 하고, 광고 라벨·안내박스·단축URL·
+ *   시술어휘+가격/이벤트/예약 결합만 차단한다.
+ */
+describe('findMedicalAdSignal — 차단 대상 (카페가 끼워 넣는 홍보 블록)', () => {
+  const blocked: string[] = [
+    // ① 게시판 안내 박스 (여우야 전 글 자동 삽입 — 2026-08-14 실측)
+    '게시판 안내를 확인해 주세요! ★밴스의원 보톡스 900원 https://bit.ly/4fmeSWq',
+    '게시판 안내를 확인해주세요',
+    // ② *의료광고 배너 라벨 (네이버 법적 표기 — 가장 확실한 신호)
+    '*의료광고 양악 윤곽 이벤트',
+    '2026 트렌드 얼굴형 양악&윤곽 * 의료광고',
+    // ③ 단축 URL = 광고 추적 링크
+    '이거 좋대요 https://bit.ly/3QiDQf9',
+    '자세한건 han.gl/abcd 참고하세요',
+    // ④ 시술 어휘 + 상거래 신호 결합
+    '레이저제모 300원부터 이벤트가',
+    '보톡스 39,000원 특가 진행합니다',
+    '가슴성형 상담 예약 받습니다',
+    '리프팅 무료 상담 선착순 마감임박',
+    // ⑤ 카페 홍보 게시판 유입
+    '병원이벤트 당첨자 발표합니다',
+    '제휴 및 체험단 문의 주세요',
+  ]
+  it.each(blocked)('"%s" → 차단', (t) => {
+    expect(findMedicalAdSignal(t, '')).not.toBeNull()
+  })
+})
+
+describe('findMedicalAdSignal — 통과 대상 (★오탐 방지: 회원의 진짜 이야기)', () => {
+  const passed: string[] = [
+    '병원 다녀왔는데 갱년기라고 하네요',        // 경험담 — P2 정희씨 핵심 주제
+    '피부가 푸석해서 고민이에요',               // 자기관리 고민
+    '보톡스 고민 중인데 무서워요',              // 시술 고민 = 우리가 원하는 대화
+    '화장품 바꿨는데 괜찮네요',                 // 후기
+    '나이 드니까 얼굴살이 빠지는 것 같아요',     // 외모 변화에 대한 마음
+    '피부과에서 기미 치료받고 왔어요',          // 시술 경험담 (가격·홍보 없음)
+    '리프팅 해보신 분 계세요? 후기 궁금해요',    // 커뮤니티 질문
+    '어제 병원에서 검사받았는데 결과가 걱정돼요', // 건강 불안 (P2 핵심)
+    '요즘 눈가 주름이 신경쓰이네요',            // 외모 고민
+    '어후 배고파요 아침 먹었눈뎅',              // 일반 수다 (여우야 실제 글 2026-08-14)
+  ]
+  it.each(passed)('"%s" → 통과', (t) => {
+    expect(findMedicalAdSignal(t, '')).toBeNull()
+  })
+})
+
+/**
+ * 여우야(shadow) 저장 차단 — crawler.ts savePosts 5.2 게이트가 쓰는 판정.
+ * 실제 여우야 글은 회원 본문 앞뒤에 카페가 홍보 블록을 끼워 넣는다(2026-08-14 화면 실측).
+ * 본문이 정상이어도 홍보 블록이 섞이면 DB 저장 자체를 막아야 한다.
+ */
+describe('findMedicalAdSignal — 여우야 실제 글 형태 (본문 + 삽입된 홍보 블록)', () => {
+  const GUIDE_BOX = '게시판 안내를 확인해 주세요! ★프랑스에서 온 화상·비감염성 상처 치료제 비아핀 화끈화끈 예민해진 피부▶https://bit.ly/4fmeSWq ★밴스의원♥주름보'
+  const AD_BANNER = '일퍼센트성형외과의원 2026 트렌드 얼굴형 양악 윤곽 예뻐지고 싶니? *의료광고'
+
+  it('안내박스가 본문 앞에 붙은 글 → 저장 차단', () => {
+    expect(findMedicalAdSignal('어후 배고파요 아침 먹었눈뎅', `${GUIDE_BOX}\n배고프네요 점메추요!~`)).not.toBeNull()
+  })
+
+  it('의료광고 배너가 본문 뒤에 붙은 글 → 저장 차단', () => {
+    expect(findMedicalAdSignal('애 안입는 옷 정리하다가 반나절 다 감', `옷장 정리 좀 하려고 꺼냈는데\n${AD_BANNER}`)).not.toBeNull()
+  })
+
+  it('홍보 블록이 없는 순수 회원 글 → 저장 허용 (★오탐 방지)', () => {
+    expect(findMedicalAdSignal('요즘 피부가 예전 같지 않아요', '세수하고 나면 당기는 느낌이 심해졌어요. 다들 어떻게 관리하세요?')).toBeNull()
+    expect(findMedicalAdSignal('보톡스 해보신 분', '무섭기도 하고 티날까봐 고민이에요. 해보신 분 어떠셨어요?')).toBeNull()
   })
 })

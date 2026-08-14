@@ -32,12 +32,12 @@ describe('파생 상수 — 현재 상태 (Phase 2-a 승격 + masanmam core 승�
     expect(PUBLISHABLE_CAFE_IDS.sort()).toEqual(['dlxogns01', 'goondae', 'masanmam', 'remonterrace', 'wgang'])
   })
 
-  it('SECONDARY_CAFE_IDS = remon, goondae, masanmam (크롤 전략·연령필터 적용)', () => {
-    expect(SECONDARY_CAFE_IDS.sort()).toEqual(['goondae', 'masanmam', 'remonterrace'])
+  it('SECONDARY_CAFE_IDS = remon, goondae, masanmam, yeowooya (크롤 전략·연령필터 적용)', () => {
+    expect(SECONDARY_CAFE_IDS.sort()).toEqual(['goondae', 'masanmam', 'remonterrace', 'yeowooya'])
   })
 
-  it('SHADOW_CAFE_IDS = 빈 배열 (masanmam은 shadow가 아니라 정식 core)', () => {
-    expect(SHADOW_CAFE_IDS).toEqual([])
+  it('SHADOW_CAFE_IDS = yeowooya (2026-08-14 온보딩 — 발행 금지 관찰 전용)', () => {
+    expect(SHADOW_CAFE_IDS).toEqual(['yeowooya'])
   })
 
   it('PUBLISHABLE_ONLY_CAFE_IDS = 빈 배열 (masanmam core 승격으로 보충 lane 졸업 — 온보딩 경로로 유지)', () => {
@@ -48,6 +48,32 @@ describe('파생 상수 — 현재 상태 (Phase 2-a 승격 + masanmam core 승�
     expect(PRODUCTION_CAFE_IDS).not.toContain('remonterrace')
     expect(PRODUCTION_CAFE_IDS).not.toContain('goondae')
     expect(PRODUCTION_CAFE_IDS).not.toContain('masanmam')
+  })
+
+  // 여우야는 성형/뷰티 카페라 광고 오염 위험이 있다. 관찰이 끝나기 전까지 어떤 발행 경로에도
+  // 들어가면 안 된다 — 이 가드가 깨지면 병원 광고가 고객 화면에 노출될 수 있다.
+  it('yeowooya는 발행 경로 전부에서 제외 (shadow — 고객 화면 노출 0)', () => {
+    expect(PRODUCTION_CAFE_IDS).not.toContain('yeowooya')
+    expect(CURATION_CORE_CAFE_IDS).not.toContain('yeowooya')
+    expect(PUBLISHABLE_CAFE_IDS).not.toContain('yeowooya')
+    expect(PUBLISHABLE_ONLY_CAFE_IDS).not.toContain('yeowooya')
+  })
+
+  it('yeowooya sourceStage 판정 = shadow / isPublishableSource=false', () => {
+    expect(sourceStageOfCafe('yeowooya')).toBe('shadow')
+    expect(isShadowSource({ sourceStage: 'shadow' })).toBe(true)
+    expect(isPublishableSource({ sourceStage: 'shadow' })).toBe(false)
+    expect(isCurationCoreSource({ sourceStage: 'shadow' })).toBe(false)
+    expect(isProductionCafe({ sourceStage: 'shadow' })).toBe(false)
+    expect(isSecondarySource({ sourceStage: 'shadow' })).toBe(true)  // 크롤 전략·연령필터는 적용
+  })
+
+  // crawler.ts savePosts의 의료광고 저장 skip은 SHADOW_CAFE_IDS 한정으로 걸려 있다.
+  // 기존 5개 카페가 이 목록에 들어가면 저장 동작이 조용히 바뀌므로 고정한다.
+  it('기존 5개 카페는 SHADOW_CAFE_IDS에 미포함 (의료광고 skip 미적용 — 저장 동작 불변)', () => {
+    for (const id of ['wgang', 'dlxogns01', 'remonterrace', 'goondae', 'masanmam']) {
+      expect(SHADOW_CAFE_IDS).not.toContain(id)
+    }
   })
 })
 

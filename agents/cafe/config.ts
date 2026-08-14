@@ -198,6 +198,42 @@ export const CAFE_CONFIGS: CafeConfig[] = [
       { name: '자유이야기방', menuId: 87, maxPages: 5, priority: 'medium', category: 'lifestyle' },
     ],
   },
+
+  // ─────────────────────────────────────────────────────────
+  // 6. yeowooya 여우야 (10912875) — shadow 온보딩 (2026-08-14)
+  //    목적: 콘텐츠 원료가 remonterrace(7일 57.5%)·wgang에 몰려 있다. 40~60대 여성의 일상·자기관리·
+  //          후기·취향 대화를 넓히기 위한 첫 소스 확장. 회원 228만, 대표 인기카페.
+  //
+  //    ⚠️ 이 카페는 자기 정체를 "『여우야』뷰티카페 (성형수술/화장품/성형후기/이벤트/체험단)"로 밝힌다.
+  //       실측(2026-08-14 창업자 화면 확인): **모든 글**에 아래 두 홍보 블록이 자동 삽입된다.
+  //         ① 본문 위 "ℹ️ 게시판 안내를 확인해 주세요!" 박스 — 병원명+bit.ly 단축링크 나열
+  //         ② 본문 아래 "*의료광고" 라벨 배너 이미지 — 성형외과 광고(글마다 로테이션)
+  //       회원이 쓴 본문이 아니라 카페가 끼워 넣는 블록이므로, age-fit-blocklist의 findMedicalAdSignal이
+  //       구조적 신호(*의료광고 / 게시판 안내를 확인해 주세요 / 단축URL / 시술어휘+가격·이벤트·예약)로 차단한다.
+  //       시술 단어 단독은 차단하지 않는다 — "보톡스 고민 중인데 무서워요"는 우리가 원하는 대화다.
+  //
+  //    sourceStage:'shadow' → **발행 금지, 관찰 전용**. 고객 화면 노출 0. refs/killer 후보 미편입.
+  //    승격 경로: 24~72h 관찰에서 광고 오염 0 + 타깃 적합 글 확보 확인 시 'shadow'→'publishable'
+  //              (masanmam 선례 — 이 줄 한 단어 + 테스트 기대값만, 로직 0줄).
+  //
+  //    ⚠️ CRAWL_CAFE_FILTER에 'yeowooya' 추가해야 실제 크롤됨(.env.local 수동 — 창업자 액션).
+  //       CRAWL_EXPECTED_CAFE_IDS엔 추가 금지(성공판정 오염 방지).
+  //    ⚠️ config 변경 후 launchd 재등록 필요 시 창업자에게 요청(.claude/rules/cafe-crawler.md 5번).
+  // ─────────────────────────────────────────────────────────
+  {
+    id: 'yeowooya',
+    name: '여우야',
+    url: 'https://cafe.naver.com/f-e/cafes/10912875',
+    numericId: 10912875,
+    legacyCrawler: true,   // goondae/remon/masanmam과 동일 — boards page loop 전용
+    sourceStage: 'shadow',
+    boards: [
+      // 자유 수다: 활성도 높음(전체글 668만). 얕게 긁으면 좋은 글을 놓치므로 5페이지로 시작.
+      { name: '[talk] 자유 수다', menuId: 143, maxPages: 5, priority: 'medium', category: 'lifestyle' },
+      // TV/방송: 가벼운 수다·취향 축. 광고 밀도가 낮을 것으로 보이나 미검증이라 1페이지로 시작.
+      { name: '[talk] TV,방송', menuId: 1698, maxPages: 1, priority: 'medium', category: 'lifestyle' },
+    ],
+  },
 ]
 
 /**
