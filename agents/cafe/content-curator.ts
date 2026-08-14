@@ -40,6 +40,33 @@ import { buildPopularSeoMeta } from './popular-seo.js'
 import { findMedicalAdviceRequest } from '../core/medical-advice-blocklist.js'
 import { buildDailyQuarantine, extractBlockedRefIds, type DailyQuarantine } from './curator-quarantine.js'
 import { recordPersonaMatcherShadow } from './persona-matcher-shadow.js'
+// 제목 리라이팅 (PR-D) — 기본 OFF. TITLE_REWRITE_ENABLED=true일 때만 동작한다.
+import Anthropic from '@anthropic-ai/sdk'
+import {
+  createSonnetCaller,
+  formatTitleRewriteLog,
+  isTitleRewriteEnabled,
+  runTitleRewrite,
+  type TitleRewritePostRepo,
+} from './title-rewrite-runner.js'
+
+/** tryTitleRewrite가 원문 CafePost에서 읽는 필드 */
+interface TitleRewriteSource {
+  cafeId: string
+  content: string
+  author: string | null
+  isUsable: boolean
+  commentCount: number
+  likeCount: number
+  boardName: string | null
+  desireCategory: string | null
+  emotionTags: string[]
+  psychInsight: string | null
+}
+
+/** 제목 리라이팅 전용 클라이언트 — 고객이 보는 제목이라 heavy(Sonnet)를 쓴다 */
+const titleRewriteClient = new Anthropic()
+const TITLE_REWRITE_MODEL = process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6'
 
 // ─── 후보 풀 / skipReason 타입 ─────────────────────────────────
 type SkipReason =
@@ -741,10 +768,74 @@ async function publishCuratedContent(curated: CuratedContent): Promise<PublishRe
       }
       return post.id
     })
+
+    // ── 제목 리라이팅 (PR-D, 2026-08-14) — 발행이 끝난 뒤에만 시도한다 ──
+    // 🚫 발행 전에 title을 바꾸면 slug(URL)와 seoTitle(검색 제목)이 함께 바뀐다.
+    //    여기서는 title만 UPDATE하므로 URL·검색 제목은 원제목 기반으로 남는다.
+    // 🚫 어떤 실패도 발행 결과에 영향을 주지 않는다. 기본값은 OFF다.
+    await tryTitleRewrite(postId, curated)
+
     return { success: true, postId, seoTransformed: seo.transformed }
   } catch (err) {
     console.error('[ContentCurator] publishCuratedContent 트랜잭션 실패:', err)
     return { success: false, skipReason: 'PUBLISH_FAILED' }
+  }
+}
+
+/**
+ * 발행된 글의 제목 리라이팅을 시도한다 — limited 운영(wgang 단독, 하루 상한).
+ *
+ * 이 함수는 **절대 throw하지 않는다.** 발행은 이미 끝났고, 제목 개선은 부가 작업이다.
+ * 플래그가 꺼져 있으면(기본값) 원문 조회조차 하지 않고 즉시 반환한다.
+ */
+async function tryTitleRewrite(postId: string, curated: CuratedContent): Promise<void> {
+  try {
+    if (!isTitleRewriteEnabled()) return
+
+    const sourceId = curated.sourcePostIds[0]
+    if (!sourceId) return
+
+    // agents/ 기준에서 prisma 모델 접근이 unknown으로 잡힌다(기존 baseline 특성).
+    // 필요한 필드만 명시해 좁힌다 — any는 쓰지 않는다.
+    const sourceRepo = prisma.cafePost as unknown as {
+      findUnique: (a: unknown) => Promise<TitleRewriteSource | null>
+    }
+    const source = await sourceRepo.findUnique({
+      where: { id: sourceId },
+      select: {
+        cafeId: true, content: true, author: true, isUsable: true,
+        commentCount: true, likeCount: true, boardName: true,
+        desireCategory: true, emotionTags: true, psychInsight: true,
+      },
+    })
+    if (!source) return
+
+    const outcome = await runTitleRewrite(
+      {
+        postId,
+        cafeId: source.cafeId,
+        publishedTitle: curated.title,
+        body: replaceCafeReferences(stripMarkdown(source.content ?? '')),
+        author: source.author,
+        isUsable: source.isUsable,
+        commentCount: source.commentCount,
+        likeCount: source.likeCount,
+        boardName: source.boardName,
+        desireCategory: source.desireCategory,
+        emotionTags: source.emotionTags,
+        psychInsight: source.psychInsight,
+      },
+      {
+        // agents/ 기준에서 prisma 인스턴스는 Record<string, unknown>으로 잡힌다(기존 baseline 특성).
+        // runner가 요구하는 최소 구조로 좁혀 넘긴다. any는 쓰지 않는다.
+        prisma: prisma as unknown as { post: TitleRewritePostRepo },
+        callModel: createSonnetCaller(titleRewriteClient, TITLE_REWRITE_MODEL),
+      },
+    )
+    console.log(formatTitleRewriteLog(postId, outcome))
+  } catch (err) {
+    // 여기까지 오면 안 되지만, 발행을 되돌리는 일은 절대 없어야 한다
+    console.warn('[ContentCurator] 제목 리라이팅 예외(발행 무영향):', err instanceof Error ? err.message : err)
   }
 }
 
