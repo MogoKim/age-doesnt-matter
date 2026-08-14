@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { findAgeFitViolation, findMedicalAdSignal } from '../../agents/core/age-fit-blocklist'
+import { findAgeFitViolation, findMedicalAdSignal, findMedicalAuthorSignal } from '../../agents/core/age-fit-blocklist'
 
 /** age-fit 기계 필터 — 차단(발화자 타깃 부적합) / 통과(자녀·손주·회상·직업 맥락 오탐 방지) 고정 */
 
@@ -186,5 +186,88 @@ describe('findMedicalAdSignal — 여우야 실제 글 형태 (본문 + 삽입�
   it('홍보 블록이 없는 순수 회원 글 → 저장 허용 (★오탐 방지)', () => {
     expect(findMedicalAdSignal('요즘 피부가 예전 같지 않아요', '세수하고 나면 당기는 느낌이 심해졌어요. 다들 어떻게 관리하세요?')).toBeNull()
     expect(findMedicalAdSignal('보톡스 해보신 분', '무섭기도 하고 티날까봐 고민이에요. 해보신 분 어떠셨어요?')).toBeNull()
+  })
+})
+
+/**
+ * author 기반 차단 — 2026-08-14 첫 회차 사고 재현.
+ *
+ * 병원 계정이 쓴 고정 공지 3건이 저장됐다. 셋 다 본문에 가격·할인·예약 문구가 없어
+ * COMMERCE_SIGNALS 결합 조건을 통과했다. 브랜드 홍보형 광고는 가격을 쓰지 않는다.
+ * 판정 근거를 "무슨 단어를 썼나"에서 "누가 썼나"로 옮긴 가드.
+ */
+describe('findMedicalAuthorSignal — 상업 의료기관 계정 (작성 주체 기준)', () => {
+  const blockedAuthors: string[] = [
+    '일퍼센트성형외과', '유앤유성형외과', '서진성형외과',
+    '아너스티성형외과', '밴스의원', '하이봄성형외과', '라이안성형외과',
+    '강남피부과', '서울대치과', '연세한의원', '밝은세상안과', '365모발이식',
+    '○○클리닉', '튼튼병원', '미즈맘여성의원',
+  ]
+  it.each(blockedAuthors)('author="%s" → 차단', (a) => {
+    expect(findMedicalAuthorSignal(a)).not.toBeNull()
+  })
+
+  const passedAuthors: (string | null | undefined)[] = [
+    '간젤리', '코노레코', '행복한삶2', '흰둥검둥이', '제일미녀', '우아한숙녀',
+    '버라이커테리', '대도시서울', '릴리의꽃말은', '모이야기',
+    '', null, undefined,
+  ]
+  it.each(passedAuthors as string[])('author="%s" → 통과 (일반 회원 닉네임)', (a) => {
+    expect(findMedicalAuthorSignal(a)).toBeNull()
+  })
+})
+
+describe('findMedicalAdSignal — author 인자 (놓친 3건 재현 + 오탐 방지)', () => {
+  // ── 2026-08-14 실제 저장된 3건. 본문에 가격·할인이 없어 기존 필터를 통과했다 ──
+  it('일퍼센트성형외과 — 가격 문구 없어도 author로 차단', () => {
+    const t = '💜🩵일퍼센트성형외과🩵💜 너 얼굴형 MBTI검사 아직도 안했어👀❓❓❓'
+    const c = '1% 디테일의 차이, 1% 예쁨을 만드는 곳. 일퍼센트성형외과는 윤곽, 이목구비를 동시에 고려하여 수술합니다.'
+    expect(findMedicalAdSignal(t, c, '일퍼센트성형외과')).toMatch(/^MEDICAL_AD_AUTHOR:/)
+  })
+
+  it('유앤유성형외과 — 가격 문구 없어도 author로 차단', () => {
+    const t = '💜 상담 당일 가슴성형/ UU모양 I골 /가슴성형은 유앤유성형외과 💜'
+    const c = '가슴 전문 원장님만 4명, 500평 규모의 가슴전문건물, 24시간 응급콜 번호 3개'
+    expect(findMedicalAdSignal(t, c, '유앤유성형외과')).toMatch(/^MEDICAL_AD_AUTHOR:/)
+  })
+
+  it('서진성형외과 — 가격 문구 없어도 author로 차단', () => {
+    const t = '👉이마축소 모발이식👈 작은 얼굴 컨설팅은 "서진성형외과💜"'
+    const c = '얼굴 비율에 맞춘 헤어라인 디자인으로 작아보이는 얼굴 효과. 2025 KBS N 모발이식 1위 수상'
+    expect(findMedicalAdSignal(t, c, '서진성형외과')).toMatch(/^MEDICAL_AD_AUTHOR:/)
+  })
+
+  // ── ★오탐 방지: 같은 문장이라도 작성자가 회원이면 통과해야 한다 ──
+  const memberPosts: [string, string][] = [
+    ['병원 다녀왔는데 갱년기라고 하네요', '어지럽고 잠도 잘 안 와서 갔더니 그렇다네요'],
+    ['보톡스 고민 중인데 무서워요', '티날까봐 걱정이에요. 해보신 분 계실까요?'],
+    ['리프팅 해보신 분 후기 궁금해요', '가격도 가격이지만 아플까봐요'],
+    ['피부과에서 기미 치료받고 왔어요', '몇 번 더 받아야 한대요'],
+    ['어제 병원에서 검사받았는데 결과가 걱정돼요', '다음 주에 다시 오래요'],
+    ['나이 드니까 얼굴살이 빠지는 것 같아요', '거울 볼 때마다 낯설어요'],
+    ['은은한 컬러렌즈 추천해주세요', '너무 티나는 건 부담스러워서요'],
+    ['다시 더워진거 같지 않나요..?', '어제는 시원했는데 오늘 또 덥네요'],
+    ['금요일인데 뭐 하세요', '저는 그냥 집에 있어요'],
+  ]
+  it.each(memberPosts)('회원 글 "%s" → 통과', (t, c) => {
+    expect(findMedicalAdSignal(t, c, '간젤리')).toBeNull()
+  })
+
+  it('같은 본문이라도 author가 병원이면 차단 (판정 근거는 작성 주체)', () => {
+    const t = '리프팅 해보신 분 후기 궁금해요'
+    const c = '가격도 가격이지만 아플까봐요'
+    expect(findMedicalAdSignal(t, c, '간젤리')).toBeNull()
+    expect(findMedicalAdSignal(t, c, '서진성형외과')).not.toBeNull()
+  })
+
+  it('author 미전달 시 기존 동작과 완전히 동일 (하위호환)', () => {
+    expect(findMedicalAdSignal('보톡스 고민 중인데 무서워요', '')).toBeNull()
+    expect(findMedicalAdSignal('레이저제모 300원부터 이벤트가', '')).not.toBeNull()
+    expect(findMedicalAdSignal('병원 다녀왔는데 갱년기라고 하네요', '')).toBeNull()
+  })
+
+  it('author가 null/undefined여도 본문 판정은 그대로 동작', () => {
+    expect(findMedicalAdSignal('보톡스 39,000원 특가 진행합니다', '', null)).not.toBeNull()
+    expect(findMedicalAdSignal('피부가 푸석해서 고민이에요', '', undefined)).toBeNull()
   })
 })
