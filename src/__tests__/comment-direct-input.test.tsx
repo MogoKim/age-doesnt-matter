@@ -264,6 +264,282 @@ describe('[C2-B] 등록 버튼 하단 고정 — 패널에서만', () => {
   })
 })
 
+/**
+ * [C2-C] 키보드가 올라온 동안 패널을 visual viewport 위에 붙들어 둔다.
+ *
+ * Android Chrome 108+ / iOS Safari는 키보드가 열려도 layout viewport를 줄이지 않아
+ * `fixed bottom-0` 패널이 키보드 뒤로 밀린다(실측 390x844: 패널 464px 중 상단 134px만 남음).
+ *
+ * 여기서 반드시 고정해야 하는 것은 **환경별로 저절로 no-op이 된다**는 쪽이다:
+ * 키보드가 layout viewport를 줄이는 환경(Android 정식 앱·Samsung Internet)에서는
+ * keyboardHeight가 0이 되어 인라인 스타일을 걸지 않아야 한다. 지금 정상인 흐름을 깨면 안 된다.
+ */
+describe('[C2-C] 키보드 보정 — visualViewport', () => {
+  const panel = () => openedPanel() as HTMLElement
+  const listeners: Array<[string, EventListener]> = []
+  let originalVV: typeof window.visualViewport
+
+  /** vv를 stub한다. height/offsetTop으로 키보드 상황을 만든다. */
+  function stubVisualViewport(height: number, offsetTop = 0) {
+    listeners.length = 0
+    const vv = {
+      height, offsetTop,
+      addEventListener: (t: string, l: EventListener) => { listeners.push([t, l]) },
+      removeEventListener: (t: string, l: EventListener) => {
+        const i = listeners.findIndex(([tt, ll]) => tt === t && ll === l)
+        if (i >= 0) listeners.splice(i, 1)
+      },
+    }
+    Object.defineProperty(window, 'visualViewport', { value: vv, configurable: true, writable: true })
+    return vv
+  }
+  function removeVisualViewport() {
+    Object.defineProperty(window, 'visualViewport', { value: undefined, configurable: true, writable: true })
+  }
+
+  beforeEach(() => {
+    originalVV = window.visualViewport
+    // CSS `max-md:fixed`가 켜지는 폭이어야 보정이 걸린다 (기본 happy-dom은 1024)
+    Object.defineProperty(window, 'innerWidth', { value: 390, configurable: true, writable: true })
+  })
+  afterEach(() => {
+    Object.defineProperty(window, 'visualViewport', { value: originalVV, configurable: true, writable: true })
+    Object.defineProperty(window, 'innerWidth', { value: 1024, configurable: true, writable: true })
+  })
+
+  it('키보드가 올라오면 bottom을 키보드 높이만큼 올리고 sheet가 가시 영역을 차지한다', async () => {
+    stubVisualViewport(450)                 // innerHeight 800 - 450 - 0 = 키보드 350px
+    await renderAndOpen()
+    expect(panel().style.bottom).toBe('350px')
+    // [C2-D] 55dvh(440) 상한을 쓰지 않는다. 가시 영역 450 - 상단 gap 24 = 426
+    expect(panel().style.maxHeight).toBe('426px')
+  })
+
+  it('iOS 자동스크롤(offsetTop)을 키보드 높이 계산에 포함한다', async () => {
+    stubVisualViewport(450, 100)            // 800 - 450 - 100 = 250px
+    await renderAndOpen()
+    expect(panel().style.bottom).toBe('250px')
+  })
+
+  it('키보드가 없으면(layout viewport가 줄어드는 환경 포함) 손대지 않는다', async () => {
+    stubVisualViewport(800)                 // 800 - 800 - 0 = 0 → 임계값 이하
+    await renderAndOpen()
+    expect(panel().style.bottom).toBe('')
+    expect(panel().style.maxHeight).toBe('')
+  })
+
+  it('데스크탑 폭에서는 보정하지 않는다 — max-height가 fixed 아닌 레이아웃을 자르면 안 된다', async () => {
+    Object.defineProperty(window, 'innerWidth', { value: 1024, configurable: true, writable: true })
+    stubVisualViewport(450)
+    await renderAndOpen()
+    expect(panel().style.bottom).toBe('')
+    expect(panel().style.maxHeight).toBe('')
+  })
+
+  it('visualViewport 미지원 환경은 기존 동작을 유지한다 (구독 0건)', async () => {
+    removeVisualViewport()
+    await renderAndOpen()
+    expect(panel().style.bottom).toBe('')
+    expect(panel().style.maxHeight).toBe('')
+    expect(listeners).toHaveLength(0)
+  })
+
+  it('composing이 아닐 때는 구독하지 않는다', async () => {
+    stubVisualViewport(450)
+    render(<CommentSection postId="post-abc" comments={[]} isLoggedIn={false} />)
+    await flushScroll()
+    expect(listeners).toHaveLength(0)
+  })
+
+  it('패널을 닫으면 인라인 스타일이 원복되고 구독이 해제된다', async () => {
+    stubVisualViewport(450)
+    await renderAndOpen()
+    const el = panel()
+    expect(el.style.bottom).toBe('350px')
+    expect(listeners.length).toBeGreaterThan(0)
+
+    fireEvent.click(screen.getByTestId('comment-compose-close'))
+    await flushScroll()
+
+    expect(el.style.bottom).toBe('')
+    expect(el.style.maxHeight).toBe('')
+    expect(listeners).toHaveLength(0)
+  })
+
+  it('C2-B sticky 등록 버튼은 그대로 유지된다', async () => {
+    stubVisualViewport(450)
+    await renderAndOpen()
+    const row = screen.getByRole('button', { name: '댓글 남기기' }).parentElement!
+    expect(row.className).toContain('max-md:sticky')
+    expect(row.className).toContain('max-md:bottom-0')
+  })
+
+  it('Turnstile 위젯이 여전히 1개다 — 보정이 리마운트를 만들지 않는다', async () => {
+    stubVisualViewport(450)
+    render(<CommentSection postId="post-abc" comments={[]} isLoggedIn={false} />)
+    await flushScroll()
+    fireEvent.change(contentBox(), { target: { value: '내용' } })
+    await act(async () => { await new Promise((r) => setTimeout(r, 350)) })
+    expect(mock.turnstileRender.mock.calls.length).toBe(1)
+
+    fireEvent.click(dock()!.querySelector('button')!)
+    await act(async () => { await new Promise((r) => setTimeout(r, 350)) })
+
+    expect(mock.turnstileRender.mock.calls.length).toBe(1)
+    expect(mock.turnstileRemove).not.toHaveBeenCalled()
+    expect(document.querySelectorAll('textarea')).toHaveLength(1)
+  })
+})
+
+/**
+ * [C2-D] 작성 전용 sheet 모드.
+ *
+ * #370(bottom 보정)만으로는 실기기에서 부족했다. 키보드가 올라와도 화면의 주인공이
+ * 본문·광고·카테고리였고, 무엇보다 **Header(z-100)와 카테고리 IconMenu(z-99)가
+ * 패널(z-96) 위를 덮어** "내가 댓글을 쓰고 있다"는 맥락이 깨졌다.
+ *
+ * 그래서 키보드가 올라온 동안만 sheet로 승격한다: z 101~104 · 뒤 화면 dim · 가시 영역 차지.
+ * 키보드가 닫히면 전부 원복해 기존 하단 패널(z-96 · 55dvh)로 돌아간다.
+ */
+describe('[C2-D] 작성 전용 sheet 모드', () => {
+  const panel = () => openedPanel() as HTMLElement
+  const dim = () => screen.queryByTestId('comment-sheet-dim')
+  let originalVV: typeof window.visualViewport
+
+  function stubVV(height: number, offsetTop = 0) {
+    const vv = {
+      height, offsetTop,
+      addEventListener: () => {}, removeEventListener: () => {},
+    }
+    Object.defineProperty(window, 'visualViewport', { value: vv, configurable: true, writable: true })
+  }
+
+  beforeEach(() => {
+    originalVV = window.visualViewport
+    Object.defineProperty(window, 'innerWidth', { value: 390, configurable: true, writable: true })
+  })
+  afterEach(() => {
+    Object.defineProperty(window, 'visualViewport', { value: originalVV, configurable: true, writable: true })
+    Object.defineProperty(window, 'innerWidth', { value: 1024, configurable: true, writable: true })
+  })
+
+  it('키보드가 올라오면 sheet로 승격한다 — Header(100)·카테고리(99)보다 위, 둥근 상단', async () => {
+    stubVV(450)
+    await renderAndOpen()
+    const cls = panel().className
+    expect(cls).toContain('max-md:z-[102]')      // Header 100 · IconMenu 99 위
+    expect(cls).not.toContain('max-md:z-[96]')
+    expect(cls).toContain('max-md:rounded-t-2xl')
+    expect(panel().getAttribute('data-sheet-mode')).toBe('on')
+  })
+
+  it('sheet 뒤가 dim된다 — 광고·본문이 작성 흐름보다 강하게 보이지 않게', async () => {
+    stubVV(450)
+    await renderAndOpen()
+    expect(dim()).toBeTruthy()
+    expect(dim()!.className).toContain('z-[101]')   // sheet(102) 바로 아래
+    expect(dim()!.className).toContain('md:hidden') // 데스크탑에는 없다
+  })
+
+  it('dim을 탭해도 닫히지 않는다 — 닫기는 ✕ 버튼만 (쓰던 글 보호)', async () => {
+    stubVV(450)
+    await renderAndOpen()
+    fireEvent.click(dim()!)
+    await flushScroll()
+    expect(openedPanel()).toBeTruthy()             // 여전히 열려 있다
+    expect(screen.getByTestId('comment-compose-close')).toBeTruthy()
+  })
+
+  it('닫기 버튼은 sheet 모드에서도 접근 가능하다 (내부 sticky 헤더)', async () => {
+    stubVV(450)
+    await renderAndOpen()
+    const close = screen.getByTestId('comment-compose-close')
+    expect(close).toBeTruthy()
+    expect(close.closest('div')!.className).toContain('sticky')
+    expect(screen.getByTestId('comment-compose-heading').textContent).toBe('댓글 쓰는 중')
+  })
+
+  it('닫기 확인창은 sheet보다 위로 함께 올라간다 — 뒤로 숨으면 닫을 수 없다', async () => {
+    stubVV(450)
+    await renderAndOpen()
+    fireEvent.change(contentBox(), { target: { value: '쓰던 내용' } })
+    fireEvent.click(screen.getByTestId('comment-compose-close'))
+    await act(async () => { await new Promise((r) => setTimeout(r, 60)) })
+    const sheet = screen.getByTestId('comment-close-confirm')
+    expect(sheet.className).toContain('z-[104]')            // sheet(102) 위
+    expect(document.querySelector('.z-\\[103\\]')).toBeTruthy() // 확인창 dim
+  })
+
+  it('키보드가 닫히면 sheet 승격이 풀리고 기존 하단 패널로 돌아간다', async () => {
+    stubVV(800)                                   // 800-800-0 = 0 → 키보드 없음
+    await renderAndOpen()
+    const cls = panel().className
+    expect(cls).toContain('max-md:z-[96]')
+    expect(cls).not.toContain('max-md:z-[102]')
+    expect(cls).not.toContain('max-md:rounded-t-2xl')
+    expect(dim()).toBeNull()
+    expect(panel().getAttribute('data-sheet-mode')).toBeNull()
+  })
+
+  it('Android 앱·Samsung Internet 계열(keyboardHeight≈0)은 기존 흐름 그대로다', async () => {
+    stubVV(800)                                   // layout viewport가 줄어드는 환경 = 키보드 높이 0
+    await renderAndOpen()
+    expect(panel().style.bottom).toBe('')         // 인라인 보정 없음
+    expect(panel().style.maxHeight).toBe('')      // 55dvh 그대로
+    expect(panel().className).toContain('max-md:max-h-[55dvh]')
+    expect(dim()).toBeNull()                      // dim도 없다
+  })
+
+  it('visualViewport 미지원 환경은 sheet로 승격하지 않는다', async () => {
+    Object.defineProperty(window, 'visualViewport', { value: undefined, configurable: true, writable: true })
+    await renderAndOpen()
+    expect(panel().className).toContain('max-md:z-[96]')
+    expect(dim()).toBeNull()
+  })
+
+  it('패널을 닫으면 dim도 사라진다', async () => {
+    stubVV(450)
+    await renderAndOpen()
+    expect(dim()).toBeTruthy()
+    fireEvent.click(screen.getByTestId('comment-compose-close'))
+    await flushScroll()
+    expect(dim()).toBeNull()
+    expect(openedPanel()).toBeNull()
+  })
+
+  it('sheet 모드에서도 C2-B sticky 등록 버튼과 Turnstile 1개가 유지된다', async () => {
+    stubVV(450)
+    render(<CommentSection postId="post-abc" comments={[]} isLoggedIn={false} />)
+    await flushScroll()
+    fireEvent.change(contentBox(), { target: { value: '내용' } })
+    await act(async () => { await new Promise((r) => setTimeout(r, 350)) })
+    expect(mock.turnstileRender.mock.calls.length).toBe(1)
+
+    fireEvent.click(dock()!.querySelector('button')!)
+    await act(async () => { await new Promise((r) => setTimeout(r, 350)) })
+
+    expect(panel().getAttribute('data-sheet-mode')).toBe('on')
+    const row = screen.getByRole('button', { name: '댓글 남기기' }).parentElement!
+    expect(row.className).toContain('max-md:sticky')
+    expect(mock.turnstileRender.mock.calls.length).toBe(1)   // remount 없음
+    expect(mock.turnstileRemove).not.toHaveBeenCalled()
+    expect(document.querySelectorAll('textarea')).toHaveLength(1)
+  })
+
+  it('회원 입력 흐름은 이번 작업에서 바뀌지 않는다 (sheet 승격은 공통, 입력 구조는 무변경)', async () => {
+    mock.loggedIn = true
+    stubVV(450)
+    render(<CommentSection postId="post-abc" comments={[]} isLoggedIn />)
+    await flushScroll()
+    fireEvent.click(dock()!.querySelector('button')!)
+    await act(async () => { await new Promise((r) => setTimeout(r, 100)) })
+    // 회원에게는 닉네임·번호·Turnstile이 없고 textarea는 하나뿐이다 — 기존 불변식 유지
+    expect(screen.queryByPlaceholderText('예: 또래친구')).toBeNull()
+    expect(mock.turnstileRender).not.toHaveBeenCalled()
+    expect(document.querySelectorAll('textarea')).toHaveLength(1)
+  })
+})
+
 describe('비회원 점진 노출 — 타이밍 무변경', () => {
   it('내용을 쓰기 전에는 이름·번호 칸이 없다 (열린 상태에서도)', async () => {
     await renderAndOpen()

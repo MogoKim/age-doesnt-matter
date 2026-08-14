@@ -15,6 +15,43 @@ const GRADE_EMOJI: Record<string, string> = {
  * 제목이 무엇을 하는 중인지 말하므로, placeholder는 **무엇을 쓸지**만 안내한다.
  */
 const COMPOSE_PLACEHOLDER = '생각을 자유롭게 적어주세요'
+
+/**
+ * [C2-C] 하단 작성 패널이 `max-md:fixed`로 전환되는 경계. Tailwind `md`(768px)와 같은 값이다.
+ * CSS 클래스가 켜지는 폭에서만 JS 보정을 걸어야 데스크탑 max-height까지 건드리지 않는다.
+ * (TipTapEditor도 같은 방식으로 `window.innerWidth < 1024`를 쓴다)
+ */
+const PANEL_FIXED_MAX_WIDTH = 768
+
+/** [C2-C] 키보드가 "올라왔다"고 볼 최소 높이. TipTapEditor와 같은 임계값. */
+const KEYBOARD_OPEN_THRESHOLD = 30
+
+/**
+ * [C2-D] 작성 전용 sheet가 가시 영역 위에 남기는 여백.
+ * 0으로 두면 전체 화면처럼 보여 "닫을 수 있는 시트"라는 느낌이 사라진다.
+ * 이 틈으로 뒤 화면이 dim된 채 살짝 보이는 것이 "올라온 시트"를 알린다.
+ */
+const PANEL_SHEET_TOP_GAP = 24
+
+/** [C2-D] sheet가 이보다 작아지면 생각을 쓸 수 없다 — 가로 키보드 등 극단 상황의 하한 */
+const PANEL_SHEET_MIN_HEIGHT = 200
+
+/**
+ * [C2-D] 작성 전용 sheet 모드의 층위.
+ * 기존 층위표: 패널/Dock 96 · 닫기확인 dim 97 · 닫기확인 98 · IconMenu(카테고리) 99 · Header 100
+ *              · HeaderFontSizeToggle 110/111 · 가입 배너 dim 149/배너 150 · 팝업 200~ · 오프라인 300
+ * 키보드가 올라오면 sheet가 가시 영역을 차지하는데, 그 위를 Header(100)와 카테고리(99)가 덮어
+ * "내가 댓글을 쓰고 있다"는 맥락을 깨뜨렸다. 그래서 **101~104 빈 구간**만 쓴다.
+ * 가입 배너(149/150)·팝업(200)·오프라인(300)보다 아래여서 기존 정책을 흔들지 않는다.
+ * 닫기 확인 시트는 항상 sheet보다 위여야 하므로 같은 폭으로 함께 올린다(안 올리면 확인창이 뒤로 숨는다).
+ */
+const SHEET_Z = {
+  dim: 'max-md:z-[101]',
+  panel: 'max-md:z-[102]',
+  confirmDim: 'z-[103]',
+  confirmSheet: 'z-[104]',
+} as const
+
 import CommentItemComponent from './CommentItem'
 import CommentInput from './CommentInput'
 import GuestCommentInput from './GuestCommentInput'
@@ -74,6 +111,13 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
   //   인스턴스가 둘이면 위젯도 둘이 되어 토큰이 어긋나고, 제출이 15초 대기 후 조용히 실패한다.
   //   같은 인스턴스의 className만 바꾸므로 리마운트가 없고 입력 중 내용·닉네임·번호가 보존된다.
   const [composing, setComposing] = useState(false)
+  /**
+   * [C2-D] 키보드가 올라와 있는가 — 작성 전용 sheet 모드의 스위치.
+   * 아래 visualViewport effect가 계산해서 켠다. 키보드가 layout viewport를 줄이는 환경
+   * (Android 정식 앱·Samsung Internet)에서는 계산값이 0이 되어 **끝까지 false로 남는다**
+   * → 그 환경의 기존 하단 패널 흐름이 그대로 유지된다.
+   */
+  const [keyboardOpen, setKeyboardOpen] = useState(false)
   //   fixed로 빠지면 흐름에서 빠져 아래 콘텐츠가 위로 밀린다 → 원래 높이를 자리로 남겨 레이아웃 흔들림을 막는다.
   const [placeholderHeight, setPlaceholderHeight] = useState<number>()
 
@@ -116,6 +160,83 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
       inputAreaRef.current?.querySelector('textarea')?.focus({ preventScroll: true })
     }, 60)
     return () => window.clearTimeout(id)
+  }, [composing])
+
+  /**
+   * [C2-C] 키보드가 올라온 동안 패널을 **보이는 화면(visual viewport)** 위에 붙들어 둔다.
+   *
+   * 문제: `position:fixed`의 기준은 layout viewport다. Android Chrome 108+와 iOS Safari는
+   * 키보드가 열릴 때 layout viewport를 그대로 두고 visual viewport만 줄인 뒤 아래로 밀어(offsetTop)
+   * 커서를 보여준다. 그래서 `bottom-0` 패널은 **키보드 뒤로** 밀려 들어간다.
+   * 실측(390x844, 키보드 약 330px): 패널 464px 중 상단 약 134px만 남고 이름·번호·등록 버튼이 전부 가려졌다.
+   * `55dvh`도 브라우저 UI에는 반응하지만 키보드에는 반응하지 않아 패널이 가시 영역보다 커진다.
+   *
+   * 해법: 키보드 높이만큼 `bottom`을 올리고, `max-height`를 가시 영역에 맞춘다.
+   *
+   * [C2-D] 실기기 QA에서 bottom 보정만으로는 부족했다. 키보드가 올라온 동안에는
+   * **작성 전용 sheet**로 다룬다(`keyboardOpen` 상태 → 아래 sheet 모드 참조).
+   *
+   * ⚠️ 환경별로 **저절로 no-op**이 되는 구조를 택했다 — UA 분기를 쓰지 않는다.
+   *    키보드가 layout viewport를 줄이는 환경(Android 정식 앱 WebView·Samsung Internet)에서는
+   *    `innerHeight`도 함께 줄어 `keyboardHeight ≈ 0`이 되므로 인라인 스타일을 아예 걸지 않는다.
+   *    → 지금 정상인 흐름을 건드리지 않는다.
+   * ⚠️ 전역 `interactiveWidget`은 쓰지 않는다. 그건 Dock·FAB·가입 배너·에디터 툴바까지 함께
+   *    끌어올려 광고 겹침(PR #333/#339)과 배너 노출 타이밍을 다시 흔든다.
+   * ⚠️ 새 wrapper를 만들지 않고 **기존 패널 element의 style만** 직접 만진다. 조건부로 DOM 구조가
+   *    바뀌면 Turnstile 위젯이 remount되어 토큰이 소실된다.
+   * ⚠️ `visualViewport` 미지원 환경은 손대지 않는다(기존 동작 유지).
+   *
+   * 공식은 TipTapEditor(글쓰기 툴바)에서 검증된 것과 같다. iOS의 `offsetTop`을 반드시 포함한다.
+   */
+  useEffect(() => {
+    if (!composing) return
+    const el = inputAreaRef.current
+    if (!el) return
+    const vv = window.visualViewport
+    if (!vv) return
+
+    const clear = () => {
+      el.style.bottom = ''
+      el.style.maxHeight = ''
+      setKeyboardOpen(false)
+    }
+
+    const update = () => {
+      // CSS `max-md:fixed`가 꺼지는 폭(데스크탑)에서는 보정하지 않는다.
+      // max-height를 걸면 fixed가 아닌 데스크탑 레이아웃까지 잘린다.
+      if (window.innerWidth >= PANEL_FIXED_MAX_WIDTH) {
+        clear()
+        return
+      }
+      // iOS: Safari 자동스크롤 시 offsetTop이 0이 아니다 — 반드시 포함
+      // Android Chrome 108+: innerHeight 불변, visualViewport.height만 감소
+      const keyboardHeight = Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
+      if (keyboardHeight <= KEYBOARD_OPEN_THRESHOLD) {
+        // 키보드 없음 = layout viewport가 줄어드는 환경 포함. 기존 CSS(bottom-0 · 55dvh)에 맡긴다.
+        clear()
+        return
+      }
+      el.style.bottom = `${Math.round(keyboardHeight)}px`
+      // [C2-D] 키보드가 올라온 동안에는 55dvh 상한을 쓰지 않는다.
+      //   #370은 "넓히지 않는다"를 지켜 min(55dvh, 가시영역)을 썼는데, 그 결과 화면의 주인공이
+      //   여전히 본문·광고였다. 작성 중에는 **가시 영역을 sheet가 차지해야** 맥락이 선명해진다.
+      //   위쪽 gap만 남겨 "전체 화면이 아니라 올라온 시트"임을 알린다.
+      const sheetMax = vv.height - PANEL_SHEET_TOP_GAP
+      el.style.maxHeight = `${Math.max(PANEL_SHEET_MIN_HEIGHT, Math.round(sheetMax))}px`
+      setKeyboardOpen(true)
+    }
+
+    update()
+    vv.addEventListener('resize', update)
+    vv.addEventListener('scroll', update)
+    window.addEventListener('resize', update)
+    return () => {
+      vv.removeEventListener('resize', update)
+      vv.removeEventListener('scroll', update)
+      window.removeEventListener('resize', update)
+      // 닫히거나 언마운트되면 반드시 원복한다 — 인라인 스타일이 남으면 인라인 상태의 레이아웃을 깬다.
+      clear()
+    }
   }, [composing])
 
   // 확인 시트를 닫고 돌아오면 포커스와 **커서 위치**까지 되돌린다.
@@ -375,9 +496,19 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
                 ? // 모바일에서만 하단 고정. 데스크탑은 원래대로 둔다(Dock 자체가 md:hidden이라 열릴 일도 없다).
                   // 55dvh 상한 + 내부 스크롤 — 전면 시트가 아니라 뒤 본문이 계속 보이는 부분 전환이다.
                   // z-[96]은 Dock과 같은 층: 가입 배너(150)보다 아래이되, 열려 있는 동안 배너는 미뤄진다.
-                  'max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:z-[96] max-md:max-h-[55dvh] max-md:overflow-y-auto max-md:overscroll-contain max-md:border-t max-md:border-border max-md:bg-card max-md:px-3 max-md:pb-[max(8px,env(safe-area-inset-bottom))] max-md:pt-1 max-md:shadow-[0_-4px_16px_rgba(0,0,0,0.12)]'
+                  //
+                  // [C2-D] 키보드가 올라오면(=keyboardOpen) 작성 전용 sheet로 승격한다.
+                  //   · z를 101~102로 올려 Header(100)·카테고리 IconMenu(99)가 sheet를 덮지 못하게 한다.
+                  //     이게 "광고·카테고리가 주인공처럼 보인다"의 직접 원인이었다.
+                  //   · 위 모서리를 둥글게 해 "올라온 시트"로 읽히게 한다.
+                  //   · bottom/max-height 실제 값은 아래 visualViewport effect가 인라인으로 넣는다.
+                  //   키보드가 닫히면 이 클래스들이 빠지고 기존 하단 패널(z-96 · 55dvh)로 되돌아간다.
+                  `max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:max-h-[55dvh] max-md:overflow-y-auto max-md:overscroll-contain max-md:border-t max-md:border-border max-md:bg-card max-md:px-3 max-md:pb-[max(8px,env(safe-area-inset-bottom))] max-md:pt-1 max-md:shadow-[0_-4px_16px_rgba(0,0,0,0.12)] ${
+                    keyboardOpen ? `${SHEET_Z.panel} max-md:rounded-t-2xl` : 'max-md:z-[96]'
+                  }`
                 : undefined
             }
+            data-sheet-mode={composing && keyboardOpen ? 'on' : undefined}
           >
             {composing && (
               // 닫기는 ✕ 버튼만이다. 바깥 탭으로 닫으면 쓰던 글이 실수로 사라진다.
@@ -423,14 +554,35 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
           </div>
 
           {/*
+            [C2-D] 작성 전용 sheet 뒤를 가라앉힌다 — 키보드가 올라온 동안만.
+            왜 필요한가: 지금까지는 sheet 뒤로 본문·광고·카테고리가 같은 밝기로 보여
+            "내가 댓글을 쓰고 있다"는 맥락이 약했다. 광고가 주인공처럼 읽히던 원인이다.
+
+            ⚠️ 탭해도 닫지 않는다(onClick 없음). 기존 정책 그대로 **닫기는 ✕ 버튼만**이다 —
+               바깥 탭으로 닫으면 쓰던 글을 잃었다고 느낀다. 대신 탭을 흡수해 뒤 광고·링크가
+               실수로 눌리는 것을 막는다.
+            ⚠️ 이 element는 입력 영역 **뒤에** 둔다. 앞에 넣으면 자식 index가 밀려
+               입력 영역이 재조정 대상이 되고 Turnstile 위젯이 remount된다(토큰 소실).
+          */}
+          {composing && keyboardOpen && (
+            <div
+              className={`fixed inset-0 ${SHEET_Z.dim} bg-black/40 md:hidden`}
+              aria-hidden="true"
+              data-testid="comment-sheet-dim"
+            />
+          )}
+
+          {/*
             [닫기 확인 · H2] 쓰던 내용이 있을 때만 뜬다.
             입력 패널(z-96) 바로 위 두 층만 쓴다 — 가입 배너(150)·팝업(200)보다 한참 아래라
             기존 레이어 정책을 흔들지 않는다. 화면을 덮지 않도록 dim은 10%다.
+            [C2-D] sheet 모드에서는 패널이 102로 올라가므로 확인창도 103/104로 함께 올린다.
+                   안 올리면 확인창이 sheet 뒤로 숨어 "닫기"를 누를 수 없다.
           */}
           {composing && confirmingClose && (
             <div className="md:hidden">
               <div
-                className="fixed inset-0 z-[97] bg-black/10"
+                className={`fixed inset-0 ${keyboardOpen ? SHEET_Z.confirmDim : 'z-[97]'} bg-black/10`}
                 aria-hidden="true"
                 onClick={keepWriting}
               />
@@ -439,7 +591,7 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
                 aria-modal="true"
                 aria-labelledby="comment-close-confirm-title"
                 data-testid="comment-close-confirm"
-                className="fixed inset-x-2 bottom-2 z-[98] rounded-2xl border border-border bg-card p-4 pb-[max(16px,env(safe-area-inset-bottom))] shadow-[0_-6px_22px_rgba(0,0,0,0.14)]"
+                className={`fixed inset-x-2 bottom-2 ${keyboardOpen ? SHEET_Z.confirmSheet : 'z-[98]'} rounded-2xl border border-border bg-card p-4 pb-[max(16px,env(safe-area-inset-bottom))] shadow-[0_-6px_22px_rgba(0,0,0,0.14)]`}
               >
                 <p id="comment-close-confirm-title" className="text-body font-bold text-foreground">
                   댓글 작성을 멈출까요?
