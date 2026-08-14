@@ -352,6 +352,10 @@ model Post {
   boardType      BoardType
   category       String?
   title          String
+  // 제목 리라이팅 적용 시 직전 title 보존 — rollback 근거. null = 리라이팅된 적 없음.
+  // ⚠️ 표시·SEO에 쓰지 않는다. 고객 제목은 title 하나뿐이다.
+  // 적용은 발행 후 UPDATE로만 한다(발행 전이면 slug·seoTitle까지 바뀐다 — 상세: 계약 테스트).
+  originalTitle  String?
   content        String
   summary        String?
   thumbnailUrl   String?
