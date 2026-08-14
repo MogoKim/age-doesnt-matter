@@ -15,6 +15,27 @@ const GRADE_EMOJI: Record<string, string> = {
  * 제목이 무엇을 하는 중인지 말하므로, placeholder는 **무엇을 쓸지**만 안내한다.
  */
 const COMPOSE_PLACEHOLDER = '생각을 자유롭게 적어주세요'
+
+/**
+ * [C2-C] 하단 작성 패널이 `max-md:fixed`로 전환되는 경계. Tailwind `md`(768px)와 같은 값이다.
+ * CSS 클래스가 켜지는 폭에서만 JS 보정을 걸어야 데스크탑 max-height까지 건드리지 않는다.
+ * (TipTapEditor도 같은 방식으로 `window.innerWidth < 1024`를 쓴다)
+ */
+const PANEL_FIXED_MAX_WIDTH = 768
+
+/** [C2-C] 키보드가 "올라왔다"고 볼 최소 높이. TipTapEditor와 같은 임계값. */
+const KEYBOARD_OPEN_THRESHOLD = 30
+
+/** [C2-C] 패널이 가시 영역을 꽉 채우지 않게 남겨두는 여백 */
+const PANEL_VISIBLE_GAP = 8
+
+/**
+ * [C2-C] `max-h-[55dvh]`가 나타내는 자연 상한.
+ * 키보드가 layout viewport를 줄이지 않는 환경(Android Chrome 108+ / iOS Safari)에서는
+ * `innerHeight`가 그대로이므로 dvh와 같은 값이 된다.
+ */
+const PANEL_NATURAL_MAX_RATIO = 0.55
+
 import CommentItemComponent from './CommentItem'
 import CommentInput from './CommentInput'
 import GuestCommentInput from './GuestCommentInput'
@@ -116,6 +137,77 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
       inputAreaRef.current?.querySelector('textarea')?.focus({ preventScroll: true })
     }, 60)
     return () => window.clearTimeout(id)
+  }, [composing])
+
+  /**
+   * [C2-C] 키보드가 올라온 동안 패널을 **보이는 화면(visual viewport)** 위에 붙들어 둔다.
+   *
+   * 문제: `position:fixed`의 기준은 layout viewport다. Android Chrome 108+와 iOS Safari는
+   * 키보드가 열릴 때 layout viewport를 그대로 두고 visual viewport만 줄인 뒤 아래로 밀어(offsetTop)
+   * 커서를 보여준다. 그래서 `bottom-0` 패널은 **키보드 뒤로** 밀려 들어간다.
+   * 실측(390x844, 키보드 약 330px): 패널 464px 중 상단 약 134px만 남고 이름·번호·등록 버튼이 전부 가려졌다.
+   * `55dvh`도 브라우저 UI에는 반응하지만 키보드에는 반응하지 않아 패널이 가시 영역보다 커진다.
+   *
+   * 해법: 키보드 높이만큼 `bottom`을 올리고, `max-height`를 가시 영역 안으로 좁힌다.
+   *
+   * ⚠️ 환경별로 **저절로 no-op**이 되는 구조를 택했다 — UA 분기를 쓰지 않는다.
+   *    키보드가 layout viewport를 줄이는 환경(Android 정식 앱 WebView·Samsung Internet)에서는
+   *    `innerHeight`도 함께 줄어 `keyboardHeight ≈ 0`이 되므로 인라인 스타일을 아예 걸지 않는다.
+   *    → 지금 정상인 흐름을 건드리지 않는다.
+   * ⚠️ 전역 `interactiveWidget`은 쓰지 않는다. 그건 Dock·FAB·가입 배너·에디터 툴바까지 함께
+   *    끌어올려 광고 겹침(PR #333/#339)과 배너 노출 타이밍을 다시 흔든다.
+   * ⚠️ 새 wrapper를 만들지 않고 **기존 패널 element의 style만** 직접 만진다. 조건부로 DOM 구조가
+   *    바뀌면 Turnstile 위젯이 remount되어 토큰이 소실된다.
+   * ⚠️ `visualViewport` 미지원 환경은 손대지 않는다(기존 동작 유지).
+   *
+   * 공식은 TipTapEditor(글쓰기 툴바)에서 검증된 것과 같다. iOS의 `offsetTop`을 반드시 포함한다.
+   */
+  useEffect(() => {
+    if (!composing) return
+    const el = inputAreaRef.current
+    if (!el) return
+    const vv = window.visualViewport
+    if (!vv) return
+
+    const clear = () => {
+      el.style.bottom = ''
+      el.style.maxHeight = ''
+    }
+
+    const update = () => {
+      // CSS `max-md:fixed`가 꺼지는 폭(데스크탑)에서는 보정하지 않는다.
+      // max-height를 걸면 fixed가 아닌 데스크탑 레이아웃까지 잘린다.
+      if (window.innerWidth >= PANEL_FIXED_MAX_WIDTH) {
+        clear()
+        return
+      }
+      // iOS: Safari 자동스크롤 시 offsetTop이 0이 아니다 — 반드시 포함
+      // Android Chrome 108+: innerHeight 불변, visualViewport.height만 감소
+      const keyboardHeight = Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
+      if (keyboardHeight <= KEYBOARD_OPEN_THRESHOLD) {
+        // 키보드 없음 = layout viewport가 줄어드는 환경 포함. 기존 CSS(bottom-0 · 55dvh)에 맡긴다.
+        clear()
+        return
+      }
+      el.style.bottom = `${Math.round(keyboardHeight)}px`
+      // 가시 영역을 넘지 않게 좁힌다. **넓히지는 않는다** — 55dvh보다 커지면 전면 시트가 되어
+      // "뒤 본문이 계속 보이는 부분 전환"이라는 기존 설계 의도가 깨진다.
+      const naturalMax = window.innerHeight * PANEL_NATURAL_MAX_RATIO
+      const visibleMax = vv.height - PANEL_VISIBLE_GAP
+      el.style.maxHeight = `${Math.max(160, Math.round(Math.min(naturalMax, visibleMax)))}px`
+    }
+
+    update()
+    vv.addEventListener('resize', update)
+    vv.addEventListener('scroll', update)
+    window.addEventListener('resize', update)
+    return () => {
+      vv.removeEventListener('resize', update)
+      vv.removeEventListener('scroll', update)
+      window.removeEventListener('resize', update)
+      // 닫히거나 언마운트되면 반드시 원복한다 — 인라인 스타일이 남으면 인라인 상태의 레이아웃을 깬다.
+      clear()
+    }
   }, [composing])
 
   // 확인 시트를 닫고 돌아오면 포커스와 **커서 위치**까지 되돌린다.
