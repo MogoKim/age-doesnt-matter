@@ -167,3 +167,16 @@ jobs:
           # 목적: 레몬테라스/우갱 편중 완화로 40~60대 고객에게 다양한 커뮤니티 글 공급.
           # 롤백 = 이 env 줄 삭제(코드 revert 불필요, 코드 기본값 off).
           SOURCE_DIVERSITY_SORT: 'on'
+          # 제목 리라이팅 limited (PR-D #375) — 배관만 연결한다. 기본값은 OFF다.
+          # vars가 등록되지 않으면 아래 fallback('false')이 쓰여 기능이 동작하지 않는다.
+          #
+          # ON  = GitHub Repository vars에 TITLE_REWRITE_ENABLED=true 등록
+          # OFF = 그 vars 값을 false로 바꾸거나 삭제 → 다음 회차부터 즉시 원제목 발행
+          #       (PR·merge·배포 불필요. 이게 vars를 고른 이유다)
+          #
+          # 적용 범위는 wgang 단독이며, 코드의 gate(TITLE_REWRITE_SOURCES=['wgang'])가
+          # 이중으로 막는다 — vars를 잘못 넣어도 다른 source는 리라이팅되지 않는다.
+          # 실패(모델 오류·검증 실패·한도 초과)는 전부 원제목 유지로 흡수되고 발행을 막지 않는다.
+          TITLE_REWRITE_ENABLED: ${{ vars.TITLE_REWRITE_ENABLED || 'false' }}
+          TITLE_REWRITE_SOURCES: ${{ vars.TITLE_REWRITE_SOURCES || 'wgang' }}
+          TITLE_REWRITE_DAILY_LIMIT: ${{ vars.TITLE_REWRITE_DAILY_LIMIT || '10' }}
