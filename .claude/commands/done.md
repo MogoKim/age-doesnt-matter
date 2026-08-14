@@ -218,7 +218,7 @@ Slack에 별도 알림 불필요 (Gate 2가 배포 후 자동으로 #qa에 결�
 | 감지 조건 | 요청 내용 |
 |---------|---------|
 | **항상** (STEP 4-D에서 PR이 생성되므로) | PR #{번호} 검토 후 merge — 링크 제공. 승인 시 제목의 `[merge 금지]` 제거 |
-| `prisma/migrations/` 신규 파일 있음 | `npx prisma migrate deploy` 실행 |
+| `prisma/schema.prisma` 또는 `prisma/migrations/` 변경됨 | **`/prisma-guide` 절차로 DB 반영** (pg 모듈 직접 SQL + `information_schema` 검증). 🚫 Prisma CLI `migrate deploy`·`migrate dev`·`db push`·`db seed`는 **이 프로젝트에서 사용하지 않는다** — 안내하지도 마라 |
 | `.env.example` 변경됨 | `.env.local`에 [추가된 KEY] 추가 |
 | 워크플로우에 신규 `secrets.*` 참조 추가됨 | GitHub Secrets 추가 |
 | `launchd/` 또는 `plist` 파일 변경됨 | `launchctl unload && launchctl load` 실행 |

@@ -42,6 +42,7 @@
 - 타입: `npx tsc --noEmit` — ⚠️ `npm run typecheck`는 root tsconfig가 `agents`·`scripts`를 exclude해 **둘을 검사하지 않는다**.
   agents/scripts는 `npx tsc -p tsconfig.ops.json --noEmit`로 별도 확인
 - 린트: `npx eslint . --ext .ts,.tsx` / 빌드: `npm run build` / 스키마 변경 시: `npx prisma generate`
+- **DB 스키마 변경은 `/prisma-guide` 기준**(pg 모듈 직접 SQL + `information_schema` 검증). `prisma migrate`·`db push`·`db seed` **금지 — 안내도 금지**
 - `agents/`·워크플로우 변경 시: `npx tsx scripts/check-cron-links.ts` (orphan 0 확인)
 - 배포 전: tsc 통과 · ESLint 통과 · 모바일 767px 반응형 · 터치 52px · 광고 슬롯 "광고" 라벨
 - QA 자동 트리거(Hook·CI·배포 후) 상세: `.claude/rules/qa-deploy.md`
