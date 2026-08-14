@@ -139,10 +139,50 @@ const COMMERCE_SIGNALS: readonly RegExp[] = [
 ] as const
 
 /**
- * 의료광고/병원 홍보 검사. 위반 시 "MEDICAL_AD:매칭어", 통과 시 null.
- * strong 신호는 단독 차단, 시술 어휘는 상거래 신호와 결합될 때만 차단(경험담 보호).
+ * 상업 의료기관 계정명 패턴 — **작성자(author)에만** 적용한다.
+ *
+ * 2026-08-14 실측 사고: 여우야 첫 회차에서 병원 계정이 쓴 고정 공지 3건이 저장됐다.
+ *   author=일퍼센트성형외과 / 유앤유성형외과 / 서진성형외과
+ * 셋 다 본문에 가격·할인·예약 문구가 없어 COMMERCE_SIGNALS 결합 조건을 통과했다.
+ * 브랜드 홍보형 광고는 가격을 쓰지 않는다 — 그래서 본문 신호만으로는 못 잡는다.
+ *
+ * ⚠️ 이 목록을 title·content에 적용하면 절대 안 된다. "병원 다녀왔는데 갱년기래요"가
+ *    막힌다. 광고 판정의 근거는 "무슨 단어를 썼나"가 아니라 **"누가 썼나"**다.
+ *    회원 닉네임에 '병원'·'의원'이 들어갈 일은 거의 없고, 있다면 그건 광고 계정이다.
  */
-export function findMedicalAdSignal(title: string, content: string): string | null {
+const MEDICAL_AUTHOR_PATTERNS: readonly RegExp[] = [
+  /성형외과|피부과|한의원|치과|안과|의원|병원|클리닉/,
+  /모발이식|비만클리닉|여성의원|산부인과/,
+] as const
+
+/**
+ * 작성자명이 상업 의료기관인지 검사. 위반 시 "MEDICAL_AD_AUTHOR:매칭어", 통과 시 null.
+ * 본문·제목은 보지 않는다 — 작성 주체만 본다.
+ */
+export function findMedicalAuthorSignal(author: string | null | undefined): string | null {
+  const name = (author ?? '').trim()
+  if (!name) return null
+  for (const re of MEDICAL_AUTHOR_PATTERNS) {
+    const m = name.match(re)
+    if (m) return `MEDICAL_AD_AUTHOR:${m[0].slice(0, 20)}`
+  }
+  return null
+}
+
+/**
+ * 의료광고/병원 홍보 검사. 위반 시 "MEDICAL_AD…:매칭어", 통과 시 null.
+ *
+ * 판정 순서
+ *   1) author 상업 계정      — 단독 차단 (작성 주체 기준. 가격 문구가 없어도 광고다)
+ *   2) strong 구조 신호      — 단독 차단 (의료광고 라벨·안내박스·단축URL)
+ *   3) 시술어휘 + 상거래 신호 — 결합 시에만 차단 (경험담 보호)
+ *
+ * author는 선택 인자다. 미전달 시 기존 동작(title+content)과 완전히 동일하다.
+ */
+export function findMedicalAdSignal(title: string, content: string, author?: string | null): string | null {
+  const authorHit = findMedicalAuthorSignal(author)
+  if (authorHit) return authorHit
+
   const flat = `${title} ${content}`.replace(/\n/g, ' ')
   for (const re of MEDICAL_AD_STRONG_PATTERNS) {
     const m = flat.match(re)

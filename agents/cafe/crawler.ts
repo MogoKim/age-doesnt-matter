@@ -1400,10 +1400,12 @@ async function savePosts(posts: RawCafePost[]): Promise<number> {
       //    goondae·masanmam)에는 호출되지 않아 기존 5개 카페 저장 동작은 바이트 단위로 동일하다.
       // ⚠️ 시술 단어 단독은 차단하지 않는다 — "보톡스 고민 중인데 무서워요"·"병원 다녀왔는데 갱년기래요"는
       //    우리가 원하는 대화다. 광고 구조(의료광고 라벨·안내박스·단축URL·시술어휘+가격/이벤트/예약)만 본다.
+      // [author 보강 2026-08-14] 첫 회차에서 병원 계정 고정 공지 3건이 저장됐다(가격 문구가 없어
+      //    COMMERCE 결합 조건을 통과). 작성자명이 상업 의료기관이면 본문 신호와 무관하게 광고다.
       if (SHADOW_CAFE_IDS.includes(post.cafeId)) {
-        const medicalAd = findMedicalAdSignal(post.title, post.content)
+        const medicalAd = findMedicalAdSignal(post.title, post.content, post.author)
         if (medicalAd) {
-          console.log(`[CafeCrawler] 의료광고/병원홍보 저장 skip (${medicalAd}): "${post.title.slice(0, 25)}"`)
+          console.log(`[CafeCrawler] 의료광고/병원홍보 저장 skip (${medicalAd}): "${post.title.slice(0, 25)}" by ${post.author}`)
           continue
         }
       }

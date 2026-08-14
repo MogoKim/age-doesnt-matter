@@ -70,10 +70,16 @@ describe('파생 상수 — 현재 상태 (Phase 2-a 승격 + masanmam core 승�
 
   // crawler.ts savePosts의 의료광고 저장 skip은 SHADOW_CAFE_IDS 한정으로 걸려 있다.
   // 기존 5개 카페가 이 목록에 들어가면 저장 동작이 조용히 바뀌므로 고정한다.
-  it('기존 5개 카페는 SHADOW_CAFE_IDS에 미포함 (의료광고 skip 미적용 — 저장 동작 불변)', () => {
+  // 2026-08-14 author 기반 차단이 추가되며 이 가드의 중요도가 올라갔다 —
+  // 기존 카페에 author 필터가 새로 걸리면 정상 회원 글 저장량이 줄 수 있다.
+  it('기존 5개 카페는 SHADOW_CAFE_IDS에 미포함 (의료광고·author skip 미적용 — 저장 동작 불변)', () => {
     for (const id of ['wgang', 'dlxogns01', 'remonterrace', 'goondae', 'masanmam']) {
       expect(SHADOW_CAFE_IDS).not.toContain(id)
     }
+  })
+
+  it('SHADOW_CAFE_IDS는 정확히 1개 (yeowooya) — 확대 시 이 테스트가 먼저 깨진다', () => {
+    expect(SHADOW_CAFE_IDS).toHaveLength(1)
   })
 })
 
