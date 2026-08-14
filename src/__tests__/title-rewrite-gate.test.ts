@@ -257,3 +257,281 @@ describe('partitionTitleRewriteCandidates — 일괄 분류', () => {
     expect(excluded.map(e => e.result.reason)).toEqual(['SHADOW_SOURCE', 'BODY_TOO_SHORT'])
   })
 })
+
+// ─────────────────────────────────────────────────────────────
+// PR-E (2026-08-14) — 화자 귀속 조정 회귀
+//
+// M3 wgang 실측에서 오탐 21건이 나왔고, 전부 "그 표현이 누구의 것인가"를
+// 구분하지 못한 결과였다. 아래는 그 실제 사례들을 픽스처로 고정한 것이다.
+// 정규식을 다시 넓히면 여기서 깨진다.
+// ─────────────────────────────────────────────────────────────
+
+describe('PR-E — YOUNG_SELF는 화자 본인일 때만 (오탐 11/11 회수)', () => {
+  it('4050 재취업 글에서 "2030세대보다"는 비교 대상이다', () => {
+    const r = evaluateTitleRewriteCandidate(base({
+      title: '4050 경력단절 후 재취업 하신분들 무슨일 하시나요?',
+      content: pad('재취업도 쉽지 않고 좋은 자리는 들어가기 더 어렵고 4050맘들은 진짜 힘든거 같아요. 일자리만 생기면 2030세대보다 더 화이팅 넘치게 일하기도 하는 나이 같아요.'),
+    }))
+    expect(r.eligible).toBe(true)
+  })
+
+  it('화자가 60대이고 30대 초반은 30년 전 회상이다', () => {
+    const r = evaluateTitleRewriteCandidate(base({
+      title: '한때 절친이였던 시절인연 결혼식 참석 어떻게 생각하세요',
+      content: pad('저는 지금 60대인데 그녀를 처음만난건 30대 초반, 딱 30년이 지났어요. 입주한 아파트에서 그녀를 처음 만났어요.'),
+    }))
+    expect(r.eligible).toBe(true)
+  })
+
+  it('"제 나이가 50줄"이면 20대 언급이 있어도 화자는 중년이다', () => {
+    const r = evaluateTitleRewriteCandidate(base({
+      title: '직장에 고추아가씨였던 선배언니',
+      content: pad('제 나이가 50줄인데도 여전히 선배들이 있습니다. 그중에 젊은 시절 20대에 고추아가씨에 뽑혔던 언니가 한분 계셔요.'),
+    }))
+    expect(r.eligible).toBe(true)
+  })
+
+  it('대학생 딸을 둔 엄마 글 — 20대는 딸의 나이다', () => {
+    const r = evaluateTitleRewriteCandidate(base({
+      title: '요샌 대학생들 사귀면 잠자리는 기본인가요?',
+      content: pad('첫연애고 제 눈엔 아직 아기같은데 사귀고 한달도 안되어 같이 놀러를 가더라구요. 20대 초반이고 아직 제 눈에는 아이 같은데 좀 더 꽁냥꽁냥 사겨도 될거 같은데요.'),
+    }))
+    expect(r.eligible).toBe(true)
+  })
+
+  it('딸의 남친 이야기는 화자의 연애가 아니다', () => {
+    const r = evaluateTitleRewriteCandidate(base({
+      title: '부모가 맘에 안들면 어쩌죠?',
+      content: pad('딸이 사귀는 남친 직업 나이 학벌 이런건 그냥 대단한게 아니지만 또 내 딸도 마찬가지라서 그냥 내년 하반기에 결혼식 올리려고했는데 갑자기 복병이 생겼어요.'),
+    }))
+    expect(r.eligible).toBe(true)
+  })
+
+  it('"제가 남자친구라면"은 가정법이라 화자의 연애가 아니다', () => {
+    const r = evaluateTitleRewriteCandidate(base({
+      title: '뼈말라 문화',
+      content: pad('제가 남자친구라면 그렇게까지 뼈 말라가는 여자친구가 창피할 것 같아요. 이제 나이를 먹어가며 생각이 달라지네요. 요즘 유행이라는 몸매가 이해되지 않습니다.'),
+    }))
+    expect(r.eligible).toBe(true)
+  })
+
+  it('며느리가 임신중인 것은 화자의 임신이 아니다', () => {
+    const r = evaluateTitleRewriteCandidate(base({
+      title: '내 삶속 스며든 죽음의 이야기',
+      content: pad('며느리가 임신중인데 장례식장 바깥에서 사돈 내외 보고 온다고 하는데 가지말라고도 못하고 남편 눈치만 보고 있습니다. 인생이 참 허무하다는 생각이 들어요.'),
+    }))
+    expect(r.eligible).toBe(true)
+  })
+
+  it('★ 화자가 본인을 30대라고 밝히면 여전히 제외한다', () => {
+    const r = evaluateTitleRewriteCandidate(base({
+      title: '요즘 너무 지치네요',
+      content: pad('저는 30대 초반인데 회사 생활이 너무 힘들어요. 매일 야근에 주말에도 나가야 하고 이렇게 사는 게 맞나 싶습니다. 다들 어떻게 버티시는지 궁금해요.'),
+    }))
+    expect(r.eligible).toBe(false)
+    expect(r.reason).toBe('YOUNG_SELF')
+  })
+
+  it('★ 본인의 신혼 이야기는 여전히 제외한다 (과거 회상 표지 없을 때)', () => {
+    const r = evaluateTitleRewriteCandidate(base({
+      title: '집들이 어떻게 하셨어요',
+      content: pad('신혼 살림 차린 지 얼마 안 됐는데 양가 부모님 모시고 집들이를 해야 할 것 같아서요. 뭘 준비해야 할지 막막합니다. 조언 부탁드려요.'),
+    }))
+    expect(r.eligible).toBe(false)
+    expect(r.reason).toBe('YOUNG_SELF')
+  })
+
+  it('★ 본인 소유 남친은 여전히 제외한다', () => {
+    const r = evaluateTitleRewriteCandidate(base({
+      title: '이런 사람 어떤가요',
+      content: pad('제 남자친구가 요즘 연락이 뜸해졌어요. 바쁘다고는 하는데 마음이 식은 건 아닌지 걱정됩니다. 이럴 때 어떻게 하는 게 좋을까요. 조언 부탁드려요.'),
+    }))
+    expect(r.eligible).toBe(false)
+    expect(r.reason).toBe('YOUNG_SELF')
+  })
+})
+
+describe('PR-E — MEDICAL_AD는 author·홍보구조만 (오탐 3/3 회수)', () => {
+  it('회원의 한의원 치료 문의는 광고가 아니다', () => {
+    const r = evaluateTitleRewriteCandidate(base({
+      title: '한의원에서 우울증치료',
+      content: pad('뇌 전문으로 하는 한의원으로 뇌파검사 자율신경 소변 간검사 등 검사비가 10만원 설명까지 2시간 소요된다는데요. 우울증약 복용한지 일년 넘었어요. 한방으로 치료해보신분 계실까요?'),
+    }))
+    expect(r.eligible).toBe(true)
+  })
+
+  it('연금 상담글의 "병원비" 언급은 의료광고가 아니다', () => {
+    const r = evaluateTitleRewriteCandidate(base({
+      title: '개인연금',
+      content: pad('연금 개시가 다음달인데 한달에 세후 70을 15년 받는게 좋을까요 아니면 92만원을 10년 받는게 좋을까요. 80즈음 병원비 많이 들 것같다하네요. 뭐가 맞을까요?'),
+    }))
+    expect(r.eligible).toBe(true)
+  })
+
+  it('회원 본인의 시술 고민은 살린다', () => {
+    const r = evaluateTitleRewriteCandidate(base({
+      title: '얼굴 리프팅 고민되네요',
+      content: pad('처진 볼살 때문에 리프팅 시술을 알아보고 있는데 1회 18만원이라고 하네요. 효과가 얼마나 갈지 모르겠고 아까워서 망설여집니다. 해보신 분 계실까요.'),
+    }))
+    expect(r.eligible).toBe(true)
+  })
+
+  it('★ 병원 계정 author는 여전히 제외한다', () => {
+    const r = evaluateTitleRewriteCandidate(base({
+      author: '강남OO성형외과',
+      title: '가을맞이 안내드립니다',
+      content: pad('저희 병원에서 이번 달 특별한 소식을 전해드립니다. 자세한 내용은 아래를 확인해 주시기 바랍니다. 많은 관심 부탁드립니다. 감사합니다.'),
+    }))
+    expect(r.eligible).toBe(false)
+    expect(r.reason).toBe('MEDICAL_AD')
+  })
+
+  it('★ 시술+예약 유도 구조는 여전히 제외한다', () => {
+    const r = evaluateTitleRewriteCandidate(base({
+      title: '리프팅 이벤트 소식',
+      content: pad('리프팅 시술 이벤트가 진행 중입니다. 지금 예약 문의 주시면 첫 방문 할인도 함께 적용해 드립니다. 카톡 문의 주세요. 많은 관심 부탁드립니다.'),
+    }))
+    expect(r.eligible).toBe(false)
+    expect(r.reason).toBe('MEDICAL_AD')
+  })
+})
+
+describe('PR-E — 전문직 명칭은 상업 맥락 결합 시에만 (오탐 2/2 회수)', () => {
+  it('본인이 변호사를 선임한 사연은 광고가 아니다', () => {
+    const r = evaluateTitleRewriteCandidate(base({
+      title: '살다보니 별의별 일 다 있습니다',
+      content: pad('밴드 모임에서 어떤 친구 하나가 저를 모함해서 일이 꼬였습니다. 기가 막히고 어이가 없었는데 지금 저는 변호사를 선임해 해결하려고 합니다. 참 세상 별일이 다 있네요.'),
+    }))
+    expect(r.eligible).toBe(true)
+  })
+
+  it('남편 빚 때문에 법률 상담을 고민하는 글은 살린다', () => {
+    const r = evaluateTitleRewriteCandidate(base({
+      title: '남의 일인줄로만 알았습니다',
+      content: pad('저는 결혼 21년차입니다. 남편 사업이 코로나로 큰 빚만 남기고 서로 죽게 싸우고 많이 힘들었습니다. 법률 상담이라도 받아봐야 하나 고민입니다. 법원도 다녀왔었구요.'),
+    }))
+    expect(r.eligible).toBe(true)
+  })
+
+  it('★ 전문직+무료상담 유치는 여전히 제외한다', () => {
+    const r = evaluateTitleRewriteCandidate(base({
+      title: '고민 있으신 분들 보세요',
+      content: pad('이혼 문제로 힘드신 분들께 도움을 드리고자 합니다. 변호사가 직접 무료 상담 진행해 드리니 편하게 문의 주세요. 연락 주시면 빠르게 안내드리겠습니다.'),
+    }))
+    expect(r.eligible).toBe(false)
+    expect(r.reason).toBe('AD_OR_EVENT')
+  })
+})
+
+describe('PR-E — 학령기는 중·고 축약형 보강, 성인 자녀는 살린다 (미탐 3/3 차단)', () => {
+  it('★ 중3 진학 고민은 제외한다', () => {
+    const r = evaluateTitleRewriteCandidate(base({
+      title: '마이스터고 진학에 대한 의견 궁금해요',
+      content: pad('중3남아입니다. 지필고사 보면 한두개 틀릴 정도입니다. 근데 공부하기 싫다고 마이스터고 가고 싶어해요. 진학해도 괜찮을지 고민이네요.'),
+    }))
+    expect(r.eligible).toBe(false)
+    expect(r.reason).toBe('PARENTING_CURRENT')
+  })
+
+  it('★ 고2 학원비 고민은 제외한다', () => {
+    const r = evaluateTitleRewriteCandidate(base({
+      title: '성적 안 나오는 고2 아들 학원비가 아까워요',
+      content: pad('공부 내려놓고 노는 애가 아니라 그치만 집 분위기는 안좋겠죠. 학교 학원 독서실 방학땐 아침부터 저녁까지 다니는데 시험치면 성적이 안 나오니 현타 오네요.'),
+    }))
+    expect(r.eligible).toBe(false)
+    expect(r.reason).toBe('PARENTING_CURRENT')
+  })
+
+  it('★ 학교 일과(등교·특강)는 성인 관계축이 있어도 제외한다', () => {
+    const r = evaluateTitleRewriteCandidate(base({
+      title: '집공부만 하는 아들래미',
+      content: pad('여름 방학동안은 절반 이상은 학교 특강 간다고 7시에 등교해서 5시 마치니 그나마 저녁에만 벌 섰는데. 남편도 일찍 오고 저 아들 단속하기도 힘드네요.'),
+    }))
+    expect(r.eligible).toBe(false)
+    expect(r.reason).toBe('PARENTING_CURRENT')
+  })
+
+  it('고3 자녀와의 관계 고민은 살린다 (입시 맥락 없음)', () => {
+    const r = evaluateTitleRewriteCandidate(base({
+      title: '아들래미 두달만에 처음 한말',
+      content: pad('고3이가 말을 안한다고 글 올린적이 있어요. 거진 두달 되가는데요. 오늘은 갑자기 아침에 방에서 나오더니 병원 가야겠다고 말했어요. 반가우면서도 마음이 아프네요.'),
+    }))
+    expect(r.eligible).toBe(true)
+  })
+
+  it('고등학생 자녀의 건강·수술 고민은 살린다', () => {
+    const r = evaluateTitleRewriteCandidate(base({
+      title: '고등학생 부비동염수술',
+      content: pad('아이 코에 물혹이 생겨서 다니던 이빈후과에서 수술 권유하시네요. 수술후 회복과정이 너무 힘들다고 하던데 감당할수 있을지 모르겠어요. 혹시 해보신분 계실까요.'),
+    }))
+    expect(r.eligible).toBe(true)
+  })
+
+  it('군 복무 중인 성인 자녀 자랑글은 살린다', () => {
+    const r = evaluateTitleRewriteCandidate(base({
+      title: '제대 한 달 앞둔 아들, 오늘 한국사시험 1급 땄대요',
+      content: pad('소소한 자랑입니다. 군대에서 틈틈이 공부하더니 87점으로 1급 합격했다고 하네요. 얼마 전에는 투자자산운용사 자격증도 취득했거든요. 한 걸음씩 준비하다보면 좋은 결과 있겠죠.'),
+    }))
+    expect(r.eligible).toBe(true)
+  })
+
+  it('"아이들 다 키우고 나니" 빈 둥지 글은 살린다', () => {
+    const r = evaluateTitleRewriteCandidate(base({
+      title: '여행이나 훌쩍 떠나고 싶네요',
+      content: pad('세상만사 다 짜증나고 혼자만의 시간이나 보내볼까 싶다가도 통 자신이 없네요. 아이들을 다 키우고 나니 이젠 영 부질없어요. 몸이 심심해서 더 헛헛한가봐요.'),
+    }))
+    expect(r.eligible).toBe(true)
+  })
+
+  it('학년 표기가 과거 회상이면 살린다 (대학생 자녀)', () => {
+    const r = evaluateTitleRewriteCandidate(base({
+      title: '대학생 딸래미 편입? 힘드네요',
+      content: pad('대2 딸래미 때문에 힘드네요. 자기가 우겨서 간 학과가 안맞는다고 편입한다고 해서 인강 결제해줬어요. 대학가면 끝인줄 알았는데 고3때보다 더 힘들어요.'),
+    }))
+    expect(r.eligible).toBe(true)
+  })
+})
+
+describe('PR-E — MALE_SELF는 1인칭 남성일 때만 (부분매칭 오탐 회수)', () => {
+  it('"아직도 내 남편입니다"는 여성 화자의 표현이다', () => {
+    const r = evaluateTitleRewriteCandidate(base({
+      title: '줸장 제기랄',
+      content: pad('출근부터 스트레스 받을 일이 생기네요. 내 사랑은 남편이 처음이었고 아직도 내 남편입니다. 그래도 결론은 못견디겠습니다. 그럼에도 식욕은 어디 안가네요.'),
+    }))
+    expect(r.eligible).toBe(true)
+  })
+
+  it('"우리 남편입니다"도 여성 화자다', () => {
+    const r = evaluateTitleRewriteCandidate(base({
+      title: '사진 한 장 올려요',
+      content: pad('옆에 서 있는 사람이 우리 남편입니다. 결혼한 지 삼십 년이 다 되어가는데 아직도 사진 찍을 때는 어색해하네요. 다들 부부 사진 자주 찍으시나요.'),
+    }))
+    expect(r.eligible).toBe(true)
+  })
+
+  it('"남편이 그랬어요"는 제외 사유가 아니다', () => {
+    const r = evaluateTitleRewriteCandidate(base({
+      title: '이런 말 들으면 서운하시죠',
+      content: pad('남편이 그랬어요. 요즘 왜 이렇게 예민하냐고. 저는 그냥 몸이 힘들어서 그런 건데 그 말 한마디가 계속 마음에 걸리네요. 다들 이럴 때 어떻게 넘기시나요.'),
+    }))
+    expect(r.eligible).toBe(true)
+  })
+
+  it('★ 남성 화자 1인칭은 여전히 제외한다', () => {
+    const r = evaluateTitleRewriteCandidate(base({
+      title: '조언 구합니다',
+      content: pad('저는 남자입니다. 이 카페에 글 올려도 되는지 모르겠지만 아내와의 문제로 조언을 구하고 싶어서 용기내어 적어봅니다. 잘 부탁드립니다.'),
+    }))
+    expect(r.eligible).toBe(false)
+    expect(r.reason).toBe('MALE_SELF')
+  })
+
+  it('★ 아내를 언급하는 화자는 여전히 제외한다', () => {
+    const r = evaluateTitleRewriteCandidate(base({
+      title: '요즘 고민이 많습니다',
+      content: pad('제 아내가 요즘 부쩍 힘들어하는 것 같아서 걱정입니다. 갱년기라 그런 건지 제가 뭘 해줘야 할지 모르겠네요. 조언 부탁드립니다. 감사합니다.'),
+    }))
+    expect(r.eligible).toBe(false)
+    expect(r.reason).toBe('MALE_SELF')
+  })
+})

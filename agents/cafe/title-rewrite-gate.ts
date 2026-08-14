@@ -17,23 +17,40 @@
  *   · 발행 사용률 43% · 하루 리라이팅 대상 약 22건(월 Sonnet 비용 $9 미만).
  */
 import { SHADOW_CAFE_IDS } from './config.js'
-import { findMedicalAdSignal } from '../core/age-fit-blocklist.js'
+// ⚠️ author 판정만 재사용한다. findMedicalAdSignal(본문 결합형)은 여우야 저장 차단 전용이라
+//   후보 gate에서는 쓰지 않는다 — 회원 개인의 병원비·건강 고민을 광고로 오인했다(실측 오탐 3/3).
+import { findMedicalAuthorSignal } from '../core/age-fit-blocklist.js'
 import {
+  ACADEMIC_CONTEXT_PATTERN,
   AD_STRONG_PATTERNS,
   AD_WEAK_CONTEXT,
   AD_WEAK_PATTERN,
   ADULT_RELATION_PATTERN,
   CHILD_SOFT_PATTERN,
+  COMMERCIAL_CONTEXT_PATTERN,
   ENTERTAINMENT_PATTERN,
   MALE_SELF_PATTERNS,
+  MEDICAL_PROCEDURE_PATTERN,
+  MEDICAL_PROMO_CONTEXT_PATTERN,
   MIN_BODY_LENGTH_FOR_REWRITE,
   NEWS_CONTEXT_PATTERN,
   NEWS_MARK_PATTERN,
   NEWS_PRESS_PATTERN,
   OUR_AGE_TOPIC_PATTERN,
   PARENTING_CONTEXT_PATTERN,
+  PARENTING_SCHOOL_CONTEXT_PATTERN,
   PARENTING_STRONG_PATTERNS,
-  YOUNG_SELF_PATTERNS,
+  PAST_RECALL_PATTERN,
+  PREGNANCY_FIRST_PERSON,
+  PREGNANCY_PATTERN,
+  ADULT_CHILD_PATTERN,
+  PROFESSION_PATTERN,
+  GRADE_PAST_SUFFIX_PATTERN,
+  SCHOOL_GRADE_PATTERN,
+  SELF_MIDDLE_AGE_PATTERN,
+  YOUNG_ROMANCE_OWN_PATTERN,
+  YOUNG_SELF_AGE_PATTERN,
+  YOUNG_SELF_STAGE_PATTERN,
   type RewriteGateResult,
 } from './title-rewrite-rules.js'
 
@@ -68,6 +85,19 @@ const reject = (reason: RewriteGateResult['reason'], detail: string): RewriteGat
   ({ eligible: false, reason, detail, signals: [] })
 
 /**
+ * 현재형 학년 표기를 찾는다. 뒤에 '때·시절'이 붙은 과거 회상은 건너뛴다.
+ * 본문에 여러 학년이 나올 수 있어(예: "고3때보다 힘든 대2 딸") 전부 훑는다.
+ */
+function findCurrentSchoolGrade(flat: string): string | null {
+  const re = new RegExp(SCHOOL_GRADE_PATTERN.source, 'g')
+  for (let m = re.exec(flat); m; m = re.exec(flat)) {
+    const tail = flat.slice(m.index + m[0].length, m.index + m[0].length + 3)
+    if (!GRADE_PAST_SUFFIX_PATTERN.test(tail)) return m[0]
+  }
+  return null
+}
+
+/**
  * 보호 신호 수집 — 제외 판정과 무관하게, 통과한 글이 왜 좋은지 검수자에게 알려준다.
  * desire/emotion/insight가 있으면 함께 본다(제목만 보고 판단하지 않는다).
  */
@@ -88,10 +118,15 @@ function collectSignals(input: RewriteGateInput, flat: string): string[] {
  * 판정 순서 (앞에서 걸리면 즉시 제외)
  *   1) source        wgang 아니면 제외 · shadow는 별도 사유로 제외
  *   2) 기본 게이트    isUsable=false / 본문 80자 미만
- *   3) 광고·의료광고  운영자성 홍보 · 병원 계정
+ *   3) 광고·의료광고  ★ author 우선 · 시술·전문직은 상업 맥락 결합 시에만
  *   4) 뉴스 스크랩
- *   5) 학령기 육아    ★ 성인 관계축이 있으면 살린다(오탐 방지)
- *   6) 20~30대 화자 · 남성 화자
+ *   5) 학령기 육아    ★ 성인 관계축이 있으면 살린다 · 중·고는 입시 맥락 결합 시에만
+ *   6) 화자 이탈      ★ 1인칭 자기지시 결합 · 중년 신호/과거 회상이면 무효
+ *
+ * ★ [PR-E 2026-08-14] 판정을 "단어 매칭"에서 "화자 귀속"으로 옮겼다.
+ *   M3 wgang 실측에서 오탐 20건(전체의 5%)이 나왔고 그중 YOUNG_SELF가 11/11(100%)이었다.
+ *   전부 나이·연애 표현이 **타인·과거·비교** 맥락인데 화자 본인으로 오인한 것이었다.
+ *   자세한 사례는 title-rewrite-rules.ts의 화자 귀속 섹션에 남겼다.
  */
 export function evaluateTitleRewriteCandidate(input: RewriteGateInput): RewriteGateResult {
   const flat = `${input.title} ${input.content}`.replace(/\n/g, ' ')
@@ -112,12 +147,24 @@ export function evaluateTitleRewriteCandidate(input: RewriteGateInput): RewriteG
   }
 
   // ── 3) 광고·의료광고 ──
-  const medical = findMedicalAdSignal(input.title, input.content, input.author)
-  if (medical) return reject('MEDICAL_AD', medical)
+  // ★ author 기반이 1순위다. "누가 썼나"가 "무슨 단어를 썼나"보다 정확하다(여우야 사고의 교훈).
+  const medicalAuthor = findMedicalAuthorSignal(input.author)
+  if (medicalAuthor) return reject('MEDICAL_AD', medicalAuthor)
+
+  // 시술 어휘는 홍보 구조와 결합될 때만. 회원의 시술 고민·병원비 걱정은 살린다.
+  const proc = flat.match(MEDICAL_PROCEDURE_PATTERN)
+  if (proc && MEDICAL_PROMO_CONTEXT_PATTERN.test(flat)) {
+    return reject('MEDICAL_AD', `시술 홍보 구조(${proc[0]}+예약/상담 유도)`)
+  }
 
   for (const re of AD_STRONG_PATTERNS) {
     const m = flat.match(re)
     if (m) return reject('AD_OR_EVENT', `운영성 강신호(${m[0].slice(0, 20)})`)
+  }
+  // 전문직 명칭은 상업 유치 맥락과 결합될 때만. "변호사 알아봐야 하나"는 당사자의 고민이다.
+  const prof = flat.match(PROFESSION_PATTERN)
+  if (prof && COMMERCIAL_CONTEXT_PATTERN.test(flat)) {
+    return reject('AD_OR_EVENT', `전문직+상업유치(${prof[0]})`)
   }
   const weak = flat.match(AD_WEAK_PATTERN)
   if (weak && AD_WEAK_CONTEXT.test(flat)) {
@@ -137,23 +184,54 @@ export function evaluateTitleRewriteCandidate(input: RewriteGateInput): RewriteG
   //   parenting으로 잘못 잡힌 사례가 있었다 — 같은 실수를 반복하지 않는다.
   //   단, 제목 자체에 학령기 표현이 있으면 그건 육아글이 맞다.
   const hasAdultRelation = ADULT_RELATION_PATTERN.test(flat)
-  for (const re of PARENTING_STRONG_PATTERNS) {
-    const m = flat.match(re)
-    if (!m) continue
-    const inTitle = re.test(input.title)
-    if (hasAdultRelation && !inTitle) break // 관계글로 보고 살린다
-    return reject('PARENTING_CURRENT', `학령기 육아(${m[0]})`)
-  }
-  const child = flat.match(CHILD_SOFT_PATTERN)
-  if (child && PARENTING_CONTEXT_PATTERN.test(flat) && !hasAdultRelation) {
-    return reject('PARENTING_CURRENT', `자녀+양육 맥락(${child[0]})`)
+  // ★ 성인 자녀 신호가 있으면 학령기 판정을 통째로 건너뛴다.
+  //   실측 오탐 4건이 전부 이 유형이었다(군 복무·대학생·"다 키우고 나니").
+  const hasAdultChild = ADULT_CHILD_PATTERN.test(flat)
+  if (!hasAdultChild) {
+    for (const re of PARENTING_STRONG_PATTERNS) {
+      const m = flat.match(re)
+      if (!m) continue
+      const inTitle = re.test(input.title)
+      if (hasAdultRelation && !inTitle) break // 관계글로 보고 살린다
+      return reject('PARENTING_CURRENT', `학령기 육아(${m[0]})`)
+    }
+    // ★ 중·고 학년 표기는 입시·성적 관리 맥락과 결합될 때만 제외한다(창업자 결정 2026-08-14).
+    //   `고3이가 두 달째 말을 안 한다`(관계) · `고등학생 부비동염 수술`(건강)은 살린다.
+    //   학년 뒤에 '때·시절'이 붙으면 과거 회상이라 현재 학령기 자녀가 아니다.
+    const currentGrade = findCurrentSchoolGrade(flat)
+    if (currentGrade && (ACADEMIC_CONTEXT_PATTERN.test(flat) || PARENTING_CONTEXT_PATTERN.test(flat))) {
+      return reject('PARENTING_CURRENT', `학령기 학년+양육/입시 맥락(${currentGrade})`)
+    }
+    const child = flat.match(CHILD_SOFT_PATTERN)
+    if (child) {
+      // 학교 일과는 강한 신호 — 성인 관계축이 있어도 살리지 않는다
+      const school = flat.match(PARENTING_SCHOOL_CONTEXT_PATTERN)
+      if (school) return reject('PARENTING_CURRENT', `자녀+학교일과(${school[0]})`)
+      if (PARENTING_CONTEXT_PATTERN.test(flat) && !hasAdultRelation) {
+        return reject('PARENTING_CURRENT', `자녀+양육 맥락(${child[0]})`)
+      }
+    }
   }
 
-  // ── 6) 화자 이탈 ──
-  for (const re of YOUNG_SELF_PATTERNS) {
-    const m = flat.match(re)
-    if (m) return reject('YOUNG_SELF', `20~30대 화자 신호(${m[0].slice(0, 16)})`)
+  // ── 6) 화자 이탈 — ★ 화자 귀속을 먼저 본다 ──
+  // 중년 자기신호나 과거 회상이 있으면 20~30대 표현이 나와도 화자 본인의 현재가 아니다.
+  const selfMiddleAge = SELF_MIDDLE_AGE_PATTERN.test(flat)
+  const pastRecall = PAST_RECALL_PATTERN.test(flat)
+  if (!selfMiddleAge) {
+    const age = flat.match(YOUNG_SELF_AGE_PATTERN)
+    if (age && !pastRecall) return reject('YOUNG_SELF', `본인 20~30대 자기지시(${age[0].slice(0, 20)})`)
+
+    const stage = flat.match(YOUNG_SELF_STAGE_PATTERN)
+    if (stage && !pastRecall) return reject('YOUNG_SELF', `20~30대 생애사건(${stage[0].slice(0, 16)})`)
+
+    const preg = flat.match(PREGNANCY_PATTERN)
+    if (preg && PREGNANCY_FIRST_PERSON.test(flat)) {
+      return reject('YOUNG_SELF', `본인 임신·출산(${preg[0]})`)
+    }
+    const romance = flat.match(YOUNG_ROMANCE_OWN_PATTERN)
+    if (romance && !pastRecall) return reject('YOUNG_SELF', `본인 연애(${romance[0].slice(0, 16)})`)
   }
+
   for (const re of MALE_SELF_PATTERNS) {
     const m = flat.match(re)
     if (m) return reject('MALE_SELF', `남성 화자 신호(${m[0].slice(0, 16)})`)
