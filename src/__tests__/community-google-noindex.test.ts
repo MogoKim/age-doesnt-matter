@@ -200,3 +200,69 @@ describe('shouldGoogleNoindexCommunityPost — 제외된 기준(회귀 방지)',
     expect(shouldGoogleNoindexCommunityPost(post({ source: 'USER', content: tagHeavy }))).toBe(true)
   })
 })
+
+/**
+ * ── 제목 리라이팅 회귀 안전선 (2026-08-14) ──────────────────────────────
+ *
+ * 배경: Sonnet 제목 리라이팅을 붙이면 Post.title이 바뀐다. 그런데 noindex 판정은
+ *   haystackOf(title + content)를 본다(community-google-noindex.ts:118).
+ *   제목에서 주제어가 빠지면 **색인되던 글이 조용히 noindex로 뒤집힐 수 있다.**
+ *   네이버 일반 robots는 영향받지 않지만, 구글 색인 정책이 소리 없이 바뀌는 건 위험하다.
+ *
+ * 이 블록의 역할: **정책을 바꾸지 않는다.** 제목 변경이 판정을 뒤집는 조건을 테스트로 고정해
+ *   리라이팅 구현 시 어디를 조심해야 하는지 못박는다.
+ *
+ * 리라이팅 구현 시 지켜야 할 계약
+ *   · 본문이 충분히 길고 주제어를 갖고 있으면 → 제목이 어떻게 바뀌어도 판정 불변 (아래 ①)
+ *   · 본문에 주제어가 없고 제목에만 있었다면 → 제목에서 주제어를 빼면 뒤집힌다 (아래 ②)
+ *     → 리라이팅 후보 gate가 본문 80자 이상을 요구하는 이유가 여기 있다.
+ */
+describe('제목 리라이팅 회귀 — 제목이 바뀌어도 noindex 판정이 조용히 뒤집히지 않는지', () => {
+  /** 본문에 우리 나이 주제어가 실제로 들어 있는 긴 본문 (BOT 주제 하한 300자 통과 — 약 350자) */
+  const BODY_WITH_TOPIC = `<p>${'갱년기 증상 때문에 요즘 잠을 잘 못 자고 있어요. 병원에 가봐야 하나 고민입니다. '.repeat(8)}</p>`
+
+  it('① 본문이 주제어를 갖고 있으면 제목을 어떻게 바꿔도 판정이 같다 (리라이팅 안전 구간)', () => {
+    const original = post({ source: 'BOT', title: '갱년기 불면 어떻게 견디세요', content: BODY_WITH_TOPIC })
+    const rewritten = post({ source: 'BOT', title: '요즘 밤마다 뒤척이는데 저만 그런가요', content: BODY_WITH_TOPIC })
+    // 제목에서 '갱년기'가 빠졌지만 본문이 갖고 있으므로 판정은 불변이어야 한다
+    expect(shouldGoogleNoindexCommunityPost(rewritten))
+      .toBe(shouldGoogleNoindexCommunityPost(original))
+    expect(shouldGoogleNoindexCommunityPost(original)).toBe(false) // 둘 다 색인 유지
+  })
+
+  it('① 주제어를 제목에 더해도 판정이 뒤집히지 않는다 (본문이 이미 근거를 갖고 있음)', () => {
+    const plain = post({ source: 'BOT', title: '요즘 밤마다 뒤척여요', content: BODY_WITH_TOPIC })
+    const enriched = post({ source: 'BOT', title: '갱년기 불면 다들 어떻게 견디세요', content: BODY_WITH_TOPIC })
+    expect(shouldGoogleNoindexCommunityPost(enriched))
+      .toBe(shouldGoogleNoindexCommunityPost(plain))
+  })
+
+  it('② 🚨 본문에 주제어가 없고 제목에만 있었다면, 제목에서 빼는 순간 뒤집힌다', () => {
+    // 이게 리라이팅의 진짜 위험 지점이다. 본문 80자 미만/주제어 없는 글을
+    // 후보에서 제외해야 하는 이유를 이 테스트가 고정한다.
+    const titleOnly = post({ source: 'BOT', title: '갱년기 이야기', content: BOT_LONG })
+    const stripped = post({ source: 'BOT', title: '오늘 하루 어떠셨어요', content: BOT_LONG })
+    expect(shouldGoogleNoindexCommunityPost(titleOnly)).toBe(false)  // 색인
+    expect(shouldGoogleNoindexCommunityPost(stripped)).toBe(true)    // noindex로 반전 ⚠️
+  })
+
+  it('② 반전 위험은 BOT 경로 한정 — USER 글은 주제와 무관하게 분량만 본다', () => {
+    const a = post({ source: 'USER', title: '갱년기 이야기', content: HUMAN_OK })
+    const b = post({ source: 'USER', title: '오늘 하루 어떠셨어요', content: HUMAN_OK })
+    expect(shouldGoogleNoindexCommunityPost(a)).toBe(shouldGoogleNoindexCommunityPost(b))
+  })
+
+  it('③ HUMOR는 제목과 무관하게 항상 noindex (리라이팅해도 불변)', () => {
+    const a = post({ boardType: 'HUMOR', source: 'BOT', title: '갱년기 불면', content: BOT_LONG })
+    const b = post({ boardType: 'HUMOR', source: 'BOT', title: '아무 말', content: BOT_LONG })
+    expect(shouldGoogleNoindexCommunityPost(a)).toBe(true)
+    expect(shouldGoogleNoindexCommunityPost(b)).toBe(true)
+  })
+
+  it('③ MENOPAUSE는 주제 게이트 대상이 아니라 제목 변경에 영향받지 않는다', () => {
+    const a = post({ boardType: 'MENOPAUSE', source: 'BOT', title: '갱년기 불면', content: BOT_LONG })
+    const b = post({ boardType: 'MENOPAUSE', source: 'BOT', title: '아무 말', content: BOT_LONG })
+    expect(shouldGoogleNoindexCommunityPost(a)).toBe(shouldGoogleNoindexCommunityPost(b))
+    expect(shouldGoogleNoindexCommunityPost(a)).toBe(false)
+  })
+})
