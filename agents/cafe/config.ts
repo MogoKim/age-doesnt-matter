@@ -228,10 +228,14 @@ export const CAFE_CONFIGS: CafeConfig[] = [
     legacyCrawler: true,   // goondae/remon/masanmam과 동일 — boards page loop 전용
     sourceStage: 'shadow',
     boards: [
-      // 자유 수다: 활성도 높음(전체글 668만). 얕게 긁으면 좋은 글을 놓치므로 5페이지로 시작.
-      { name: '[talk] 자유 수다', menuId: 143, maxPages: 5, priority: 'medium', category: 'lifestyle' },
-      // TV/방송: 가벼운 수다·취향 축. 광고 밀도가 낮을 것으로 보이나 미검증이라 1페이지로 시작.
-      { name: '[talk] TV,방송', menuId: 1698, maxPages: 1, priority: 'medium', category: 'lifestyle' },
+      // 자유 수다: 활성도 높음(전체글 668만).
+      //   2026-08-15 5→10: 첫 5페이지 실측이 본문 중앙 27자·80자 미만 83%로 인사·잡담 위주였다.
+      //   여우야는 글 생성 속도가 빨라 댓글 많은 좋은 글이 뒤 페이지로 밀린다 — 더 깊게 훑어 재고를 찾는다.
+      //   ⚠️ 수집 깊이만 늘린다. sourceStage는 'shadow' 그대로라 고객 발행은 계속 0이다.
+      { name: '[talk] 자유 수다', menuId: 143, maxPages: 10, priority: 'medium', category: 'lifestyle' },
+      // TV/방송: 가벼운 수다·취향 축. 광고 밀도가 낮을 것으로 보이나 미검증이라 1페이지로 시작했다.
+      //   2026-08-15 1→2: 1페이지로는 저장 0건이라 표본 자체가 없어 판단이 불가능했다.
+      { name: '[talk] TV,방송', menuId: 1698, maxPages: 2, priority: 'medium', category: 'lifestyle' },
     ],
   },
 ]
