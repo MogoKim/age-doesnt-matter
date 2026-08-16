@@ -16,7 +16,7 @@
  *   근거(실측) — REJECT 필요 글 0건 · 본문 중앙 199자 · 우리 나이 신호 40%(5개 소스 중 최고)
  *   · 발행 사용률 43% · 하루 리라이팅 대상 약 22건(월 Sonnet 비용 $9 미만).
  */
-import { SHADOW_CAFE_IDS } from './config.js'
+import { PUBLISHABLE_CAFE_IDS, SHADOW_CAFE_IDS } from './config.js'
 // ⚠️ author 판정만 재사용한다. findMedicalAdSignal(본문 결합형)은 여우야 저장 차단 전용이라
 //   후보 gate에서는 쓰지 않는다 — 회원 개인의 병원비·건강 고민을 광고로 오인했다(실측 오탐 3/3).
 import { findMedicalAuthorSignal } from '../core/age-fit-blocklist.js'
@@ -55,10 +55,24 @@ import {
 } from './title-rewrite-rules.js'
 
 /**
- * 1차 limited 대상 source. 확대는 검수 PASS 후 별도 판단한다.
- * ⚠️ yeowooya는 넣지 않는다 — shadow 관찰 중이고 본문 중앙값이 26자라 재료가 없다.
+ * gate가 허용하는 source — **발행 가능한 카페**(production + core + publishable)다.
+ *
+ * 역할 분담(2026-08-16 확대):
+ *   · 어떤 source를 "지금" 리라이팅할지 고르는 것은 **런타임 설정**이다
+ *     → `TITLE_REWRITE_SOURCES` 환경변수 / `getTitleRewriteSources()`(runner)
+ *   · gate는 "애초에 리라이팅해도 되는 카페인가"라는 **구조적 자격**만 본다
+ *     → 여기(PUBLISHABLE_CAFE_IDS)
+ *
+ * 이렇게 나눈 이유: 이전에는 여기에 `['wgang']`이 하드코딩돼 있어, vars로 source를
+ * 확대해도 gate가 다시 NOT_TARGET_SOURCE로 막았다(2026-08-16 21:50 회차 실측).
+ * 운영 범위를 바꾸려고 코드 배포가 필요한 구조는 "빠르게 끌 수 있게 만든 뒤 켠다"는
+ * 원칙과도 어긋난다. 범위 조절은 vars가, 안전선은 gate가 맡는다.
+ *
+ * ⚠️ shadow(yeowooya)는 PUBLISHABLE_CAFE_IDS에 들어가지 않으므로 자동으로 빠진다.
+ *    바로 위 SHADOW_CAFE_IDS 체크와 함께 이중으로 막힌다.
+ * ⚠️ config에 없는 unknown cafeId도 allowlist 방식이라 기본 차단된다.
  */
-export const TITLE_REWRITE_SOURCES: readonly string[] = ['wgang'] as const
+export const TITLE_REWRITE_SOURCES: readonly string[] = PUBLISHABLE_CAFE_IDS
 
 /** gate 입력 — DB 모델에 의존하지 않는 최소 형태(테스트·오프라인 평가에서 그대로 쓴다) */
 export interface RewriteGateInput {
@@ -136,7 +150,9 @@ export function evaluateTitleRewriteCandidate(input: RewriteGateInput): RewriteG
     return reject('SHADOW_SOURCE', `${input.cafeId}는 shadow 관찰 중 — 리라이팅 대상 아님`)
   }
   if (!TITLE_REWRITE_SOURCES.includes(input.cafeId)) {
-    return reject('NOT_TARGET_SOURCE', `${input.cafeId}는 1차 limited 대상(${TITLE_REWRITE_SOURCES.join(',')}) 밖`)
+    // 발행 가능 카페(PUBLISHABLE_CAFE_IDS)가 아니면 차단한다 — config 미등록 cafeId 포함.
+    // "지금 어떤 source를 켤지"는 runner가 vars로 따로 좁힌다(SOURCE_NOT_ALLOWED).
+    return reject('NOT_TARGET_SOURCE', `${input.cafeId}는 발행 가능 source(${TITLE_REWRITE_SOURCES.join(',')}) 밖`)
   }
 
   // ── 2) 기본 게이트 ──

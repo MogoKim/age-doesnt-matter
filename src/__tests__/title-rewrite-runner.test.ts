@@ -156,13 +156,43 @@ describe('★ source 제한 — wgang만', () => {
     expect(d.prisma.post.update).not.toHaveBeenCalled()
   })
 
-  it('환경변수에 다른 source를 넣어도 gate가 wgang 외를 막는다', async () => {
-    // 이중 방어: env를 잘못 켜도 gate(TITLE_REWRITE_SOURCES=wgang)가 REJECT한다
-    const env = { ...ENV_ON, TITLE_REWRITE_SOURCES: 'wgang,remonterrace' } as unknown as NodeJS.ProcessEnv
+  it('★ env가 wgang만이면 remonterrace는 SOURCE_NOT_ALLOWED로 막힌다', async () => {
+    // 운영 범위를 좁히는 것은 vars의 역할이다. gate가 아니라 runner에서 걸러진다.
+    const env = { ...ENV_ON, TITLE_REWRITE_SOURCES: 'wgang' } as unknown as NodeJS.ProcessEnv
     const d = deps({ env })
     const r = await runTitleRewrite(input({ cafeId: 'remonterrace' }), d)
     expect(r.applied).toBe(false)
+    expect(r.skipReason).toBe('SOURCE_NOT_ALLOWED')
+    expect(d.callModel).not.toHaveBeenCalled()
+    expect(d.prisma.post.update).not.toHaveBeenCalled()
+  })
+
+  it('★ env가 5개 source면 remonterrace·dlxogns01이 source 단계에서 막히지 않는다', async () => {
+    // 2026-08-16 확대: 이전에는 gate의 ['wgang'] 하드코딩 때문에 vars를 늘려도
+    // GATE_REJECTED(NOT_TARGET_SOURCE)로 막혔다. 그 회귀를 고정한다.
+    const env = {
+      ...ENV_ON,
+      TITLE_REWRITE_SOURCES: 'wgang,dlxogns01,remonterrace,goondae,masanmam',
+    } as unknown as NodeJS.ProcessEnv
+    for (const cafeId of ['remonterrace', 'dlxogns01']) {
+      const d = deps({ env })
+      const r = await runTitleRewrite(input({ cafeId }), d)
+      expect(r.skipReason).not.toBe('SOURCE_NOT_ALLOWED')
+      expect(r.skipReason).not.toBe('GATE_REJECTED')
+    }
+  })
+
+  it('★ env를 잘못 넣어 shadow(yeowooya)를 켜도 gate가 막는다', async () => {
+    // 이중 방어의 핵심은 그대로 유지된다 — vars 오설정이 shadow 발행으로 이어지지 않는다.
+    const env = {
+      ...ENV_ON,
+      TITLE_REWRITE_SOURCES: 'wgang,yeowooya',
+    } as unknown as NodeJS.ProcessEnv
+    const d = deps({ env })
+    const r = await runTitleRewrite(input({ cafeId: 'yeowooya' }), d)
+    expect(r.applied).toBe(false)
     expect(r.skipReason).toBe('GATE_REJECTED')
+    expect(d.callModel).not.toHaveBeenCalled()
     expect(d.prisma.post.update).not.toHaveBeenCalled()
   })
 })

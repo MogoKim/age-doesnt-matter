@@ -6,6 +6,7 @@ import {
   type RewriteGateInput,
 } from '../../agents/cafe/title-rewrite-gate'
 import { MIN_BODY_LENGTH_FOR_REWRITE } from '../../agents/cafe/title-rewrite-rules'
+import { PUBLISHABLE_CAFE_IDS, SHADOW_CAFE_IDS } from '../../agents/cafe/config'
 
 /**
  * 제목 리라이팅 후보 gate — Sonnet 호출 **전** 필터.
@@ -41,8 +42,16 @@ const base = (over: Partial<RewriteGateInput> = {}): RewriteGateInput => ({
 })
 
 describe('title-rewrite-gate — 기본 계약', () => {
-  it('1차 limited 대상은 wgang 단독이다', () => {
-    expect(TITLE_REWRITE_SOURCES).toEqual(['wgang'])
+  it('gate가 허용하는 source는 발행 가능 카페(PUBLISHABLE_CAFE_IDS)다', () => {
+    // 2026-08-16 확대: 여기에 ['wgang']이 하드코딩돼 있어 vars로 source를 늘려도
+    // gate가 NOT_TARGET_SOURCE로 다시 막았다. 범위 조절은 vars, 안전선은 gate로 나눴다.
+    expect(TITLE_REWRITE_SOURCES).toEqual(PUBLISHABLE_CAFE_IDS)
+    expect(TITLE_REWRITE_SOURCES.length).toBeGreaterThan(0)
+  })
+
+  it('★ shadow는 gate 허용 목록에 절대 들어가지 않는다', () => {
+    const overlap = SHADOW_CAFE_IDS.filter(id => TITLE_REWRITE_SOURCES.includes(id))
+    expect(overlap).toEqual([])
   })
 
   it('본문 최소 길이는 80자 (발행 차단선이 아니라 리라이팅 후보 기준)', () => {
@@ -54,6 +63,38 @@ describe('title-rewrite-gate — 기본 계약', () => {
     expect(r.eligible).toBe(false)
     expect(r.reason).toBe('BODY_TOO_SHORT')
     expect(r.detail).toContain('발행은 그대로 된다')
+  })
+})
+
+describe('★ source 확대 — 5개 publishable source가 source 단계를 통과한다 (2026-08-16)', () => {
+  /**
+   * 확대 전에는 wgang 외 전부 NOT_TARGET_SOURCE였다. 그 결과 vars를 5개로 늘려도
+   * 실제로는 한 건도 리라이팅되지 않았다(21:50 회차 실측: GATE_REJECTED 3건).
+   * 여기서 고정하는 것은 "source 단계를 통과한다"까지다 — 본문·광고·나이·의료 게이트는 그대로 적용된다.
+   */
+  it.each(['wgang', 'dlxogns01', 'remonterrace', 'goondae', 'masanmam'])(
+    '%s는 source 때문에 막히지 않는다',
+    (cafeId) => {
+      const r = evaluateTitleRewriteCandidate(base({ cafeId }))
+      expect(r.reason).not.toBe('NOT_TARGET_SOURCE')
+      expect(r.reason).not.toBe('SHADOW_SOURCE')
+    },
+  )
+
+  it('5개 source 전부 PUBLISHABLE_CAFE_IDS에 실제로 등록돼 있다', () => {
+    for (const id of ['wgang', 'dlxogns01', 'remonterrace', 'goondae', 'masanmam']) {
+      expect(PUBLISHABLE_CAFE_IDS).toContain(id)
+    }
+  })
+
+  it('★ source를 통과해도 다른 gate 조건은 그대로 적용된다', () => {
+    // 확대가 "무조건 통과"가 되면 안 된다 — 본문 길이·광고 등은 여전히 막아야 한다.
+    const short = evaluateTitleRewriteCandidate(base({ cafeId: 'remonterrace', content: '짧은 글' }))
+    expect(short.eligible).toBe(false)
+    expect(short.reason).toBe('BODY_TOO_SHORT')
+
+    const ad = evaluateTitleRewriteCandidate(base({ cafeId: 'dlxogns01', author: '아너스티성형외과' }))
+    expect(ad.eligible).toBe(false)
   })
 })
 
@@ -125,8 +166,14 @@ describe('title-rewrite-gate — ❌ REJECT (모델 호출 전 제외)', () => {
     expect(r.reason).toBe('SHADOW_SOURCE')
   })
 
-  const otherSources = ['remonterrace', 'dlxogns01', 'masanmam', 'goondae']
-  it.each(otherSources)('%s는 1차 limited 대상 밖', (cafeId) => {
+  it('★ yeowooya는 gate 허용 목록에도 없어 이중으로 막힌다', () => {
+    // SHADOW_CAFE_IDS 체크를 지우더라도 PUBLISHABLE 미포함으로 NOT_TARGET_SOURCE가 된다.
+    expect(SHADOW_CAFE_IDS).toContain('yeowooya')
+    expect(TITLE_REWRITE_SOURCES).not.toContain('yeowooya')
+  })
+
+  it.each(['unknown-cafe', 'not-registered', ''])('config 미등록 cafeId(%s)는 NOT_TARGET_SOURCE', (cafeId) => {
+    // allowlist 방식이라 "명시적으로 허용될 때까지 차단"이 기본값이다.
     const r = evaluateTitleRewriteCandidate(base({ cafeId }))
     expect(r.eligible).toBe(false)
     expect(r.reason).toBe('NOT_TARGET_SOURCE')
