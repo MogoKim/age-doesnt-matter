@@ -3,6 +3,7 @@ import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import {
   countTodayRewrites,
+  kstStartOfDayUtc,
   getTitleRewriteDailyLimit,
   getTitleRewriteSources,
   isTitleRewriteEnabled,
@@ -79,6 +80,13 @@ function makeRepo(opts: { count?: number; originalTitle?: string | null; countTh
     originalTitle: opts.originalTitle ?? null,
   })
   return { post: { count, findUnique, update } }
+}
+
+/** count()에 넘어간 where 인자를 꺼낸다 — 날짜 기준 필드를 직접 검증하기 위해. */
+function countArg(repo: ReturnType<typeof makeRepo>) {
+  return repo.post.count.mock.calls[0][0] as {
+    where: { originalTitle: unknown; createdAt: { gte: Date } }
+  }
 }
 
 function deps(over: Partial<TitleRewriteDeps> = {}, model: TitleRewriteModelResult | null = modelOk()): TitleRewriteDeps & {
@@ -200,13 +208,101 @@ describe('★ daily limit', () => {
     expect(d.callModel).not.toHaveBeenCalled()
   })
 
-  it('오늘 자정 이후만 센다', async () => {
+  it('오늘(KST) 자정 이후 createdAt만 센다', async () => {
     const repo = makeRepo({ count: 2 })
     const n = await countTodayRewrites(repo, new Date('2026-08-15T15:30:00+09:00'))
     expect(n).toBe(2)
-    const arg = repo.post.count.mock.calls[0][0] as { where: { originalTitle: unknown; updatedAt: { gte: Date } } }
+    const arg = countArg(repo)
     expect(arg.where.originalTitle).toEqual({ not: null })
-    expect(arg.where.updatedAt.gte.getHours()).toBe(0)
+    // 2026-08-15 15:30 KST → 그날 KST 자정 = 2026-08-14T15:00:00Z
+    expect(arg.where.createdAt.gte.toISOString()).toBe('2026-08-14T15:00:00.000Z')
+  })
+
+  it('★ updatedAt은 daily count에 절대 쓰지 않는다 (2026-08-16 회귀 고정)', async () => {
+    // 왜: Post.updatedAt은 리라이팅과 무관한 UPDATE(댓글 wave 연동·지표 갱신)로도 갱신된다.
+    //     이 기준을 쓰면 어제 적용분이 오늘 카운트에 계속 잡혀 스스로를 영구 차단한다.
+    //     실측(2026-08-16): 오늘 적용 0건인데 카운트 10 → 상한 10에 걸려 하루 종일 skip.
+    const repo = makeRepo({ count: 0 })
+    await countTodayRewrites(repo, new Date('2026-08-16T19:00:00+09:00'))
+    const where = countArg(repo).where as Record<string, unknown>
+    expect(where.updatedAt).toBeUndefined()
+    expect(where).toHaveProperty('createdAt')
+  })
+
+  it('★ updatedAt이 오늘이어도 createdAt이 어제면 세지 않는다', async () => {
+    // 쿼리 경계를 실제 레코드에 적용해 검증한다 — DB 없이 where 절 의미를 직접 확인.
+    const now = new Date('2026-08-16T19:00:00+09:00')
+    const gte = kstStartOfDayUtc(now)
+    const yesterdayRow = {
+      createdAt: new Date('2026-08-15T14:22:00+09:00'), // 어제 발행 = 어제 리라이팅
+      updatedAt: new Date('2026-08-16T18:38:00+09:00'), // 오늘 갱신됨 (오염)
+    }
+    expect(yesterdayRow.updatedAt >= gte).toBe(true)  // updatedAt 기준이면 잡힌다 (버그)
+    expect(yesterdayRow.createdAt >= gte).toBe(false) // createdAt 기준이면 안 잡힌다 ✅
+  })
+
+  it('한도 직전(limit-1)이면 모델 호출 단계까지 진행한다', async () => {
+    const d = deps({ prisma: makeRepo({ count: 4 }) }) // ENV_ON의 limit=5
+    const r = await runTitleRewrite(input(), d)
+    expect(d.callModel).toHaveBeenCalledTimes(1)
+    expect(r.applied).toBe(true)
+  })
+})
+
+describe('★ KST 하루 경계 — 서버 TZ와 무관하게 계산된다', () => {
+  it('UTC 14:59:59(=KST 23:59:59)는 당일에 속한다', () => {
+    const gte = kstStartOfDayUtc(new Date('2026-08-16T14:59:59.000Z'))
+    expect(gte.toISOString()).toBe('2026-08-15T15:00:00.000Z') // 8/16 KST 자정
+  })
+
+  it('UTC 15:00:00(=KST 익일 00:00)은 다음날로 넘어간다', () => {
+    const gte = kstStartOfDayUtc(new Date('2026-08-16T15:00:00.000Z'))
+    expect(gte.toISOString()).toBe('2026-08-16T15:00:00.000Z') // 8/17 KST 자정
+  })
+
+  it('KST 자정 직후·직전이 서로 다른 하루로 갈린다', () => {
+    const before = kstStartOfDayUtc(new Date('2026-08-16T14:59:59.999Z'))
+    const after = kstStartOfDayUtc(new Date('2026-08-16T15:00:00.000Z'))
+    expect(before.getTime()).toBeLessThan(after.getTime())
+    expect(after.getTime() - before.getTime()).toBe(24 * 60 * 60 * 1000)
+  })
+
+  it('★ TZ=UTC 환경(GHA ubuntu-latest)에서도 KST 기준이다', () => {
+    // setHours(0,0,0,0)를 썼다면 UTC 자정(=KST 09:00)이 나와 운영 의도와 어긋난다.
+    const now = new Date('2026-08-16T02:00:00.000Z') // KST 11:00
+    const gte = kstStartOfDayUtc(now)
+    expect(gte.toISOString()).toBe('2026-08-15T15:00:00.000Z') // KST 자정 ✅
+    expect(gte.toISOString()).not.toBe('2026-08-16T00:00:00.000Z') // UTC 자정이면 안 된다
+  })
+
+  it('KST 09:00 이전(=UTC 전날)에도 같은 하루로 묶인다', () => {
+    // UTC 자정 기준이었다면 KST 08:20 슬롯과 09:05 슬롯이 다른 날로 갈렸다.
+    const slot0820 = kstStartOfDayUtc(new Date('2026-08-16T08:20:00+09:00'))
+    const slot0905 = kstStartOfDayUtc(new Date('2026-08-16T09:05:00+09:00'))
+    expect(slot0820.toISOString()).toBe(slot0905.toISOString())
+  })
+})
+
+describe('★ createdAt을 리라이팅 시각 대리값으로 쓰는 전제 — 호출부 계약', () => {
+  /**
+   * countTodayRewrites가 createdAt을 쓰는 근거는 "리라이팅이 발행 직후에만 일어난다"이다.
+   * 다른 곳에서 뒤늦게 리라이팅하는 경로가 생기면 이 전제가 깨지고 카운트가 어긋난다.
+   */
+  const CURATOR = readFileSync(resolve(__dirname, '../../agents/cafe/content-curator.ts'), 'utf8')
+
+  it('runTitleRewrite 호출부는 content-curator의 tryTitleRewrite 하나뿐이다', () => {
+    expect((CURATOR.match(/runTitleRewrite\(/g) ?? []).length).toBe(1)
+  })
+
+  it('tryTitleRewrite 호출부도 하나뿐이다', () => {
+    expect((CURATOR.match(/await tryTitleRewrite\(/g) ?? []).length).toBe(1)
+  })
+
+  it('tryTitleRewrite는 발행이 끝난 뒤에 호출된다 (postId 확보 이후)', () => {
+    const call = CURATOR.indexOf('await tryTitleRewrite(')
+    const publishReturn = CURATOR.indexOf('return post.id')
+    expect(publishReturn).toBeGreaterThan(-1)
+    expect(call).toBeGreaterThan(publishReturn) // 발행 트랜잭션 종료 후
   })
 })
 

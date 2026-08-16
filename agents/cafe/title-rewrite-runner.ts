@@ -168,21 +168,50 @@ const skip = (
   ...extra,
 })
 
+/** KST(UTC+9) 고정 오프셋 — 한국은 서머타임이 없어 상수로 충분하다. */
+const KST_OFFSET_MS = 9 * 60 * 60 * 1000
+
 /**
- * 오늘 이미 리라이팅한 건수를 센다.
+ * `now`가 속한 **한국시간 하루의 시작**을 UTC Date로 돌려준다.
+ *
+ * `Date.prototype.setHours(0,0,0,0)`를 쓰지 않는 이유: 그건 **서버 로컬 타임존** 기준이라
+ * GHA(ubuntu-latest, TZ=UTC)에서는 하루 경계가 KST 09:00에 그어진다. 큐레이션 슬롯이
+ * 08:20~01:15 KST라 "오늘"이 운영 의도와 어긋난다. 여기서는 서버 TZ와 무관하게 계산한다.
+ */
+export function kstStartOfDayUtc(now: Date): Date {
+  const shifted = new Date(now.getTime() + KST_OFFSET_MS) // UTC 필드를 KST 벽시계로 읽기 위한 이동
+  const kstMidnight = Date.UTC(
+    shifted.getUTCFullYear(),
+    shifted.getUTCMonth(),
+    shifted.getUTCDate(),
+  )
+  return new Date(kstMidnight - KST_OFFSET_MS) // 다시 실제 UTC 시각으로
+}
+
+/**
+ * 오늘(KST) 이미 리라이팅한 건수를 센다.
  *
  * 별도 카운터 테이블을 만들지 않는다 — `originalTitle IS NOT NULL`이 곧 "리라이팅됨"이다.
  * 세는 데 실패하면 **보수적으로 skip**한다(한도를 모르면 쓰지 않는다).
+ *
+ * ⚠️ 날짜 기준은 `createdAt`이다. `updatedAt`을 쓰면 안 된다.
+ *    `Post.updatedAt`은 리라이팅과 무관한 UPDATE(댓글 wave 연동·지표 갱신 등)로도 갱신되므로,
+ *    어제 적용분이 오늘 카운트에 계속 잡혀 **스스로를 DAILY_LIMIT_REACHED로 영구 차단**한다.
+ *    (2026-08-16 실측: 오늘 적용 0건인데 카운트 10 → 상한 10에 걸려 하루 종일 skip.
+ *     당시 updatedAt은 발행 후 25~34시간까지 밀려 있었다.)
+ *
+ *    `createdAt`을 쓸 수 있는 근거: 리라이팅은 `content-curator.ts`의 발행 직후
+ *    `tryTitleRewrite` 한 곳에서만 실행된다. 즉 `createdAt ≈ 리라이팅 시각`이고,
+ *    `createdAt`은 불변이라 오염되지 않는다. 이 전제는 계약 테스트로 고정돼 있다.
  */
 export async function countTodayRewrites(
   prisma: { post: TitleRewritePostRepo },
   now: Date,
 ): Promise<number | null> {
-  const start = new Date(now)
-  start.setHours(0, 0, 0, 0)
+  const start = kstStartOfDayUtc(now)
   try {
     return await prisma.post.count({
-      where: { originalTitle: { not: null }, updatedAt: { gte: start } },
+      where: { originalTitle: { not: null }, createdAt: { gte: start } },
     })
   } catch (err) {
     console.warn('[TitleRewrite] 일일 카운트 실패 — 보수적으로 skip:', err instanceof Error ? err.message : err)
