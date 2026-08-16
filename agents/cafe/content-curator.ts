@@ -9,6 +9,7 @@ import { prisma, disconnect } from '../core/db.js'
 import { notifySlack, sendSlackMessage } from '../core/notifier.js'
 import { findPoliticalKeyword, hasPoliticalKeyword } from '../core/political-blocklist.js'
 import { findAgeFitViolation, findMedicalAdSignal } from '../core/age-fit-blocklist.js'
+import { findCelebrityOrRaceViolation } from '../core/celebrity-race-blocklist.js'
 import { evaluateContentQualityWithHaiku, summarizeHaikuResult, resolveHaikuGateMode, shouldBlockPublish, recordHaikuBlocked, type HaikuQualityResult } from './haiku-quality-gate.js'
 import type { CuratedContent } from './types.js'
 
@@ -388,6 +389,14 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
       // 시술 단어 단독은 막지 않는다 — "보톡스 고민 중인데 무서워요"는 우리가 원하는 대화다(findMedicalAdSignal 참조).
       const medicalAd = findMedicalAdSignal(p.title, p.content)
       if (medicalAd) { console.log(`[ContentCurator] 의료광고/병원홍보 2차 필터 skip (${medicalAd}): "${p.title.slice(0, 30)}"`)
+        return false }
+      // [원문 품질 gate 2026-08-17] 실존 인물 사생활·비방 / 국적·인종 비하 원문을 제외한다.
+      // 지칭 단독으로는 막지 않는다 — 결합(인물+스캔들/비방, 국적+비하)일 때만이다.
+      //   실측(최근 14일 1,353건): 단독이면 최대 62건(4.6%) 과차단, 결합이면 5건(0.37%).
+      // ⚠️ 여기(원문 CafePost 기준)에서 막아야 한다. 발행본은 리라이팅·정화로 인물 단서가
+      //    지워져 놓친다("강*자님" → "강자님", 제목도 교체됨 — 실측 확인).
+      const celebRace = findCelebrityOrRaceViolation(p.title, p.content)
+      if (celebRace) { console.log(`[ContentCurator] 원문 품질 gate skip (${celebRace}): "${p.title.slice(0, 30)}"`)
         return false }
       const hasStrongPzp = STRONG_PZP_SIGNALS_CC.some(s => flat.includes(s))
       const weakPzpCount = WEAK_PZP_SIGNALS_CC.filter(s => flat.includes(s)).length
