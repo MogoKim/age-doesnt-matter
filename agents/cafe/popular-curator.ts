@@ -23,7 +23,7 @@ import { generateCommunitySlug } from '../core/slug.js'
 import { findPoliticalKeyword } from '../core/political-blocklist.js'
 import { computeUsableCount } from './compute-usable-count.js'
 import { buildPopularSeoMeta } from './popular-seo.js'
-import { sourceStageOfCafe } from './config.js'
+import { PUBLISHABLE_CAFE_IDS, sourceStageOfCafe } from './config.js'
 import {
   evaluateContentQualityWithHaiku,
   recordHaikuBlocked,
@@ -73,6 +73,12 @@ export async function main() {
       isPopular: true, isUsable: true, usedAt: null,
       imageUrls: { isEmpty: true }, videoUrls: { isEmpty: true },
       commentCrawled: true,
+      // shadow source는 어떤 경로로도 고객 발행되지 않는다 — content-curator.ts의
+      // PUBLISHABLE_CAFE_IDS 계약을 인기글 lane에도 동일하게 적용한다.
+      // denylist(SHADOW_CAFE_IDS 제외)가 아니라 allowlist인 이유: 새 sourceStage나
+      // config 미등록 cafeId가 생겨도 "명시적으로 허용될 때까지 차단"이 기본값이어야 한다.
+      // 수집은 막지 않는다. 발행 후보에서만 제외해 shadow 관찰을 계속할 수 있게 둔다.
+      cafeId: { in: PUBLISHABLE_CAFE_IDS },
     },
     orderBy: { killerScore: 'desc' },
     take: 15,
