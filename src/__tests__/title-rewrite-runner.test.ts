@@ -383,15 +383,28 @@ describe('★ 적용 성공 — originalTitle 보존 + slug/seoTitle 불변', ()
     expect(arg.data.originalTitle).not.toBe(ORIGINAL)
   })
 
-  it('★ slug·seoTitle·content·publishedAt을 절대 업데이트하지 않는다', async () => {
+  it('★ title과 seoTitle이 모두 새 제목으로 들어간다 (P0-2)', async () => {
+    // generateMetadata가 `post.seoTitle ?? post.title`을 쓰므로, seoTitle이 원제목으로
+    // 남아 있으면 리라이팅이 검색엔진에 한 글자도 전달되지 않는다.
     const repo = makeRepo()
     await runTitleRewrite(input(), deps({ prisma: repo }))
 
     const arg = repo.post.update.mock.calls[0][0] as { data: Record<string, unknown> }
-    for (const forbidden of ['slug', 'seoTitle', 'seoDescription', 'content', 'summary', 'publishedAt', 'status']) {
+    expect(arg.data.title).toBe(GOOD_TITLE)
+    expect(arg.data.seoTitle).toBe(GOOD_TITLE)
+    expect(arg.data.seoTitle).toBe(arg.data.title) // 화면과 검색 제목이 어긋나지 않는다
+  })
+
+  it('★ slug·seoDescription·content·publishedAt은 절대 업데이트하지 않는다', async () => {
+    // slug를 바꾸면 URL·canonical이 끊겨 기존 색인을 잃는다. seoTitle만 바꾸는 이유다.
+    const repo = makeRepo()
+    await runTitleRewrite(input(), deps({ prisma: repo }))
+
+    const arg = repo.post.update.mock.calls[0][0] as { data: Record<string, unknown> }
+    for (const forbidden of ['slug', 'seoDescription', 'content', 'summary', 'publishedAt', 'status']) {
       expect(arg.data).not.toHaveProperty(forbidden)
     }
-    expect(Object.keys(arg.data).sort()).toEqual(['originalTitle', 'title'])
+    expect(Object.keys(arg.data).sort()).toEqual(['originalTitle', 'seoTitle', 'title'])
   })
 
   it('Post를 찾지 못하면 update하지 않는다', async () => {
@@ -400,6 +413,50 @@ describe('★ 적용 성공 — originalTitle 보존 + slug/seoTitle 불변', ()
     const r = await runTitleRewrite(input(), deps({ prisma: repo }))
     expect(r.skipReason).toBe('UPDATE_FAILED')
     expect(repo.post.update).not.toHaveBeenCalled()
+  })
+})
+
+describe('★ seoTitle은 적용 성공 경로에서만 바뀐다 (P0-2)', () => {
+  /**
+   * seoTitle은 검색엔진이 읽는 제목이다. 실패·보류 경로에서 건드리면
+   * 원제목 유지라는 안전 계약이 깨지고, 검색 결과만 어긋난 채 남는다.
+   * 아래 모든 경로에서 update 자체가 일어나지 않아야 한다.
+   */
+  const cases: [string, () => ReturnType<typeof deps>][] = [
+    ['MODEL_KEEP', () => deps({}, modelOk({ decision: 'KEEP' }))],
+    ['MODEL_REJECT', () => deps({}, modelOk({ decision: 'REJECT', rewrittenTitle: '' }))],
+    ['LOW_CONFIDENCE', () => deps({}, modelOk({ confidence: MIN_CONFIDENCE - 0.01 }))],
+    ['DAILY_LIMIT_REACHED', () => deps({ prisma: makeRepo({ count: 5 }) })],
+    ['LIMIT_COUNT_FAILED', () => deps({ prisma: makeRepo({ countThrows: true }) })],
+    [
+      'VALIDATION_FAILED',
+      () => deps({}, modelOk({ rewrittenTitle: '부모님과 절연한 지 10년… 저만 이런 건 아니죠?' })),
+    ],
+    ['MODEL_ERROR', () => deps({ callModel: vi.fn().mockRejectedValue(new Error('boom')) } as never)],
+  ]
+
+  for (const [reason, make] of cases) {
+    it(`${reason}이면 seoTitle을 건드리지 않는다`, async () => {
+      const d = make()
+      const r = await runTitleRewrite(input(), d)
+      expect(r.applied).toBe(false)
+      expect(r.skipReason).toBe(reason)
+      expect(d.prisma.post.update).not.toHaveBeenCalled()
+    })
+  }
+
+  it('GATE_REJECTED(본문 80자 미만)에서도 seoTitle을 건드리지 않는다', async () => {
+    const d = deps()
+    const r = await runTitleRewrite(input({ body: '짧은 글' }), d)
+    expect(r.skipReason).toBe('GATE_REJECTED')
+    expect(d.prisma.post.update).not.toHaveBeenCalled()
+  })
+
+  it('SOURCE_NOT_ALLOWED(shadow source)에서도 seoTitle을 건드리지 않는다', async () => {
+    const d = deps()
+    const r = await runTitleRewrite(input({ cafeId: 'yeowooya' }), d)
+    expect(r.skipReason).toBe('SOURCE_NOT_ALLOWED')
+    expect(d.prisma.post.update).not.toHaveBeenCalled()
   })
 })
 
