@@ -316,7 +316,16 @@ export async function runTitleRewrite(
     })
   }
 
-  // ── 7) title만 UPDATE. slug·seoTitle은 건드리지 않는다 ──
+  // ── 7) title + seoTitle UPDATE. slug는 절대 건드리지 않는다 ──
+  //
+  // seoTitle을 함께 쓰는 이유(P0-2, 2026-08-16): 커뮤니티 상세 페이지의 generateMetadata는
+  // `post.seoTitle ?? post.title`을 <title>·OG title·Twitter title에 쓴다. seoTitle이
+  // 원제목으로 남아 있는 한 리라이팅 제목은 화면 H1에만 보이고 **검색엔진에는 한 글자도
+  // 전달되지 않는다**(실측: 적용 10건 전부 <title>이 원제목이었다).
+  //
+  // slug는 여전히 제외한다 — URL이 바뀌면 기존 색인·canonical이 끊긴다.
+  // seoTitle만 바꾸면 URL은 그대로 둔 채 검색 제목만 갱신되므로 색인 충격이 없다.
+  // seoDescription도 이번에는 건드리지 않는다(별도 작업).
   const newTitle = model.rewrittenTitle.trim()
   try {
     const current = await deps.prisma.post.findUnique({
@@ -329,9 +338,11 @@ export async function runTitleRewrite(
       where: { id: input.postId },
       data: {
         title: newTitle,
+        // 검색엔진이 실제로 읽는 제목 — 이게 있어야 리라이팅이 SEO에 반영된다
+        seoTitle: newTitle,
         // ★ 이미 있으면 덮어쓰지 않는다 — 최초 원본을 영구 보존한다
         originalTitle: current.originalTitle ?? current.title,
-        // slug·seoTitle은 의도적으로 제외한다 (URL·검색 제목 불변)
+        // slug·seoDescription은 의도적으로 제외한다 (URL·canonical·설명문 불변)
       },
     })
   } catch (err) {
