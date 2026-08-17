@@ -94,6 +94,15 @@ export interface TitleRewriteOutcome {
   /** P0-3 — seoDescription 적용 결과. null = 시도 안 함 */
   descApplied: boolean | null
   descSkipReason: string | null
+  /**
+   * P0-4 — 모델이 실제로 생성한 seoDescription의 길이. null = 모델이 값을 안 줌.
+   *
+   * 거부된 값은 DB에 남지 않아 사후 검증이 불가능하다. 길이만이라도 로그에 남겨야
+   * "130자 상한이 빡센 건지(131~140자), 모델이 장황한 건지(160자+)"를 구분할 수 있다.
+   */
+  descLength: number | null
+  /** P0-4 — 거부된 seoDescription의 앞부분(정규화·절단). 검증 실패 시에만 채운다. */
+  descPreview: string | null
 }
 
 /** 모델 응답 — 파싱 실패 시 null */
@@ -172,14 +181,36 @@ const skip = (
   confidence: null,
   descApplied: null,
   descSkipReason: null,
+  descLength: null,
+  descPreview: null,
   ...extra,
 })
+
+/** P0-4 — 로그 preview 상한. 40~60자 구간에서 고른 값이며, 절단 표시 `…`를 붙여도 60자를 넘지 않는다. */
+export const DESC_PREVIEW_MAX_CHARS = 50
+
+/**
+ * P0-4 — 거부된 설명문을 로그에 남기기 위한 안전 가공.
+ *
+ * 전문을 남기지 않는 이유는 두 가지다.
+ *   1. 원문에서 끌어온 문장이라 개인사가 길게 노출될 수 있다
+ *   2. 개행·따옴표가 섞이면 로그 한 줄 계약이 깨진다
+ *
+ * 그래서 공백을 한 칸으로 접고, 큰따옴표는 작은따옴표로 바꾸고, 앞부분만 남긴다.
+ */
+export function previewForLog(raw: string, max: number = DESC_PREVIEW_MAX_CHARS): string {
+  const flat = raw.replace(/\s+/g, ' ').replace(/"/g, "'").trim()
+  return flat.length <= max ? flat : `${flat.slice(0, max)}…`
+}
 
 /**
  * P0-3 — seoDescription 갱신 여부를 판단한다.
  *
  * 검증 실패는 **title 적용을 막지 않는다.** 값이 없으면 기존 seoDescription(원문 발췌)이
  * 그대로 남고, 그건 지금까지의 동작과 같다 — 안전한 축퇴다.
+ *
+ * P0-4에서 length·preview를 함께 돌려준다. **판정 기준은 한 글자도 바뀌지 않았다** —
+ * 거부된 값이 어떤 모양이었는지 로그로 볼 수 있게 하는 관찰 장치일 뿐이다.
  *
  * @returns update data에 합칠 조각 + 로그용 결과
  */
@@ -188,13 +219,23 @@ function resolveSeoDescription(
   effectiveTitle: string,
   originalTitle: string,
   body: string,
-): { patch: { seoDescription?: string }; applied: boolean | null; skipReason: string | null } {
+): {
+  patch: { seoDescription?: string }
+  applied: boolean | null
+  skipReason: string | null
+  length: number | null
+  preview: string | null
+} {
   const raw = (model.seoDescription ?? '').trim()
-  if (!raw) return { patch: {}, applied: null, skipReason: null } // 모델이 안 준 경우 — 시도 자체를 안 함
+  // 모델이 안 준 경우 — 시도 자체를 안 함. 남길 길이도 없다.
+  if (!raw) return { patch: {}, applied: null, skipReason: null, length: null, preview: null }
 
   const v = validateSeoDescription(raw, effectiveTitle, originalTitle, body)
-  if (!v.ok) return { patch: {}, applied: false, skipReason: v.reason }
-  return { patch: { seoDescription: raw }, applied: true, skipReason: null }
+  // 거부분만 preview를 남긴다. 통과분은 DB(seoDescription)에서 언제든 원문을 볼 수 있다.
+  if (!v.ok) {
+    return { patch: {}, applied: false, skipReason: v.reason, length: raw.length, preview: previewForLog(raw) }
+  }
+  return { patch: { seoDescription: raw }, applied: true, skipReason: null, length: raw.length, preview: null }
 }
 
 /** KST(UTC+9) 고정 오프셋 — 한국은 서머타임이 없어 상수로 충분하다. */
@@ -342,6 +383,8 @@ export async function runTitleRewrite(
           ...meta,
           descApplied: false,
           descSkipReason: `UPDATE_FAILED: ${err instanceof Error ? err.message.slice(0, 80) : 'update 실패'}`,
+          // 검증은 통과했고 DB만 실패한 경우다 — 길이는 남기되 preview는 남기지 않는다.
+          descLength: d.length,
         })
       }
     }
@@ -349,6 +392,8 @@ export async function runTitleRewrite(
       ...meta,
       descApplied: d.applied,
       descSkipReason: d.skipReason,
+      descLength: d.length,
+      descPreview: d.preview,
     })
   }
   if (model.decision === 'REJECT') {
@@ -378,7 +423,9 @@ export async function runTitleRewrite(
   // seoTitle만 바꾸면 URL은 그대로 둔 채 검색 제목만 갱신되므로 색인 충격이 없다.
   // seoDescription도 이번에는 건드리지 않는다(별도 작업).
   const newTitle = model.rewrittenTitle.trim()
-  let desc: ReturnType<typeof resolveSeoDescription> = { patch: {}, applied: null, skipReason: null }
+  let desc: ReturnType<typeof resolveSeoDescription> = {
+    patch: {}, applied: null, skipReason: null, length: null, preview: null,
+  }
   try {
     const current = await deps.prisma.post.findUnique({
       where: { id: input.postId },
@@ -413,6 +460,8 @@ export async function runTitleRewrite(
     skipReason: null,
     descApplied: desc.applied,
     descSkipReason: desc.skipReason,
+    descLength: desc.length,
+    descPreview: desc.preview,
     detail: `제목 적용 — ${original.length}자 → ${newTitle.length}자`,
     originalTitle: original,
     newTitle,
@@ -468,9 +517,15 @@ export function parseTitleRewriteResponse(text: string): TitleRewriteModelResult
 /** 운영 로그 한 줄 — 사람이 훑어볼 수 있게 */
 export function formatTitleRewriteLog(postId: string, o: TitleRewriteOutcome): string {
   // P0-3 — 설명문 적용 여부를 항상 남긴다. skip 경로(MODEL_KEEP)에서도 설명문은 갱신될 수 있다.
+  //
+  // P0-4 — 거부분에는 길이와 preview를 덧붙인다. 거부된 값은 DB에 남지 않으므로
+  //   이 로그가 유일한 근거다. 이게 없으면 "131자라 아깝게 잘린 것"과 "180자라 장황한 것"을
+  //   구분할 수 없고, 130자 상한을 조정할지 프롬프트를 죌지 결정할 수 없다.
+  const len = o.descLength === null ? '' : ` len=${o.descLength}`
+  const preview = o.descPreview === null ? '' : ` preview="${o.descPreview}"`
   const desc =
-    o.descApplied === true ? ' · desc=applied'
-    : o.descApplied === false ? ` · desc=skipped(${o.descSkipReason})`
+    o.descApplied === true ? ` · desc=applied${len}`
+    : o.descApplied === false ? ` · desc=skipped(${o.descSkipReason}${len}${preview})`
     : ''
   if (!o.applied) {
     return `[TitleRewrite] skip(${o.skipReason}) postId=${postId} · ${o.detail}${desc}`
