@@ -9,8 +9,12 @@ import {
   isTitleRewriteEnabled,
   parseTitleRewriteResponse,
   runTitleRewrite,
+  formatTitleRewriteLog,
+  previewForLog,
+  DESC_PREVIEW_MAX_CHARS,
   MIN_CONFIDENCE,
   type TitleRewriteDeps,
+  type TitleRewriteOutcome,
   type TitleRewriteModelResult,
   type TitleRewriteRunInput,
 } from '../../agents/cafe/title-rewrite-runner'
@@ -703,5 +707,166 @@ describe('★ P0-3 — seoDescription 고유화', () => {
     }
     expect(arg.data.originalTitle).toBe(ORIGINAL)
     expect(Object.keys(arg.data).sort()).toEqual(['originalTitle', 'seoDescription', 'seoTitle', 'title'])
+  })
+})
+
+describe('★ P0-4 — 거부된 seoDescription 관찰 로깅', () => {
+  /**
+   * ## 왜 이 테스트가 있나
+   *
+   * 09:50~12:05 실측에서 desc applied 7건 / skipped 6건이었고, skip 6건 중 **5건(83%)이
+   * DESC_TOO_LONG**이었다. 통과한 값은 116~128자로 상한(130자) 바로 아래에 몰려 있다.
+   *
+   * 그런데 거부된 값은 DB에 저장되지 않고 로그에도 사유만 남아서, **131자라 아깝게 잘린 건지
+   * 180자라 장황한 건지 구분할 방법이 없다.** 근거가 없으니 상한을 조정할 수도 없다.
+   *
+   * P0-4는 그 근거를 만드는 **관찰 장치**다. 판정 기준·update 조건은 한 글자도 바꾸지 않는다.
+   *
+   * ## 이 테스트가 지키는 것
+   *
+   * 1. 거부 로그에 len과 preview가 실린다 (REWRITE·MODEL_KEEP 양쪽)
+   * 2. preview는 짧게 잘리고, 개행·연속공백이 접히고, 따옴표로 로그를 깨지 않는다
+   * 3. description 전문이 로그로 새지 않는다 (개인사 노출 방지)
+   * 4. 적용·update 동작은 P0-3 그대로다
+   */
+  const GOOD_DESC =
+    '나이 많은 신입으로 들어갔는데 텃새를 겪고 있습니다. 메모하는 방식까지 지적받으니 마음이 상했고, 계속 다녀야 할지 아니면 그만두는 게 나을지 고민이 깊어집니다.'
+  /**
+   * 138자 — 상한(130자)을 여덟 자 넘긴다.
+   * P0-4가 밝히려는 "아깝게 잘리는 131~140자" 구간을 대표한다.
+   */
+  const TOO_LONG_DESC =
+    '추석 음식을 어디까지 준비해야 하는지를 두고 남편과 부딪친 이야기입니다. 예비 사위와 딸이 오는데 그냥 삼겹살만 굽자고 하니 서운했고, 하필 추석 당일이 남편 생일이기까지 해서 마음이 더 복잡해졌다고 조심스럽게 털어놓는 글입니다. 다들 어떠신지요?'
+  const COPIED_DESC = BODY.replace(/\s+/g, ' ').trim().slice(0, 90)
+
+  const logOf = (o: TitleRewriteOutcome) => formatTitleRewriteLog('post-1', o)
+
+  it('TOO_LONG 테스트 데이터가 실제로 상한을 넘는지 (전제 확인)', () => {
+    expect(TOO_LONG_DESC.length).toBeGreaterThan(130)
+    expect(TOO_LONG_DESC.length).toBeLessThan(160) // 131~140 구간을 대표한다
+  })
+
+  it('★ DESC_TOO_LONG skip 로그에 len과 preview가 포함된다', async () => {
+    const repo = makeRepo()
+    const r = await runTitleRewrite(input(), deps({ prisma: repo }, modelOk({ seoDescription: TOO_LONG_DESC })))
+
+    expect(r.descApplied).toBe(false)
+    expect(r.descSkipReason).toBe('DESC_TOO_LONG')
+    expect(r.descLength).toBe(TOO_LONG_DESC.length)
+    expect(r.descPreview).not.toBeNull()
+
+    const log = logOf(r)
+    expect(log).toContain('desc=skipped(DESC_TOO_LONG')
+    expect(log).toContain(`len=${TOO_LONG_DESC.length}`)
+    expect(log).toMatch(/preview="[^"]+"/)
+  })
+
+  it('★ DESC_COPIED_FROM_SOURCE skip 로그에도 len과 preview가 포함된다', async () => {
+    const repo = makeRepo()
+    const r = await runTitleRewrite(input(), deps({ prisma: repo }, modelOk({ seoDescription: COPIED_DESC })))
+
+    expect(r.descSkipReason).toBe('DESC_COPIED_FROM_SOURCE')
+    expect(r.descLength).toBe(COPIED_DESC.length)
+    const log = logOf(r)
+    expect(log).toContain(`desc=skipped(DESC_COPIED_FROM_SOURCE len=${COPIED_DESC.length} preview="`)
+  })
+
+  it('★ MODEL_KEEP 경로의 desc skip 로그에도 len과 preview가 포함된다', async () => {
+    const repo = makeRepo()
+    const d = deps({ prisma: repo }, modelOk({ decision: 'KEEP', rewrittenTitle: '', seoDescription: TOO_LONG_DESC }))
+    const r = await runTitleRewrite(input(), d)
+
+    expect(r.skipReason).toBe('MODEL_KEEP')
+    expect(r.descApplied).toBe(false)
+    expect(r.descLength).toBe(TOO_LONG_DESC.length)
+    expect(r.descPreview).not.toBeNull()
+
+    const log = logOf(r)
+    expect(log).toContain('skip(MODEL_KEEP)')
+    expect(log).toContain(`desc=skipped(DESC_TOO_LONG len=${TOO_LONG_DESC.length} preview="`)
+    expect(repo.post.update).not.toHaveBeenCalled() // update 조건은 P0-3 그대로
+  })
+
+  it('★ description 전문이 로그에 그대로 노출되지 않는다', async () => {
+    const repo = makeRepo()
+    const r = await runTitleRewrite(input(), deps({ prisma: repo }, modelOk({ seoDescription: TOO_LONG_DESC })))
+
+    const log = logOf(r)
+    expect(log).not.toContain(TOO_LONG_DESC) // 전문 금지
+    expect(r.descPreview!.length).toBeLessThan(TOO_LONG_DESC.length)
+  })
+
+  it('★ preview는 60자를 넘지 않는다 (절단 표시 포함)', async () => {
+    const repo = makeRepo()
+    const r = await runTitleRewrite(input(), deps({ prisma: repo }, modelOk({ seoDescription: TOO_LONG_DESC })))
+
+    expect(DESC_PREVIEW_MAX_CHARS).toBeLessThanOrEqual(60)
+    expect(r.descPreview!.length).toBeLessThanOrEqual(60)
+    expect(r.descPreview!.length).toBeLessThanOrEqual(DESC_PREVIEW_MAX_CHARS + 1) // +1 = '…'
+  })
+
+  it('★ preview의 줄바꿈·연속 공백이 한 칸으로 정규화된다', () => {
+    const messy = '첫 줄입니다.\n\n둘째   줄이고요.\t셋째 줄.'
+    const out = previewForLog(messy)
+    expect(out).toBe('첫 줄입니다. 둘째 줄이고요. 셋째 줄.')
+    expect(out).not.toMatch(/[\n\t]/)
+    expect(out).not.toMatch(/ {2}/)
+  })
+
+  it('★ preview의 큰따옴표가 치환된다 — 로그 한 줄 계약이 깨지지 않는다', () => {
+    const quoted = '남편이 "하지 말라"고 했다는 이야기'
+    const out = previewForLog(quoted)
+    expect(out).not.toContain('"')
+    expect(out).toContain("'하지 말라'")
+    // 로그에 실었을 때 preview="..." 구조가 유지되는지
+    const log = formatTitleRewriteLog('post-1', {
+      applied: false, skipReason: 'MODEL_KEEP', detail: 'd', originalTitle: ORIGINAL, newTitle: null,
+      humanReview: [], validationReason: null, promptVersion: 'v', modelRiskFlags: [], styleType: null,
+      confidence: null, descApplied: false, descSkipReason: 'DESC_TOO_LONG', descLength: 140, descPreview: out,
+    })
+    expect(log.match(/"/g)!.length).toBe(2) // preview를 감싸는 따옴표 딱 2개
+  })
+
+  it('preview는 짧은 문장을 자르지 않는다', () => {
+    const short = '짧은 설명문입니다.'
+    expect(previewForLog(short)).toBe(short)
+    expect(previewForLog(short)).not.toContain('…')
+  })
+
+  it('★ desc applied 로그는 len만 붙고 preview는 붙지 않는다 (통과분은 DB에서 볼 수 있다)', async () => {
+    const repo = makeRepo()
+    const r = await runTitleRewrite(input(), deps({ prisma: repo }, modelOk({ seoDescription: GOOD_DESC })))
+
+    expect(r.descApplied).toBe(true)
+    expect(r.descLength).toBe(GOOD_DESC.length)
+    expect(r.descPreview).toBeNull()
+
+    const log = logOf(r)
+    expect(log).toContain(`desc=applied len=${GOOD_DESC.length}`)
+    expect(log).not.toContain('preview=')
+  })
+
+  it('모델이 description을 안 주면 len·preview 모두 null이고 로그에도 안 나온다', async () => {
+    const repo = makeRepo()
+    const r = await runTitleRewrite(input(), deps({ prisma: repo }, modelOk()))
+
+    expect(r.descLength).toBeNull()
+    expect(r.descPreview).toBeNull()
+    expect(logOf(r)).not.toContain('desc=')
+  })
+
+  it('★ P0-3 update 계약은 그대로다 — 로깅이 저장 로직을 건드리지 않았다', async () => {
+    const repo = makeRepo()
+    // 거부되는 description을 줘도 title·seoTitle은 그대로 적용된다
+    await runTitleRewrite(input(), deps({ prisma: repo }, modelOk({ seoDescription: TOO_LONG_DESC })))
+
+    const arg = repo.post.update.mock.calls[0][0] as { data: Record<string, unknown> }
+    expect(arg.data.title).toBe(GOOD_TITLE)
+    expect(arg.data.seoTitle).toBe(GOOD_TITLE)
+    expect(arg.data).not.toHaveProperty('seoDescription')
+    expect(Object.keys(arg.data).sort()).toEqual(['originalTitle', 'seoTitle', 'title'])
+    for (const forbidden of ['slug', 'content', 'summary', 'publishedAt', 'status']) {
+      expect(arg.data).not.toHaveProperty(forbidden)
+    }
   })
 })

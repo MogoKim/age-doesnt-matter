@@ -331,8 +331,161 @@ src/__tests__/title-rewrite-validate.test.ts   신규
 
 ## 결과
 
-(1차·2차 확인 후 기록 — **baseline만 있고 결과가 없으면 실패한 실험으로 본다**)
+**2026-08-17 09:50~12:05 KST · 7회차 관찰 — 판정 PASS**
+
+merge SHA `080ff0c8` 이상 회차만 집계했다. 11:20 회차는 `runner.ts`의 10분 중복 방지로 스킵돼 발행 0이며, 이는 설계된 동작이라 분모에서 제외했다.
+
+```
+총 게시                18   (발행 6회차 × 3)
+모델 호출              14
+title applied          11
+desc applied            7
+desc skipped            6
+MODEL_KEEP              2   ├ desc-only update  1  ← P0-3 핵심 경로 실증
+                            └ desc=skipped      1
+VALIDATION_FAILED       1
+GATE_REJECTED           4
+발행 실패               0
+DAILY_LIMIT / MODEL_ERROR / TIMEOUT / PARSE_FAILED / UPDATE_FAILED   0
+
+desc 적용률
+  desc applied / 총 게시 수                    7 / 18 = 38.9%
+  desc applied / 모델 호출 수                  7 / 14 = 50.0%
+  desc applied / (title applied + MODEL_KEEP)  7 / 13 = 53.8%  ← 실질 성공률
+```
+
+### PASS 근거
+
+- **원문 복사 통과 0건** — desc applied 7건 전부 복사 검사 4종(앞20⊂본문앞40 / 앞40==summary앞40 / 앞40==본문앞40 / 본문에 통째 포함)을 통과했다
+- **HTML 반영 확인** — `meta description` · `og:description`이 DB `seoDescription`과 완전 일치. ISR 대기 없이 즉시 반영됐다
+- **slug·canonical 불변** — 7건 전부 원제목 기반 slug 유지
+- **기존 글 변경 0** — SEO rescue 50건 전수 대조에서 `seoTitle`·`seoDescription`·`slug` 50/50 유지
+- **모델 호출 수 증가 0** — 회차당 2~3건으로 P0-3 전후 동일
+- **품질 오류 0** — 7건 전수 검수에서 본문에 없는 사실 추가·의료/법률/금융 단정·인물 비방·국적 비하·카페명 노출 모두 0
+
+### ★ MODEL_KEEP desc-only update 실증 (설계의 마지막 미검증 경로)
+
+`cmswkusoo000f516hpwx6k76a` — "터널 지날때 숨 참고소원 비는 것~~"
+
+```
+originalTitle   (NULL)                     ← 제목을 아예 건드리지 않았다
+title           터널 지날때 숨 참고소원 비는 것~~   ← 원제목 그대로
+seoTitle        (title과 동일)               ← 동기화 유지
+slug            터널-지날때-숨-참고소원-비는-것    ← 불변
+seoDescription  128자 고유 설명문             ← 설명문만 새로
+```
+
+`data: { seoDescription }` 하나만 보내는 계약이 실제 DB에서 그대로 지켜졌다. HTML도 `<title>`은 원제목, `meta description`만 새 문장이다.
+
+### 커버리지 한계 (설계대로, 악화 없음)
+
+18건 중 11건은 여전히 원문 발췌 description이다. 전부 **설계된 안전한 축퇴**이지 결함이 아니다.
+
+```
+GATE_REJECTED    4건  모델 호출 자체가 없다 (BODY_TOO_SHORT 등)
+VALIDATION_FAILED 1건  제목 검증 실패 → desc 경로 미진입
+desc skipped     6건  validator 거부 → 기존 값 유지
+```
+
+---
 
 ## 후속 조치
 
-(기록)
+### P0-4 — rejected seoDescription 관찰 로깅 (2026-08-17 결정)
+
+**결정: 임계값 조정보다 rejected desc 로깅이 먼저다.**
+
+#### 왜 이 순서인가
+
+desc skip 6건 중 **5건(83.3%)이 `DESC_TOO_LONG`**이다. 그리고 통과한 7건의 길이 분포는 상한(130자) 바로 아래에 밀집해 있다.
+
+```
+통과 desc 길이  116 · 121 · 125 · 127 · 128 · 128 · 128
+                최소 116 · 최대 128 · 중앙값 127 · 평균 124.7
+                → 7건 중 4건이 127~128자
+```
+
+모델 출력이 125~135자 구간에 몰려 있고 130자 컷이 그 한가운데를 자르고 있다고 보는 게 자연스럽다. **병목의 실제 비용도 확인됐다.**
+
+```
+cmswll25u "30분 4키로"
+  모델 desc → DESC_TOO_LONG으로 거부
+  결과 남은 값 → "아님 인클라인 넣고 걷기 ​ 10분이라도 뛰는게좋나요 저4키로뛰는데…"
+  원문 본문   → "아님 인클라인 넣고 걷기 ​ 10분이라도 뛰는게좋나요 저4키로뛰는데…"
+  ▶ 완전 동일 = 몇 자 넘겼다는 이유로 100% 원문 복사본이 검색에 노출된다
+
+같은 패턴: cmswnkng8 "여행관련 짜증나는 지인"(110자) · cmswmpuf "49제"(118자)
+```
+
+**그럼에도 상한을 조정할 수 없다.** 근거가 없기 때문이다.
+
+```
+① rejected desc의 실제 길이를 모른다
+   131자였는지 180자였는지 구분 불가 → "+10자"가 맞는지 "+50자"가 맞는지 계산 불가
+② rejected desc의 내용을 모른다
+   길이만 넘고 품질은 좋았는지, 장황해서 잘린 게 정상인지 판정 불가
+③ ENTITY_NOT_IN_SOURCE 1건이 정탐인지 오탐인지도 같은 이유로 판정 불가
+④ 표본 6건은 적다
+```
+
+거부된 값은 **DB에 저장되지 않고**(설계상 맞다) 로그에도 사유만 남는다. 그래서 사후 검증 경로가 아예 없다. P0-4는 그 경로를 만드는 **관찰 장치**다.
+
+#### P0-4의 범위 — 관찰만 한다
+
+```
+하는 것    거부된 seoDescription의 길이(len)와 앞부분(preview)을 로그에 남긴다
+           적용된 seoDescription의 길이(len)도 남긴다 (통과 분포를 로그만으로 보기 위해)
+
+하지 않는 것
+  ✗ MIN_DESC_LENGTH(70) / MAX_DESC_LENGTH(130) 변경
+  ✗ DESC_TOO_LONG · DESC_COPIED_FROM_SOURCE · ENTITY_NOT_IN_SOURCE 판정 기준 변경
+  ✗ seoDescription update 조건 변경
+  ✗ title / seoTitle 적용 조건 변경
+  ✗ MODEL_KEEP update 조건 변경
+  ✗ VALIDATION_FAILED · GATE_REJECTED 경로로 desc 확장
+  ✗ daily limit · source · gate · slug · canonical 변경
+  ✗ 기존 글 백필
+```
+
+**desc 적용률을 직접 높이지 않는다.** 적용률을 올리는 판단은 이 로깅으로 데이터를 모은 뒤 별도로 한다.
+
+#### 로그 형식
+
+```
+거부  … · desc=skipped(DESC_TOO_LONG len=138 preview="추석 음식을 어디까지 준비해야 하는지를 두고 남편과 부딪친…")
+      … · desc=skipped(ENTITY_NOT_IN_SOURCE len=48 preview="이사 뒤 가족 초대를 두고 남편과 부딪친 이야기.")
+적용  … · desc=applied len=128
+미시도 (기존과 동일 — desc 표기 없음)
+```
+
+preview 안전 장치
+
+```
+상한 50자 (+ 절단 표시 '…' → 최대 51자, 요구 상한 60자 이내)
+\s+ → 공백 한 칸        개행·탭·연속 공백이 로그 한 줄 계약을 깨지 않게
+"   → '                preview="..." 구조가 따옴표로 깨지지 않게
+전문 노출 금지          원문에서 끌어온 문장이라 개인사가 길게 남지 않게
+```
+
+#### 이 데이터로 무엇을 판단하는가
+
+로깅 후 desc skip이 **10건 이상 누적**되면 아래 기준으로 다음 작업을 정한다.
+
+| 관측 | 해석 | 후속 작업 |
+|---|---|---|
+| rejected 대부분이 **131~140자**이고 preview 품질 양호 | 상한이 과엄격 | `MAX_DESC_LENGTH` 완화 검토 |
+| rejected가 **160자 이상** | 모델이 장황 | 프롬프트 압축 강화 검토 (상한 유지) |
+| `ENTITY_NOT_IN_SOURCE`가 **오탐** | validator 과검출 | `CHECKED_ENTITY_PATTERN` 개선 검토 |
+| `DESC_COPIED_FROM_SOURCE`가 다수 | 검증이 제 일을 하는 중 | **현재 검증 유지** (조정하지 않는다) |
+
+어느 쪽이든 **P0-4 자체는 검색 결과를 바꾸지 않는다.** 운영 관찰력만 높이는 저위험 변경이다.
+
+### 그 밖의 후속 관찰 (P0-4 범위 밖, 기록만)
+
+```
+· P0-2 이전(2026-08-15) 리라이팅 10건은 seoTitle에 원제목이 남아 있다
+  → 리라이팅 제목이 검색에 전혀 가지 않는 상태. SEO rescue 2차 후보
+· title 감정 각색 1건 관찰 ("49제" — 본문 "시누이가 서운" → 제목 "시누이한테 미안")
+  → FAIL 아님. 누적 관찰 대상
+· SEO rescue 50건 색인 반응 3~7일 관찰 (대조군: 제외한 50건)
+```
