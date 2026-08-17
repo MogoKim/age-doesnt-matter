@@ -603,3 +603,105 @@ describe('★ 발행 경로 계약 — 발행 전에는 제목을 바꾸지 않�
     expect(sys).not.toContain('손이 떨리')
   })
 })
+
+describe('★ P0-3 — seoDescription 고유화', () => {
+  /**
+   * 신규 발행글의 seoDescription 98%가 본문 앞부분 복사다(최근 7일 641건 실측).
+   * 검증을 통과한 설명문만 덮어쓰고, 실패하면 기존 값(원문 발췌)이 그대로 남는다.
+   *
+   * ⚠️ 핵심 계약: description 검증 실패가 title 적용을 막지 않는다.
+   */
+  const GOOD_DESC =
+    '나이 많은 신입으로 들어갔는데 텃새를 겪고 있습니다. 메모하는 방식까지 지적받으니 마음이 상했고, 계속 다녀야 할지 아니면 그만두는 게 나을지 고민이 깊어집니다.'
+  /** 본문 첫 문장 복붙 — DESC_COPIED_FROM_SOURCE로 걸려야 한다 */
+  const COPIED_DESC = BODY.replace(/\s+/g, ' ').trim().slice(0, 90)
+
+  it('REWRITE + 유효 description → title·seoTitle·seoDescription 모두 적용', async () => {
+    const repo = makeRepo()
+    const r = await runTitleRewrite(input(), deps({ prisma: repo }, modelOk({ seoDescription: GOOD_DESC })))
+
+    expect(r.applied).toBe(true)
+    expect(r.descApplied).toBe(true)
+    const arg = repo.post.update.mock.calls[0][0] as { data: Record<string, unknown> }
+    expect(arg.data.title).toBe(GOOD_TITLE)
+    expect(arg.data.seoTitle).toBe(GOOD_TITLE)
+    expect(arg.data.seoDescription).toBe(GOOD_DESC)
+  })
+
+  it('★ REWRITE + 무효 description → title·seoTitle은 적용, seoDescription만 제외', async () => {
+    const repo = makeRepo()
+    const r = await runTitleRewrite(input(), deps({ prisma: repo }, modelOk({ seoDescription: COPIED_DESC })))
+
+    expect(r.applied).toBe(true) // ← description 실패가 title 적용을 막지 않는다
+    expect(r.descApplied).toBe(false)
+    expect(r.descSkipReason).toBe('DESC_COPIED_FROM_SOURCE')
+    const arg = repo.post.update.mock.calls[0][0] as { data: Record<string, unknown> }
+    expect(arg.data.title).toBe(GOOD_TITLE)
+    expect(arg.data.seoTitle).toBe(GOOD_TITLE)
+    expect(arg.data).not.toHaveProperty('seoDescription') // 키 자체가 없다 = 기존 값 유지
+  })
+
+  it('모델이 description을 주지 않으면 시도 자체를 하지 않는다', async () => {
+    const repo = makeRepo()
+    const r = await runTitleRewrite(input(), deps({ prisma: repo }, modelOk()))
+
+    expect(r.applied).toBe(true)
+    expect(r.descApplied).toBeNull()
+    const arg = repo.post.update.mock.calls[0][0] as { data: Record<string, unknown> }
+    expect(arg.data).not.toHaveProperty('seoDescription')
+  })
+
+  it('★ MODEL_KEEP + 유효 description → title 미변경, seoDescription만 UPDATE', async () => {
+    const repo = makeRepo()
+    const d = deps({ prisma: repo }, modelOk({ decision: 'KEEP', rewrittenTitle: '', seoDescription: GOOD_DESC }))
+    const r = await runTitleRewrite(input(), d)
+
+    expect(r.applied).toBe(false)
+    expect(r.skipReason).toBe('MODEL_KEEP')
+    expect(r.descApplied).toBe(true)
+    expect(repo.post.update).toHaveBeenCalledTimes(1)
+    const arg = repo.post.update.mock.calls[0][0] as { data: Record<string, unknown> }
+    expect(arg.data).toEqual({ seoDescription: GOOD_DESC }) // title·slug는 손대지 않는다
+  })
+
+  it('★ MODEL_KEEP + 무효 description → update 자체가 없다', async () => {
+    const repo = makeRepo()
+    const d = deps({ prisma: repo }, modelOk({ decision: 'KEEP', rewrittenTitle: '', seoDescription: COPIED_DESC }))
+    const r = await runTitleRewrite(input(), d)
+
+    expect(r.skipReason).toBe('MODEL_KEEP')
+    expect(r.descApplied).toBe(false)
+    expect(repo.post.update).not.toHaveBeenCalled()
+  })
+
+  it('MODEL_REJECT면 description도 만들지 않는다', async () => {
+    const repo = makeRepo()
+    const d = deps({ prisma: repo }, modelOk({ decision: 'REJECT', rewrittenTitle: '', seoDescription: GOOD_DESC }))
+    const r = await runTitleRewrite(input(), d)
+
+    expect(r.skipReason).toBe('MODEL_REJECT')
+    expect(repo.post.update).not.toHaveBeenCalled()
+  })
+
+  it('KEEP 경로의 update가 실패해도 예외를 던지지 않는다 (발행 무영향)', async () => {
+    const repo = makeRepo()
+    repo.post.update = vi.fn().mockRejectedValue(new Error('DB write 실패'))
+    const d = deps({ prisma: repo }, modelOk({ decision: 'KEEP', rewrittenTitle: '', seoDescription: GOOD_DESC }))
+    const r = await runTitleRewrite(input(), d)
+
+    expect(r.skipReason).toBe('MODEL_KEEP')
+    expect(r.descApplied).toBe(false)
+  })
+
+  it('slug·content·originalTitle 계약은 그대로다', async () => {
+    const repo = makeRepo()
+    await runTitleRewrite(input(), deps({ prisma: repo }, modelOk({ seoDescription: GOOD_DESC })))
+
+    const arg = repo.post.update.mock.calls[0][0] as { data: Record<string, unknown> }
+    for (const forbidden of ['slug', 'content', 'summary', 'publishedAt', 'status']) {
+      expect(arg.data).not.toHaveProperty(forbidden)
+    }
+    expect(arg.data.originalTitle).toBe(ORIGINAL)
+    expect(Object.keys(arg.data).sort()).toEqual(['originalTitle', 'seoDescription', 'seoTitle', 'title'])
+  })
+})

@@ -82,9 +82,17 @@ describe('P0-2 범위 밖 — 이번 변경이 건드리지 않는 것', () => {
 })
 
 describe('runner 쪽 계약 — seoTitle은 쓰고 slug는 쓰지 않는다', () => {
-  /** 적용 성공 경로의 update data 블록만 잘라낸다 */
+  /**
+   * 적용 성공 경로의 update data 블록만 잘라낸다.
+   *
+   * ⚠️ P0-3(2026-08-17)부터 `post.update` 호출이 2곳이다 — MODEL_KEEP 경로에서
+   *    설명문만 갱신하는 호출이 앞에 온다. 그래서 첫 번째 호출이 아니라
+   *    `title: newTitle`을 담은 **성공 경로**를 명시적으로 찾아야 한다.
+   */
   const updateBlock = (() => {
-    const i = runner.indexOf('await deps.prisma.post.update({')
+    const anchor = runner.indexOf('const newTitle = model.rewrittenTitle.trim()')
+    expect(anchor).toBeGreaterThan(-1)
+    const i = runner.indexOf('await deps.prisma.post.update({', anchor)
     expect(i).toBeGreaterThan(-1)
     return runner.slice(i, runner.indexOf('})', runner.indexOf('data: {', i)))
   })()
@@ -101,15 +109,28 @@ describe('runner 쪽 계약 — seoTitle은 쓰고 slug는 쓰지 않는다', ()
     expect(updateBlock).not.toMatch(/^\s*slug:/m)
   })
 
-  it('★ update data에 seoDescription이 없다 — 별도 작업 범위', () => {
-    expect(updateBlock).not.toMatch(/^\s*seoDescription:/m)
+  it('★ P0-3 — update data에 seoDescription이 조건부로 들어간다', () => {
+    // 검증 통과 시에만 합쳐지는 조건부 스프레드다. 실패하면 키 자체가 없어
+    // 기존 값(원문 발췌)이 그대로 남는다 — 안전한 축퇴.
+    expect(updateBlock).toContain('...desc.patch')
+    expect(updateBlock).not.toMatch(/^\s*seoDescription:\s*\w/m) // 무조건 대입은 금지
   })
 
   it('originalTitle 보존 로직이 유지된다 (rollback 근거)', () => {
     expect(updateBlock).toContain('current.originalTitle ?? current.title')
   })
 
-  it('post.update 호출은 적용 성공 경로 1곳뿐이다', () => {
-    expect((runner.match(/deps\.prisma\.post\.update\(/g) ?? []).length).toBe(1)
+  it('post.update 호출은 2곳뿐이다 — 성공 경로 + MODEL_KEEP 설명문 경로 (P0-3)', () => {
+    // 늘어난 1곳은 KEEP에서 seoDescription만 갱신하는 호출이다. 그 외 경로는 DB를 건드리지 않는다.
+    expect((runner.match(/deps\.prisma\.post\.update\(/g) ?? []).length).toBe(2)
+  })
+
+  it('★ MODEL_KEEP 경로의 update는 seoDescription만 건드린다 (title·slug 불변)', () => {
+    const i = runner.indexOf("if (model.decision === 'KEEP')")
+    expect(i).toBeGreaterThan(-1)
+    const keepBlock = runner.slice(i, runner.indexOf('if (model.decision === \'REJECT\')', i))
+    expect(keepBlock).toContain('data: { seoDescription: d.patch.seoDescription }')
+    expect(keepBlock).not.toMatch(/title:\s*newTitle/)
+    expect(keepBlock).not.toMatch(/^\s*slug:/m)
   })
 })
