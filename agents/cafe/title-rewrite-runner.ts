@@ -24,7 +24,7 @@
  * `TITLE_REWRITE_ENABLED=true`가 명시적으로 켜지지 않으면 아무 일도 하지 않는다.
  */
 import { evaluateTitleRewriteCandidate, type RewriteGateInput } from './title-rewrite-gate.js'
-import { validateRewrittenTitle, type HumanReviewFlag, type TitleValidationReason } from './title-rewrite-validate.js'
+import { validateRewrittenTitle, validateSeoDescription, type HumanReviewFlag, type TitleValidationReason } from './title-rewrite-validate.js'
 import {
   buildTitleRewritePrompt,
   TITLE_REWRITE_PROMPT_VERSION,
@@ -91,12 +91,17 @@ export interface TitleRewriteOutcome {
   modelRiskFlags: string[]
   styleType: string | null
   confidence: number | null
+  /** P0-3 — seoDescription 적용 결과. null = 시도 안 함 */
+  descApplied: boolean | null
+  descSkipReason: string | null
 }
 
 /** 모델 응답 — 파싱 실패 시 null */
 export interface TitleRewriteModelResult {
   decision: 'REWRITE' | 'KEEP' | 'REJECT'
   rewrittenTitle: string
+  /** P0-3 — 검색 결과 설명문. decision과 무관하게 채워진다(REJECT 제외) */
+  seoDescription?: string
   reason?: string
   sourceSignals?: string[]
   styleType?: string
@@ -165,8 +170,32 @@ const skip = (
   modelRiskFlags: [],
   styleType: null,
   confidence: null,
+  descApplied: null,
+  descSkipReason: null,
   ...extra,
 })
+
+/**
+ * P0-3 — seoDescription 갱신 여부를 판단한다.
+ *
+ * 검증 실패는 **title 적용을 막지 않는다.** 값이 없으면 기존 seoDescription(원문 발췌)이
+ * 그대로 남고, 그건 지금까지의 동작과 같다 — 안전한 축퇴다.
+ *
+ * @returns update data에 합칠 조각 + 로그용 결과
+ */
+function resolveSeoDescription(
+  model: TitleRewriteModelResult,
+  effectiveTitle: string,
+  originalTitle: string,
+  body: string,
+): { patch: { seoDescription?: string }; applied: boolean | null; skipReason: string | null } {
+  const raw = (model.seoDescription ?? '').trim()
+  if (!raw) return { patch: {}, applied: null, skipReason: null } // 모델이 안 준 경우 — 시도 자체를 안 함
+
+  const v = validateSeoDescription(raw, effectiveTitle, originalTitle, body)
+  if (!v.ok) return { patch: {}, applied: false, skipReason: v.reason }
+  return { patch: { seoDescription: raw }, applied: true, skipReason: null }
+}
 
 /** KST(UTC+9) 고정 오프셋 — 한국은 서머타임이 없어 상수로 충분하다. */
 const KST_OFFSET_MS = 9 * 60 * 60 * 1000
@@ -298,7 +327,29 @@ export async function runTitleRewrite(
   }
 
   if (model.decision === 'KEEP') {
-    return skip('MODEL_KEEP', '모델이 원제목 유지를 택했다 — 판단력이지 실패가 아니다', original, meta)
+    // P0-3: 제목은 그대로 두되 설명문은 새로 쓴다.
+    //   실측(2026-08-16~17) 모델 호출의 40%가 KEEP이다. 여기서 아무것도 안 하면
+    //   description 개선 기회의 40%를 버리게 된다. decision은 '제목에 대한 판단'일 뿐이다.
+    const d = resolveSeoDescription(model, original, original, input.body)
+    if (d.patch.seoDescription) {
+      try {
+        await deps.prisma.post.update({
+          where: { id: input.postId },
+          data: { seoDescription: d.patch.seoDescription }, // title·slug는 건드리지 않는다
+        })
+      } catch (err) {
+        return skip('MODEL_KEEP', '모델이 원제목 유지를 택했다 — 판단력이지 실패가 아니다', original, {
+          ...meta,
+          descApplied: false,
+          descSkipReason: `UPDATE_FAILED: ${err instanceof Error ? err.message.slice(0, 80) : 'update 실패'}`,
+        })
+      }
+    }
+    return skip('MODEL_KEEP', '모델이 원제목 유지를 택했다 — 판단력이지 실패가 아니다', original, {
+      ...meta,
+      descApplied: d.applied,
+      descSkipReason: d.skipReason,
+    })
   }
   if (model.decision === 'REJECT') {
     return skip('MODEL_REJECT', '모델이 리라이팅 대상이 아니라고 판단했다', original, meta)
@@ -327,12 +378,18 @@ export async function runTitleRewrite(
   // seoTitle만 바꾸면 URL은 그대로 둔 채 검색 제목만 갱신되므로 색인 충격이 없다.
   // seoDescription도 이번에는 건드리지 않는다(별도 작업).
   const newTitle = model.rewrittenTitle.trim()
+  let desc: ReturnType<typeof resolveSeoDescription> = { patch: {}, applied: null, skipReason: null }
   try {
     const current = await deps.prisma.post.findUnique({
       where: { id: input.postId },
       select: { title: true, originalTitle: true },
     })
     if (!current) return skip('UPDATE_FAILED', 'Post를 찾지 못했다', original, meta)
+
+    // P0-3 — 설명문은 검증을 통과했을 때만 함께 갱신한다.
+    //   실패해도 title/seoTitle 적용은 그대로 간다(조건부 스프레드). 값이 없으면
+    //   기존 seoDescription이 남고, 그건 지금까지의 동작과 같다.
+    desc = resolveSeoDescription(model, newTitle, original, input.body)
 
     await deps.prisma.post.update({
       where: { id: input.postId },
@@ -342,7 +399,9 @@ export async function runTitleRewrite(
         seoTitle: newTitle,
         // ★ 이미 있으면 덮어쓰지 않는다 — 최초 원본을 영구 보존한다
         originalTitle: current.originalTitle ?? current.title,
-        // slug·seoDescription은 의도적으로 제외한다 (URL·canonical·설명문 불변)
+        // 검증을 통과한 경우에만 설명문을 덮어쓴다 (P0-3)
+        ...desc.patch,
+        // slug는 의도적으로 제외한다 (URL·canonical 불변)
       },
     })
   } catch (err) {
@@ -352,6 +411,8 @@ export async function runTitleRewrite(
   return {
     applied: true,
     skipReason: null,
+    descApplied: desc.applied,
+    descSkipReason: desc.skipReason,
     detail: `제목 적용 — ${original.length}자 → ${newTitle.length}자`,
     originalTitle: original,
     newTitle,
@@ -392,6 +453,7 @@ export function parseTitleRewriteResponse(text: string): TitleRewriteModelResult
     return {
       decision: p.decision,
       rewrittenTitle: typeof p.rewrittenTitle === 'string' ? p.rewrittenTitle : '',
+      seoDescription: typeof p.seoDescription === 'string' ? p.seoDescription : undefined,
       reason: p.reason,
       sourceSignals: Array.isArray(p.sourceSignals) ? p.sourceSignals : [],
       styleType: typeof p.styleType === 'string' ? p.styleType : undefined,
@@ -405,9 +467,14 @@ export function parseTitleRewriteResponse(text: string): TitleRewriteModelResult
 
 /** 운영 로그 한 줄 — 사람이 훑어볼 수 있게 */
 export function formatTitleRewriteLog(postId: string, o: TitleRewriteOutcome): string {
+  // P0-3 — 설명문 적용 여부를 항상 남긴다. skip 경로(MODEL_KEEP)에서도 설명문은 갱신될 수 있다.
+  const desc =
+    o.descApplied === true ? ' · desc=applied'
+    : o.descApplied === false ? ` · desc=skipped(${o.descSkipReason})`
+    : ''
   if (!o.applied) {
-    return `[TitleRewrite] skip(${o.skipReason}) postId=${postId} · ${o.detail}`
+    return `[TitleRewrite] skip(${o.skipReason}) postId=${postId} · ${o.detail}${desc}`
   }
   const hr = o.humanReview.length ? ` · 검수필요[${o.humanReview.join(',')}]` : ''
-  return `[TitleRewrite] applied postId=${postId} · "${o.originalTitle}" → "${o.newTitle}" · style=${o.styleType} · conf=${o.confidence}${hr}`
+  return `[TitleRewrite] applied postId=${postId} · "${o.originalTitle}" → "${o.newTitle}" · style=${o.styleType} · conf=${o.confidence}${desc}${hr}`
 }

@@ -16,7 +16,7 @@
  */
 
 /** 프롬프트 버전 — 로그에 남겨 A/B 비교와 사후 추적에 쓴다 */
-export const TITLE_REWRITE_PROMPT_VERSION = 'v1-2026-08-14-m5'
+export const TITLE_REWRITE_PROMPT_VERSION = 'v2-2026-08-17-p0-3-desc'
 
 export const TITLE_REWRITE_SYSTEM = `너는 "우리 나이가 어때서"(우나어)의 편집자다.
 40대 중반~60대 중반 여성이 몸의 변화·가족과 관계·돈과 일·노후와 일상을 나누는 커뮤니티다.
@@ -103,9 +103,30 @@ export const TITLE_REWRITE_SYSTEM = `너는 "우리 나이가 어때서"(우나�
 ■ riskFlags — 해당되면 모두, 없으면 ["NONE"]
   FACT_RISK · CAFE_CONTEXT_RISK · MEDICAL_CLAIM · TONE_RISK · TOO_CLICKBAIT · TOO_BLOGGY
 
+■ seoDescription — 검색 결과에 뜨는 설명문 (제목과 별개로 항상 만든다)
+
+  지금 우리 글의 설명문은 원문 첫 문장을 그대로 복사한 상태다. 그래서 검색엔진에는
+  원본 카페 글의 복제본처럼 보인다. 그걸 바꾸는 게 이 필드의 목적이다.
+
+  · 70~130자
+  · **원문 첫 문장을 옮겨 적지 마라.** 본문 앞부분을 재배열하는 것도 안 된다.
+    글쓴이가 어떤 상황에 놓였고 무엇을 묻고 있는지를 **네 문장으로 다시 써라.**
+  · 제목과 같은 문장을 반복하지 마라. 제목이 사건이면 설명문은 맥락과 감정을 준다.
+  · 본문에 없는 숫자·금액·질병·지역·가족관계·직업·나이를 만들지 마라
+  · 금지어(시니어·노인·어르신·실버·노년), 카페명, 낚시·공포·선정 표현 금지
+  · 실존 인물의 사생활·비방을 설명문에서 키우지 마라
+  · 국적·인종·종교 비하 표현 금지
+  · 의료·법률·금융·투자 단정 금지
+  · 우리 나이 여성 독자가 읽고 "아 이런 상황이구나" 하고 알 수 있게
+
+  ★ decision과 무관하게 항상 채운다.
+    KEEP   = 제목은 그대로 두되 설명문은 새로 쓴다
+    REWRITE = 제목·설명문 둘 다 새로 쓴다
+    REJECT  = 둘 다 빈 문자열
+
 ■ 출력 — 설명 없이 JSON 하나만
-{"decision":"REWRITE|KEEP|REJECT","rewrittenTitle":"","reason":"왜 이렇게 바꿨는지 한 줄","sourceSignals":["본문에서 끌어온 근거"],"styleType":"QUESTION|MONOLOGUE|EMOTION|QUOTE|EVENT|SHORT_RAW|DAILY_TALK","riskFlags":["NONE"],"confidence":0.0}
-KEEP·REJECT면 rewrittenTitle은 빈 문자열로 둔다.`
+{"decision":"REWRITE|KEEP|REJECT","rewrittenTitle":"","seoDescription":"","reason":"왜 이렇게 바꿨는지 한 줄","sourceSignals":["본문에서 끌어온 근거"],"styleType":"QUESTION|MONOLOGUE|EMOTION|QUOTE|EVENT|SHORT_RAW|DAILY_TALK","riskFlags":["NONE"],"confidence":0.0}
+KEEP·REJECT면 rewrittenTitle은 빈 문자열로 둔다. seoDescription은 REJECT일 때만 빈 문자열이다.`
 
 export interface TitleRewritePromptInput {
   title: string
