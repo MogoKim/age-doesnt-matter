@@ -36,7 +36,9 @@ const pad = (s: string, n: number) => (s + ' 그런 마음이 들어 여기에 �
 describe('길이 경계', () => {
   it(`하한은 ${MIN_DESC_LENGTH}자, 상한은 ${MAX_DESC_LENGTH}자다`, () => {
     expect(MIN_DESC_LENGTH).toBe(70)
-    expect(MAX_DESC_LENGTH).toBe(130)
+    // 130→140 (2026-08-18): P0-4 거부 표본 10건 중 DESC_TOO_LONG 8건, 그중 5건이
+    // 131~140 — 상한 바로 위에서 좋은 후보가 잘려 원문 발췌가 남았다. 160까지는 열지 않는다.
+    expect(MAX_DESC_LENGTH).toBe(140)
   })
 
   it('69자 → DESC_TOO_SHORT', () => {
@@ -44,13 +46,13 @@ describe('길이 경계', () => {
     expect(validateSeoDescription(d, NEW_TITLE, ORIGINAL_TITLE, BODY).reason).toBe('DESC_TOO_SHORT')
   })
 
-  it('131자 → DESC_TOO_LONG', () => {
-    const d = pad('새 직장에서 겪은 일을 적어봅니다.', 131)
+  it('141자 → DESC_TOO_LONG', () => {
+    const d = pad('새 직장에서 겪은 일을 적어봅니다.', 141)
     expect(validateSeoDescription(d, NEW_TITLE, ORIGINAL_TITLE, BODY).reason).toBe('DESC_TOO_LONG')
   })
 
-  it('70자·130자 경계는 길이로는 통과한다', () => {
-    for (const n of [70, 130]) {
+  it('70자·140자 경계는 길이로는 통과한다', () => {
+    for (const n of [70, 140]) {
       const d = pad('새 직장에서 겪은 일을 적어봅니다.', n)
       expect(validateSeoDescription(d, NEW_TITLE, ORIGINAL_TITLE, BODY).reason).not.toBe('DESC_TOO_SHORT')
       expect(validateSeoDescription(d, NEW_TITLE, ORIGINAL_TITLE, BODY).reason).not.toBe('DESC_TOO_LONG')
