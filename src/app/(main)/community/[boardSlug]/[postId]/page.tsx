@@ -38,6 +38,35 @@ export const dynamic = 'force-static'
 // 재조회 + 댓글 작성 revalidatePath/Tag가 즉시성 담당 → TTL은 비로그인 노출 주기만 결정.
 export const revalidate = 300
 
+/** fallback description에 넣을 게시판 맥락 라벨 (BoardType → 노출 문구) */
+const BOARD_CONTEXT_LABEL: Record<string, string> = {
+  STORY: '사는이야기',
+  LIFE2: '인생 2막',
+  HUMOR: '웃음방',
+  MENOPAUSE: '갱년기톡',
+}
+
+/** 제목이 길어도 description 총 길이가 널뛰지 않도록 앞부분만 쓴다 */
+const FALLBACK_TITLE_MAX_CHARS = 60
+
+/**
+ * seoDescription·preview가 **둘 다** 없는 글의 마지막 수단.
+ *
+ * 고정 문구 하나를 돌려주면 그 글들이 전부 같은 `<meta name="description">`을 달게 되고,
+ * 네이버 사이트 진단이 "동일 설명문 발견"으로 잡는다(2026-08-18 실측: PUBLISHED 109건이
+ * 같은 문장을 공유, 그중 95건이 웃음방). 그래서 제목·게시판으로 URL마다 다르게 만든다.
+ * 본문을 지어내지 않는다 — 제목에 이미 있는 사실만 재배열한다.
+ */
+function buildFallbackDescription(title: string, boardType: string): string {
+  const label = BOARD_CONTEXT_LABEL[boardType] ?? '우리 나이'
+  const flat = title.replace(/\s+/g, ' ').trim()
+  const head = flat.length > FALLBACK_TITLE_MAX_CHARS
+    ? `${flat.slice(0, FALLBACK_TITLE_MAX_CHARS)}…`
+    : flat
+  // 제목 5~60자 → 총 75~130자. 스니펫이 잘리지도, 너무 비어 보이지도 않는 구간이다.
+  return `${head} — 40대 50대 여성이 ${label}에서 나눈 이야기입니다. 우리 또래의 경험과 생각을 편하게 읽어보고, 내 이야기도 남겨보세요.`
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { boardSlug, postId: rawPostId } = await params
   const postId = decodeURIComponent(rawPostId)
@@ -56,7 +85,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const canonicalId = post.slug ?? postId
   const url = `${BASE_URL}/community/${boardSlug}/${canonicalId}`
-  const description = post.preview || '50·60대가 나이 걱정 없이 소통하는 따뜻한 커뮤니티'
+  const description = post.preview || buildFallbackDescription(post.title, post.boardType)
 
   return {
     title: post.seoTitle ?? post.title,
@@ -154,7 +183,8 @@ export default async function PostDetailPage({ params }: PageProps) {
   const forumComments = await getForumCommentsForJsonLd(resolvedId, DFP_COMMENT_LIMIT)
   const jsonLd = buildDiscussionForumJsonLd({
     title: post.title,
-    text: plainText || post.preview || '50·60대가 나이 걱정 없이 소통하는 따뜻한 커뮤니티',
+    // metadata description과 같은 fallback을 쓴다 — 두 곳이 갈라지면 같은 글이 서로 다른 설명을 갖는다.
+    text: plainText || post.preview || buildFallbackDescription(post.title, post.boardType),
     authorName: post.author.nickname,
     datePublished: new Date(post.createdAt).toISOString(),
     dateModified: new Date(post.updatedAt).toISOString(),
