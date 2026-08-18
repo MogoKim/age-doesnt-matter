@@ -228,9 +228,16 @@ export interface DescriptionValidationResult {
   detail: string
 }
 
-/** 네이버·구글 스니펫이 잘리지 않는 구간. 짧으면 정보가 없고 길면 뒤가 버려진다. */
+/**
+ * 네이버·구글 스니펫이 잘리지 않는 구간. 짧으면 정보가 없고 길면 뒤가 버려진다.
+ *
+ * 상한 130→140 (2026-08-18, P0-4 관찰 근거): 거부 표본 10건 중 DESC_TOO_LONG 8건이
+ * 전부 133~159자였고 그중 5건이 131~140 — 상한 바로 위에서 멀쩡한 후보가 잘리고,
+ * 거부되면 원문 발췌가 그대로 남아 P0-3의 목적과 반대로 간다. 141~160 표본(3건)이
+ * 있으므로 160까지는 열지 않는다 — 이번 완화는 140까지만이다.
+ */
 export const MIN_DESC_LENGTH = 70
-export const MAX_DESC_LENGTH = 130
+export const MAX_DESC_LENGTH = 140
 
 /** 원문 복사 판정에 쓰는 본문 앞부분 길이 — description은 대개 여기서 베껴진다 */
 const SOURCE_HEAD_CHARS = 120
