@@ -34,9 +34,14 @@ interface PageProps {
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'
 export const dynamic = 'force-static'
-// ISR Writes 절감: 봇 순회 재생성 완화(30→300s). 회원 댓글은 CommentSection의 no-store
+// ISR Writes 절감: 봇 순회 재생성 완화(30→300→3600s). 회원 댓글은 CommentSection의 no-store
 // 재조회 + 댓글 작성 revalidatePath/Tag가 즉시성 담당 → TTL은 비로그인 노출 주기만 결정.
-export const revalidate = 300
+//
+// 3600s 근거 (2026-08-19 Vercel Usage 실측, Jul 1~Aug 19):
+//   ISR Writes 10.79M = $56.10 — 전 항목 1위(다음이 Fast Origin Transfer $40.82).
+//   이 route의 ISR 엔트리가 10,003개로 전체 모수의 94%라 TTL이 그대로 비용에 곱해진다.
+//   글 본문은 발행 후 거의 바뀌지 않으므로 짧은 TTL의 이득이 없다.
+export const revalidate = 3600
 
 /** fallback description에 넣을 게시판 맥락 라벨 (BoardType → 노출 문구) */
 const BOARD_CONTEXT_LABEL: Record<string, string> = {
