@@ -1,5 +1,7 @@
 /**
- * 콘텐츠 변환기 — 외부 HTML 정제 + 출처 표시 + 미디어 보존 + YouTube 변환
+ * 콘텐츠 변환기 — 외부 HTML 정제 + 미디어 보존 + YouTube 변환
+ *
+ * 출처 꼬리표는 붙이지 않는다 (M2-10B, 2026-08-19). 원문에 원래 있던 출처 문구는 보존한다.
  */
 
 import sanitize from 'sanitize-html'
@@ -41,7 +43,8 @@ export function transformContent(
   rawHtml: string,
   sourceUrl: string,
   siteConfig: SiteConfig,
-  boardType: SheetBoardType = 'HUMOR',
+  /** 보드별 분기는 M2-10B에서 사라졌다(출처 꼬리표 폐지). 호출부 시그니처 유지를 위해 남긴다. */
+  _boardType: SheetBoardType = 'HUMOR',
 ): string {
   // 1. 불필요 요소 제거 (사이트별)
   let cleaned = rawHtml
@@ -67,11 +70,12 @@ export function transformContent(
   // 7. 빈 태그 정리
   processed = cleanEmptyTags(processed)
 
-  // 8. 출처 표시 — STORY(사는이야기)는 개인 글처럼 보이므로 출처 없음
-  if (boardType === 'HUMOR') {
-    // 외부 커뮤니티명 노출 금지 — 출처 문구는 유지하되 일반화 (P0 2026-07-16, siteConfig.name 직접 노출 금지)
-    processed = `${processed}\n<p>출처: 온라인 커뮤니티</p>`
-  }
+  // 8. 출처 꼬리표는 붙이지 않는다 (M2-10B, 2026-08-19 창업자 결정)
+  //    고객 화면에 "출처: 온라인 커뮤니티"가 보이면 외부글 모음처럼 읽혀
+  //    커뮤니티 정체성과 충돌한다. 이전에는 HUMOR에만 붙였으나 전 보드에서 제거한다.
+  //    ⚠️ 원문 본문에 원래 들어있던 출처 문구는 건드리지 않는다 —
+  //       그쪽은 normalize-source-references.ts가 일반화만 담당한다(수정 대상 아님).
+  //    내부 추적(Post.sourceUrl · Sheet A열 · note · cook82 queue)은 그대로 유지된다.
 
   return processed
 }
@@ -83,7 +87,8 @@ export function transformRawContent(
   rawContent: string,
   sourceUrl: string,
   siteName: string,
-  boardType: SheetBoardType = 'HUMOR',
+  /** 보드별 분기는 M2-10B에서 사라졌다(출처 꼬리표 폐지). 호출부 시그니처 유지를 위해 남긴다. */
+  _boardType: SheetBoardType = 'HUMOR',
 ): string {
   const isHtml = /<[a-z][\s\S]*>/i.test(rawContent)
 
@@ -102,11 +107,8 @@ export function transformRawContent(
       .join('\n')
   }
 
-  // STORY(사는이야기)는 개인 글처럼 보여야 하므로 출처 없음
-  if (boardType === 'HUMOR') {
-    // 외부 커뮤니티명 노출 금지 — 출처 문구는 유지하되 일반화 (P0 2026-07-16)
-    content = `${content}\n<p>출처: 온라인 커뮤니티</p>`
-  }
+  // 출처 꼬리표는 붙이지 않는다 (M2-10B, 2026-08-19 창업자 결정 — transformContent와 동일 정책)
+  //    원문에 원래 있던 출처 문구는 보존한다. 우리가 자동으로 덧붙이는 것만 없앤다.
 
   return content
 }
