@@ -96,6 +96,9 @@ agents/scripts/_*.ts
 # 매거진 로컬 러너 일일 결과 파일 (gitignore — 로컬 전용)
 agents/cafe/.magazine-daily-*.json
 
+# 82cook 후보 큐 생성물 (raw/queue/bridge-log jsonl — 로컬 전용, 커밋 금지)
+agents/cook82/data/
+
 # Local plugin state (bkit, OMC)
 .bkit/
 .omc/
