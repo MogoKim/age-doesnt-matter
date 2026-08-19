@@ -38,8 +38,16 @@ npx tsx agents/cook82/review.ts --status=REVIEW
 npx tsx agents/cook82/review.ts --approve=cook82:15:1234 --note="사유"
 
 # L3 — 전달 (기본 dry-run)
-npx tsx agents/cook82/publish-bridge.ts            # dry-run
-npx tsx agents/cook82/publish-bridge.ts --apply    # 실제 — 스위치 ON 필요
+npx tsx agents/cook82/publish-bridge.ts                     # dry-run
+npx tsx agents/cook82/publish-bridge.ts --apply --limit=1   # 첫 전달은 이 형태만 가능
+npx tsx agents/cook82/publish-bridge.ts --apply             # 2회차 이후
+```
+
+승인은 쉼표로 여러 건을 한 번에 지정할 수 있다. **하나라도 문제가 있으면 전부 적용하지 않는다**
+(부분 적용되면 어디까지 됐는지 되짚어야 하고, 승인은 되돌리기 어려운 동작이다).
+
+```bash
+npx tsx agents/cook82/review.ts --approve=cook82:15:111,cook82:15:222
 ```
 
 ## 안전장치
@@ -51,6 +59,9 @@ dry-run 기본  publish-bridge는 --apply 인자가 없으면 append를 호출�
               환경변수가 아니라 CLI 인자라서 크론에 잘못 걸려도 실행되지 않는다.
 사람 게이트   APPROVED로 가는 코드 경로가 없다. review.ts로만 가능하다.
 REJECT 불가역 REJECT 후보는 승인할 수 없다. 댓글 수로도 구제되지 않는다.
+첫 전달 1건  이 큐가 Sheet에 보낸 적이 없으면 --apply 만으로는 거부되고 --limit=1 을 요구한다.
+             (감사 로그와 큐 상태를 둘 다 보고 판정 — 한쪽이 지워져도 오판하지 않는다)
+승인 원자성  다중 승인은 all-or-nothing. 하나라도 문제가 있으면 큐를 건드리지 않는다.
 승인 보존     gate 재판정은 사람이 바꾼 상태를 덮어쓰지 않는다.
 guardrail     제3자 범죄/의혹이 승인선을 넘으면 L3가 즉시 정지한다(유일한 자동 차단).
 ```

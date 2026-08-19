@@ -50,19 +50,19 @@ function printRows(rows: QueueEntry[], limit: number): void {
     console.log('   (해당 없음)')
     return
   }
+  // 후보당 2줄로 압축한다. 15건이 한 화면(30줄)에 들어와야 훑을 수 있다.
+  // 번호는 이 출력 안에서만 유효한 표기다 — 상태 변경은 candidateId로만 한다.
   rows.slice(0, limit).forEach((r, i) => {
-    const et = r.entertainmentType ? ` [${r.entertainmentType}]` : ''
+    const et = r.entertainmentType ? ' 🎬' : ''
     const flags = r.riskFlags.length > 0 ? `  ⚠️ ${r.riskFlags.join(',')}` : ''
-    // 번호는 이 출력 안에서만 유효한 임시 표기다. 상태 변경은 candidateId로만 한다.
+    const num = r.candidateId.split(':')[2] ?? ''
     console.log(
-      `\n   [${String(i + 1).padStart(2)}] 댓글${String(r.commentCount).padStart(3)}(${r.commentSignal.padEnd(6)}) ` +
-        `ns=${r.nsScore} ff=${r.ffScore} ${r.suggestedBoard.padEnd(10)}${et}`,
+      `  ${String(i + 1).padStart(2)}. 💬${String(r.commentCount).padStart(2)} ns${r.nsScore} ff${r.ffScore} ` +
+        `${r.suggestedBoard.padEnd(9)}${et} ${r.title.slice(0, 44)}${flags}`,
     )
-    console.log(`        ${r.title.slice(0, 60)}${flags}`)
-    console.log(`        ${r.sourceUrl}`) // 원문을 바로 열 수 있게
-    console.log(`        ${r.candidateId}`)
+    console.log(`      ${r.candidateId}  https://www.82cook.com/entiz/read.php?bn=15&num=${num}`)
   })
-  if (rows.length > limit) console.log(`   … 외 ${rows.length - limit}건`)
+  if (rows.length > limit) console.log(`  … 외 ${rows.length - limit}건`)
 }
 
 export function main(): void {
@@ -83,30 +83,50 @@ export function main(): void {
   ]
 
   for (const [flag, to] of actions) {
-    const id = arg(flag)
-    if (!id) continue
-    const idx = rows.findIndex((r) => r.candidateId === id)
-    if (idx < 0) {
-      console.log(`[review] 후보를 찾을 수 없습니다: ${id}`)
+    const raw = arg(flag)
+    if (!raw) continue
+
+    // 다중 지정: --approve=id1,id2,id3
+    // ★ all-or-nothing — 하나라도 문제가 있으면 전부 적용하지 않는다.
+    //   부분 적용되면 "어디까지 됐지?"를 되짚어야 하고, 승인은 되돌리기 어려운 동작이다.
+    const ids = raw.split(',').map((s) => s.trim()).filter((s) => s.length > 0)
+    const targets: number[] = []
+    const problems: string[] = []
+
+    for (const id of ids) {
+      const idx = rows.findIndex((r) => r.candidateId === id)
+      if (idx < 0) {
+        problems.push(`${id} — 큐에 없음`)
+        continue
+      }
+      if (rows[idx].status === 'REJECT') {
+        problems.push(`${id} — REJECT 후보(${rows[idx].gateReason})는 승인할 수 없음`)
+        continue
+      }
+      if (targets.includes(idx)) continue // 같은 id 중복 지정은 무시
+      targets.push(idx)
+    }
+
+    if (problems.length > 0) {
+      console.log(`[review] 중단: ${problems.length}건에 문제가 있어 ${ids.length}건 전부 적용하지 않았습니다.`)
+      problems.forEach((p) => console.log(`   ✗ ${p}`))
+      console.log('[review] 큐는 변경되지 않았습니다. 문제 항목을 빼고 다시 실행하세요.')
       process.exitCode = 1
       return
     }
-    const before = rows[idx]
-    if (before.status === 'REJECT') {
-      // 댓글 수나 기분으로 REJECT를 되살리지 않는다 (M2-7 E절 원칙)
-      console.log(`[review] 거부: REJECT 후보는 승인할 수 없습니다 — ${before.gateReason}`)
-      process.exitCode = 1
-      return
+
+    for (const idx of targets) {
+      const before = rows[idx]
+      rows[idx] = transition(before, to, note)
+      console.log(`[review] ${before.candidateId} : ${before.status} → ${to}`)
+      console.log(`[review]   ${before.title.slice(0, 60)}`)
     }
-    rows[idx] = transition(before, to, note)
     saveQueue(rows)
-    console.log(`[review] ${id} : ${before.status} → ${to}`)
-    console.log(`[review]   ${before.title.slice(0, 60)}`)
-    console.log('[review] Sheet write 0 · DB write 0 (큐 파일만 갱신)')
+    console.log(`[review] ${targets.length}건 적용. Sheet write 0 · DB write 0 (큐 파일만 갱신)`)
     return
   }
 
-  // 조회 모드
+  // 조회 모드 — 위 for 문에서 어떤 액션 인자도 걸리지 않았을 때만 도달한다
   const status = (arg('status') ?? 'PASS_CANDIDATE') as CandidateStatus
   const limit = Number(arg('limit') ?? '15')
   const filtered = rows
@@ -117,9 +137,10 @@ export function main(): void {
   console.log(`[review] 큐 ${rows.length}건 — PASS ${count('PASS_CANDIDATE')} · REVIEW ${count('REVIEW')} · REJECT ${count('REJECT')} · APPROVED ${count('APPROVED')} · HOLD ${count('HOLD')}`)
   console.log(`\n## ${status} (${filtered.length}건, 댓글 신호순)`)
   printRows(filtered, limit)
-  console.log('\n승인:  npx tsx agents/cook82/review.ts --approve=<candidateId>')
-  console.log('보류:  npx tsx agents/cook82/review.ts --hold=<candidateId>')
-  console.log('반려:  npx tsx agents/cook82/review.ts --decline=<candidateId>')
+  console.log('\n승인:  npx tsx agents/cook82/review.ts --approve=<id>[,<id>,...]')
+  console.log('보류:  npx tsx agents/cook82/review.ts --hold=<id>[,<id>,...]')
+  console.log('반려:  npx tsx agents/cook82/review.ts --decline=<id>[,<id>,...]')
+  console.log('       (여러 건은 쉼표로. 하나라도 문제가 있으면 전부 적용하지 않습니다)')
 }
 
 const invokedDirectly = process.argv[1]?.includes('review')

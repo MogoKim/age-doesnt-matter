@@ -90,9 +90,21 @@ export function checkGuardrails(rows: QueueEntry[]): string | null {
   return null
 }
 
+/**
+ * 이 큐가 Sheet로 무언가를 보낸 적이 있는가.
+ * 감사 로그와 큐 상태를 **둘 다** 본다 — 한쪽이 지워져도 첫 전달로 오판하지 않기 위해서다.
+ */
+function hasEverSent(rows: QueueEntry[]): boolean {
+  const loggedBefore = existsSync(BRIDGE_LOG_PATH) && readFileSync(BRIDGE_LOG_PATH, 'utf-8').trim().length > 0
+  const inQueue = rows.some((r) => r.sentToSheetAt !== null || r.status === 'SENT_TO_SHEET' || r.status === 'PUBLISHED')
+  return loggedBefore || inQueue
+}
+
 export async function main(): Promise<void> {
   const apply = process.argv.includes('--apply')
   const enabled = process.env.COOK82_BRIDGE_ENABLED === 'true'
+  const limitArg = process.argv.find((a) => a.startsWith('--limit='))
+  const explicitLimit = limitArg ? Number(limitArg.split('=')[1]) : null
 
   const rows = loadQueue()
   if (rows.length === 0) {
@@ -107,11 +119,32 @@ export async function main(): Promise<void> {
     return
   }
 
-  const approved = rows.filter((r) => r.status === 'APPROVED')
-  const targets = approved.slice(0, DAILY_LIMIT)
+  const firstEver = !hasEverSent(rows)
 
-  console.log(`[bridge] APPROVED ${approved.length}건 · 이번 전달 대상 ${targets.length}건 (1일 상한 ${DAILY_LIMIT})`)
-  console.log(`[bridge] mode=${apply ? 'APPLY' : 'DRY-RUN'} · killSwitch=${enabled ? 'ON' : 'OFF'}`)
+  // ★ 첫 실제 전달은 반드시 1건이어야 한다.
+  //   Sheet 행 생성은 스크래퍼 자동 발행으로 이어지므로 되돌리기가 가장 어려운 첫 동작이다.
+  //   `--limit=1`을 손으로 적게 해서, 사람이 "지금 1건만 보낸다"고 명시적으로 선언하게 만든다.
+  if (firstEver && apply && explicitLimit !== 1) {
+    console.error('[bridge] 🛑 중단: 첫 Sheet 전달은 --limit=1 로만 가능합니다.')
+    console.error('[bridge]    이 큐는 아직 한 번도 Sheet에 전달한 적이 없습니다.')
+    console.error('[bridge]    실행 예: npx tsx agents/cook82/publish-bridge.ts --apply --limit=1')
+    process.exitCode = 1
+    return
+  }
+
+  const effectiveLimit =
+    explicitLimit !== null && Number.isFinite(explicitLimit) && explicitLimit > 0
+      ? Math.min(explicitLimit, DAILY_LIMIT)
+      : DAILY_LIMIT
+
+  const approved = rows.filter((r) => r.status === 'APPROVED')
+  const targets = approved.slice(0, effectiveLimit)
+
+  console.log(`[bridge] APPROVED ${approved.length}건 · 이번 전달 대상 ${targets.length}건 (상한 ${effectiveLimit}/${DAILY_LIMIT})`)
+  console.log(`[bridge] mode=${apply ? 'APPLY' : 'DRY-RUN'} · killSwitch=${enabled ? 'ON' : 'OFF'} · 첫전달=${firstEver ? 'YES' : 'no'}`)
+  if (firstEver && !apply) {
+    console.log('[bridge] ℹ️ 이 큐의 첫 전달입니다. 실제 전달 시 --apply --limit=1 이 모두 필요합니다.')
+  }
 
   for (const t of targets) {
     const tab = BOARD_TO_TAB[t.suggestedBoard]
