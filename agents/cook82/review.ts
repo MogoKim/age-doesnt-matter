@@ -50,15 +50,18 @@ function printRows(rows: QueueEntry[], limit: number): void {
     console.log('   (해당 없음)')
     return
   }
-  for (const r of rows.slice(0, limit)) {
+  rows.slice(0, limit).forEach((r, i) => {
     const et = r.entertainmentType ? ` [${r.entertainmentType}]` : ''
     const flags = r.riskFlags.length > 0 ? `  ⚠️ ${r.riskFlags.join(',')}` : ''
+    // 번호는 이 출력 안에서만 유효한 임시 표기다. 상태 변경은 candidateId로만 한다.
     console.log(
-      `   ${r.candidateId.padEnd(18)} 댓글${String(r.commentCount).padStart(3)}(${r.commentSignal.padEnd(6)}) ` +
+      `\n   [${String(i + 1).padStart(2)}] 댓글${String(r.commentCount).padStart(3)}(${r.commentSignal.padEnd(6)}) ` +
         `ns=${r.nsScore} ff=${r.ffScore} ${r.suggestedBoard.padEnd(10)}${et}`,
     )
-    console.log(`   ${' '.repeat(18)} ${r.title.slice(0, 60)}${flags}`)
-  }
+    console.log(`        ${r.title.slice(0, 60)}${flags}`)
+    console.log(`        ${r.sourceUrl}`) // 원문을 바로 열 수 있게
+    console.log(`        ${r.candidateId}`)
+  })
   if (rows.length > limit) console.log(`   … 외 ${rows.length - limit}건`)
 }
 

@@ -1,5 +1,5 @@
 /**
- * 82cook 자유게시판 gate v3.2.1 — **순수 함수**
+ * 82cook 자유게시판 gate v3.2.2 — **순수 함수**
  *
  * 제약 (설계상 절대):
  *   - AI API 호출 없음 (비용 0원)
@@ -7,9 +7,16 @@
  *   - DB/Sheet write 없음
  *   - 전역 상태 없음 — 같은 입력이면 항상 같은 출력
  *
- * v3.2 대비 변경 (M2-7 J절 잔여 정책 2건 → 그래서 버전이 v3.2.1이다):
+ * v3.2 대비 변경 (M2-7 J절 잔여 정책 2건):
  *   [P1] 작품어 단독 연예 글: 작품명·인물·시청/회상 표현·댓글수 4신호 중 2개 이상이면 E4로 인식
  *   [P2] 기업 비하 / 주식 선동: 자동 PASS 금지. 기본 REVIEW, 강하면 REJECT
+ *
+ * v3.2.1 대비 변경 (M2-8 첫 실험에서 발견된 누출 2건 → v3.2.2):
+ *   [P3] 국적·인종 비하 + 실존 인물 비방: agents/core/celebrity-race-blocklist.ts를 **재사용**한다.
+ *        새 사전을 만들지 않는다 — 같은 금지 정책이 두 벌로 갈라지면 반드시 어긋난다.
+ *        (누출 사례: "중국인들 민폐로 또 세금낭비"가 PASS로 통과했다)
+ *   [P4] 정치 사전에 정치인 실명·당원 용어 보강
+ *        (누출 사례: "정청래한테 화환보낸 리박세작 B시민 권리당원"이 REVIEW에 남았다)
  *
  * 연예 정책 (창업자 결정, 후퇴 금지):
  *   - hard reject 폐기. 신체·성형형(E3)도 통과 대상
@@ -17,9 +24,13 @@
  *   - 연예 글 보드는 웃음방(HUMOR) 기본
  */
 
+// [P3] 국적·인종 비하 / 실존 인물 비방은 기존 SSoT를 재사용한다.
+// 이 모듈은 "지칭어 단독으로는 절대 차단하지 않고, 비하어와 결합될 때만 차단한다"는
+// 실측 기반 설계를 이미 갖고 있다(발행 1,353건 기준 과차단 4.58% → 0.37%).
+import { findCelebrityScandalSignal, findRacialDegradeSignal } from '../core/celebrity-race-blocklist.js'
 import type { EntertainmentType, GateResult, SuggestedBoard } from './types.js'
 
-export const GATE_VERSION = 'v3.2.1'
+export const GATE_VERSION = 'v3.2.2'
 
 // ── [1] 정치 ────────────────────────────────────────────────
 const POLITICS = [
@@ -27,6 +38,10 @@ const POLITICS = [
   '민주당', '국힘', '국민의힘', '정성호', '김민석', '이재명', '윤석열', '한동훈', '조국',
   '대통령', '국회의원', '여당', '야당', '총선', '대선', '탄핵', '사드', '청문회',
   '좌파', '우파', '정권', '친일', '의원님', '정당',
+  // [P4] v3.2.2 보강 — M2-8 실험에서 REVIEW로 새어나간 사례 반영
+  '정청래', '추미애', '박지원', '홍준표', '이준석', '김어준', '문재인', '박근혜',
+  '권리당원', '당원', '최고위', '당대표', '당권', '개딸', '수박', '태극기',
+  '리박스쿨', '세작', '공작', '국짐', '개혁신당', '조국혁신당', '진보당',
 ]
 
 // ── [2] 연예 — 명단 + 패턴 ──────────────────────────────────
@@ -213,6 +228,13 @@ export function judge(title: string, commentCount = 0): GateResult {
     }
   }
   if (isNews(t)) riskFlags.push('뉴스전재')
+
+  // [P3] 국적·인종 비하 / 실존 인물 비방 — 기존 SSoT 재사용.
+  // 82cook 후보는 목록 단계라 본문이 없다. 제목만 넘기면 결합 판정이 제목 안에서 이뤄진다.
+  const racial = findRacialDegradeSignal(t, '')
+  if (racial) riskFlags.push(racial)
+  const scandal = findCelebrityScandalSignal(t, '')
+  if (scandal) riskFlags.push(scandal)
 
   const celeb = isCeleb(t, commentCount)
   const entertainmentType = celeb ? celebType(t) : null
