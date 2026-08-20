@@ -2159,6 +2159,8 @@ npx tsx scripts/create-admin.ts <이메일> <닉네임> <비밀번호>
 
 ### 14-10. 우나어 생존 시에도 가져갈 개선 backlog
 
+> 📌 **이 절은 원본이다. 전체 24건 통합 관리는 §19를 본다.**
+
 ```
 1. 🔴 재해 복구 절차 문서화 — 현재 DB 소실 시 46모델 복원 절차가 없었다
       → §14-5~14-8이 그 절차다. 현재 서비스에도 그대로 적용된다
@@ -3053,6 +3055,8 @@ launchd-alert.sh       2개 — UNAO_WORKDIR 미설정 시 **old workspace fallb
 
 ### 18-7. 우나어 생존 시에도 가져갈 개선 backlog
 
+> 📌 **이 절은 원본이다. 전체 24건 통합 관리는 §19를 본다.**
+
 ```
 1. 🔴 ops-doctor 강화 — write runner의 sync 상태 검사
    현재 scripts/ops-doctor.ts:344-349 는 "git 관리 중"이면 PASS다(O1 확인)
@@ -3102,6 +3106,179 @@ launchd-alert.sh       2개 — UNAO_WORKDIR 미설정 시 **old workspace fallb
 | `run-script.yml` 권한 범위 | 임의 스크립트 실행 가능 | 워크플로우 정독 |
 | GHA 최근 실행 성공률 | `gh run list` 미실행 | `gh run list --limit 50` |
 | `figma-use-mcp` · `figma-ws` (PID 499·510) | **[추정]** 개발도구이며 운영 무관 | plist 정독 |
+
+---
+
+## 19. 우나어 생존 시 개선 backlog (통합) — UNAO-SURVIVAL-BACKLOG-1/2, 2026-08-20
+
+> **이 절은 M3 준비 중 발견한 "우나어 자체의 문제"를 모은 것이다.**
+> M3가 실행되지 않더라도(= 네이버가 회복되더라도) **이 과제들은 그대로 남는다.**
+>
+> **§14-10 · §18-7은 삭제하지 않는다.** 두 절은 각 감사의 맥락 안에 있는 원본이고,
+> 이 §19가 **전체를 P0~P3로 통합한 단일 관리 지점**이다.
+> 충돌이 아니라 포함 관계다 — §14-10(7건) + §18-7(6건) ⊂ §19(24건).
+
+### 19-1. 현재 판정
+
+```
+전체 과제        24건
+문서화됨         13건  (§14-10 7건 + §18-7 6건)
+🔴 미문서화      11건  ← 대화에만 있어 세션 종료 시 휘발할 뻔했다
+
+⚠️ 특히 C 카테고리(봇 댓글/BotLog/노출 guard) 5건이 **전부 미문서화**였다.
+   M3-BOT 절에 흩어져는 있으나 "우나어 생존 시 과제"로 분류된 적이 없어,
+   판정 후 우나어를 고칠 때 놓칠 가능성이 높았다.
+```
+
+**카테고리별 문서화 현황**
+
+| 카테고리 | 건수 | 문서화 |
+|---|---|---|
+| A. 운영 실행 경로 / runner / launchd / GHA | 6 | 6/6 ✅ (§18-7) |
+| B. ops-doctor / 재발 방지 guard | 3 | 1/3 ⚠️ |
+| **C. 봇 댓글 / BotLog / 노출 guard** | **5** | **0/5 🔴** |
+| **D. SEO / canonical / sameAs** | **3** | **0/3 🔴** |
+| E. 게시판 IA | 2 | 1/2 |
+| F. DB / migration / seed / admin | 5 | 5/5 ✅ (§14-10) |
+| G. 외부글 archive / Voice Engine | 2 | 2/2 ✅ (§16) |
+| **H. env / secrets / observability** | **1** | **0/1 🔴** |
+| **I. 약관 / 사업자 / 신뢰 신호** | **1** | **0/1 🔴** |
+
+### 19-2. 🔴 P0 — 생존 판정 직후 즉시 (4건)
+
+| # | 과제명 | 출처 | AS-IS (실측) | 우나어 적용 | 시점 | 파일 | 검증 | 창업자 결정 |
+|---|---|---|---|---|---|---|---|---|
+| **P0-1** | **ops-doctor behind 검사 부재** | OPS-RUNNER-1 · §18-7 | `ops-doctor.ts:344-349`가 `isGitRepo()`면 무조건 `PASS`. **HEAD·dirty만 보고 behind를 안 본다** | ✅ 예 | **지금도 가능** | `scripts/ops-doctor.ts` | unao-ops(140 behind)가 FATAL로 뜨는지 | 불필요 |
+| **P0-2** | **BotLog 무기록 3경로** | M3-BOT-6 | `comment-activator`·`reply-chain-driver`·`controversy-chain`이 `botLog.create` **0건**. 봇 댓글을 쓰는데 기록이 없다 | ✅ 예 | **지금도 가능** | 위 3파일 | BotLog에 action 기록 확인 | 불필요 |
+| **P0-3** | **재해 복구 절차 부재** | M3-OPS-7 · §14-10 | DB 소실 시 46모델 복원 절차가 문서화된 적 없었다 | ✅ 예 | **지금 가능**(문서화만) | `.claude/commands/prisma-guide/` | 절차 문서 존재 | 불필요 |
+| **P0-4** | **migration ↔ 스키마 9모델 불일치** | M3-OPS-7 · §14-10 | schema 46 vs migrations 39. `AdminQueue`·`Notice`·`Popup` 등 9모델이 이력에 없다 | ✅ 예 | 🔴 **판정 후** | `prisma/migrations/` | `migrate diff` 46/46 | 필요 |
+
+⚠️ **P0-1은 O1 사고의 직접 재발 방지책이다.** 현재 코드는 stale을 탐지하지 못한다.
+⚠️ **P0-1·P0-2·P0-3은 판정 전에도 안전하다.** SEO·DB·고객 화면에 영향이 없다.
+🚫 **단 이 문서 작성 시점에는 코드를 수정하지 않는다.** 착수는 창업자 지시 후다.
+
+### 19-3. 🟡 P1 — 생존 판정 후 (8건)
+
+| # | 과제명 | 출처 | AS-IS (실측) | 시점 | 파일 | 검증 |
+|---|---|---|---|---|---|---|
+| **P1-1** | `launchd-alert.sh` → `wrapper.mjs` 통일 | OPS-RUNNER-1 · §18-7 | 2개만 alert.sh(`naver-cafe-sheet-scraper`·`session-refresh`). **UNAO_WORKDIR 지워지면 구 경로로 조용히 fallback** | 판정 후 | plist 2개 | 로그 첫 줄 workdir |
+| **P1-2** | 🔴 **봇 cap 정책 3벌 불일치** | M3-BOT-5 | `constitution.yaml:351`=**5** / `comment-activator:23`=**5** / `wave-processor` globalCap=**20·14·10**. **코드가 헌법값을 4배 초과** | 판정 후 | 위 3파일 | 헌법값과 코드 일치 |
+| **P1-3** | 🔴 `USER_POST_WAVE` BotLog에 postId 없음 | M3-BOT-3b | `details: {processed, failed}`만. **사후 추적 불가** — 487건 출처 확정이 어려웠던 원인 | 판정 후 | `user-post-wave-processor.ts:229` | details에 postId 포함 |
+| **P1-4** | 🔴 JSON-LD `sameAs` 구 네이버 블로그 | M3-OPS-6 | `(main)/page.tsx:178` — **현재 서비스에도 존재**. 블로그 운영 여부 미확인 | 🚫 판정 후 | `(main)/page.tsx` | `curl \| grep sameAs` |
+| **P1-5** | 🔴 `BASE_URL` fallback 37곳 산재 | M3-OPS-6b | `breadcrumb.ts:3` 주석은 *"BASE_URL은 여기 한 곳에서만 관리"* 라는데 실제 **37곳**. **주석이 사실과 다르다** | 🚫 판정 후 | 37파일 | `grep -c` |
+| **P1-6** | `BoardConfig` 단일 장애점 | M3-OPS-4 · §14-10 | fallback 없음. 비면 전 게시판 404 | 🚫 판정 후 | `queries/boards.ts` | 빈 상태 렌더 |
+| **P1-7** | `agents-sheet-viral` ↔ `agents-cafe-wave` 중복 | OPS-RUNNER-1 · §18-7 | 둘 다 `seed viral-waves`를 `*/5`로 호출 | 판정 후 | 워크플로우 2개 | BotLog 중복 흔적 |
+| **P1-8** | 🔴 **외부글 공급원 93% 편중** | M3-OPS-10 | SHEET 2,945건 중 cook82 **53%** + navercafe **40%**. **한 곳 막히면 절반 끊긴다** | 판정 후 | 공급 파이프라인 | 출처 다변화 |
+
+⚠️ **P1-8은 이미 발생한 현재진행형 리스크다.** image-router DAY_CAP 6/6 · navercafe/bboom 공급 중단이 그 증상이다.
+→ 근본 해법은 **§19-7 Voice Engine**이다.
+
+### 19-4. 🟢 P2 — D+30 (8건)
+
+| # | 과제명 | 출처 | AS-IS |
+|---|---|---|---|
+| P2-1 | `prisma-guide`가 Prisma 7 이전 기준 | M3-OPS-7 · §14-10 | `prisma.config.ts` 미반영. **[추정]** 제거된 플래그(`--to-schema-datamodel`) 잔존 |
+| P2-2 | `seed.ts` 운영+테스트 데이터 혼재 | M3-OPS-4 · §14-10 | BoardConfig(운영) + 유저·글·댓글(테스트)이 한 파일 |
+| P2-3 | `create-admin.ts` 예시 이메일 불일치 | M3-OPS-7b · §14-10 | `admin@unao.com` vs 실제 도메인 |
+| P2-4 | 🔴 `create-admin.ts:5` `[WATCH]` 잔재 | M3-OPS-7b | *"2주 모니터링 대상"* 로그. 종료 시점 불명 |
+| P2-5 | `run-script.yml` 권한 범위 | OPS-RUNNER-1 · §18-7 | dispatch 전용이나 무엇이든 실행 가능 |
+| P2-6 | repo plist ↔ 실물 plist diff 자동 대조 | OPS-RUNNER-1 · §18-7 | 파일명만 일치 확인. 내용 검사 없음 |
+| P2-7 | 🔴 `WEEKLY` 숨김이 3곳 분산 | M3-OPS-4 | `schema.prisma` 1 · `board-registry.ts` 3 · `seed.ts` 3 |
+| P2-8 | 🔴 `sentiment` 필드 미채움 | M3-OPS-10 | `CafePost.sentiment`가 전부 빈 값. **[추정]** psych-analyzer 미구현 |
+
+### 19-5. ⚪ P3 — 관찰·보류 (4건)
+
+| # | 과제명 | 출처 | 비고 |
+|---|---|---|---|
+| P3-1 | `unao-ops` 정리 여부 | OPS-RUNNER-1 · §18-7 | 140 behind · plist 참조 0건. 🚫 **창업자 지시로 삭제 안 함** |
+| P3-2 | 🔴 `Comment`에 생성 경로 필드 없음 | M3-BOT-3b | migration 필요. 487건 출처 확정 불가의 근본 원인 |
+| P3-3 | 🔴 `PersonaMemory` 모델 | M3-BOT-1/4 | migration 필요. 봇 장기 기억 |
+| P3-4 | `BOARD_REGISTRY`는 잘 설계된 자산 | M3-OPS-4 · §14-10 | 개선 과제가 아니라 **보존 기록**. slug·sitemap·prewarm이 여기서 파생 |
+
+### 19-6. 고아 방지 필드 (전 과제 공통)
+
+```
+상태        미착수 (24/24)   ← 이 문서 작성 시점 전량
+다음 트리거  P0-1·P0-2·P0-3  창업자 지시 (판정 전에도 안전)
+            그 외 20건       2026-08-22 네이버 수집 재관찰 판정
+소유자      Claude(실행) / Codex(검증) / 창업자(승인)
+종료 조건   과제별 '검증' 열 통과 + 이 표에서 ✅ 완료로 갱신
+
+⚠️ 이 표는 완료 시 지우지 않고 ✅로 갱신한다. 이력이 남아야 재발을 안다.
+```
+
+### 19-7. Voice Engine — M3 전용이 아니다
+
+```
+🔴 우나어 생존 시에도 핵심 자산이다.
+   §16이 "M3 D+30 과제"로 적었으나, 실제로는 우나어의 P1-8을 푸는 근본 해법이다.
+
+연결
+  P1-8  외부글 공급원 93% 편중 (cook82 53% + navercafe 40%)
+        → 한 곳 막히면 공급 절반이 끊긴다. 이미 발생 중
+  해법  CafePost 31,501건의 비식별 메타로 "주제"를 확보하면
+        원문 공급원이 바뀌어도 콘텐츠 기획이 유지된다
+
+시점  D+30 이후. 🚫 D-day·판정 전 사용 금지 (§16-3)
+전제  🔔 창업자 결정 — CafePost 비식별 메타 사용 승인 (이월 중)
+상세  §16 전체
+```
+
+### 19-8. 🚫 우나어가 생존해도 지금 하면 안 되는 것
+
+```
+🚫 P1-4 sameAs 제거              SEO 변경. 수집 10건/day라 검증 불가
+🚫 P1-5 BASE_URL 37곳 정리        SEO 노출면. CI seo-guard 대상
+🚫 P0-4 migration 9모델 정리      DB 이력 조작. 판정 전 변수 추가 금지
+🚫 P1-6 BoardConfig fallback      게시판 렌더 로직. 관찰 중 변경 금지
+🚫 P1-7 중복 워크플로우 정리       봇 댓글 경로. M3-BOT-6 선행
+🚫 P2-7 WEEKLY 정리               enum 변경. 위험 대비 효과 없음
+🚫 P3-1 unao-ops 삭제             창업자 지시
+🚫 HUMOR 대량 발행                보류 확정 (§11)
+🚫 canonical / robots / sitemap 변경  CI seo-guard + 관찰 오염
+
+공통 원칙
+  네이버 수집이 10건/day라 **무엇을 바꿔도 검증이 안 된다.**
+  변수를 늘리면 원인 규명이 불가능해진다.
+```
+
+### 19-9. 🚫 M3 전용 — 우나어에 적용 금지
+
+```
+🚫 브랜드 문자열 치환 41지점 (§17)      우나어는 브랜드를 안 바꾼다
+🚫 BoardConfig 3행 축소 (§14-2)         HUMOR·LIFE2·JOB을 지우면 현재 콘텐츠가 사라진다
+🚫 /jobs notFound (§14-1④)              현재 서비스는 jobs를 운영 중이다
+🚫 /community/talk slug 변경 (§14-1②)   기존 URL 색인이 깨진다
+🚫 새 Supabase 초기화 (§14-5)           운영 DB에 실행하면 재앙이다
+🚫 매거진 3건 전략 (§15)                 우나어 매거진은 262건 자산이 있다
+🚫 페르소나 30명 축소 (M3-BOT-4)         우나어는 79명 운영 중이다
+🚫 D-day runner 정책 (§18-6)            제외/분리는 새 브랜드 기준이다
+
+⚠️ 예외 — M3-BOT-3 safety guard는 우나어에도 유효하다.
+   의료 발화 차단은 브랜드 무관이다.
+   다만 M3-BOT-6 22단계 전체를 우나어에 적용하면
+   기존 보드 댓글이 급감한다(globalCap 10~20 → 2). 신중해야 한다.
+```
+
+### 19-10. 확정 vs 추정 구분
+
+```
+✅ 코드·실측으로 확정 (18건)
+   ops-doctor:344-349 behind 미검사 · BotLog 0건 3경로
+   schema 46 vs migrations 39 · cap 5/5/20·14·10 · USER_POST_WAVE details
+   sameAs:178 · BASE_URL fallback 37 · WEEKLY 3곳 · alert.sh 2개
+   launchd 16개 unao-prod · unao-ops 140 behind · SHEET 93% 편중
+   CafePost 31,501 · ageSignal 50s 18,221 · sentiment 빈 값
+   seed.ts 혼재 · create-admin 예시 이메일
+
+⚠️ 추정 (6건)
+   [추정] agents-sheet-viral ↔ cafe-wave 중복 영향 — 미검증
+   [추정] BoardConfig 비면 전 게시판 404 — 코드상 그렇게 보이나 실행 확인 안 함
+   [추정] sentiment 미채움 = psych-analyzer 미구현
+   [추정] prisma-guide에 제거된 플래그 잔존 — 전문 재확인 안 함
+   [추정] P0 착수 순서의 효과 — 우선순위는 Claude 판단이다
+   [추정] sameAs 제거가 SEO에 미치는 영향 — 검증 불가
+```
 
 ---
 
