@@ -3121,7 +3121,7 @@ launchd-alert.sh       2개 — UNAO_WORKDIR 미설정 시 **old workspace fallb
 ### 19-1. 현재 판정
 
 ```
-전체 과제        24건
+전체 과제        25건  (P0-3B에서 P2-9 추가)
 문서화됨         13건  (§14-10 7건 + §18-7 6건)
 🔴 미문서화      11건  ← 대화에만 있어 세션 종료 시 휘발할 뻔했다
 
@@ -3139,7 +3139,7 @@ launchd-alert.sh       2개 — UNAO_WORKDIR 미설정 시 **old workspace fallb
 | **C. 봇 댓글 / BotLog / 노출 guard** | **5** | **0/5 🔴** |
 | **D. SEO / canonical / sameAs** | **3** | **0/3 🔴** |
 | E. 게시판 IA | 2 | 1/2 |
-| F. DB / migration / seed / admin | 5 | 5/5 ✅ (§14-10) |
+| F. DB / migration / seed / admin | 6 | 6/6 ✅ (§14-10 · P2-9) |
 | G. 외부글 archive / Voice Engine | 2 | 2/2 ✅ (§16) |
 | **H. env / secrets / observability** | **1** | **0/1 🔴** |
 | **I. 약관 / 사업자 / 신뢰 신호** | **1** | **0/1 🔴** |
@@ -3150,7 +3150,7 @@ launchd-alert.sh       2개 — UNAO_WORKDIR 미설정 시 **old workspace fallb
 |---|---|---|---|---|---|---|---|---|
 | **P0-1** | **ops-doctor behind 검사 부재** | OPS-RUNNER-1 · §18-7 | `ops-doctor.ts:344-349`가 `isGitRepo()`면 무조건 `PASS`. **HEAD·dirty만 보고 behind를 안 본다** | ✅ 예 | **지금도 가능** | `scripts/ops-doctor.ts` | unao-ops(140 behind)가 FATAL로 뜨는지 | 불필요 |
 | **P0-2** | **BotLog 무기록 3경로** | M3-BOT-6 | `comment-activator`·`reply-chain-driver`·`controversy-chain`이 `botLog.create` **0건**. 봇 댓글을 쓰는데 기록이 없다 | ✅ 예 | **지금도 가능** | 위 3파일 | BotLog에 action 기록 확인 | 불필요 |
-| **P0-3** | **재해 복구 절차 부재** | M3-OPS-7 · §14-10 | DB 소실 시 46모델 복원 절차가 문서화된 적 없었다 | ✅ 예 | **지금 가능**(문서화만) | `.claude/commands/prisma-guide/` | 절차 문서 존재 | 불필요 |
+| **P0-3** | ~~재해 복구 절차 부재~~ → ✅ **문서화 완료 (2026-08-20, P0-3B)** | M3-OPS-7 · §14-10 | ~~DB 소실 시 46모델 복원 절차가 문서화된 적 없었다~~ → `docs/operations/2026-08-20-database-disaster-recovery.md` 신설. S1~S9 시나리오 · 금지 명령 · 검증 쿼리 · 체크리스트. 🔴 감사 중 신규 발견: `seed.ts:135-137` **deleteMany 3건** + `BoardConfig.upsert`가 `update: config`로 전량 덮어씀 | ✅ 예 | ✅ **완료** | `.claude/commands/prisma-guide/` | 절차 문서 존재 | 불필요 |
 | **P0-4** | **migration ↔ 스키마 9모델 불일치** | M3-OPS-7 · §14-10 | schema 46 vs migrations 39. `AdminQueue`·`Notice`·`Popup` 등 9모델이 이력에 없다 | ✅ 예 | 🔴 **판정 후** | `prisma/migrations/` | `migrate diff` 46/46 | 필요 |
 
 ⚠️ **P0-1은 O1 사고의 직접 재발 방지책이다.** 현재 코드는 stale을 탐지하지 못한다.
@@ -3173,7 +3173,7 @@ launchd-alert.sh       2개 — UNAO_WORKDIR 미설정 시 **old workspace fallb
 ⚠️ **P1-8은 이미 발생한 현재진행형 리스크다.** image-router DAY_CAP 6/6 · navercafe/bboom 공급 중단이 그 증상이다.
 → 근본 해법은 **§19-7 Voice Engine**이다.
 
-### 19-4. 🟢 P2 — D+30 (8건)
+### 19-4. 🟢 P2 — D+30 (9건)
 
 | # | 과제명 | 출처 | AS-IS |
 |---|---|---|---|
@@ -3185,6 +3185,7 @@ launchd-alert.sh       2개 — UNAO_WORKDIR 미설정 시 **old workspace fallb
 | P2-6 | repo plist ↔ 실물 plist diff 자동 대조 | OPS-RUNNER-1 · §18-7 | 파일명만 일치 확인. 내용 검사 없음 |
 | P2-7 | 🔴 `WEEKLY` 숨김이 3곳 분산 | M3-OPS-4 | `schema.prisma` 1 · `board-registry.ts` 3 · `seed.ts` 3 |
 | P2-8 | 🔴 `sentiment` 필드 미채움 | M3-OPS-10 | `CafePost.sentiment`가 전부 빈 값. **[추정]** psych-analyzer 미구현 |
+| **P2-9** | 🔴 **R2 / Supabase Storage 백업 전략 부재** | P0-3B (2026-08-20) | Supabase DB 백업에 **Storage 객체가 포함되지 않는다**(콘솔 확인: "Storage objects are not included"). 이미지·첨부·썸네일·OG 이미지는 DB 복구로 되살릴 수 없다. R2 버킷 백업 정책도 미확인 |
 
 ### 19-5. ⚪ P3 — 관찰·보류 (4건)
 
@@ -3198,7 +3199,9 @@ launchd-alert.sh       2개 — UNAO_WORKDIR 미설정 시 **old workspace fallb
 ### 19-6. 고아 방지 필드 (전 과제 공통)
 
 ```
-상태        미착수 (24/24)   ← 이 문서 작성 시점 전량
+상태        미착수 24 / ✅ 완료 1 (25건 중)
+            ✅ P0-3 재해 복구 절차 문서화 — 2026-08-20 (P0-3B)
+               → docs/operations/2026-08-20-database-disaster-recovery.md
 다음 트리거  P0-1·P0-2·P0-3  창업자 지시 (판정 전에도 안전)
             그 외 20건       2026-08-22 네이버 수집 재관찰 판정
 소유자      Claude(실행) / Codex(검증) / 창업자(승인)

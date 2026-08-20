@@ -44,6 +44,7 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 5. `npx tsc --noEmit`으로 타입 체크
 
 ## 참조 파일
+- 🔴 **DB 재해 복구는 `docs/operations/2026-08-20-database-disaster-recovery.md`** — S1~S9 시나리오별 절차. 특히 **운영 DB에 `prisma/seed.ts` 실행 금지**(`:135-137` deleteMany 3건 + BoardConfig 전량 덮어쓰기)
 - `references/pooler-issues.md` — pooler 포트 문제 상세 + 해결 코드
 - `references/enum-migration.md` — enum 타입 추가/변경 SQL 패턴
 - `references/common-errors.md` — 자주 발생하는 에러 + 해결법
