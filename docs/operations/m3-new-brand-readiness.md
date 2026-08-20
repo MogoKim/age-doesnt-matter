@@ -1773,6 +1773,9 @@ Naver/GSC/Search Advisor 요청
 | 17 | **D-day 매거진 3개** | ✅ **확정 (M3-OPS-8/9, 2026-08-20)** | ① 갱년기 언제 시작해 언제 끝나나요(연령대별 구조) · ② 잠이 안 오고 얼굴이 화끈거릴 때(시간대별 증상 지도) · ③ 이 커뮤니티는 어떤 곳인가요(운영자 관점, 브랜드명 확정 후). **감정·가족**과 **병원·치료**는 **D+7로 이월** — 전자는 실회원 근거 0건, 후자는 의료 키워드 리스크 |
 | 18 | **매거진 원문성 전략** | ✅ **정정 확정 (M3-OPS-9)** | 🔴 기존 우나어 MENOPAUSE 141건은 **원문성 근거로 쓰지 않는다** — 실회원 글 5건(3.5%)뿐이고 나머지는 봇 136·외부글 89다. "회원들이 말했다"는 **거짓 서술**이 된다. 문장 추출·직접 인용·외부글 재가공·봇 글의 회원 발화화 전부 금지. 원문성은 **데이터가 아니라 글의 구조와 운영자 관점**에서 확보한다 |
 | 19 | **외부글 = voice 자산** | ✅ **창업자 확정 (M3-OPS-10, 2026-08-20)** | **"외부글은 실제 4050/5060 여성들의 목소리이므로 최고의 자산이다."** 직접 재사용은 금지하되 **장기 voice 자산으로 보존**한다. `CafePost` **31,501건**(AI 분석 29,312 · `ageSignal=50s` **18,221**)의 **비식별 메타**는 M3 장기 리서치 자산으로 쓸 수 있다. 🔴 **D-day에는 사용하지 않는다** — 아카이브 Sheet 생성·자동 export·원문/닉네임/URL 이관 전부 안 한다. D+30 이후 **M3 Voice Engine**(말투·오타·문장 호흡·감정선 체화 + 자동 재창조 + originality/risk gate + 자동 발행/HOLD/폐기)으로 발전시킨다. 목표는 창업자가 매번 검수하는 구조가 아니라 **자동 gate + 애매한 것만 보류**다. 상세 §16 |
+| 20 | **D-day 변경 항목 수** | ✅ **상향 정정 (M3-OPS-11, 2026-08-20)** | M3-OPS-6 **18파일** → M3-OPS-6b **30항목** → M3-OPS-11 **38항목**. 신규 8종은 네이버 인증코드·애드센스 fallback·사업자 정보·CONTACT_EMAIL·앱 딥링크 5곳·child-safety·capacitor·android build.gradle이다. 이전 수치는 폐기가 아니라 **상향 정정**이다. 상세 §17 |
+| 21 | **Android 앱 D-day 처리** | 🔔 **권고 — 창업자 확정 필요** | **D-day 범위에서 제외**를 권고한다. 스토어 심사로 24시간을 초과한다. 제외하면 N5·N7·N8이 필수에서 빠져 **38 → 35항목**이 된다. D-day에는 웹만 오픈하고 `manifest.json`의 앱 연결을 제거한다 |
+| 22 | **사업자 정보 · 네이버 인증코드** | ✅ **확정 (M3-OPS-11)** | 🚫 `Footer.tsx:57-60`의 법인·대표·사업자번호·통신판매업·주소를 **복붙 금지**. placeholder(`M3_OPERATOR_LEGAL_NAME` 등 5종)로 관리하고 새 브랜드 기준 검토 후 입력한다. ⚠️ 통신판매업 신고가 도메인별인지 사업자별인지 **미확인**. 🚫 `layout.tsx:67`의 구 네이버 인증코드 2개 **유지 금지** — 새 도메인으로 Search Advisor 등록 후 신규값으로 교체한다. **실패해도 사이트는 정상 동작하므로 발견이 늦는다** |
 | 12 | **MENOPAUSE 실회원 글 봇 wave 수** | 확정 | D-day에도 글당 최대 2개. 단, 공통 safety guard, 같은 톤 반복 방지, 실회원 댓글 후 중단, 최근 20글 동일 페르소나 최대 2회 조건을 전제로 한다 |
 
 ---
@@ -2534,6 +2537,314 @@ D-day 매거진 3건은 §15-3 확정안대로 쓴다. 이 자산 없이도 작�
 | `dlxogns01`(9,760) · `remonterrace`(8,316) 카페 정체 | `cafeId`만 있고 실제 카페명 미확인 | `agents/cafe/config.ts` |
 | "10건 규칙"의 저작권 안전성 | 실무 판단이며 **법률 자문이 아니다** | 필요 시 전문가 검토 |
 | 기존 Sheet 전체 컬럼 스펙 | A~H열 사용만 확인 | Sheet 직접 확인 |
+
+---
+
+## 17. D-day 변경 지점 최종 매니페스트 (M3-OPS-11, 2026-08-20)
+
+> **판정: PARTIAL — D-day 필수 항목을 38로 상향 정정한다.**
+>
+> ⚠️ **이 절은 브랜드명·도메인이 미확정인 상태에서 "무엇을 지금 준비할 수 있는가"와
+> "무엇을 아직 못 닫았는가"를 확정한 것이다.**
+
+### 17-1. 항목 수 상향 이력 (이력 보존 — 이전 수치를 지우지 않는다)
+
+```
+M3-OPS-6    D-day 필수 18파일   (env·레이아웃·핵심페이지·법적·next.config)
+M3-OPS-6b   D-day 필수 30항목   (+ 하드코딩 6 · 자산 4 · 설정 2)
+M3-OPS-11   D-day 필수 38항목   ← 🔴 신규 8종 발견으로 상향 정정
+
+⚠️ M3-OPS-6b의 "30항목"은 폐기가 아니라 **M3-OPS-11에서 38항목으로 상향 정정**된 것이다.
+   30항목 자체는 여전히 유효하며, 그 위에 8종이 추가됐다.
+```
+
+**38항목 내역**
+
+```
+코드 파일        24 + 8 = 32
+이미지 자산       4   (og-cover · og-image · logo · logo-symbol)
+설정 파일         2   (manifest.json · assetlinks.json)
+────────────────────────
+합계             38
+```
+
+### 17-2. 🔴 M3-OPS-11 신규 발견 8종
+
+| # | 파일:라인 | 현재 값 | placeholder | 누락 시 장애 |
+|---|---|---|---|---|
+| **N1** | `src/app/layout.tsx:67` | `'naver-site-verification': ['f3e97b22…', 'dd29f33d…']` | `M3_NAVER_SITE_VERIFICATION` | 🔴 **네이버 Search Advisor 소유 확인 실패.** 네이버 유입이 핵심인데 등록 자체가 막힌다. **빌드·화면 모두 정상이라 당일 발견되지 않는다** |
+| **N2** | `src/app/layout.tsx:66` | `?? 'ca-pub-4117999106913048'` | `M3_ADSENSE_CLIENT_ID` | 🟡 구 애드센스 계정으로 광고 수익이 귀속된다 |
+| **N3** | `src/components/layouts/Footer.tsx:57-60` | 케이에이지랩(K-Agelab) · 대표 김용석 · 사업자등록번호 457-24-01157 · 통신판매업 제2023-서울서초-2160호 · 주소 | `M3_OPERATOR_LEGAL_NAME` `M3_REPRESENTATIVE_NAME` `M3_BUSINESS_REGISTRATION_NUMBER` `M3_ECOMMERCE_REGISTRATION` `M3_BUSINESS_ADDRESS` | 🔴 **법적 표기다.** 통신판매업 신고가 도메인별인지 사업자별인지 확인 필요 |
+| **N4** | `src/components/layouts/Footer.tsx:18` | `korea.age.not.matter@gmail.com` | `M3_CONTACT_EMAIL` | 🟡 문의가 구 브랜드 메일로 간다 |
+| **N5** | `src/lib/app-links.ts:5,66` · `AppDeepLinkHandler.tsx:17` · `app-login/bridge/route.ts:8` · `auth/error/AppAuthErrorRedirect.tsx:11` | `com.agenotmatter.app://` | `M3_APP_ID` | 🟡 앱 미출시면 무해. 출시 시 딥링크 실패 |
+| **N6** | `src/app/child-safety/page.tsx:19,20,53,68` | 도메인 · 앱ID · 이메일 · 운영자명 | 전부 | 🔴 **앱 스토어 심사 대상 문서.** 구 정보면 심사 반려 |
+| **N7** | `capacitor.config.ts:14,15,17` | `appId` · `appName` · `server.url` | `M3_APP_ID` `M3_BRAND_NAME` `M3_DOMAIN` | 🟡 앱 D-day 제외 시 무관 |
+| **N8** | `android/app/build.gradle:4,7` | `namespace` · `applicationId` = `com.agenotmatter.app` | `M3_APP_ID` | 🟡 동일 |
+
+⚠️ **N1이 가장 위험하다.** 나머지는 눈에 보이거나 기능이 깨지지만, N1은 **에러 없이 조용히 실패**한다.
+
+### 17-2b. ⚠️ 이 절이 존재하는 이유 — M3-OPS 감사 결과의 문서화 공백
+
+```
+M3-OPS-1 (인프라 감사) · M3-OPS-2 (env 매트릭스) · M3-OPS-3 (치환 파일 목록)
+M3-OPS-6 (라인 단위 매니페스트) · M3-OPS-6b (잔여 미확정 해소)
+→ 이 5개 감사는 수행됐으나 **문서에 직접 반영된 적이 없다**(2026-08-20 확인).
+   결과가 대화에만 남아 있어, 세션이 바뀌면 D-day에 라인 번호를 다시 찾아야 했다.
+
+§17은 그 공백을 메우는 **실행 매니페스트**다.
+D-day 구현자가 이 절만 보고 손을 움직일 수 있어야 한다.
+```
+
+### 17-2c. 38항목 라인 단위 변경 매니페스트
+
+**분류: 웹 D-day 필수 35 + Android D+30 이월 3 = 38**
+
+범례 — `브전`=브랜드명 확정 전 가능 · `도후`=도메인 확정 후 가능 · `당일`=D-day 당일 필요
+
+#### A. 시스템 기반 — env·SEO fallback (5항목)
+
+| # | 파일 | 라인/패턴 | 현재 값 | placeholder | 브전 | 도후 | 당일 | 누락 시 장애 | 검증 |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | `src/lib/env.ts` | **83** | `optionalEnv('SEARCH_CONSOLE_SITE_URL', 'https://age-doesnt-matter.com')` | `M3_DOMAIN` | ✅ | ✅ | ✅ | 🔴 **새 브랜드 검색 데이터가 죽은 속성으로.** 에러 없이 실패 | `grep -c age-doesnt-matter src/lib/env.ts` → 0 |
+| 2 | `src/lib/env.ts` | **117** | `optionalEnv('NEXT_PUBLIC_APP_URL', 'https://age-doesnt-matter.com')` | `M3_DOMAIN` | ✅ | ✅ | ✅ | 🔴 sitemap·robots·canonical·breadcrumb 전부 구 도메인 | 동일 |
+| 3 | `src/app/sitemap.ts` | **13** | `const BASE_URL = … ?? 'https://age-doesnt-matter.com'` | `M3_DOMAIN` | ✅ | ✅ | ✅ | 🔴 sitemap 전체가 구 도메인 URL | `curl -s $URL/sitemap.xml \| grep -c age-doesnt-matter` → 0 |
+| 4 | `src/app/robots.ts` | **12** | `` `${… ?? 'https://age-doesnt-matter.com'}/sitemap.xml` `` | `M3_DOMAIN` | ✅ | ✅ | ✅ | 🔴 robots가 구 sitemap을 가리킴 | `curl -s $URL/robots.txt` |
+| 5 | `src/lib/seo/breadcrumb.ts` **6** · `src/components/common/Breadcrumbs.tsx` **12** | 각 1곳 | 동일 fallback | `M3_DOMAIN` | ✅ | ✅ | ✅ | 🟡 JSON-LD breadcrumb이 구 도메인 | `curl \| grep BreadcrumbList` |
+
+⚠️ **권장 조치**: `env.ts:83,117`을 `requireEnv`로 승격하면 3·4·5의 fallback이 전부 무력화된다.
+`breadcrumb.ts:3` 주석은 *"BASE_URL은 여기 한 곳에서만 관리"* 라고 하지만 **실제로는 5곳**이다.
+
+#### B. 전역 레이아웃·메타 (9항목)
+
+| # | 파일 | 라인 | 현재 값 | placeholder | 브전 | 도후 | 당일 | 누락 시 장애 | 검증 |
+|---|---|---|---|---|---|---|---|---|---|
+| 6 | `layout.tsx` | **52** | `default: '우리 나이가 어때서 — 40대 50대 여성 커뮤니티'` | `M3_BRAND_NAME` | ❌ | — | ✅ | 🔴 모든 페이지 `<title>` | `curl \| grep -o '<title>[^<]*'` |
+| 7 | `layout.tsx` | **53** | `template: '%s \| … : 우리 나이가 어때서'` | `M3_BRAND_NAME` | ❌ | — | ✅ | 🔴 하위 페이지 title | 동일 |
+| 8 | `layout.tsx` | **56** | `metadataBase: new URL(… ?? 'https://age-doesnt-matter.com')` | `M3_DOMAIN` | ✅ | ✅ | ✅ | 🔴 상대 OG 경로가 구 도메인으로 절대화 | `curl \| grep og:url` |
+| 9 | `layout.tsx` | **60** | `siteName: '우리 나이가 어때서'` | `M3_BRAND_NAME` | ❌ | — | ✅ | 🔴 OG site_name | `curl \| grep og:site_name` |
+| 10 | `layout.tsx` | **61** | `images: [{ url: '/og-cover.png', … alt: '우리 나이가 어때서 — …' }]` | `M3_BRAND_NAME` | ❌ | — | ✅ | 🟡 OG alt | `curl \| grep og:image` |
+| 11 | `layout.tsx` | **64** | `google: process.env.NEXT_PUBLIC_GSC_VERIFICATION` | `M3_GOOGLE_SITE_VERIFICATION` | ❌ | ✅ | ✅ | 🔴 GSC 소유 확인 실패 | GSC 콘솔 확인 |
+| 12 | `layout.tsx` | **66** | `?? 'ca-pub-4117999106913048'` | `M3_ADSENSE_CLIENT_ID` | ✅ | — | ✅ | 🟡 **구 애드센스로 수익 귀속** | `curl \| grep adsense-account` |
+| 13 | `layout.tsx` | **67** | `'naver-site-verification': ['f3e97b22…','dd29f33d…']` | `M3_NAVER_SITE_VERIFICATION` | ❌ | ✅ | ✅ | 🔴🔴 **네이버 소유 확인 실패. 조용히 실패한다** | Search Advisor 소유확인 |
+| 14 | `layout.tsx` | **119** | `<link rel="preconnect" href="https://img.age-doesnt-matter.com" />` | `M3_IMAGE_DOMAIN` | ✅ | ✅ | ✅ | 🟡 불필요 DNS 조회 | `curl \| grep preconnect` |
+
+#### C. 헤더·푸터·사업자 정보 (5항목)
+
+| # | 파일 | 라인 | 현재 값 | placeholder | 브전 | 도후 | 당일 | 누락 시 장애 | 검증 |
+|---|---|---|---|---|---|---|---|---|---|
+| 15 | `Header.tsx` | **16** | `aria-label="우나어 홈"` | `M3_BRAND_NAME` | ❌ | — | ✅ | 🟢 스크린리더만 | `grep -c 우나어` → 0 |
+| 16 | `GNB.tsx` | **46** | `aria-label="우나어 홈"` | `M3_BRAND_NAME` | ❌ | — | ✅ | 🟢 동일 | 동일 |
+| 17 | `Footer.tsx` | **50** | `&copy; 2026 우리 나이가 어때서` | `M3_BRAND_NAME` | ❌ | — | ✅ | 🟡 전 페이지 하단 노출 | `curl \| grep -c 우리 나이가` → 0 |
+| 18 | `Footer.tsx` | **18, 64, 65** | `CONTACT_EMAIL = 'korea.age.not.matter@gmail.com'` | `M3_CONTACT_EMAIL` | ✅ | — | ✅ | 🟡 문의가 구 메일로 | `curl \| grep mailto` |
+| 19 | `Footer.tsx` | **57, 60** | 케이에이지랩(K-Agelab) · 대표 김용석 · 사업자등록번호 457-24-01157 · 통신판매업 제2023-서울서초-2160호 · 서울 노원구 월계로55길 15 | `M3_OPERATOR_LEGAL_NAME` `M3_REPRESENTATIVE_NAME` `M3_BUSINESS_REGISTRATION_NUMBER` `M3_ECOMMERCE_REGISTRATION` `M3_BUSINESS_ADDRESS` | ❌ | — | ✅ | 🔴 **법적 표기.** 복붙 금지(§17-5②) | 육안 + 법적 검토 |
+
+#### D. 핵심 페이지·JSON-LD (7항목)
+
+| # | 파일 | 라인 | 현재 값 | placeholder | 브전 | 도후 | 당일 | 누락 시 장애 | 검증 |
+|---|---|---|---|---|---|---|---|---|---|
+| 20 | `(main)/page.tsx` | **161,162,165,186,187,208** | Organization/WebSite `name`·`alternateName`·`description`·`<h1 sr-only>` | `M3_BRAND_NAME` | ❌ | — | ✅ | 🔴 JSON-LD 브랜드 | `curl \| grep -A5 Organization` |
+| 21 | `(main)/page.tsx` | **163,164,188,192** | `url`·`logo`·`searchAction target` fallback | `M3_DOMAIN` | ✅ | ✅ | ✅ | 🔴 JSON-LD URL | 동일 |
+| 22 | `(main)/page.tsx` | **178** | `'https://blog.naver.com/age-doesnt-matter'` (`sameAs`) | 제거 또는 신규 | ✅ | — | ✅ | 🔴 **[추정]** 검색엔진이 구 브랜드와 동일 주체로 연결 | `curl \| grep -A3 sameAs` |
+| 23 | `(main)/page.tsx` | **179** | `play.google.com/…id=com.agenotmatter.app` (`sameAs`) | `M3_APP_ID` 또는 제거 | ✅ | — | ✅ | 🟡 구 앱 연결 | 동일 |
+| 24 | `[postId]/page.tsx` | **35** | `const BASE_URL = … ?? 'https://age-doesnt-matter.com'` | `M3_DOMAIN` | ✅ | ✅ | ✅ | 🔴🔴 **모든 글 canonical이 구 도메인 → 색인 전면 제외** | `curl <글> \| grep canonical` |
+| 25 | `[postId]/page.tsx` | **104, 201** | `siteName:` · `publisherName: '우리 나이가 어때서'` | `M3_BRAND_NAME` | ❌ | — | ✅ | 🔴 글 상세 OG·JSON-LD | 동일 |
+| 26 | `opengraph-image.tsx` | **4, 16, 104, 108** | `alt` · 기본 title · **픽셀 텍스트** · **픽셀 도메인** | `M3_BRAND_NAME` `M3_DOMAIN` | ❌ | ✅ | ✅ | 🔴 **카톡 공유 이미지에 구 브랜드·도메인. 캐시되면 회수 불가** | 브라우저로 이미지 직접 열람 |
+
+#### E. 라이브러리 하드코딩 (4항목)
+
+| # | 파일 | 라인 | 현재 값 | placeholder | 브전 | 도후 | 당일 | 누락 시 장애 | 검증 |
+|---|---|---|---|---|---|---|---|---|---|
+| 27 | `src/lib/app-links.ts` | **45** | `const APP_HOST = 'age-doesnt-matter.com'` | `M3_DOMAIN` | ✅ | ✅ | ✅ | 🟡 앱 딥링크 판정 실패 | `grep -c age-doesnt-matter` → 0 |
+| 28 | `src/lib/hero-link.ts` | **26** | `const SITE_HOST = 'age-doesnt-matter.com'` | `M3_DOMAIN` | ✅ | ✅ | ✅ | 🔴 **HERO 배너 내부링크 판정 실패 → 외부 이탈** | 배너 클릭 테스트 |
+| 29 | `src/lib/sanitize.ts` | **160, 180** | `img.age-doesnt-matter.com` 정규식 2곳 | `M3_IMAGE_DOMAIN` | ✅ | ✅ | ✅ | 🔴 **본문 이미지 프록시 미작동 → 이미지 깨짐** | 본문 이미지 렌더 확인 |
+| 30 | `src/lib/actions/contact.ts` | **42** | `from: 'noreply@age-doesnt-matter.com'` | `M3_DOMAIN` | ✅ | ✅ | ✅ | 🔴 **문의 메일 발송 실패**(도메인 미인증) | 문의 폼 실제 발송 |
+
+#### F. 법적·정책 페이지 (4항목)
+
+| # | 파일 | 패턴 | 건수 | placeholder | 브전 | 도후 | 당일 | 누락 시 장애 | 검증 |
+|---|---|---|---|---|---|---|---|---|---|
+| 31 | `(main)/terms/page.tsx` | `우나어`·`우리 나이가 어때서`·`케이에이지랩` | **8건** (7,8,20,28,45,65,71,92…) | `M3_BRAND_NAME` `M3_OPERATOR_LEGAL_NAME` | ❌ | ✅(canonical) | ✅ | 🔴 **실제와 다른 서비스명·사업자로 동의 취득** | `curl /terms \| grep -c 우나어` → 0 |
+| 32 | `(main)/privacy/page.tsx` | 동일 | **15건** (7,8,19,21,27,39,99,111,214…) | `M3_BRAND_NAME` `M3_CONTACT_EMAIL` | ❌ | ✅ | ✅ | 🔴 동일 | `curl /privacy \| grep -c` → 0 |
+| 33 | `(main)/about/page.tsx` | 동일 + 도메인 | **10건** (50,167,175,183,191,199,207,225…) | `M3_BRAND_NAME` `M3_DOMAIN` | ❌ | ✅ | 🔔 | 🟡 **재작성 필요.** D-day 비공개 선택지 있음 | `curl /about` |
+| 34 | `src/app/child-safety/page.tsx` | **13,19,20,53,68** | 도메인·앱ID·이메일·운영자명 | `M3_DOMAIN` `M3_APP_ID` `M3_CONTACT_EMAIL` `M3_OPERATOR_NAME` | ❌ | ✅ | ✅ | 🔴 **앱 스토어 심사 대상 문서. 구 정보면 반려** | `curl /child-safety` |
+
+#### G. 설정·자산 (7항목)
+
+| # | 대상 | 라인/내용 | 현재 값 | placeholder | 브전 | 도후 | 당일 | 누락 시 장애 | 검증 |
+|---|---|---|---|---|---|---|---|---|---|
+| 35 | `next.config.js` | **41** `remotePatterns` | `hostname: 'img.age-doesnt-matter.com'` | `M3_IMAGE_DOMAIN` | ✅ | ✅ | ✅ | 🔴 **next/image가 400 거부 → 이미지 전량 깨짐** | 썸네일 렌더 |
+| 36 | `next.config.js` | **115** CSP | `img-src … https://img.age-doesnt-matter.com` | `M3_IMAGE_DOMAIN` | ✅ | ✅ | ✅ | 🔴 브라우저 CSP 차단 | DevTools 콘솔 violation 0 |
+| 37 | `next.config.js` | **67, 71** `redirects()` | `www.age-doesnt-matter.com` → 구 도메인 · `age-doesnt-matter.vercel.app` → 구 도메인 | 교체(67) / **제거**(71) | ✅ | ✅ | ✅ | 🔴🔴 **www 접속이 죽은 사이트로 튕김. 오픈 실패** | `curl -sI https://www.$DOMAIN/` |
+| 38 | `public/og-cover.png` · `og-image.png` | 동일 파일 (md5 `30daac63…`) | **"우리나이가어때서" 로고+텍스트가 픽셀로 박힘** (실물 확인) | 재제작 | ❌ | — | ✅ | 🔴 **카톡·페북 공유에 구 브랜드 이미지** | 이미지 직접 열람 |
+| 39 | `public/logo.png` · `logo-symbol.png` | 동일 파일 (md5 `cc2e1888…`) | **"우리나이가어때서" 텍스트 포함** (실물 확인) | 재제작 | ❌ | — | ✅ | 🔴 JSON-LD logo · 헤더 로고 | 동일 |
+| 40 | `public/manifest.json` | `name`·`short_name`·`related_applications` | `"우리나이가어때서"` · `com.agenotmatter.app` | `M3_BRAND_NAME` / 앱 연결 제거 | ❌ | — | ✅ | 🔴 **PWA 홈화면 이름이 구 브랜드** | `curl /manifest.json` |
+| 41 | `public/.well-known/assetlinks.json` | `package_name`·지문 | `com.agenotmatter.app` | 앱 제외 시 **파일 제거** | ✅ | — | ✅ | 🟡 구 Android 앱 연결 | `curl /.well-known/assetlinks.json` |
+
+⚠️ **번호 41 vs 항목 35 — 세는 단위가 다르다.**
+
+```
+위 표 A~G의 행(변경 지점)   41행   ← D-day에 손댈 실제 위치. 구현자는 이 41행을 본다
+M3-OPS-6b 기준 "항목"       35항목 ← 파일·자산 단위로 묶은 수
+  코드 파일 24 + 신규 5(웹) + 이미지 자산 4 + 설정 2 = 35
+Android 이월(H)              3항목
+────────────────────────────────────
+전체                        38항목  (§17-1의 상향 정정 수치)
+
+즉 "38항목"은 파일·자산 단위이고, "41행"은 라인 단위다.
+⚠️ D-day 체크는 **41행 기준**으로 한다. 항목 단위로 세면 한 파일 안의
+   여러 라인(예: layout.tsx 9곳)을 빠뜨릴 수 있다.
+```
+
+#### H. 🔵 Android D+30 이월 (3항목) — §17-5① 권고 적용 시 D-day 제외
+
+| # | 파일 | 라인 | 현재 값 | placeholder | 웹 D-day | 비고 |
+|---|---|---|---|---|---|---|
+| A1 | `src/lib/app-links.ts` **5,66** · `AppDeepLinkHandler.tsx` **17** · `app-login/bridge/route.ts` **8** · `auth/error/AppAuthErrorRedirect.tsx` **11** | 5지점 | `com.agenotmatter.app://` · `PLAY_STORE_BASE` | `M3_APP_ID` | ❌ 제외 | 앱 미출시면 무해 |
+| A2 | `capacitor.config.ts` | **14, 15, 19** | `appId` · `appName` · `server.url` | `M3_APP_ID` `M3_BRAND_NAME` `M3_DOMAIN` | ❌ 제외 | 파일 주석에 **"PoC ONLY — NOT for production"** 명시 |
+| A3 | `android/app/build.gradle` | **4, 7** | `namespace` · `applicationId` | `M3_APP_ID` | ❌ 제외 | 스토어 재등록 필요 |
+
+```
+전체        38항목
+웹 D-day    35항목  (A~G)
+Android     3항목   (H) → D+30 이월
+```
+
+### 17-3. placeholder 목록 (브랜드명 확정 전 사용)
+
+```
+M3_BRAND_NAME                      서비스명
+M3_DOMAIN                          도메인
+M3_APP_NAME                        앱 표시명
+M3_APP_ID                          앱 패키지 ID (com.agenotmatter.app 대체)
+M3_OPERATOR_NAME                   운영 주체 표기
+M3_CONTACT_EMAIL                   문의 이메일
+
+── 법적 표기 (N3) ──
+M3_OPERATOR_LEGAL_NAME             법인명
+M3_REPRESENTATIVE_NAME             대표자명
+M3_BUSINESS_REGISTRATION_NUMBER    사업자등록번호
+M3_ECOMMERCE_REGISTRATION          통신판매업 신고번호
+M3_BUSINESS_ADDRESS                사업장 주소
+
+── 콘솔 발급 (도메인 확정 후) ──
+M3_NAVER_SITE_VERIFICATION         네이버 Search Advisor 인증코드
+M3_GOOGLE_SITE_VERIFICATION        Google Search Console 인증코드
+M3_ADSENSE_CLIENT_ID               애드센스 pub-id
+```
+
+### 17-4. 브랜드명 없이 지금 준비 가능한 것 🟢
+
+```
+[ ] 치환 매니페스트 38항목 확정        ← 이 절
+[ ] env 매트릭스 확정                  §17-6
+[ ] 콘솔 등록 체크리스트               §17-7
+[ ] DDL 생성 리허설                    migrate diff는 DB 접속 없음 (§14-5 실증)
+[ ] BoardConfig 3행 seed 스크립트 초안  displayName 제외 (§14-2)
+[ ] AdminAccount 절차 확인             create-admin.ts 존재 (§14-7)
+[ ] 매거진 ①② 초고 작성               브랜드명 불필요 (§15-3)
+[ ] IA 확정                            §14-1 완료
+[ ] 봇 guard 22단계 설계               M3-BOT-6 완료
+[ ] AUTH_SECRET · ADMIN_JWT_SECRET 생성  openssl rand — 브랜드 무관
+[ ] 사업자 정보 유지 여부 결정          §17-5 권고 ②
+[ ] 브랜드 색상 유지 여부 결정          #FF6F61 유지 시 PWA 아이콘 10개 재사용
+[ ] Android 앱 D-day 제외 결정          §17-5 권고 ①
+```
+
+**브랜드명 없이도 D-day 준비의 약 70%를 지금 끝낼 수 있다.**
+
+### 17-5. 창업자 결정 · 권고 3건
+
+**① Android 앱은 D-day 범위에서 제외한다 (권고)**
+
+```
+근거   스토어 심사로 24시간을 초과한다
+       manifest.json related_applications · assetlinks.json ·
+       capacitor.config.ts · android/build.gradle 이 전부 구 앱을 가리킨다
+조치   D-day에는 웹만 오픈. manifest에서 앱 연결 제거
+효과   N5 · N7 · N8 이 D-day 필수에서 빠진다 (38 → 35항목)
+```
+
+**② 사업자 정보는 기존 우나어 정보를 복붙하지 않는다 (확정)**
+
+```
+🚫 Footer.tsx:57-60을 그대로 복사 금지
+   법인·대표·사업자번호·통신판매업 신고번호·주소는 법적 표기다
+✅ placeholder로 관리하고, 새 브랜드 기준으로 검토 후 입력한다
+⚠️ 통신판매업 신고가 도메인별인지 사업자별인지 확인이 필요하다 (미확인)
+```
+
+**③ 네이버 사이트 인증 코드는 신규값으로 교체한다 (확정)**
+
+```
+🚫 layout.tsx:67의 기존 코드 2개를 유지 금지
+✅ 새 도메인으로 Naver Search Advisor 사이트를 등록한 뒤
+   발급받은 신규 코드로 교체한다
+⚠️ 이 순서를 지키지 않으면 소유 확인이 실패하고,
+   실패해도 사이트는 정상 동작하므로 발견이 늦는다
+```
+
+### 17-6. env 매트릭스 보강 (M3-OPS-2 대비 신규 2건)
+
+```
+🔴 절대 재사용 금지 — 기존 8 + 신규 2
+기존 8   SEARCH_CONSOLE_SITE_URL · NEXT_PUBLIC_APP_URL · SITE_URL
+         NEXT_PUBLIC_GA4_ID · GA4_PROPERTY_ID · NEXT_PUBLIC_GTM_ID
+         GOOGLE_SERVICE_ACCOUNT_JSON · SHEETS_SCRAPER_ID
+신규 2   🔴 NEXT_PUBLIC_GSC_VERIFICATION   (layout.tsx:64 — M3-OPS-2 미포착)
+         🔴 NEXT_PUBLIC_ADSENSE_CLIENT_ID  (layout.tsx:66 — 구 pub-id fallback)
+
+⚠️ GHA Secrets는 62개다 (실측). 새 repo 전략이면 전량 재등록이 필요하다.
+```
+
+### 17-7. 외부 콘솔 4단계 분류
+
+| 콘솔 | 지금 준비 | 브랜드 후 | 도메인 후 | D-day 당일 |
+|---|---|---|---|---|
+| GitHub repo | 전략 결정 | — | — | repo 생성 + **Secrets 62개** |
+| Supabase | 스키마 준비 ✅ | — | — | project + DDL + seed |
+| Vercel | — | — | — | project + 도메인 + env |
+| Kakao app | 필요 정보 정리 | 앱 이름 | redirect URI | 앱 생성 + 키 발급 |
+| **Naver Search Advisor** | — | — | 사이트 등록 | 🔴 **인증코드 → `layout.tsx:67`** |
+| **Google Search Console** | — | — | 속성 추가 | 🔴 **인증코드 → env** |
+| GA4 / GTM | — | — | — | 속성 + 측정 ID |
+| R2 bucket | 분리 여부 결정 | — | 커스텀 도메인 | 버킷 + 토큰 |
+| Slack | 채널 수 결정 | 채널명 | — | 채널 생성 |
+| **Android TWA** | 🔔 **D-day 제외 권고** | — | — | (제외 시 없음) |
+
+### 17-8. 🔴 D-day blocker (5건)
+
+```
+1. 브랜드명 + 도메인                    최우선. 나머지 대부분이 종속된다
+2. naver-site-verification 신규 코드    도메인 후 콘솔에서만 발급
+                                        ⚠️ 네이버 유입이 핵심인데 등록이 막힌다
+3. 로컬 DB 리허설 수단 부재             psql·docker 없음. 설치 금지
+                                        ⚠️ 단 "실패 시 project 재생성"으로 위험은 낮다(§14-6)
+4. 사업자 / 통신판매업 정보 확인         법적 사안. 도메인별 재신고 여부 미확인
+5. GHA Secrets 62개 재등록              repo 전략 종속
+```
+
+### 17-9. 하면 안 되는 것 (M3-OPS-11 보강)
+
+```
+🚫 구 네이버 인증 코드 유지             layout.tsx:67 — 조용히 실패한다
+🚫 구 사업자 정보를 검토 없이 복붙       법적 표기다
+🚫 구 앱 ID / 딥링크 유지               com.agenotmatter.app
+🚫 Android 앱을 D-day 범위에 포함        스토어 심사로 24h 초과
+🚫 구 애드센스 fallback 유지            layout.tsx:66 — 수익이 구 계정으로
+🚫 child-safety 페이지를 구 정보로 방치  앱 심사 반려
+🚫 브랜드명 확정 전 도메인 구매          창업자 판단 사항
+🚫 판정 전 외부 콘솔 생성
+```
+
+### 17-10. 아직 미확정 (추정하지 않음)
+
+| 항목 | 왜 미확정인가 | 확인 방법 |
+|---|---|---|
+| 통신판매업 신고가 도메인별인가 사업자별인가 | 법적 확인 필요 | 공정거래위원회 또는 관할 구청 |
+| `naver-site-verification` 2개 중 유효한 것 | 둘 다 하드코딩돼 있으나 용도 불명 | Search Advisor 콘솔 |
+| 애드센스 계정의 다중 사이트 허용 여부 | 같은 계정에 새 도메인 추가 가능한지 미확인 | 애드센스 콘솔 |
+| Android 앱 제외 시 N5·N7·N8 무해성 | **[추정]** 앱 미출시 전제 | 앱 배포 계획 확정 후 |
+| `public/images/logo.png` · `logo2.png` | 열람하지 않음 (M3-OPS-6b 이월) | 이미지 직접 확인 |
 
 ---
 
