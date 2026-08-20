@@ -1776,6 +1776,7 @@ Naver/GSC/Search Advisor 요청
 | 20 | **D-day 변경 항목 수** | ✅ **상향 정정 (M3-OPS-11, 2026-08-20)** | M3-OPS-6 **18파일** → M3-OPS-6b **30항목** → M3-OPS-11 **38항목**. 신규 8종은 네이버 인증코드·애드센스 fallback·사업자 정보·CONTACT_EMAIL·앱 딥링크 5곳·child-safety·capacitor·android build.gradle이다. 이전 수치는 폐기가 아니라 **상향 정정**이다. 상세 §17 |
 | 21 | **Android 앱 D-day 처리** | 🔔 **권고 — 창업자 확정 필요** | **D-day 범위에서 제외**를 권고한다. 스토어 심사로 24시간을 초과한다. 제외하면 N5·N7·N8이 필수에서 빠져 **38 → 35항목**이 된다. D-day에는 웹만 오픈하고 `manifest.json`의 앱 연결을 제거한다 |
 | 22 | **사업자 정보 · 네이버 인증코드** | ✅ **확정 (M3-OPS-11)** | 🚫 `Footer.tsx:57-60`의 법인·대표·사업자번호·통신판매업·주소를 **복붙 금지**. placeholder(`M3_OPERATOR_LEGAL_NAME` 등 5종)로 관리하고 새 브랜드 기준 검토 후 입력한다. ⚠️ 통신판매업 신고가 도메인별인지 사업자별인지 **미확인**. 🚫 `layout.tsx:67`의 구 네이버 인증코드 2개 **유지 금지** — 새 도메인으로 Search Advisor 등록 후 신규값으로 교체한다. **실패해도 사이트는 정상 동작하므로 발견이 늦는다** |
+| 23 | **M3 D-day runner 정책** | ✅ **확정 (OPS-RUNNER-1, 2026-08-20)** | active runner **42개**(GHA 26 + launchd 16). 🔴 **필수 재사용**: `ci.yml` 가드 5종 · `launchd-wrapper.mjs`(UNAO_WORKDIR 필수화) · `unao-prod-sync`(03:00 자동 pull). 🟡 **guard 후 활성화**: 봇 댓글 5경로(cafe-wave · sheet-viral · seed · seed-micro · daily 4task) — M3-BOT-6 22단계 완료 전 금지. 🔴 **분리 필수**: `agents-social`(SNS 토큰 전량 신규). 🚫 **제외**: `agents-jobs` · `coo:job-matcher`. 🔵 **검토**: `run-script` · `killer-post` · `design` · `weekly`. ⚠️ O1 stale 문제는 해소(launchd 16개 전부 unao-prod · 0 behind)됐으나 `unao-ops` 디렉터리가 140 behind로 잔존한다(참조 0건). 상세 §18 |
 | 12 | **MENOPAUSE 실회원 글 봇 wave 수** | 확정 | D-day에도 글당 최대 2개. 단, 공통 safety guard, 같은 톤 반복 방지, 실회원 댓글 후 중단, 최근 20글 동일 페르소나 최대 2회 조건을 전제로 한다 |
 
 ---
@@ -2845,6 +2846,262 @@ M3_ADSENSE_CLIENT_ID               애드센스 pub-id
 | 애드센스 계정의 다중 사이트 허용 여부 | 같은 계정에 새 도메인 추가 가능한지 미확인 | 애드센스 콘솔 |
 | Android 앱 제외 시 N5·N7·N8 무해성 | **[추정]** 앱 미출시 전제 | 앱 배포 계획 확정 후 |
 | `public/images/logo.png` · `logo2.png` | 열람하지 않음 (M3-OPS-6b 이월) | 이미지 직접 확인 |
+
+---
+
+## 18. 운영 실행 경로 매니페스트 (OPS-RUNNER-1, 2026-08-20)
+
+> **§17이 "코드 변경 지점"이라면, §18은 "실행 경로"다.**
+> D-day에 GHA 26개와 launchd 16개를 각각 어떻게 할지 확정한다.
+
+### 18-1. 현재 판정: **PASS — O1의 stale 실행 문제는 해소됐다**
+
+```
+✅ launchd 16개 전부 unao-prod 단일 경로
+   WorkingDirectory · script · UNAO_WORKDIR · 로그 경로 전부 unao-prod
+✅ unao-ops 참조 0건 · New_Claude_agenotmatter 참조 0건
+✅ unao-prod 완전 동기
+   브랜치 main · upstream origin/main · dirty 0 · 0 behind / 0 ahead
+✅ launchctl 18개 전부 exit=0 (실패 이력 없음)
+✅ 자동 sync — com.unao.unao-prod-sync 03:00 `git pull --ff-only`
+
+⚠️ stale 잔재 1건
+   unao-ops 디렉터리가 여전히 존재한다.
+   브랜치 ops/main · main 대비 **140 behind** · 마지막 커밋 2026-07-30
+   → plist 참조가 0건이라 **실행되지는 않는다**. 그러나 디렉터리가 남아 재발 여지가 있다.
+   🚫 창업자 지시(O1)에 따라 삭제하지 않는다. 정리 여부는 창업자 결정 사항이다.
+```
+
+**"코드는 main에 있는데 실행은 다른 곳을 보는" 경로는 0건이다.**
+
+### 18-2. active runner 총괄
+
+```
+GHA          26개 워크플로우 (스케줄 22 · 수동 전용 4)
+launchd      16개 (실물 plist 기준, 전부 로드됨)
+─────────────────────────────────
+합계         42개 실행 경로
+```
+
+### 18-3. GHA 실행 경로 표 (26개)
+
+| 워크플로우 | schedule | dispatch | 실행 대상 | write 등급 | **M3 판정** |
+|---|---|---|---|---|---|
+| `agents-daily.yml` | **45회** | Y | 17 task (§18-3b) | 🔴 DB write | **부분 guard 후 활성화** |
+| `agents-cafe-hourly-curation.yml` | 20회 | Y | `content-curate` · `image-route` | 🔴 고객 발행 | 재사용 |
+| `agents-cafe-wave.yml` | `*/5` | Y | `wave-process` · `user-post-wave-process` · `seed viral-waves` | 🔴 DB write(봇 댓글) | 🟡 **guard 후 활성화** |
+| `agents-sheet-viral.yml` | `*/5` | Y | `seed viral-waves` | 🔴 DB write | 🟡 **guard 후 활성화** ⚠️ cafe-wave와 중복 |
+| `agents-seed.yml` | 13회 | Y | `seed scheduler` | 🔴 DB write | 🟡 **guard 후 활성화** |
+| `agents-seed-micro.yml` | 6회 | Y | `seed micro` | 🔴 DB write | 🟡 **guard 후 활성화** |
+| `agents-scraper.yml` | 10회 | Y | `community sheet-scrape` | 🔴 고객 발행 | 재사용 |
+| `agents-scraper-dawn.yml` | 8회 | Y | `cron/runner.ts` (인자 미확정) | 🔴 고객 발행 | 재사용 |
+| `agents-cafe-popular-curation.yml` | 3회 | Y | `popular-curate` | 🔴 고객 발행 | 재사용 |
+| `agents-cafe.yml` | 3회 | Y | `brief-monitor` · `daily-brief-fallback` · `evening-brief-safety` | 🟡 알림 | 재사용 |
+| `agents-social.yml` | 11회 | Y | `cmo` 8 task (X·Threads·IG·FB·Ads) | 🔴 **외부 API write** | 🔴 **분리 필수** |
+| `agents-jobs.yml` | 3회 | Y | `coo job-scraper` | 🔴 DB write | 🚫 **제외** (일자리 폐기) |
+| `agents-moderation.yml` | 3회 | Y | `coo moderator` | 🔴 DB write | 재사용 |
+| `agents-hourly.yml` | `19 */4` | Y | `cdo anomaly-detector` · `cto error-monitor` · `health-check` | 🟡 알림 | 재사용 |
+| `agents-weekly.yml` | 4회 | Y | `cron/runner.ts` (인자 미확정) | 🟡 미확정 | 🔵 **검토** |
+| `agents-killer-post.yml` | — | Y | `seed killer-post` | 🔴 고객 발행 | 🔵 **검토** |
+| `agents-design.yml` | — | Y | `cron/runner.ts` (인자 미확정) | 🟡 미확정 | 🔵 **검토** |
+| `admin-kpi-snapshot.yml` | 1회 | Y | `collect-dashboard-snapshot.ts` | 🟡 DB write(스냅샷) | 재사용 |
+| `ops-daily-report.yml` | 1회 | Y | `ops-daily-report.ts` | 🟢 read-only | 재사용 |
+| `prewarm-detail-pages.yml` | `17,47 * * * *` | Y | `curl` | 🟢 read-only | 재사용 |
+| `push-scheduled.yml` | `*/5` | Y | `curl` | 🟡 알림 발송 | 재사용 |
+| `quarantine-check.yml` | 주 1회 | Y | `curl` | 🟢 read-only | 재사용 |
+| `post-deploy-qa.yml` | — | Y | `qa deploy-audit` · smoke · cron-links | 🟢 read-only | 재사용 |
+| **`ci.yml`** | — | — | **가드 5종** | 🟢 read-only | 🔴 **필수 재사용** |
+| `lighthouse.yml` | — | — | — | 🟢 | 재사용 |
+| `run-script.yml` | — | Y | **임의 스크립트** | 🔴 임의 실행 | 🔵 **검토** |
+
+#### 18-3b. `agents-daily.yml` 17 task
+
+```
+🔴 봇 댓글 — guard 후 활성화 (M3-BOT-6 22단계 대상)
+   coo:comment-activator · coo:reply-chain-driver
+   coo:author-reply-dryrun · coo:connection-facilitator
+
+🔴 고객 발행 / DB write
+   cafe_crawler:magazine-generate · coo:content-scheduler
+   cmo:health-anxiety-responder · coo:trending-scorer(점수)
+
+🚫 M3 제외
+   coo:job-matcher
+
+🟢 read / 알림
+   cto:arch-review · cto:count-reconcile · cto:crawler-health
+   cto:qa-verify · cto:security-audit · qa:content-audit
+   ceo:approval-reminder · skip:skip(no-op)
+```
+
+#### 18-3c. `ci.yml` 가드 5종 — 🔴 M3 필수 재사용
+
+```
+scripts/check-cron-links.ts          runner ↔ workflow 연결 (orphan 0)
+scripts/check-seo-guard.ts           네이버 노출면 보호
+scripts/check-ops-typecheck.ts       agents·scripts 타입 회귀
+scripts/check-admin-auth-guards.ts   어드민 인증 가드
+scripts/check-persona-ssot.ts        페르소나 SSoT 정합
+
+⚠️ M3-BOT-6 19단계의 check-bot-comment-guard.ts 도 여기에 추가된다.
+```
+
+### 18-4. launchd 실행 경로 표 (16개)
+
+| # | Label | WorkingDirectory | script | UNAO_WORKDIR | write 등급 | M3 판정 |
+|---|---|---|---|---|---|---|
+| 1~9 | `com.unao.cafe-crawler-{dawn,morning,lunch,afternoon,evening,09h30,17h30}` · `popular-{morning,afternoon,evening}` | unao-prod | `launchd-wrapper.mjs` | unao-prod | 🔴 DB write | 재사용 |
+| 10 | **`com.unao.naver-cafe-sheet-scraper`** | unao-prod | **`launchd-alert.sh`** | unao-prod | 🔴 **고객 발행** | 재사용 ⚠️ wrapper 통일 대상 |
+| 11 | **`com.unaeo.session-refresh`** | unao-prod | **`launchd-alert.sh`** | unao-prod | 🟡 쿠키 갱신 | 재사용 ⚠️ 동일 |
+| 12 | `com.unaeo.magazine-morning` | unao-prod | `launchd-wrapper.mjs` | unao-prod | 🔴 고객 발행 | 재사용 |
+| 13 | `com.unaeo.magazine-late` | unao-prod | `launchd-wrapper.mjs` | unao-prod | 🔴 고객 발행 | 재사용 |
+| 14 | **`com.unao.unao-prod-sync`** | unao-prod | `launchd-wrapper.mjs` → `git -C unao-prod pull --ff-only` (03:00) | unao-prod | 🟢 sync | 🔴 **필수 재사용 패턴** |
+| 15 | `com.unaeo.opsboard` | unao-prod | (상주 PID 508) | unao-prod | 🟢 read-only | 재사용 |
+| 16 | `com.unaoeo.figma-use-mcp` · `figma-ws` | ? | (상주 PID 499·510) | ? | ⚪ 개발도구 | 운영 무관 |
+
+⚠️ **표는 8행이지만 label은 16개다.** 1~9행이 cafe-crawler 10개를, 16행이 figma 2개를 묶었다.
+
+```
+cafe-crawler 계열 10   dawn · morning · lunch · afternoon · evening
+                       09h30 · 17h30 · popular-morning · popular-afternoon · popular-evening
+sheet-scraper           1
+session-refresh         1
+magazine                2   morning · late
+unao-prod-sync          1
+opsboard                1
+─────────────────────────── 운영 16개
+figma-use-mcp · figma-ws  2  ← 개발도구. 운영 무관(운영 16에 미포함)
+```
+
+**repo `launchd/` 16개 ↔ 실물 16개 — 파일명 100% 일치** (+ `.bak-20260820` 1개)
+⚠️ 내용 diff는 대조하지 않았다(§18-9 미확정).
+
+#### ⚠️ wrapper 2종 혼재 — 잠재 위험
+
+```
+launchd-wrapper.mjs   14개 — UNAO_WORKDIR 미설정 시 **FATAL**
+launchd-alert.sh       2개 — UNAO_WORKDIR 미설정 시 **old workspace fallback**
+                             (naver-cafe-sheet-scraper · session-refresh)
+
+현재는 둘 다 UNAO_WORKDIR이 설정돼 있어 안전하다.
+⚠️ 그러나 alert.sh 쪽은 누군가 env를 지우면 **조용히 구 워크스페이스로 간다.**
+   O1 사고와 같은 실패 모드다.
+```
+
+### 18-5. write runner 분류
+
+```
+🔴 customer-facing publish (8)
+   naver-cafe-sheet-scraper · magazine-morning · magazine-late
+   agents-scraper · agents-scraper-dawn
+   agents-cafe-hourly-curation · agents-cafe-popular-curation · agents-killer-post
+
+🔴 DB write — 봇 댓글 (5)   ← M3-BOT-6 22단계 선행 대상
+   agents-cafe-wave · agents-sheet-viral · agents-seed · agents-seed-micro
+   agents-daily(comment-activator · reply-chain-driver
+                author-reply-dryrun · connection-facilitator)
+
+🔴 DB write — 기타 (4)
+   cafe-crawler ×10(launchd) · coo:content-scheduler
+   coo:job-matcher · cmo:health-anxiety-responder
+
+🔴 external API write (1)
+   agents-social — X · Threads · Instagram · Facebook · Google Ads
+
+🟡 notification only (4)
+   agents-cafe · agents-hourly · ceo:approval-reminder · push-scheduled
+
+🟢 read-only (7)
+   ci · lighthouse · post-deploy-qa · ops-daily-report
+   prewarm-detail-pages · quarantine-check · opsboard
+```
+
+**DB write 총 19지점은 M3-BOT-2에서 이미 전수 확인돼 있다**(§4 M3-BOT-2 절 참조).
+
+### 18-6. M3 D-day runner 정책
+
+```
+🔴 필수 재사용
+   ci.yml 가드 5종            check-cron-links · check-seo-guard
+                              check-ops-typecheck · check-admin-auth-guards
+                              check-persona-ssot
+   launchd-wrapper.mjs 패턴   UNAO_WORKDIR 필수화 (미설정 시 FATAL)
+   unao-prod-sync 패턴        03:00 자동 git pull --ff-only
+
+🟡 guard 후 활성화 (M3-BOT-6 22단계 완료 전 금지)
+   agents-cafe-wave · agents-sheet-viral
+   agents-seed · agents-seed-micro
+   agents-daily의 봇 댓글 4 task
+   ⚠️ D-day에는 봇을 돌리지 않는다(M3-OPS-1). D+1~D+3에 순서대로 투입
+
+🔴 분리 필수
+   agents-social              새 브랜드 SNS 계정 전부 신규 발급
+                              X · Threads · IG · FB · Google Ads 토큰 재사용 금지
+
+🚫 제외
+   agents-jobs                일자리 전략 폐기 확정
+   coo:job-matcher            동일
+
+🔵 검토
+   run-script.yml             임의 스크립트 실행 — 권한 범위 확인 필요
+   agents-killer-post         고객 발행. 새 브랜드 초기에 필요한지 재검토
+   agents-design              실행 인자 미확정
+   agents-weekly              실행 인자 미확정
+```
+
+⚠️ **GHA Secrets 62개 재등록이 선행 조건이다**(§17-8 blocker 5).
+
+### 18-7. 우나어 생존 시에도 가져갈 개선 backlog
+
+```
+1. 🔴 ops-doctor 강화 — write runner의 sync 상태 검사
+   현재 scripts/ops-doctor.ts:344-349 는 "git 관리 중"이면 PASS다(O1 확인)
+   → **behind > 0 이면 FATAL**로 판정해야 한다
+   → 이번 감사 기준: unao-prod 0 behind ✅ / unao-ops 140 behind ⚠️
+
+2. 🟡 launchd-alert.sh → launchd-wrapper.mjs 통일
+   2개(sheet-scraper · session-refresh)만 alert.sh를 쓴다
+   alert.sh는 UNAO_WORKDIR 미설정 시 fallback → 조용히 구 경로로 간다
+
+3. 🟡 agents-sheet-viral 과 agents-cafe-wave 중복 확인
+   둘 다 `seed viral-waves`를 `*/5`로 호출한다
+   → 동시 실행 시 중복 처리 가능성 (미검증)
+
+4. 🟡 unao-ops 정리 여부 결정
+   140 behind · plist 참조 0건 · 재발 여지
+   🚫 창업자 지시로 삭제하지 않는다. 결정 사항이다
+
+5. 🟡 run-script.yml 권한 범위 확인
+   dispatch 전용이나 무엇이든 실행할 수 있다
+
+6. 🟢 repo plist ↔ 실물 plist 내용 diff 자동 대조
+   파일명은 일치하나 내용 검사가 없다
+```
+
+### 18-8. 하면 안 되는 것
+
+```
+🚫 launchctl load/unload/reload        18개 전부 exit=0 정상. 창업자 영역
+🚫 plist 수정                          16개 전부 정합
+🚫 unao-ops 삭제                       창업자 지시 (O1)
+🚫 New_Claude_agenotmatter 삭제/이동    미커밋 47파일 보유
+🚫 unao-prod 수동 git 작업              03:00 자동 sync 대상. 수동 개입 시 pull 충돌
+🚫 .bak-20260820 삭제                  O1 통합 시 백업본. 롤백 근거
+🚫 workflow_dispatch 실행               전부 write runner
+🚫 agents-social 중단                  외부 API 토큰 상태 미확인
+```
+
+### 18-9. 아직 미확정 (추정하지 않음)
+
+| 항목 | 왜 미확정인가 | 확인 방법 |
+|---|---|---|
+| repo plist ↔ 실물 plist 내용 diff | 파일명 일치만 확인 | `diff` 16쌍 대조 |
+| `agents-weekly` · `agents-design` · `agents-scraper-dawn` 세부 task | `cron/runner.ts`만 grep에 잡히고 인자를 추출하지 못함 | 워크플로우 전문 정독 |
+| `unao-ops`의 `ops/main` 원격 추적 여부 | 로컬 전용 브랜치일 가능성 | `git -C unao-ops branch -vv` |
+| `agents-sheet-viral` vs `agents-cafe-wave` 중복 영향 | 둘 다 `*/5`로 `seed viral-waves` 호출 | BotLog 중복 실행 흔적 조회 |
+| `run-script.yml` 권한 범위 | 임의 스크립트 실행 가능 | 워크플로우 정독 |
+| GHA 최근 실행 성공률 | `gh run list` 미실행 | `gh run list --limit 50` |
+| `figma-use-mcp` · `figma-ws` (PID 499·510) | **[추정]** 개발도구이며 운영 무관 | plist 정독 |
 
 ---
 
