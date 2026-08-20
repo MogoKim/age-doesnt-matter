@@ -1765,7 +1765,11 @@ Naver/GSC/Search Advisor 요청
 | 8 | **생존 판단 기준** | 미정 | **운영 기준으로 08-22까지 수집량이 10건 안팎이면 소량 수집 고착, 100건 이상이면 회복 시작 신호** (§9 참조). 진짜 회복은 색인/노출/유입 동반 여부로 판정 |
 | 9 | **기존 도메인 연결** | 확정 | 전체 리다이렉트 금지. 실패한 도메인의 신호를 새 브랜드에 연결하지 않음 |
 | 10 | **기존 콘텐츠 재활용** | 방향 확정 | 살릴 수 있는 글은 Google Sheet 등 내부 큐에 보존하고, 오리지널리티를 강화해 새 브랜드에서 재활용하는 방법을 설계 |
-| 11 | **자유게시판 내부 구현** | D-day 권고 확정 | 고객 URL은 `/community/talk`, 내부 enum은 `STORY` 재사용. `TALK` enum 추가는 D+30 이후 필요성이 생길 때 재검토 |
+| 11 | **자유게시판 내부 구현** | ✅ **확정 (M3-OPS-4)** | 고객 URL은 `/community/talk`, 내부 enum은 `STORY` 재사용. **`TALK` enum은 추가하지 않는다** — 빈 DB DDL에 BoardType 7값이 이미 있고, 추가 시 16파일 변경 + `ALTER TYPE` DB 작업이 드는데 효과는 0이다. 구현은 `BOARD_REGISTRY`의 STORY 행 slug를 `'stories'`→`'talk'`로 변경 |
+| 13 | **D-day 게시판 구조** | ✅ **확정 (M3-OPS-4, 2026-08-20)** | 글쓰기 게시판 **3개만**: `MENOPAUSE`(갱년기 핵심판) · `STORY`(자유게시판) · `MAGAZINE`(매거진). 베스트는 별도 게시판이 아니라 노출/랭킹 화면. `HUMOR`·`LIFE2`·`WEEKLY`·`JOB`은 **BoardConfig row를 만들지 않는다**(= 404). 사는이야기·웃음방·2막준비·수다·돈·노후·유머는 자유게시판으로 흡수. 임시 표시명은 갱년기톡/자유게시판/매거진이며 브랜드명 확정 후 조정 |
+| 14 | **매거진 D-day 오픈** | ✅ **확정** | 연다. 단 **첫날 3~5개 글이 전제**다. 단순 콘텐츠가 아니라 브랜드 정체성을 보여주는 공식 콘텐츠여야 하며, 네이버 AI 인용과 Google SEO를 위해 **원문성·구체성·서비스 정체성**을 담는다 |
+| 15 | **`/jobs` 처리** | ✅ **확정** | D-day에는 **삭제하지 않고 `notFound()`로 임시 차단**한다. `/jobs`는 최상위 라우트이고 34파일이 `JOB`을 참조해 즉시 삭제 시 빌드·타입·라우팅 리스크가 크다. D+7~D+30에 참조 전수 조사 후 완전 제거 검토. **`notFound()`는 영구 유지가 아니라 첫날 사고 방지용 안전 차단막이다** |
+| 16 | **D-day DB 초기화** | ✅ **확정 (M3-OPS-7/7b)** | 기존 `prisma/seed.ts`는 **절대 실행하지 않는다**(폐기 보드 4개 + 샘플 유저·글·댓글 오염). `scripts/seed-m3-minimal-board-config.ts`로 **BoardConfig 3행만 upsert**. DDL은 `migrate diff --from-empty --to-schema`로 생성하며 **멱등성 0건 = 1회 전용** — 실패 시 재실행 금지, 새 Supabase project 재생성으로 복구. AdminAccount는 기존 `scripts/create-admin.ts`(bcrypt saltRounds=12) 사용 |
 | 12 | **MENOPAUSE 실회원 글 봇 wave 수** | 확정 | D-day에도 글당 최대 2개. 단, 공통 safety guard, 같은 톤 반복 방지, 실회원 댓글 후 중단, 최근 20글 동일 페르소나 최대 2회 조건을 전제로 한다 |
 
 ---
@@ -1825,7 +1829,8 @@ Naver/GSC/Search Advisor 요청
 | 영역 | 부족한 내용 | 다음 작업 |
 |---|---|---|
 | 브랜드 | 새 브랜드명 후보, 금지어, 도메인 후보 기준 | 은은한 여성 커뮤니티 이름 후보군 작성 |
-| 제품 | MVP route, 홈 첫 화면 구성, 게시판별 역할 | M3-2 IA/Product spec으로 확정. 단, `/community/talk`는 D-day에 `STORY` enum 재사용 |
+| 제품 | ~~MVP route, 게시판별 역할~~ → ✅ **M3-OPS-4에서 확정** (§14-1). 남은 것은 홈 첫 화면 구성뿐 | 게시판 3개(MENOPAUSE·STORY·MAGAZINE) 확정. `/community/talk` = `STORY` enum 재사용. 홈 화면 구성은 M3-2에서 계속 |
+| 인프라·DB | ~~Supabase 초기화 절차~~ → ✅ **M3-OPS-7/7b에서 확보** (§14-5~14-8) | DDL 46/46 생성 실증 · 1회 전용 · AdminAccount 절차 확인. 남은 것은 **로컬 리허설 수단 부재**뿐 |
 | 콘텐츠 | 초기 7일 발행 계획, 외부글 20건 구성, 매거진 첫 주제 | M3-3 콘텐츠 운영 정책으로 확정 |
 | 봇/페르소나 | 첫 세트 30명 설계 PASS, D-day 확정 분포 50대 19명·40대 후반 6명·60대 5명, 갱년기 봇 댓글 허용, 갱년기 실회원 글도 글당 최대 2개, 최근 20글 노출 guard, 실회원 KPI 6종 | M3-BOT-1/2/3/3b/4 기준을 문서화함. 다음은 같은 톤 반복 방지, 노출 guard 세부 설계, D-day 구현 체크리스트 |
 | 코드 | 복사할 모듈, 삭제할 모듈, 다시 쓸 모듈 | M3-1 Keep/Drop/Rewrite를 파일 단위로 확장 |
@@ -1837,6 +1842,323 @@ Naver/GSC/Search Advisor 요청
 
 이 섹션은 실행 지시가 아니다. 네이버 생존 판정 대기 시간에 하나씩 채워서,
 회복 불가 판정이 났을 때 판단과 실행을 같은 날 끝낼 수 있게 만드는 준비 항목이다.
+
+---
+
+## 14. D-day IA · DB 초기화 (M3-OPS-4 / 7 / 7b, 2026-08-20)
+
+> **판정: D-day IA 확정 · DB 초기화 경로 확보.**
+> 핵심 발견은 **"D-day IA에 코드 변경이 거의 필요 없다"** 는 것이다.
+> 게시판 노출은 enum이 아니라 **`BoardConfig` row 존재 여부**로 결정되므로,
+> row를 안 만들면 그 게시판은 404가 된다(`getBoardConfig`에 fallback 없음).
+
+### 14-1. 창업자 확정 — D-day 게시판 구조 (2026-08-20)
+
+**① 글쓰기 게시판은 3개다**
+
+| # | boardType | 고객 URL | 역할 |
+|---|---|---|---|
+| 1 | **MENOPAUSE** | `/community/menopause` | **갱년기 핵심판** — 새 브랜드의 시작점 |
+| 2 | **STORY** | **`/community/talk`** | **자유게시판** — 사는이야기·유머·돈·노후·수다를 전부 흡수 |
+| 3 | **MAGAZINE** | `/magazine` | **매거진** — 브랜드 정체성 콘텐츠 |
+
+```
+베스트는 별도 게시판이 아니라 노출/랭킹 화면이다. BoardConfig row를 만들지 않는다.
+HUMOR · LIFE2 · WEEKLY · JOB 은 BoardConfig row를 만들지 않는다.
+기존 사는이야기 · 웃음방 · 2막준비 · 수다 · 돈 · 노후 · 유머는 자유게시판으로 흡수한다.
+```
+
+**② 자유게시판 URL = `/community/talk`, 내부 enum은 `STORY` 재사용**
+
+```
+✅ 고객 URL   /community/talk
+✅ 내부 enum  STORY (기존 값 그대로)
+🚫 TALK enum 추가 금지
+
+근거
+  · 빈 DB DDL에 BoardType 7값이 이미 전부 포함된다(init-ddl.sql:20)
+    'JOB','STORY','HUMOR','MAGAZINE','WEEKLY','LIFE2','MENOPAUSE'
+  · TALK 추가는 전례상 16파일 변경 + ALTER TYPE DB 작업이 든다
+    (MENOPAUSE 도입 커밋 102aaf49 실측)
+  · 효과는 0 — STORY로 동일하게 달성된다
+  · M3-2 확정 원칙("고객 URL은 /community/talk, 내부 enum은 STORY 재사용")과 일치
+
+⚠️ 구현 지점: BOARD_REGISTRY의 STORY 행 slug를 'stories' → 'talk' 로 변경한다.
+   slug는 sitemap · prewarm · revalidatePath · URL prefix가 전부 파생되는 SSoT다.
+```
+
+**③ 매거진은 D-day에 연다 — 단 첫날 3~5개 글이 전제다**
+
+```
+매거진 글은 단순 콘텐츠가 아니라 새 브랜드 정체성을 보여주는 공식 콘텐츠여야 한다.
+요건: 네이버 AI가 인용하기 쉽고, Google SEO에도 걸릴 수 있도록
+      원문성 · 구체성 · 서비스 정체성을 담는다.
+⚠️ 3~5개가 준비되지 않으면 빈 매거진이 되어 오히려 신뢰를 떨어뜨린다.
+   콘텐츠 확보가 D-day 매거진 오픈의 선행 조건이다.
+```
+
+**④ `/jobs`는 D-day에 `notFound()`로 임시 차단한다**
+
+```
+🚫 D-day에 삭제하지 않는다
+이유: /jobs는 BoardConfig와 무관한 최상위 라우트이고(BOARD_REGISTRY isCommunity:false),
+      JobDetail 모델과 34파일이 JOB을 참조한다.
+      즉시 삭제하면 빌드 · 타입 · 라우팅 리스크가 크다.
+
+D-day    /jobs · /jobs/[id] · /jobs/region/[sido] 에서 notFound() 반환
+D+7~D+30 참조 전수 조사 후 완전 제거 검토
+
+⚠️ notFound()는 영구 유지가 아니라 첫날 사고 방지용 안전 차단막이다.
+```
+
+**⑤ 게시판 표시명 — 브랜드명 확정 전 임시명**
+
+```
+MENOPAUSE  갱년기톡  또는  갱년기 이야기
+STORY      자유게시판
+MAGAZINE   매거진
+
+⚠️ 최종 표시명은 브랜드명 확정 후 조정한다(§10 결정 2 종속).
+   단 row 구조와 categories는 지금 확정된 것을 쓴다.
+```
+
+### 14-2. BoardConfig 최소 seed 표 (D-day 3행)
+
+| # | boardType | 고객 URL | displayName(임시) | description | categories | writeGrade | isActive | hot/fame | D-day |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | **MENOPAUSE** | `/community/menopause` | 갱년기톡 | 갱년기를 지나는 우리 또래의 이야기 | `나만 이런가요` `몸의 변화` `완경·호르몬` `마음의 변화` `가족·관계` | `SPROUT` | `true` | 기본값 유지 | ✅ 필수 |
+| 2 | **STORY** | **`/community/talk`** | 자유게시판 | 무슨 이야기든 편하게 | `가입인사` `건강` `가족` `돈·노후` `고민` `자유수다` | `SPROUT` | `true` | 기본값 유지 | ✅ 필수 |
+| 3 | **MAGAZINE** | `/magazine` | 매거진 | 우리 또래를 위한 읽을거리 | `전체` `건강` `돈·노후` `생활정보` | `SPROUT` | `true` | 기본값 유지 | ✅ 필수 |
+| — | HUMOR · LIFE2 · WEEKLY · JOB | — | — | — | — | — | — | — | ❌ **row 미생성** |
+
+**categories 변경점 (기존 `seed.ts` 대비)**
+
+```
+STORY     '취미' → '돈·노후' 로 교체 — LIFE2(2막준비) 폐기분을 카테고리로 흡수
+MAGAZINE  '재테크'·'여행' → '돈·노후' 로 통합 — 초기 빈 카테고리를 만들지 않는다
+MENOPAUSE 기존 5개 그대로 재사용
+          ⚠️ sheet-board-routing.test.ts:50이 '나만 이런가요'를 기본값으로 고정 중
+
+writeGrade = SPROUT   신규 가입자가 첫날 바로 글을 쓸 수 있어야 한다
+hot(10)/fame(50)      첫날 트래픽에서 도달할 일이 없다. 튜닝은 D+30
+```
+
+### 14-3. 🚫 기존 `prisma/seed.ts`를 D-day에 절대 실행하지 않는다
+
+| 문제 | 위치 | 새 브랜드 오염 |
+|---|---|---|
+| **LIFE2 row** | `seed.ts:17-20` `2막준비` | 🔴 폐기 게시판이 `isActive=true`로 노출 |
+| **WEEKLY row** | `:23-26` `수다방` | 🔴 이미 숨김 처리한 보드가 부활 |
+| **JOB row** | `:29-32` `내 일 찾기` | 🔴 폐기한 일자리 전략이 메뉴에 등장 |
+| **HUMOR row** | `:11-14` `웃음방` | 🟡 자유게시판 흡수 대상인데 별도 판이 열림 |
+| **user.upsert** | `:82` | 🔴 테스트 유저가 실제 회원 목록에 |
+| **post.create** | `:147` | 🔴 샘플 글이 고객 화면에 노출 |
+| **jobDetail.create** | `:166` | 🔴 폐기한 일자리 데이터 |
+| **comment.create ×6** | `:216-238` | 🔴 샘플 댓글(삭제된 댓글 케이스 포함) |
+| **구 브랜드 게시판명** | 전 row | 🔴 `사는이야기`·`웃음방`·`2막준비` |
+
+**7개 row 중 4개가 폐기 대상이고 유저·글·댓글 샘플이 함께 들어간다.**
+
+### 14-4. D-day 최소 seed 스크립트 설계
+
+```
+scripts/seed-m3-minimal-board-config.ts   (신규 · D-day에 작성)
+
+기존 seed.ts를 수정하지 않는 이유
+  ① seed.ts는 현재 서비스 자산이다 — 우나어가 생존하면 계속 쓴다
+  ② D-day에 원본을 고치면 되돌릴 기준이 사라진다
+  ③ prisma.config.ts의 seed 설정이 seed.ts를 가리킨다 — 건드리면 부작용
+
+설계
+  · DIRECT_URL 우선 (pooler 6543 아님) — create-admin.ts:11과 동일 패턴
+  · BoardConfig 3행만 upsert (where: { boardType } — @unique)
+  · upsert여야 하는 이유: displayName·categories 조정이 D-day에 여러 번 필요할 수 있다
+    DDL은 1회 전용이지만 seed는 재실행이 안전해야 한다
+  🚫 prisma db seed 금지(prisma-guide:5) → npx tsx 로 직접 실행
+```
+
+**검증 쿼리**
+
+```sql
+-- 실행 전 (DDL 직후)
+SELECT count(*) FROM "BoardConfig";        -- 기대: 0
+
+-- 실행 후
+SELECT "boardType","displayName","isActive",array_length("categories",1)
+FROM "BoardConfig" ORDER BY "boardType";   -- 기대: 3행 (MAGAZINE·MENOPAUSE·STORY)
+-- 🔴 JOB·WEEKLY·LIFE2·HUMOR이 있으면 잘못된 seed를 돌린 것
+```
+
+```bash
+curl -sI NEW_APP_URL/community/menopause   # 200
+curl -sI NEW_APP_URL/community/talk        # 200
+curl -sI NEW_APP_URL/community/humor       # 404 (정상)
+curl -sI NEW_APP_URL/jobs                  # 404 (notFound 차단)
+```
+
+**실패 시 중단 기준**
+
+```
+1. BoardConfig 행 수 != 3              → 중단, 스크립트 확인
+2. 폐기 보드가 1행이라도 생성됨         → 중단, 잘못된 seed 실행
+3. /community/menopause 가 404         → 중단, isActive 또는 slug 확인
+4. 글쓰기 시 "카테고리 유효하지 않음"   → categories 불일치 (posts.ts:83)
+```
+
+### 14-5. 빈 Supabase DB 초기화 절차 (M3-OPS-7 / 7b 실증)
+
+**1단계 — DDL 생성 (DB 접속 없음, 실행 검증 완료)**
+
+```bash
+npx prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script > init.sql
+```
+
+⚠️ **`--to-schema-datamodel`은 Prisma 7에서 제거됐다.** `--to-schema`가 올바른 플래그다.
+
+**실측 결과 (2026-08-20)**
+
+```
+1,503줄 / 49,096 bytes
+CREATE TABLE 46  ← schema.prisma 46모델과 정확히 일치 (46/46)
+CREATE TYPE  36 (enum)
+CREATE INDEX 99 + UNIQUE INDEX 36
+FOREIGN KEY  34 · PRIMARY KEY 46
+
+✅ migrations에 없던 9모델도 전부 포함됨
+   AdminQueue · DailyBrief · HomeCurationOverride · Notice · Popup
+   PushSubscription · SocialPost · VoteBallot · VoteEvent
+
+✅ Supabase 전용 의존 0건
+   CREATE EXTENSION 0 · auth. 0 · storage. 0 · SECURITY DEFINER 0 · supabase 0
+   → 순수 PostgreSQL. 어떤 Postgres에도 이식 가능하다
+```
+
+**2단계 — Node.js pg 모듈로 실행** (prisma-guide:6 원칙 준수 · DIRECT_URL 5432)
+
+**3단계 — 검증**
+
+```sql
+-- 실행 전: 빈 DB 확인 (필수)
+SELECT count(*) FROM information_schema.tables
+WHERE table_schema='public' AND table_type='BASE TABLE';   -- 기대: 0
+-- 🔴 0이 아니면 실행 중단. 빈 DB가 아니다
+
+-- 실행 후
+SELECT count(*) FROM information_schema.tables
+WHERE table_schema='public' AND table_type='BASE TABLE';   -- 기대: 46
+SELECT count(*) FROM pg_type t JOIN pg_namespace n ON t.typnamespace=n.oid
+WHERE n.nspname='public' AND t.typtype='e';                -- 기대: 36
+SELECT count(*) FROM information_schema.table_constraints
+WHERE table_schema='public' AND constraint_type='FOREIGN KEY';  -- 기대: 34
+```
+
+**4단계** — `npx prisma generate` → `npx tsc --noEmit`
+
+### 14-6. 🔴 DDL은 1회 전용이다 (멱등성 0건 — 실측)
+
+| 구문 | 멱등 | 전체 |
+|---|---|---|
+| `CREATE TABLE IF NOT EXISTS` | **0** | 46 |
+| `CREATE TYPE IF NOT EXISTS` | **0** | 36 |
+| `CREATE INDEX IF NOT EXISTS` | **0** | 99 |
+| `DO $$` 블록 | **0** | — |
+| `BEGIN`/`COMMIT` 트랜잭션 | **0** | — |
+
+```
+재실행하면 첫 CREATE TYPE "Role" 에서 42710(duplicate_object) 즉시 실패한다.
+트랜잭션이 없으므로 중간 실패 시 일부 테이블만 생성된 상태로 남는다.
+
+⚠️ prisma-guide:7("신규 SQL은 멱등적으로 작성")과 충돌한다.
+   migrate diff 출력은 프로젝트 원칙을 따르지 않는다.
+```
+
+**🚫 실패 시 같은 SQL을 재실행하지 않는다. 복구는 아래 둘 중 하나다.**
+
+```
+A(권장)  새 Supabase project를 재생성하고 처음부터
+         → 데이터가 없는 project이므로 재생성 비용이 가장 낮다
+B        DROP SCHEMA public CASCADE; CREATE SCHEMA public; 후 재실행
+         → 빠르지만 DROP은 되돌릴 수 없다. 새 DB에만 허용
+```
+
+**재실행 금지 조건**
+
+```
+1. 실행 전 테이블 수 != 0
+2. _prisma_migrations 테이블이 이미 존재
+3. 이전 실행이 중간 실패 → DROP SCHEMA 또는 project 재생성 없이 재시도 금지
+4. 기존 데이터가 1행이라도 있는 DB
+```
+
+### 14-7. 관리자 계정 생성 (M3-OPS-7b — 절차 이미 존재)
+
+```bash
+npx tsx scripts/create-admin.ts <이메일> <닉네임> <비밀번호>
+```
+
+```
+모델    AdminAccount { email @unique · passwordHash · nickname · role }
+해시    bcrypt (bcryptjs) · saltRounds=12
+        생성 create-admin.ts:34  bcrypt.hash(password, 12)
+        검증 admin-auth.ts:35    bcrypt.compare(...)
+전제    .env.local 에 DIRECT_URL 설정 (새 Supabase)
+검증    새 도메인 /admin/login 로그인 성공
+
+⚠️ 비밀번호는 대화·문서에 남기지 않는다. 창업자가 직접 입력한다.
+⚠️ create-admin.ts:19 예시 이메일이 admin@unao.com (구 브랜드) — 실행 시 새 도메인 사용
+⚠️ 중복 이메일은 실패 처리다(멱등 아님)
+```
+
+**관리자 계정 없이 최소 오픈이 가능한가 — 조건부 가능**
+
+```
+가능    홈 · 게시판 · 글 상세 · 카카오 로그인 · 글쓰기 · 댓글
+막힘    /admin/** 전체 — 신고 처리 · 회원 관리 · 배너/광고 · 공지 · 팝업
+        투표 이벤트 · 홈 큐레이션 · BoardConfig 수정
+→ 오픈은 되지만 운영이 불가능하다. D-day 필수로 본다.
+```
+
+### 14-8. D-day DB 실행 순서 요약
+
+```
+1. 새 Supabase project 생성 (창업자)
+2. npx prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script > init.sql
+3. 실행 전 검증: 테이블 수 0 확인
+4. Node pg 모듈로 init.sql 실행 (DIRECT_URL)   ← 1회 전용
+5. 실행 후 검증: 46 / 36 / 34
+6. npx prisma generate → npx tsc --noEmit
+7. npx tsx scripts/seed-m3-minimal-board-config.ts   ← BoardConfig 3행
+8. seed 검증: 3행 확인
+9. npx tsx scripts/create-admin.ts <이메일> <닉네임> <비밀번호>
+10. /admin/login 로그인 검증
+```
+
+### 14-9. 아직 미확정 (추정하지 않음)
+
+| 항목 | 왜 미확정인가 | 확인 방법 |
+|---|---|---|
+| 로컬 리허설 수단 | psql · docker 없음. 설치 금지 | 창업자에게 Postgres/Docker 설치 요청 |
+| 최종 게시판 표시명 | 브랜드명(§10 결정 2) 종속 | 브랜드명 확정 후 |
+| 매거진 첫날 3~5글 주제 | 콘텐츠 기획 미착수 | M3-3 콘텐츠 운영 정책 |
+| `create-admin.ts:5`의 `[WATCH] 2주 모니터링` | 무슨 감시였는지 불명 | `git log -S "WATCH" -- scripts/create-admin.ts` |
+| 2단계(pg로 DDL 실행) 실측 | 로컬 DB 부재로 리허설 불가 | 리허설 수단 확보 후 |
+
+⚠️ **로컬 리허설 부재의 위험도는 낮아졌다.** 멱등성이 없다는 사실이 확정되면서
+**"실패하면 project를 다시 만든다"** 는 단순 복구 경로가 생겼기 때문이다.
+
+### 14-10. 우나어 생존 시에도 가져갈 개선 backlog
+
+```
+1. 🔴 재해 복구 절차 문서화 — 현재 DB 소실 시 46모델 복원 절차가 없었다
+      → §14-5~14-8이 그 절차다. 현재 서비스에도 그대로 적용된다
+2. 🔴 migration 파일과 실제 스키마 9모델 불일치 — 이력 추적이 불완전
+3. 🟡 seed.ts가 운영 데이터(BoardConfig)와 테스트 데이터(유저·글·댓글)를 섞고 있다
+4. 🟡 BoardConfig 단일 장애점 — fallback 없음. 비면 전 게시판 404
+5. 🟡 prisma-guide가 Prisma 7 이전 기준 — prisma.config.ts 도입 미반영,
+      제거된 플래그(--to-schema-datamodel)가 문서에 남아 있을 수 있다
+6. 🟡 create-admin.ts 예시 이메일이 admin@unao.com — 실제 도메인과 불일치
+7. 🟢 BOARD_REGISTRY는 잘 설계된 자산이다 — slug·sitemap·prewarm이 여기서 파생된다
+```
 
 ---
 
