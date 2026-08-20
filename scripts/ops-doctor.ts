@@ -34,8 +34,19 @@ import { execFileSync } from 'child_process'
 import { existsSync, readdirSync, statSync } from 'fs'
 import { join } from 'path'
 import { homedir } from 'os'
+import {
+  EXPECTED_LAUNCHD_ROOT,
+  formatVerdictDetail,
+  judgeRunnerFreshness,
+  launchdGrade,
+  PROD_SYNC_INTERVAL_HOURS,
+  UNKNOWN_LAUNCHD_GRADE,
+  type RunnerRoot,
+  type WorktreeFreshness,
+} from './ops-runner-manifest'
 
 const HOME = homedir()
+const MAIN_DIR = join(HOME, 'Documents/unao-main')
 const PROD_DIR = join(HOME, 'Documents/unao-prod')
 const OPS_DIR = join(HOME, 'Documents/unao-ops')
 const DEV_DIR = join(HOME, 'Documents/New_Claude_agenotmatter')
@@ -111,6 +122,102 @@ function remoteMainSha(dir: string): string | null {
   if (!out) return null
   const first = out.split('\n')[0]?.trim()
   return first ? first.split(/\s+/)[0] ?? null : null
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * worktree freshness 수집 (P0-1B) — 판정은 ops-runner-manifest.ts가 한다
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/** 경로 → 실행 루트 라벨. rootOf()와 같은 규칙이되 unao-main까지 구분한다 */
+function rootOfDir(dir: string): RunnerRoot {
+  if (dir.startsWith(PROD_DIR)) return 'prod'
+  if (dir.startsWith(OPS_DIR)) return 'ops'
+  if (dir.startsWith(DEV_DIR)) return 'DEV'
+  if (dir.startsWith(MAIN_DIR)) return 'main'
+  return 'other'
+}
+
+/**
+ * worktree 한 곳의 신선도를 read-only로 수집한다.
+ *
+ * ⚠️ behind 계산에 두 기준을 쓴다:
+ *   1순위  `git ls-remote`로 조회한 **실제 원격 main** — stale ref 함정을 피한다
+ *   2순위  로컬 origin/main ref — 원격 조회가 실패했을 때만
+ *   둘 다 안 되면 behind = null 로 남긴다. **0으로 채우지 않는다.**
+ *   "모른다"를 "최신이다"로 바꾸는 순간 O1 사고가 반복된다.
+ *
+ * fetch는 하지 않는다. fetch는 로컬 ref를 갱신하는 쓰기 동작이다.
+ */
+/** HEAD 커밋 이후 경과 시간(h). "몇 커밋 뒤"보다 운영 관점에서 정확한 신호다 */
+function headAgeHours(dir: string): number | null {
+  const ts = run('git', ['log', '-1', '--format=%ct'], dir)
+  if (!ts) return null
+  const sec = Number(ts)
+  if (!Number.isFinite(sec)) return null
+  return (Date.now() / 1000 - sec) / 3600
+}
+
+function collectFreshness(dir: string): WorktreeFreshness {
+  const root = rootOfDir(dir)
+  const base: WorktreeFreshness = {
+    root, path: dir, exists: false, isGitRepo: false, branch: null, headSha: null,
+    dirtyCount: null, hasUpstream: false, ahead: null, behind: null,
+    divergedFromRemote: null, headAgeHours: null,
+    // 자동 sync 장치가 있는 곳은 unao-prod 하나뿐이다(§18-4). 나머지는 방치하면 영원히 뒤처진다.
+    syncIntervalHours: rootOfDir(dir) === 'prod' ? PROD_SYNC_INTERVAL_HOURS : null,
+  }
+
+  if (!existsSync(dir)) return { ...base, reason: '디렉토리 없음' }
+  if (!isGitRepo(dir)) return { ...base, exists: true, reason: 'git 저장소 아님' }
+
+  const head = run('git', ['rev-parse', 'HEAD'], dir)
+  const branch = run('git', ['rev-parse', '--abbrev-ref', 'HEAD'], dir)
+  const dirtyRaw = run('git', ['status', '--porcelain'], dir)
+  const upstream = run('git', ['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}'], dir)
+
+  const info: WorktreeFreshness = {
+    ...base,
+    exists: true,
+    isGitRepo: true,
+    branch,
+    headSha: head ? head.slice(0, 8) : null,
+    dirtyCount: dirtyRaw === null ? null : dirtyRaw.split('\n').filter(Boolean).length,
+    hasUpstream: !!upstream,
+    headAgeHours: headAgeHours(dir),
+  }
+
+  // 실제 원격을 직접 조회 — 로컬 ref는 마지막 pull 시점의 기억이라 신뢰하지 않는다
+  const remote = remoteMainSha(dir)
+  if (!head || !remote) {
+    return { ...info, reason: !head ? 'HEAD 조회 실패' : '원격 조회 실패(네트워크/인증)' }
+  }
+
+  // SHA 직접 비교 — 이건 fetch 없이도 확실하다
+  const diverged = head !== remote
+
+  // 개수 세기는 원격 커밋 객체가 로컬에 있어야만 된다. 없으면 null로 남긴다(0으로 채우지 않는다).
+  const behindRaw = diverged ? run('git', ['rev-list', '--count', `${head}..${remote}`], dir) : '0'
+  const aheadRaw = diverged ? run('git', ['rev-list', '--count', `${remote}..${head}`], dir) : '0'
+
+  return {
+    ...info,
+    divergedFromRemote: diverged,
+    behind: behindRaw === null ? null : Number(behindRaw),
+    ahead: aheadRaw === null ? null : Number(aheadRaw),
+    reason: diverged && behindRaw === null
+      ? '원격 커밋이 로컬에 없어 개수 미상 (fetch 금지 — 나이로 판정한다)'
+      : undefined,
+  }
+}
+
+/** 같은 worktree를 여러 runner가 쓰므로 조회 결과를 재사용한다 (ls-remote는 네트워크 비용) */
+const freshnessCache = new Map<string, WorktreeFreshness>()
+function freshnessOf(dir: string): WorktreeFreshness {
+  const hit = freshnessCache.get(dir)
+  if (hit) return hit
+  const v = collectFreshness(dir)
+  freshnessCache.set(dir, v)
+  return v
 }
 
 function checkProdClone(): void {
@@ -242,7 +349,7 @@ function rootOf(path: string | null): string {
   return 'other'
 }
 
-function checkLaunchd(opsTracked: boolean): PlistInfo[] {
+function checkLaunchd(): PlistInfo[] {
   header('[5-7] launchd — 어느 경로를 실행하는가')
 
   if (!existsSync(LAUNCH_AGENTS)) {
@@ -285,18 +392,55 @@ function checkLaunchd(opsTracked: boolean): PlistInfo[] {
       `${argLabel.padEnd(5)} ${rootOf(info.stdout).padEnd(4)} ${rootOf(info.stderr)}`,
     )
 
-    // (a) 개발 작업트리를 가리키면 즉시 문제 — 운영이 미커밋 코드를 실행하게 된다
+    // (a) freshness guard (P0-1B) — "git repo인가"가 아니라 "최신 코드에 도달했는가"를 본다
+    //
+    //     🔴 O1 사고(2026-08-20 이전): unao-ops가 140커밋 뒤처진 상태에서
+    //        naver-cafe-sheet-scraper(고객 발행)가 그 경로를 실행했는데
+    //        이 자리에서 "git 추적 중이면 PASS"를 냈다. 그 판정이 사고를 통과시켰다.
+    //        추적 여부와 코드 신선도는 무관하다 — 잘 추적되면서 3주 뒤처질 수 있다.
     const allRoots = [rootOf(info.workDir), rootOf(info.envWorkDir), rootOf(info.stdout), rootOf(info.stderr), ...argRoots]
-    if (allRoots.includes('DEV')) {
-      record('FATAL', 'launchd', `${name}: 개발 작업트리를 가리킨다`)
-    } else if (allRoots.includes('ops')) {
-      // unao-ops가 git으로 추적되고 있으면 별도 실행 루트라는 사실만 알리면 된다.
-      if (opsTracked) {
-        record('PASS', 'launchd', `${name}: unao-ops 경로 (git 추적 중 — 별도 실행 루트)`)
-      } else {
-        record('WARN', 'launchd', `${name}: unao-ops 경로 — git 미관리라 실행 코드 추적 불가`)
-      }
-    } else if (allRoots.some((r) => r === 'other')) {
+    const spec = launchdGrade(info.label)
+    const grade = spec?.grade ?? UNKNOWN_LAUNCHD_GRADE
+
+    // 등급표에 없는 잡은 freshness 검사에서 샌다. 먼저 그 사실을 알린다.
+    if (!spec) {
+      record('WARN', 'launchd', `${name}: 등급표에 없는 잡 — scripts/ops-runner-manifest.ts에 추가해야 freshness 검사 대상이 된다`)
+    }
+
+    // 실제로 코드가 도는 경로: UNAO_WORKDIR > WorkingDirectory 순으로 신뢰한다
+    // (래퍼가 UNAO_WORKDIR를 우선 적용하므로 그쪽이 실효값이다)
+    const execDir = info.envWorkDir ?? info.workDir
+    const fresh: WorktreeFreshness = execDir
+      ? freshnessOf(execDir)
+      : {
+          root: '-', path: '(경로 미지정)', exists: false, isGitRepo: false,
+          branch: null, headSha: null, dirtyCount: null, hasUpstream: false,
+          ahead: null, behind: null, divergedFromRemote: null, headAgeHours: null,
+          syncIntervalHours: null, reason: 'WorkingDirectory·UNAO_WORKDIR 둘 다 없음',
+        }
+
+    // launchd-alert.sh 는 UNAO_WORKDIR 미설정 시 구 워크스페이스로 fallback한다(§19 P1-1)
+    const usesFallbackWrapper = info.programArgs.some((a) => a.endsWith('launchd-alert.sh'))
+
+    const verdict = judgeRunnerFreshness({
+      name: info.label,
+      grade,
+      what: spec?.what ?? '(등급 미상)',
+      workDirRoot: rootOf(info.workDir) as RunnerRoot,
+      envWorkDirRoot: rootOf(info.envWorkDir) as RunnerRoot,
+      freshness: fresh,
+      expectedRoot: EXPECTED_LAUNCHD_ROOT,
+      usesFallbackWrapper,
+    })
+
+    if (verdict.level !== 'PASS') {
+      console.log(`  ${ICON[verdict.level]}${verdict.message}`)
+      console.log(formatVerdictDetail(verdict))
+    }
+    record(verdict.level, 'launchd', verdict.message)
+
+    // 등급표에 있는 잡은 위 판정이 경로까지 본다. 없는 잡만 기존 경로 경고를 유지한다.
+    if (!spec && allRoots.some((r) => r === 'other')) {
       record('WARN', 'launchd', `${name}: 알 수 없는 경로`)
     }
 
@@ -342,10 +486,21 @@ function checkOpsDir(): boolean {
     return true
   }
   if (isGitRepo(OPS_DIR)) {
-    const head = run('git', ['rev-parse', 'HEAD'], OPS_DIR)
-    const dirty = run('git', ['status', '--porcelain'], OPS_DIR) ?? ''
-    console.log(`  ✅ git 관리 중 — HEAD ${shortSha(head)} · dirty ${dirty ? dirty.split('\n').filter(Boolean).length : 0}건`)
-    record('PASS', 'unao-ops', 'git 관리 중')
+    // 🔴 P0-1B: 예전에는 여기서 무조건 PASS를 냈다. "git 관리 중"이 안전의 근거가 아니다.
+    //    O1 사고 당시 unao-ops는 git으로 잘 추적되면서 140커밋 뒤처져 있었다.
+    const f = freshnessOf(OPS_DIR)
+    const behindLabel = f.behind === null ? '판정 불가' : `${f.behind}커밋 뒤`
+    console.log(`  HEAD ${f.headSha ?? '?'} (${f.branch ?? '?'}) · dirty ${f.dirtyCount ?? '?'}건 · ${behindLabel}`)
+
+    if (f.behind !== null && f.behind > 0) {
+      console.log('  ⚠️  뒤처진 실행 루트다. 지금 이 경로를 쓰는 잡이 없다면 즉시 위험은 아니다.')
+      console.log('      그러나 write runner가 하나라도 여기를 가리키면 위 launchd 검사가 FATAL을 낸다.')
+      record('WARN', 'unao-ops', `stale worktree — ${behindLabel} (참조하는 write runner가 있으면 FATAL)`)
+    } else if (f.behind === null) {
+      record('WARN', 'unao-ops', `신선도 판정 불가${f.reason ? ` — ${f.reason}` : ''}`)
+    } else {
+      record('PASS', 'unao-ops', 'git 관리 중 · behind 0')
+    }
     return true
   } else {
     console.log('  ⚠️  git 미관리 디렉토리다.')
@@ -421,9 +576,9 @@ function main(): void {
 
   checkProdClone()
   checkDevWorktree()
-  // unao-ops 추적 여부를 먼저 확인해야 launchd 경로 판정에 반영할 수 있다
-  const opsTracked = checkOpsDir()
-  const infos = checkLaunchd(opsTracked)
+  // unao-ops를 먼저 본다 — freshness 캐시가 채워져 launchd 검사에서 재조회하지 않는다
+  checkOpsDir()
+  const infos = checkLaunchd()
   checkLogs()
   checkFmkorea(infos)
 
