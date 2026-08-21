@@ -6,9 +6,12 @@ import {
   isActiveWriteRunner,
   judgeRunnerFreshness,
   launchdGrade,
+  parseSyncLogTail,
+  SYNC_LOG_MARKER,
   UNKNOWN_LAUNCHD_GRADE,
   unknownFreshness,
   type RunnerCheckInput,
+  type SyncEvidence,
   type WorktreeFreshness,
 } from '../../scripts/ops-runner-manifest'
 
@@ -491,6 +494,192 @@ describe('dev-tool 정책 — 개발 도구가 개발 워크트리를 쓰는 건
       const v = judgeRunnerFreshness(input({ grade, freshness: { ...healthyProd, root: 'DEV' } }))
       expect(v.level, `${grade} 가 DEV에서 FATAL이 아니다`).toBe('FATAL')
     }
+  })
+})
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 4-C. P0-1C — sync 실행 흔적으로 stale을 판단한다
+ *
+ * headAgeHours는 "HEAD 커밋이 얼마나 오래됐는가"이지
+ * "sync가 얼마나 밀렸는가"가 아니다. 둘은 다른 사실인데 하나로 판정했다.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/** sync가 방금 정상 실행된 상태 — prod에만 존재한다 */
+const syncHealthy: SyncEvidence = {
+  logPath: '/Users/yanadoo/Documents/unao-prod/logs/unao-prod-sync.log',
+  lastAttemptAgeHours: 7,
+  lastOutcome: 'fast-forward',
+}
+
+describe('P0-1C — sync evidence가 headAgeHours보다 우선한다', () => {
+  it('lastAttempt 7h · headAge 72h · stale → FATAL이 아니라 WARN', () => {
+    // 주말 시나리오: 저장소가 조용하다 월요일 커밋이 나면 prod HEAD 나이가 이미 72h다.
+    // 그런데 sync는 7시간 전에 정상 실행됐다. 여기서 FATAL을 내면 매주 월요일 오탐이고,
+    // 매번 울리는 FATAL은 아무도 보지 않게 되어 결국 O1을 다시 놓친다.
+    const v = judgeRunnerFreshness(input({
+      freshness: {
+        ...healthyProd,
+        behind: 2, divergedFromRemote: true,
+        headAgeHours: 72,          // ← 예전 기준이면 48h 초과라 FATAL이었다
+        sync: syncHealthy,         // ← 실제 sync는 7시간 전에 돌았다
+      },
+    }))
+    expect(v.level).toBe('WARN')
+    expect(v.code).toBe('stale_write_within_grace')
+    expect(v.detail.graceBasis).toBe('sync 실행 흔적')
+  })
+
+  it('lastAttempt 51h → FATAL sync_not_running (유예 48h 초과)', () => {
+    const v = judgeRunnerFreshness(input({
+      freshness: {
+        ...healthyProd,
+        behind: 2, divergedFromRemote: true,
+        headAgeHours: 2,           // ← 코드는 새것이다. 그래도 sync가 멈췄다
+        sync: { ...syncHealthy, lastAttemptAgeHours: 51 },
+      },
+    }))
+    expect(v.level).toBe('FATAL')
+    expect(v.code).toBe('sync_not_running')
+    // 메시지가 "코드가 오래됐다"가 아니라 "sync가 안 돌았다"를 말해야 한다
+    expect(v.message).toContain('마지막 sync 시도')
+  })
+
+  it('sync evidence가 null이면 기존 headAgeHours 폴백을 유지한다', () => {
+    const v = judgeRunnerFreshness(input({
+      freshness: {
+        ...healthyProd,
+        behind: 2, divergedFromRemote: true,
+        headAgeHours: 72, sync: null,
+      },
+    }))
+    expect(v.level).toBe('FATAL')
+    expect(v.code).toBe('stale_write_runner')     // sync_not_running 이 아니다
+    expect(v.detail.graceBasis).toContain('HEAD 커밋 나이')
+  })
+
+  it('sync 로그를 못 읽어 시각이 null이면 폴백하고 이유를 남긴다', () => {
+    const v = judgeRunnerFreshness(input({
+      freshness: {
+        ...healthyProd,
+        behind: 1, divergedFromRemote: true, headAgeHours: 5,
+        sync: { logPath: '/x/log', lastAttemptAgeHours: null, lastOutcome: null, reason: 'sync 로그 없음' },
+      },
+    }))
+    expect(v.level).toBe('WARN')                  // headAge 5h → 유예 안
+    expect(v.detail.syncReason).toBe('sync 로그 없음')
+  })
+
+  it('outcome unknown이면 WARN — 유예 안이어도 다음 회차가 위험하다', () => {
+    const v = judgeRunnerFreshness(input({
+      freshness: {
+        ...healthyProd,
+        behind: 1, divergedFromRemote: true, headAgeHours: 5,
+        sync: { ...syncHealthy, lastOutcome: 'unknown' },
+      },
+    }))
+    expect(v.level).toBe('WARN')
+    expect(v.code).toBe('sync_outcome_unknown')
+  })
+
+  it('sync가 정상이어도 dirty가 우선한다', () => {
+    const v = judgeRunnerFreshness(input({
+      freshness: { ...healthyProd, dirtyCount: 3, sync: syncHealthy },
+    }))
+    expect(v.code).toBe('dirty_write_runner')
+  })
+
+  it('sync가 정상이어도 unao-ops 참조가 우선한다 (O1 방어선)', () => {
+    const v = judgeRunnerFreshness(input({
+      workDirRoot: 'ops', envWorkDirRoot: 'ops',
+      freshness: { ...healthyProd, root: 'ops', sync: syncHealthy, syncIntervalHours: null },
+    }))
+    expect(v.code).toBe('ops_write_runner')
+  })
+
+  it('sync가 정상이어도 DEV 참조가 우선한다', () => {
+    const v = judgeRunnerFreshness(input({
+      freshness: { ...healthyProd, root: 'DEV', sync: syncHealthy },
+    }))
+    expect(v.code).toBe('dev_write_runner')
+  })
+
+  it('sync 장치가 없는 경로는 evidence와 무관하게 뒤처짐 자체가 FATAL이다', () => {
+    // unao-ops가 이 경우다. syncIntervalHours가 null이면 유예 개념이 성립하지 않는다.
+    const v = judgeRunnerFreshness(input({
+      freshness: {
+        ...healthyProd, root: 'prod',
+        behind: 140, divergedFromRemote: true,
+        syncIntervalHours: null, headAgeHours: 2, sync: null,
+      },
+    }))
+    expect(v.level).toBe('FATAL')
+    expect(v.code).toBe('stale_write_runner')
+  })
+
+  it('원격 미상 분기도 같은 기준을 쓴다 — 한쪽만 고치면 오탐이 남는다', () => {
+    const v = judgeRunnerFreshness(input({
+      freshness: {
+        ...healthyProd,
+        divergedFromRemote: null,   // 원격 조회 실패
+        headAgeHours: 72,           // 예전 기준이면 FATAL
+        sync: syncHealthy,          // 실제 sync는 7시간 전
+      },
+    }))
+    expect(v.level).toBe('WARN')
+    expect(v.code).toBe('remote_unknown_within_grace')
+  })
+
+  it('read-only runner는 sync evidence와 무관하게 FATAL이 아니다', () => {
+    const v = judgeRunnerFreshness(input({
+      grade: 'read-only',
+      freshness: {
+        ...healthyProd, behind: 5, divergedFromRemote: true,
+        sync: { ...syncHealthy, lastAttemptAgeHours: 200 },
+      },
+    }))
+    expect(v.level).toBe('WARN')
+    expect(v.code).toBe('stale_readonly_runner')
+  })
+})
+
+describe('parseSyncLogTail — 마지막 회차 결과만 읽는다', () => {
+  const M = SYNC_LOG_MARKER
+
+  it('Already up to date', () => {
+    expect(parseSyncLogTail(`${M} · workdir=/x (UNAO_WORKDIR)\nAlready up to date.\n`)).toBe('up-to-date')
+  })
+
+  it('Fast-forward', () => {
+    expect(parseSyncLogTail(
+      `${M} · workdir=/x (UNAO_WORKDIR)\nUpdating 019b47e5..c1a74f24\nFast-forward\n docs/x.md | 396 +++\n`,
+    )).toBe('fast-forward')
+  })
+
+  it('마커만 있고 결과가 없으면 unknown — 실행 중 죽었다', () => {
+    // launchd-wrapper.mjs는 workdir 경로가 없으면 마커를 찍은 뒤 exit한다
+    expect(parseSyncLogTail(`${M} · workdir=/x (UNAO_WORKDIR)\n`)).toBe('unknown')
+  })
+
+  it('마커가 없으면 null — 이 로그로는 아무것도 말할 수 없다', () => {
+    expect(parseSyncLogTail('그냥 아무 텍스트\nFast-forward\n')).toBeNull()
+  })
+
+  it('빈 문자열은 null', () => {
+    expect(parseSyncLogTail('')).toBeNull()
+  })
+
+  it('직전 회차 결과를 끌어오지 않는다 — 마지막 마커 이후만 본다', () => {
+    // 이전 회차는 성공했지만 마지막 회차는 도중에 죽은 경우.
+    // lastIndexOf를 쓰지 않으면 'fast-forward'로 잘못 읽는다.
+    const tail =
+      `${M} · workdir=/x (UNAO_WORKDIR)\nUpdating a..b\nFast-forward\n` +
+      `${M} · workdir=/x (UNAO_WORKDIR)\n`
+    expect(parseSyncLogTail(tail)).toBe('unknown')
+  })
+
+  it('tail이 회차 중간에서 잘려도 마지막 마커 기준으로 판정한다', () => {
+    const tail = ` file.ts | 12 ++--\n${M} · workdir=/x (UNAO_WORKDIR)\nAlready up to date.\n`
+    expect(parseSyncLogTail(tail)).toBe('up-to-date')
   })
 })
 

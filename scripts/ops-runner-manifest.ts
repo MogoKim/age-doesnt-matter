@@ -284,8 +284,97 @@ export interface WorktreeFreshness {
    * unao-prod만 03:00 `unao-prod-sync`가 돈다(§18-4). 나머지는 방치하면 영원히 뒤처진다.
    */
   syncIntervalHours: number | null
+  /**
+   * sync가 **실제로 돌았는가**의 증거 (P0-1C).
+   *
+   * 있으면 stale 판정에서 `headAgeHours`보다 **우선한다**.
+   * null이면 기존 `headAgeHours` 폴백을 그대로 쓴다 —
+   * unao-ops처럼 sync 장치 자체가 없는 경로가 그 경우이고,
+   * 거기서는 `syncIntervalHours === null`이라 뒤처짐이 곧 FATAL이다(O1 방어선).
+   */
+  sync?: SyncEvidence | null
   /** 판정 근거를 못 구한 이유 — 메시지에 그대로 싣는다 */
   reason?: string
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 5-B. sync evidence (P0-1C) — "코드 나이"와 "sync 지연"은 다른 것이다
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * `git pull --ff-only` 한 회차의 결과.
+ *
+ * - `up-to-date`   : 이미 최신이었다 ("Already up to date")
+ * - `fast-forward` : 실제로 당겨왔다 ("Updating a..b" + "Fast-forward")
+ * - `unknown`      : 실행 마커는 있는데 결과 라인이 없다 → 도중에 죽었다
+ * - `null`         : 마커조차 없다 → 이 로그로는 아무것도 말할 수 없다
+ */
+export type SyncOutcome = 'up-to-date' | 'fast-forward' | 'unknown' | null
+
+/**
+ * unao-prod-sync 실행 흔적.
+ *
+ * 🔴 왜 필요한가 — `headAgeHours`는 **HEAD 커밋이 얼마나 오래됐는가**이지
+ *    **sync가 얼마나 밀렸는가**가 아니다. 둘은 다른 값인데 하나로 판정했다.
+ *
+ *    실측(2026-08-21 10:16 KST):
+ *      unao-prod HEAD c1a74f24 = 26시간 전 커밋  → headAgeHours 26h
+ *      실제 sync 실행          = 03:00:07        → 7.3시간 전
+ *      즉 sync는 7시간 전에 정상 동작했는데 지표는 "26시간 된 코드"라고 말한다.
+ *
+ *    오탐 시나리오: 저장소가 주말 내내 조용하다가 월요일 커밋이 하나 나면
+ *    prod HEAD 나이가 이미 72h라 03:00 sync 전에 FATAL이 뜬다. sync는 멀쩡한데.
+ *    매일 울리는 FATAL은 아무도 보지 않게 되어 결국 O1을 다시 놓친다.
+ */
+export interface SyncEvidence {
+  /** 어느 로그를 봤는가 — 판정 근거를 메시지에 싣기 위해 */
+  logPath: string
+  /**
+   * 마지막 sync **시도** 이후 경과 시간(h). stdout 로그 파일의 mtime 기준.
+   *
+   * ⚠️ 이름이 `lastSuccess`가 아니라 `lastAttempt`인 이유:
+   *    mtime은 "성공"을 뜻하지 않는다. 실패해도 stdout에 뭔가 쓰면 갱신된다.
+   *    성공 여부는 `lastOutcome`이 따로 말한다. 둘을 뭉치면 또 같은 실수를 한다.
+   */
+  lastAttemptAgeHours: number | null
+  lastOutcome: SyncOutcome
+  /** 근거를 못 구한 이유 — 메시지에 그대로 싣는다 */
+  reason?: string
+}
+
+/**
+ * sync stdout 로그의 **tail**에서 마지막 회차 결과를 읽는다.
+ *
+ * 로그 전체를 파싱하지 않는다. append-only이고 회전 장치가 없어서
+ * 시간이 갈수록 커진다(실측 35KB / 23회차). 호출부가 tail만 잘라 넘긴다.
+ *
+ * ⚠️ 로그에 타임스탬프가 없다. 그래서 "언제"는 파일 mtime으로만 알 수 있고,
+ *    이 함수는 "무슨 일이 있었는가"만 답한다. 두 신호의 역할이 다르다.
+ *
+ * ⚠️ stderr는 보지 않는다. `git pull`은 **성공해도** fetch 진행상황을
+ *    stderr에 쓴다("From https://...", "* [new branch] ...").
+ *    stderr 크기로 실패를 판정하면 상시 오탐이다(실측 확인).
+ */
+export const SYNC_LOG_MARKER = '[launchd-wrapper] unao-prod-sync'
+
+export function parseSyncLogTail(tail: string): SyncOutcome {
+  if (!tail) return null
+  const idx = tail.lastIndexOf(SYNC_LOG_MARKER)
+  if (idx === -1) return null
+
+  // 마지막 마커 이후만 본다 — 그 앞은 지난 회차다
+  const lastRun = tail.slice(idx)
+  if (/already up to date/i.test(lastRun)) return 'up-to-date'
+  if (/Fast-forward|^Updating [0-9a-f]+\.\.[0-9a-f]+/mi.test(lastRun)) return 'fast-forward'
+
+  // 마커는 찍혔는데 결과가 없다 = 실행 중 죽었다.
+  // launchd-wrapper.mjs는 workdir 경로가 없으면 마커를 찍은 **뒤** exit한다.
+  return 'unknown'
+}
+
+/** sync 장치가 없거나 로그를 못 읽은 경우 — "모른다"를 명시적으로 만든다 */
+export function unknownSyncEvidence(logPath: string, reason: string): SyncEvidence {
+  return { logPath, lastAttemptAgeHours: null, lastOutcome: null, reason }
 }
 
 /** 아직 조사하지 않은 worktree — 판정 함수가 "모른다"를 구분할 수 있게 한다 */
@@ -328,6 +417,8 @@ export type VerdictCode =
   | 'freshness_unknown'         // FATAL: active write runner인데 신선도 판정 불가
   | 'dirty_unknown_write_runner' // FATAL: active write runner인데 dirty 여부조차 모름
   | 'arg_path_write_runner'     // FATAL: ProgramArguments의 실행 스크립트가 ops/DEV
+  | 'sync_not_running'          // FATAL: 마지막 sync 시도가 유예를 넘겼다 (sync 자체가 멈췄다)
+  | 'sync_outcome_unknown'      // WARN: sync는 돌았는데 결과 라인이 없다 (도중에 죽었다)
   | 'remote_unknown_within_grace' // WARN: 원격 조회만 실패 — sync 있고 유예 안
   | 'stale_readonly_runner'     // WARN: 비-active runner가 behind > 0
   | 'stale_write_within_grace'  // WARN: active write runner가 뒤처졌으나 sync 유예 안
@@ -514,7 +605,7 @@ export function judgeRunnerFreshness(i: RunnerCheckInput): RunnerVerdict {
   if (active && f.divergedFromRemote === null) {
     const limit = f.syncIntervalHours === null ? null : f.syncIntervalHours * SYNC_GRACE_MULTIPLIER
     const ageLabel = f.headAgeHours === null ? '나이 불명' : `${Math.floor(f.headAgeHours)}시간 된 코드`
-    const d = { ...detail, age: ageLabel, what: i.what }
+    const d: Record<string, string> = { ...detail, age: ageLabel, what: i.what }
 
     // sync 장치가 없으면 뒤처져도 스스로 회복하지 못한다 — 모르는 채로 둘 수 없다
     if (f.syncIntervalHours === null) {
@@ -525,11 +616,22 @@ export function judgeRunnerFreshness(i: RunnerCheckInput): RunnerVerdict {
       }
     }
 
-    // sync가 있어도 코드가 유예를 넘겼으면 sync가 고장난 것이다
-    if (f.headAgeHours === null || (limit !== null && f.headAgeHours > limit)) {
+    // sync가 있어도 유예를 넘겼으면 sync가 고장난 것이다.
+    // P0-1C: 여기도 stale 분기와 같은 기준을 쓴다. 한쪽만 고치면
+    //        "원격 조회가 실패한 날에만 주말 오탐이 나는" 이상한 상태가 된다.
+    const attemptAgeRU = f.sync?.lastAttemptAgeHours ?? null
+    const graceAgeRU = attemptAgeRU ?? f.headAgeHours
+    if (attemptAgeRU !== null) {
+      d.lastSyncAttempt = `${Math.floor(attemptAgeRU)}시간 전`
+      d.graceBasis = 'sync 실행 흔적'
+    }
+    if (graceAgeRU === null || (limit !== null && graceAgeRU > limit)) {
+      const basis = attemptAgeRU !== null
+        ? `마지막 sync 시도가 ${Math.floor(attemptAgeRU)}시간 전이다`
+        : `${ageLabel}이고 sync 실행 흔적도 없다`
       return {
-        level: 'FATAL', code: 'freshness_unknown',
-        message: `${i.name}: 원격 신선도를 알 수 없고 ${ageLabel}다 — 자동 sync(${f.syncIntervalHours}h)가 동작하지 않는다`,
+        level: 'FATAL', code: attemptAgeRU !== null ? 'sync_not_running' : 'freshness_unknown',
+        message: `${i.name}: 원격 신선도를 알 수 없고 ${basis} — 자동 sync(${f.syncIntervalHours}h)를 확인해야 한다`,
         detail: { ...d, syncLimit: limit === null ? '(unknown)' : `${limit}h`, action: 'unao-prod-sync(03:00) 실행 로그를 확인한다' },
       }
     }
@@ -553,7 +655,7 @@ export function judgeRunnerFreshness(i: RunnerCheckInput): RunnerVerdict {
       ? `${f.behind}커밋 뒤`
       : '원격과 다름(커밋 수는 fetch 없이 셀 수 없다)'
     const ageLabel = f.headAgeHours === null ? '나이 불명' : `${Math.floor(f.headAgeHours)}시간 된 코드`
-    const d = { ...detail, gap: gapLabel, age: ageLabel, what: i.what }
+    const d: Record<string, string> = { ...detail, gap: gapLabel, age: ageLabel, what: i.what }
 
     if (!active) {
       return {
@@ -564,7 +666,29 @@ export function judgeRunnerFreshness(i: RunnerCheckInput): RunnerVerdict {
     }
 
     const limit = f.syncIntervalHours === null ? null : f.syncIntervalHours * SYNC_GRACE_MULTIPLIER
-    const withinGrace = limit !== null && f.headAgeHours !== null && f.headAgeHours <= limit
+
+    // ── P0-1C: 유예 판단의 기준을 고른다 ──
+    //
+    //   기존   headAgeHours (= HEAD 커밋 나이)
+    //   문제   "코드가 오래됐다"와 "sync가 밀렸다"는 다른 사실이다.
+    //          저장소가 조용하다가 새 커밋이 나면 prod HEAD 나이가 이미 유예를 넘어
+    //          03:00 sync 전에 FATAL이 뜬다. sync는 멀쩡한데 울린다.
+    //   변경   sync 실행 흔적이 있으면 그걸 쓴다. 없으면 기존 폴백 그대로.
+    //
+    //   ⚠️ lastAttemptAgeHours는 "성공"이 아니라 "마지막 시도"다.
+    //      성공 여부는 lastOutcome이 따로 말한다(아래 sync_outcome_unknown).
+    const attemptAge = f.sync?.lastAttemptAgeHours ?? null
+    const usesSyncEvidence = attemptAge !== null
+    const graceAge = usesSyncEvidence ? attemptAge : f.headAgeHours
+    const withinGrace = limit !== null && graceAge !== null && graceAge <= limit
+    if (usesSyncEvidence) {
+      d.lastSyncAttempt = `${Math.floor(attemptAge)}시간 전`
+      d.lastSyncOutcome = f.sync?.lastOutcome ?? '(unknown)'
+      d.graceBasis = 'sync 실행 흔적'
+    } else {
+      d.graceBasis = 'HEAD 커밋 나이 (sync 흔적 없음)'
+      if (f.sync?.reason) d.syncReason = f.sync.reason
+    }
 
     // sync 장치가 없으면 스스로 회복하지 못한다 — 뒤처짐 자체가 사고다 (O1이 이 경우다)
     if (f.syncIntervalHours === null) {
@@ -577,10 +701,29 @@ export function judgeRunnerFreshness(i: RunnerCheckInput): RunnerVerdict {
 
     // sync 장치가 있는데도 유예를 넘겼다 = sync가 고장났다
     if (!withinGrace) {
+      // 근거가 무엇이었는지에 따라 단정의 강도가 달라야 한다.
+      // sync 흔적을 봤으면 "sync가 안 돌았다"고 말할 수 있다(사실 진술).
+      // HEAD 나이만 봤으면 그렇게 단정할 근거가 없다 — 추정으로 적는다.
+      if (usesSyncEvidence) {
+        return {
+          level: 'FATAL', code: 'sync_not_running',
+          message: `${i.name}: 마지막 sync 시도가 ${Math.floor(attemptAge)}시간 전이다 — 03:00 unao-prod-sync가 돌지 않았다`,
+          detail: { ...d, syncLimit: `${limit}h`, action: `launchctl list로 unao-prod-sync 상태와 ${f.sync?.logPath ?? '동기화 로그'}를 확인한다` },
+        }
+      }
       return {
         level: 'FATAL', code: 'stale_write_runner',
-        message: `${i.name}: active write runner가 ${ageLabel}를 실행한다 — 자동 sync(${f.syncIntervalHours}h)가 동작하지 않는다`,
+        message: `${i.name}: active write runner가 ${ageLabel}를 실행한다 — sync 실행 흔적이 없어 자동 동기화 상태를 확인할 수 없다`,
         detail: { ...d, syncLimit: `${limit}h`, action: 'unao-prod-sync(03:00) 실행 로그를 확인한다. 급하면 수동 pull' },
+      }
+    }
+
+    // 유예 안이지만 마지막 회차가 도중에 죽었다 — 지금은 괜찮아도 다음이 위험하다
+    if (usesSyncEvidence && f.sync?.lastOutcome === 'unknown') {
+      return {
+        level: 'WARN', code: 'sync_outcome_unknown',
+        message: `${i.name}: 마지막 sync가 결과를 남기지 않고 끝났다 — 유예 안이지만 다음 회차가 실패하면 뒤처진다`,
+        detail: { ...d, action: `${f.sync?.logPath ?? '동기화 로그'} 마지막 회차를 확인한다 (경로 없음·권한 오류 여부)` },
       }
     }
 
