@@ -19,6 +19,10 @@ export async function main() {
   const start = Date.now()
   let chainCount = 0
   let replyCount = 0
+  // 사고 역추적용 — 실제로 생성된 대댓글만 모은다(P0-2B).
+  // 어떤 글의 어떤 댓글에 무엇을 달았는지 되짚을 수 있어야 한다.
+  const touchedPostIds = new Set<string>()
+  const createdCommentIds: string[] = []
 
   try {
     const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000)
@@ -135,6 +139,8 @@ export async function main() {
           currentParentId = newReply.id
           chainReplyCount++
           replyCount++
+          touchedPostIds.add(comment.postId)
+          createdCommentIds.push(newReply.id)
           console.log(`[COO] 대댓글 체인: ${triggerPersonaId} → ${responderId} (${chain.topic})`)
         }
 
@@ -152,7 +158,10 @@ export async function main() {
 
     const summary = `대댓글 체인 완료: ${chainCount}개 체인, ${replyCount}개 답글 생성`
 
-    await safeBotLog({ botType: 'COO', action: 'REPLY_CHAIN_DRIVE', status: 'SUCCESS', details: summary, itemCount: replyCount, executionTimeMs: Date.now() - start })
+    // summary가 첫 키 — ops-daily-report가 90자에서 자른다.
+    const details = JSON.stringify({ summary, postIds: [...touchedPostIds], commentIds: createdCommentIds })
+
+    await safeBotLog({ botType: 'COO', action: 'REPLY_CHAIN_DRIVE', status: 'SUCCESS', details, itemCount: replyCount, executionTimeMs: Date.now() - start })
 
     if (replyCount > 0) {
       await notifySlack({
