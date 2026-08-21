@@ -6,6 +6,7 @@ import {
   isActiveWriteRunner,
   judgeRunnerFreshness,
   launchdGrade,
+  UNKNOWN_LAUNCHD_GRADE,
   unknownFreshness,
   type RunnerCheckInput,
   type WorktreeFreshness,
@@ -125,6 +126,8 @@ describe('FATAL — active write runner', () => {
     }))
     expect(v.level).toBe('WARN')
     expect(v.detail.action).toContain('sync')
+    // publish 등급인데 'stale_readonly_runner'로 나오면 code 필터가 write runner를 놓친다
+    expect(v.code).toBe('stale_write_within_grace')
   })
 
   it('sync 장치가 없는 worktree는 뒤처짐 자체가 FATAL — 스스로 회복하지 못한다', () => {
@@ -364,6 +367,132 @@ describe('PASS — 정상 상태', () => {
 /* ═══════════════════════════════════════════════════════════════════════════
  * 5. 등급 분류 — §18-5 와 어긋나면 guard가 헛돈다
  * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 4-B. 코드 리뷰 BLOCKER 재현 (2026-08-21)
+ *
+ * 아래 3건은 전부 **판정 함수 바깥**(수집·필터)에 있던 구멍이라
+ * 기존 33개 테스트로는 원리적으로 잡히지 않았다.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+describe('BLOCKER-2 재현 — ProgramArguments의 stale 경로', () => {
+  it('workDir·env는 prod지만 ProgramArguments가 unao-ops면 FATAL', () => {
+    const v = judgeRunnerFreshness(input({
+      // plist 3곳 중 2곳은 완벽히 정상이다. 실행되는 스크립트만 구 경로다.
+      workDirRoot: 'prod',
+      envWorkDirRoot: 'prod',
+      freshness: healthyProd,      // prod worktree는 clean·최신
+      programArgRoots: ['ops'],
+    }))
+    expect(v.level).toBe('FATAL')
+    expect(v.code).toBe('arg_path_write_runner')
+    expect(v.message).toContain('ProgramArguments')
+  })
+
+  it('ProgramArguments가 DEV면 FATAL — 미커밋 코드가 실행된다', () => {
+    const v = judgeRunnerFreshness(input({
+      workDirRoot: 'prod', envWorkDirRoot: 'prod',
+      freshness: healthyProd,
+      programArgRoots: ['DEV'],
+    }))
+    expect(v.level).toBe('FATAL')
+    expect(v.code).toBe('dev_write_runner')
+  })
+
+  it('workDir이 ops면 arg가 아니라 ops_write_runner로 잡힌다 (원인별 조치가 다르다)', () => {
+    const v = judgeRunnerFreshness(input({
+      workDirRoot: 'ops', envWorkDirRoot: 'ops',
+      freshness: { ...healthyProd, root: 'ops', syncIntervalHours: null },
+      programArgRoots: ['ops'],
+    }))
+    expect(v.code).toBe('ops_write_runner')
+  })
+
+  it('stdout/stderr만 구 경로면 WARN — 로그 목적지는 실행 코드가 아니다', () => {
+    const v = judgeRunnerFreshness(input({ logRoots: ['ops'] }))
+    expect(v.level).toBe('WARN')
+    expect(v.code).toBe('log_path_stale')
+  })
+
+  it('로그 경로 WARN이 실행 경로 FATAL을 가리지 않는다', () => {
+    const v = judgeRunnerFreshness(input({
+      programArgRoots: ['ops'],
+      logRoots: ['ops'],
+    }))
+    expect(v.level).toBe('FATAL')
+  })
+
+  it('prod 로그 경로는 WARN이 아니다', () => {
+    const v = judgeRunnerFreshness(input({ logRoots: ['prod', 'prod'] }))
+    expect(v.level).toBe('PASS')
+  })
+})
+
+describe('BLOCKER-3 재현 — dirtyCount가 null', () => {
+  it('publish runner는 dirty 미상이면 PASS가 아니다', () => {
+    const v = judgeRunnerFreshness(input({
+      freshness: { ...healthyProd, dirtyCount: null },
+    }))
+    expect(v.level).not.toBe('PASS')
+    expect(v.code).toBe('dirty_unknown_write_runner')
+  })
+
+  it('"모름"을 0으로 바꾸지 않는다 — 원격이 최신이어도 통과시키지 않는다', () => {
+    const v = judgeRunnerFreshness(input({
+      // behind 0 · diverged false = 원격 기준으로는 완벽하다. 그래도 PASS가 아니다.
+      freshness: { ...healthyProd, dirtyCount: null, behind: 0, divergedFromRemote: false },
+    }))
+    expect(v.level).toBe('FATAL')
+  })
+
+  it('read-only runner는 dirty 미상이어도 FATAL이 아니다', () => {
+    const v = judgeRunnerFreshness(input({
+      grade: 'read-only',
+      freshness: { ...healthyProd, dirtyCount: null },
+    }))
+    expect(v.level).not.toBe('FATAL')
+  })
+})
+
+describe('등급 미상 정책 — allowlist 누락이 guard 무력화가 되면 안 된다', () => {
+  it('등급표에 빠진 잡이 unao-ops를 가리키면 FATAL이다 (기본 등급 db-write)', () => {
+    const v = judgeRunnerFreshness({
+      name: 'com.unao.brand-new-publisher',
+      grade: UNKNOWN_LAUNCHD_GRADE,
+      what: '(등급 미상)',
+      workDirRoot: 'ops',
+      envWorkDirRoot: 'ops',
+      freshness: { ...healthyProd, root: 'ops', behind: 140, divergedFromRemote: true, syncIntervalHours: null },
+    })
+    expect(v.level).toBe('FATAL')
+  })
+
+  it('기본 등급은 active write runner여야 한다 — read-only면 검사 자체를 건너뛴다', () => {
+    expect(isActiveWriteRunner(UNKNOWN_LAUNCHD_GRADE)).toBe(true)
+  })
+})
+
+describe('dev-tool 정책 — 개발 도구가 개발 워크트리를 쓰는 건 정상이다', () => {
+  it('dev-tool이 DEV 워크트리를 실행해도 FATAL이 아니다 (상시 오탐 방지)', () => {
+    const v = judgeRunnerFreshness(input({
+      name: 'com.unaoeo.figma-use-mcp',
+      grade: 'dev-tool',
+      what: 'Figma MCP (개발 도구)',
+      workDirRoot: 'DEV',
+      envWorkDirRoot: 'DEV',
+      freshness: { ...healthyProd, root: 'DEV' },
+      programArgRoots: ['DEV'],
+    }))
+    expect(v.level).not.toBe('FATAL')
+  })
+
+  it('dev-tool이 아니면 DEV는 여전히 FATAL이다 — 면제는 dev-tool 한 등급뿐', () => {
+    for (const grade of ['publish', 'db-write', 'ops-data', 'read-only', 'notification'] as const) {
+      const v = judgeRunnerFreshness(input({ grade, freshness: { ...healthyProd, root: 'DEV' } }))
+      expect(v.level, `${grade} 가 DEV에서 FATAL이 아니다`).toBe('FATAL')
+    }
+  })
+})
 
 describe('write 등급 분류', () => {
   it('publish · db-write · sheet-write · external-api · ops-data 는 active write runner다', () => {

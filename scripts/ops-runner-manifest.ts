@@ -58,8 +58,42 @@ export function isActiveWriteRunner(grade: WriteGrade): boolean {
  * 2. 실행 루트
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-/** 경로가 속한 실행 루트 라벨. ops-doctor의 rootOf()와 같은 어휘를 쓴다. */
+/** 경로가 속한 실행 루트 라벨. ops-doctor는 아래 `pathRoot()` 하나만 쓴다. */
 export type RunnerRoot = 'prod' | 'ops' | 'DEV' | 'main' | 'other' | '-'
+
+/** 루트 디렉터리 실경로 — ops-doctor가 homedir 기준으로 채워 넘긴다 */
+export interface RootDirs {
+  prod: string
+  ops: string
+  DEV: string
+  main: string
+}
+
+/**
+ * 경로가 루트 안에 있는가.
+ *
+ * ⚠️ `startsWith(root)` 단독은 틀린다. `/Users/x/Documents/unao-prod-backup`이
+ *    `unao-prod`로 분류돼 **자동 sync 대상(유예 48h)이라는 특권을 얻는다.**
+ *    sync 장치가 없는 디렉터리가 유예를 받으면 stale이 FATAL 대신 WARN이 되고,
+ *    그건 O1이 통과했던 완화 경로와 같은 성격이다. 경계를 명시적으로 본다.
+ */
+export function pathInRoot(dir: string, root: string): boolean {
+  return dir === root || dir.startsWith(root.endsWith('/') ? root : `${root}/`)
+}
+
+/**
+ * 경로 → 실행 루트. null/빈 문자열은 `'-'`(미지정)다.
+ * ops-doctor의 rootOf()·rootOfDir() 두 갈래를 하나로 합친 것 —
+ * 둘이 서로 다른 어휘를 쓰면서 `as RunnerRoot` 캐스트로 가려져 있었다.
+ */
+export function pathRoot(path: string | null | undefined, dirs: RootDirs): RunnerRoot {
+  if (!path) return '-'
+  if (pathInRoot(path, dirs.prod)) return 'prod'
+  if (pathInRoot(path, dirs.ops)) return 'ops'
+  if (pathInRoot(path, dirs.DEV)) return 'DEV'
+  if (pathInRoot(path, dirs.main)) return 'main'
+  return 'other'
+}
 
 /**
  * 운영 launchd가 실행해야 하는 유일한 루트.
@@ -112,11 +146,65 @@ export const LAUNCHD_RUNNERS: Readonly<Record<string, RunnerSpec>> = {
   'com.unaoeo.figma-ws': { grade: 'dev-tool', what: 'Figma WS (개발 도구)' },
 }
 
-/** 등급표에 없는 launchd label의 기본 등급 — 모르면 안전한 쪽으로 밀지 않고 WARN을 낸다 */
-export const UNKNOWN_LAUNCHD_GRADE: WriteGrade = 'read-only'
+/**
+ * 등급표에 없는 launchd label의 기본 등급.
+ *
+ * 🔴 예전 값은 `'read-only'`였다. 그건 틀렸다.
+ *    read-only는 `isActiveWriteRunner()`가 false라, 등급표에서 빠진 잡이
+ *    unao-ops를 가리켜도 WARN에서 끝났다. 즉 **allowlist 누락이 곧 guard 무력화**였고,
+ *    이건 O1(확인되지 않은 것을 안전으로 간주)과 같은 실패 구조다.
+ *
+ *    모르는 잡은 "쓰기를 한다"고 가정한다. 오탐은 등급표에 한 줄 추가하면 사라지지만,
+ *    미탐은 고객 화면에 구 코드가 나간 뒤에야 발견된다. 비용이 대칭이 아니다.
+ */
+export const UNKNOWN_LAUNCHD_GRADE: WriteGrade = 'db-write'
 
 export function launchdGrade(label: string): RunnerSpec | null {
   return LAUNCHD_RUNNERS[label] ?? null
+}
+
+/**
+ * 개발 도구인가 — 운영 경로가 아니므로 개발 워크트리를 실행하는 게 **정상**이다.
+ * 이 등급만 `dev_write_runner` FATAL에서 면제된다(뒤처짐 WARN은 그대로 받는다).
+ */
+export function isDevToolRunner(grade: WriteGrade): boolean {
+  return grade === 'dev-tool'
+}
+
+/**
+ * 운영 launchd label prefix.
+ *
+ * 🔴 예전 ops-doctor는 `f.startsWith('com.unao.')` 하나로 걸렀다.
+ *    그런데 실제 label은 세 갈래다 — `com.unao.` / `com.unaeo.` / `com.unaoeo.`.
+ *    `com.unaeo.`(un**ae**o)는 `com.unao.` 뒤에 리터럴 점을 요구하는 조건에 걸려
+ *    **magazine-morning·magazine-late(둘 다 publish 등급)와 session-refresh가
+ *    검사 대상에서 통째로 빠졌다.** 등급표에는 있으니 검사되는 것처럼 보였다.
+ */
+export const OPERATIONAL_LABEL_PREFIXES: readonly string[] = [
+  'com.unao.',
+  'com.unaeo.',
+  'com.unaoeo.',
+]
+
+/** plist 파일명 → launchd label (`.plist` 확장자만 떼면 된다) */
+export function launchdLabelFromFile(file: string): string {
+  return file.replace(/\.plist$/, '')
+}
+
+/**
+ * 이 plist 파일을 freshness 검사 대상으로 삼는가.
+ *
+ * 판정 순서가 중요하다:
+ *   1. `.plist`로 끝나지 않으면 launchd가 로드하지 않는다 → 제외
+ *      (`...plist.bak-20260820` 같은 백업본이 여기서 걸러진다)
+ *   2. 등급표에 있으면 **무조건 포함** — prefix 규칙이 바뀌어도 등급표가 이긴다
+ *   3. 등급표에 없어도 운영 prefix면 포함 — 새 잡이 조용히 새는 것을 막는다
+ */
+export function isMonitoredLaunchdFile(file: string): boolean {
+  if (!file.endsWith('.plist')) return false
+  const label = launchdLabelFromFile(file)
+  if (label in LAUNCHD_RUNNERS) return true
+  return OPERATIONAL_LABEL_PREFIXES.some((p) => label.startsWith(p))
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -238,8 +326,12 @@ export type VerdictCode =
   | 'workdir_mismatch'          // FATAL: WorkingDirectory ≠ UNAO_WORKDIR
   | 'unexpected_root'           // FATAL: 기대 루트가 아님
   | 'freshness_unknown'         // FATAL: active write runner인데 신선도 판정 불가
+  | 'dirty_unknown_write_runner' // FATAL: active write runner인데 dirty 여부조차 모름
+  | 'arg_path_write_runner'     // FATAL: ProgramArguments의 실행 스크립트가 ops/DEV
   | 'remote_unknown_within_grace' // WARN: 원격 조회만 실패 — sync 있고 유예 안
-  | 'stale_readonly_runner'     // WARN: read-only runner가 behind > 0
+  | 'stale_readonly_runner'     // WARN: 비-active runner가 behind > 0
+  | 'stale_write_within_grace'  // WARN: active write runner가 뒤처졌으나 sync 유예 안
+  | 'log_path_stale'            // WARN: stdout/stderr가 구 워크스페이스를 가리킨다
   | 'grade_unknown'             // WARN: 등급표에 없는 runner
   | 'fallback_wrapper'          // WARN: UNAO_WORKDIR 미설정 시 fallback 위험
 
@@ -263,6 +355,21 @@ export interface RunnerCheckInput {
   envWorkDirRoot: RunnerRoot
   /** 실제로 실행되는 worktree의 신선도 */
   freshness: WorktreeFreshness
+  /**
+   * ProgramArguments 안의 **실행 스크립트 경로**가 속한 루트들.
+   *
+   * 🔴 이게 빠져서 미탐이 났다. WorkingDirectory·UNAO_WORKDIR이 둘 다 prod여도
+   *    `ProgramArguments = [/bin/bash, ~/Documents/unao-ops/scripts/scrape.sh]`이면
+   *    **실제로 도는 코드는 unao-ops다.** 예전 ops-doctor는 allRoots로 이걸 봤는데,
+   *    freshness guard로 옮기면서 execDir(= env ?? workDir) 2개만 넘겨 탐지면이 좁아졌다.
+   */
+  programArgRoots?: readonly RunnerRoot[]
+  /**
+   * StandardOutPath·StandardErrorPath가 속한 루트들.
+   * 실행 코드가 아니라 **로그 목적지**이므로 FATAL이 아니라 WARN이다.
+   * 다만 구 워크스페이스를 가리키면 plist가 옛 경로에서 복사됐다는 신호라 흘리지 않는다.
+   */
+  logRoots?: readonly RunnerRoot[]
   /** 기대 루트 (기본 prod) */
   expectedRoot?: RunnerRoot
   /** launchd-alert.sh 처럼 UNAO_WORKDIR 미설정 시 fallback하는 래퍼를 쓰는가 */
@@ -298,12 +405,25 @@ export function judgeRunnerFreshness(i: RunnerCheckInput): RunnerVerdict {
   }
   if (f.reason) detail.reason = f.reason
 
-  // ── (1) 개발 작업트리 — 등급 무관 최우선. 미커밋 코드가 그대로 돈다 ──
-  if (i.workDirRoot === 'DEV' || i.envWorkDirRoot === 'DEV' || f.root === 'DEV') {
+  // 실제로 코드가 도는 경로들 — plist 3곳(WorkingDirectory·UNAO_WORKDIR·ProgramArguments)과
+  // 수집된 worktree의 루트를 한 묶음으로 본다. 어느 하나라도 구 경로면 구 코드가 돈다.
+  const argRoots = i.programArgRoots ?? []
+  const execRoots: RunnerRoot[] = [i.workDirRoot, i.envWorkDirRoot, f.root, ...argRoots]
+  const logRoots = i.logRoots ?? []
+  if (argRoots.length > 0) detail.argRoots = [...new Set(argRoots)].join(',')
+  if (logRoots.length > 0) detail.logRoots = [...new Set(logRoots)].join(',')
+
+  // ── (1) 개발 작업트리 ──
+  //     미커밋 코드가 그대로 돈다. ProgramArguments의 스크립트 경로까지 본다.
+  //     ⚠️ dev-tool만 면제한다. Figma MCP 같은 개발 도구가 개발 워크트리를 실행하는 건
+  //        정상이다. 여기서 FATAL을 내면 상시 오탐이 되고, 매일 울리는 FATAL은
+  //        아무도 보지 않게 되어 결국 진짜 O1을 놓친다(이 파일 §7 주석과 같은 이유).
+  //        면제는 이 FATAL 한 줄뿐 — 뒤처짐 WARN은 dev-tool도 그대로 받는다.
+  if (!isDevToolRunner(i.grade) && execRoots.includes('DEV')) {
     return {
       level: 'FATAL', code: 'dev_write_runner',
       message: `${i.name}: 개발 작업트리를 실행한다 — 미커밋 코드가 운영에 나간다`,
-      detail: { ...detail, action: `WorkingDirectory·UNAO_WORKDIR을 ${expected} 경로로 변경 후 launchctl reload` },
+      detail: { ...detail, action: `WorkingDirectory·UNAO_WORKDIR·ProgramArguments를 ${expected} 경로로 변경 후 launchctl reload` },
     }
   }
 
@@ -319,8 +439,19 @@ export function judgeRunnerFreshness(i: RunnerCheckInput): RunnerVerdict {
 
   // ── (3) active write runner가 unao-ops 참조 ── 🔴 O1 사고 조건
   //    기존 코드는 여기서 "git 추적 중이면 PASS"를 냈다. 그게 사고를 통과시켰다.
-  if (active && (i.workDirRoot === 'ops' || i.envWorkDirRoot === 'ops' || f.root === 'ops')) {
+  if (active && execRoots.includes('ops')) {
     const behindLabel = f.behind === null ? '판정 불가' : `${f.behind}`
+    // ProgramArguments만 ops인 경우는 원인이 다르다 — 조치 문구도 달라야 한다
+    const viaArgsOnly =
+      argRoots.includes('ops') &&
+      i.workDirRoot !== 'ops' && i.envWorkDirRoot !== 'ops' && f.root !== 'ops'
+    if (viaArgsOnly) {
+      return {
+        level: 'FATAL', code: 'arg_path_write_runner',
+        message: `${i.name}: WorkingDirectory는 ${i.workDirRoot}지만 ProgramArguments가 unao-ops 스크립트를 실행한다 — 도는 코드는 unao-ops다`,
+        detail: { ...detail, what: i.what, action: `ProgramArguments의 스크립트 경로를 ${expected}로 바꾼다` },
+      }
+    }
     return {
       level: 'FATAL', code: 'ops_write_runner',
       message: `${i.name}: active write runner가 unao-ops(stale worktree)를 실행한다 — behind ${behindLabel}`,
@@ -349,11 +480,24 @@ export function judgeRunnerFreshness(i: RunnerCheckInput): RunnerVerdict {
   // ── (6) dirty ── 미커밋 코드가 고객에게 나간다
   //     ⚠️ (7)보다 먼저 본다. dirty는 원격 조회 성공 여부와 무관하게 FATAL이어야 하는데,
   //        (7)의 grace 경로가 먼저 걸리면 dirty가 WARN에 삼켜진다.
-  if (active && (f.dirtyCount ?? 0) > 0) {
-    return {
-      level: 'FATAL', code: 'dirty_write_runner',
-      message: `${i.name}: active write runner가 미커밋 ${f.dirtyCount}건인 worktree를 실행한다`,
-      detail: { ...detail, action: '운영 경로의 미커밋 변경을 정리한다. 손댄 이유를 먼저 확인할 것' },
+  //     ⚠️ null(모름)을 0(깨끗함)으로 바꾸지 않는다. 수집부는 `git status` 실패를
+  //        null로 정확히 남기는데, 판정부가 `?? 0`으로 덮으면 그 순간 "모름"이 "안전"이 된다.
+  //        `git status`가 실패하는 상황(인덱스 lock·권한·손상)은 오히려 worktree에
+  //        이상이 있을 때 생긴다. 그 순간 PASS가 나오면 안 된다.
+  if (active) {
+    if (f.dirtyCount === null) {
+      return {
+        level: 'FATAL', code: 'dirty_unknown_write_runner',
+        message: `${i.name}: active write runner의 미커밋 여부를 확인할 수 없다 — git status 실패`,
+        detail: { ...detail, action: 'worktree에서 git status가 왜 실패하는지 확인한다. 확인 전까지 깨끗하다고 가정하지 않는다' },
+      }
+    }
+    if (f.dirtyCount > 0) {
+      return {
+        level: 'FATAL', code: 'dirty_write_runner',
+        message: `${i.name}: active write runner가 미커밋 ${f.dirtyCount}건인 worktree를 실행한다`,
+        detail: { ...detail, action: '운영 경로의 미커밋 변경을 정리한다. 손댄 이유를 먼저 확인할 것' },
+      }
     }
   }
 
@@ -441,8 +585,11 @@ export function judgeRunnerFreshness(i: RunnerCheckInput): RunnerVerdict {
     }
 
     // 유예 안이면 정상적인 sync 대기 상태다. 여기서 FATAL을 내면 매일 울려 guard가 무력해진다.
+    // ⚠️ 코드는 `stale_write_within_grace`다. 예전엔 `stale_readonly_runner`를 돌려줬는데,
+    //    publish 등급 runner가 "readonly" 코드로 보고돼 정의와 어긋났다.
+    //    대시보드·알림이 code로 필터링하면 "read-only니까 무시"에 write runner가 섞인다.
     return {
-      level: 'WARN', code: 'stale_readonly_runner',
+      level: 'WARN', code: 'stale_write_within_grace',
       message: `${i.name}: ${gapLabel} · ${ageLabel} — sync 유예(${limit}h) 안이다`,
       detail: { ...d, action: `다음 sync(${f.syncIntervalHours}h 주기)로 해소된다. 유예를 넘기면 FATAL이 된다` },
     }
@@ -454,6 +601,19 @@ export function judgeRunnerFreshness(i: RunnerCheckInput): RunnerVerdict {
       level: 'WARN', code: 'fallback_wrapper',
       message: `${i.name}: launchd-alert.sh 사용 — UNAO_WORKDIR가 지워지면 구 워크스페이스로 fallback한다 (현재 값은 정상)`,
       detail: { ...detail, action: 'launchd-wrapper.mjs로 통일 검토 (§19 P1-1)' },
+    }
+  }
+
+  // ── (9) 로그 경로가 구 워크스페이스 ──
+  //     stdout/stderr는 실행 코드가 아니다. 그래서 FATAL이 아니라 WARN이다.
+  //     그러나 plist가 옛 경로에서 복사됐다는 신호이고, 그 plist의 다른 필드도
+  //     같이 낡았을 수 있다. 조용히 넘기지 않는다.
+  const staleLogRoots = [...new Set(logRoots.filter((r) => r === 'ops' || r === 'DEV'))]
+  if (staleLogRoots.length > 0) {
+    return {
+      level: 'WARN', code: 'log_path_stale',
+      message: `${i.name}: 로그 경로가 ${staleLogRoots.join(',')}를 가리킨다 — 실행 코드는 정상이나 plist가 구 경로에서 복사된 흔적이다`,
+      detail: { ...detail, action: 'StandardOutPath·StandardErrorPath를 현재 운영 경로로 정리한다' },
     }
   }
 

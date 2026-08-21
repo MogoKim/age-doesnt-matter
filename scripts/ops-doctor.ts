@@ -37,8 +37,10 @@ import { homedir } from 'os'
 import {
   EXPECTED_LAUNCHD_ROOT,
   formatVerdictDetail,
+  isMonitoredLaunchdFile,
   judgeRunnerFreshness,
   launchdGrade,
+  pathRoot,
   PROD_SYNC_INTERVAL_HOURS,
   UNKNOWN_LAUNCHD_GRADE,
   type RunnerRoot,
@@ -128,13 +130,15 @@ function remoteMainSha(dir: string): string | null {
  * worktree freshness 수집 (P0-1B) — 판정은 ops-runner-manifest.ts가 한다
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-/** 경로 → 실행 루트 라벨. rootOf()와 같은 규칙이되 unao-main까지 구분한다 */
-function rootOfDir(dir: string): RunnerRoot {
-  if (dir.startsWith(PROD_DIR)) return 'prod'
-  if (dir.startsWith(OPS_DIR)) return 'ops'
-  if (dir.startsWith(DEV_DIR)) return 'DEV'
-  if (dir.startsWith(MAIN_DIR)) return 'main'
-  return 'other'
+/**
+ * 루트 실경로 묶음 — 판정용 순수 함수 `pathRoot()`에 넘긴다.
+ * 분류 규칙 자체는 ops-runner-manifest.ts가 갖고 있어야 테스트할 수 있다.
+ */
+const ROOT_DIRS = { prod: PROD_DIR, ops: OPS_DIR, DEV: DEV_DIR, main: MAIN_DIR }
+
+/** 경로 → 실행 루트 라벨. null이면 '-'(미지정) */
+function rootOfDir(dir: string | null): RunnerRoot {
+  return pathRoot(dir, ROOT_DIRS)
 }
 
 /**
@@ -340,13 +344,16 @@ function readPlist(file: string): PlistInfo | null {
   }
 }
 
-/** 경로가 어느 실행 루트에 속하는지 — 표에 짧게 찍기 위한 라벨 */
-function rootOf(path: string | null): string {
-  if (!path) return '-'
-  if (path.startsWith(PROD_DIR)) return 'prod'
-  if (path.startsWith(OPS_DIR)) return 'ops'
-  if (path.startsWith(DEV_DIR)) return 'DEV'
-  return 'other'
+/**
+ * 경로가 어느 실행 루트에 속하는지.
+ *
+ * ⚠️ 예전에는 rootOf()와 rootOfDir() 두 벌이 있었고 어휘가 달랐다
+ *    (rootOf는 'main'을 몰라 unao-main을 'other'로 냈다).
+ *    그 상태에서 `rootOf(...) as RunnerRoot` 캐스트로 타입 검사가 가려져 있었다.
+ *    이제 둘 다 pathRoot() 하나를 쓴다.
+ */
+function rootOf(path: string | null): RunnerRoot {
+  return pathRoot(path, ROOT_DIRS)
 }
 
 function checkLaunchd(): PlistInfo[] {
@@ -356,10 +363,12 @@ function checkLaunchd(): PlistInfo[] {
     console.log('  ⓘ ~/Library/LaunchAgents 없음. 건너뛴다.')
     return []
   }
-  // `com.unao.` prefix로 좁힌다. `com.unaoeo.figma-*`(Figma MCP 도구)는 우나어 운영 잡이 아니다.
-  const files = readdirSync(LAUNCH_AGENTS)
-    .filter((f) => f.endsWith('.plist') && f.startsWith('com.unao.'))
-    .sort()
+  // 🔴 예전 필터는 `f.startsWith('com.unao.')` 하나였다. 그게 검사 구멍을 냈다.
+  //    실제 label은 `com.unao.` / `com.unaeo.` / `com.unaoeo.` 세 갈래인데
+  //    `com.unaeo.`(un**ae**o)가 걸려서 magazine-morning·magazine-late(둘 다 publish)와
+  //    session-refresh가 **등급표에 있으면서도 한 번도 검사되지 않았다.**
+  //    이제 등급표에 있는 label은 무조건 포함된다(§isMonitoredLaunchdFile).
+  const files = readdirSync(LAUNCH_AGENTS).filter(isMonitoredLaunchdFile).sort()
 
   if (files.length === 0) {
     console.log('  ⓘ unao 관련 plist가 없다.')
@@ -386,7 +395,8 @@ function checkLaunchd(): PlistInfo[] {
     )
     const argLabel = argRoots.size ? [...argRoots].join(',') : '-'
 
-    const name = info.label.replace(/^com\.unao\./, '')
+    // `com.unao.` / `com.unaeo.` / `com.unaoeo.` 셋 다 벗긴다 — 한 갈래만 벗기면 표가 어긋난다
+    const name = info.label.replace(/^com\.[a-z]+\./, '')
     console.log(
       `  ${name.padEnd(40)} ${rootOf(info.workDir).padEnd(7)} ${rootOf(info.envWorkDir).padEnd(4)} ` +
       `${argLabel.padEnd(5)} ${rootOf(info.stdout).padEnd(4)} ${rootOf(info.stderr)}`,
@@ -422,13 +432,22 @@ function checkLaunchd(): PlistInfo[] {
     // launchd-alert.sh 는 UNAO_WORKDIR 미설정 시 구 워크스페이스로 fallback한다(§19 P1-1)
     const usesFallbackWrapper = info.programArgs.some((a) => a.endsWith('launchd-alert.sh'))
 
+    // 🔴 BLOCKER-2 수정: execDir(= env ?? workDir) 2개만 넘기면
+    //    ProgramArguments가 unao-ops 스크립트를 가리키는 경우를 놓친다.
+    //    예전 코드는 allRoots로 이걸 봤는데, freshness guard로 옮기며 탐지면이 좁아졌다.
+    //    실행 코드(programArgs)와 로그 목적지(stdout/stderr)는 정책이 달라 나눠 넘긴다.
+    const programArgRoots = [...argRoots]
+    const logRoots = [rootOf(info.stdout), rootOf(info.stderr)].filter((r) => r !== '-')
+
     const verdict = judgeRunnerFreshness({
       name: info.label,
       grade,
       what: spec?.what ?? '(등급 미상)',
-      workDirRoot: rootOf(info.workDir) as RunnerRoot,
-      envWorkDirRoot: rootOf(info.envWorkDir) as RunnerRoot,
+      workDirRoot: rootOf(info.workDir),
+      envWorkDirRoot: rootOf(info.envWorkDir),
       freshness: fresh,
+      programArgRoots,
+      logRoots,
       expectedRoot: EXPECTED_LAUNCHD_ROOT,
       usesFallbackWrapper,
     })
