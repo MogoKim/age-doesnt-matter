@@ -31,7 +31,7 @@
  */
 
 import { execFileSync } from 'child_process'
-import { existsSync, readdirSync, statSync } from 'fs'
+import { closeSync, existsSync, openSync, readdirSync, readSync, statSync } from 'fs'
 import { join } from 'path'
 import { homedir } from 'os'
 import {
@@ -40,10 +40,13 @@ import {
   isMonitoredLaunchdFile,
   judgeRunnerFreshness,
   launchdGrade,
+  parseSyncLogTail,
   pathRoot,
   PROD_SYNC_INTERVAL_HOURS,
   UNKNOWN_LAUNCHD_GRADE,
+  unknownSyncEvidence,
   type RunnerRoot,
+  type SyncEvidence,
   type WorktreeFreshness,
 } from './ops-runner-manifest'
 
@@ -161,6 +164,57 @@ function headAgeHours(dir: string): number | null {
   return (Date.now() / 1000 - sec) / 3600
 }
 
+/**
+ * unao-prod-sync 실행 흔적을 read-only로 모은다 (P0-1C).
+ *
+ * 신호가 두 개고 역할이 다르다:
+ *   파일 mtime  → **언제** 마지막으로 시도했는가 (로그에 타임스탬프가 없어 이것뿐이다)
+ *   tail 파싱   → **무슨 일이** 있었는가 (up-to-date / fast-forward / 도중 사망)
+ *
+ * ⚠️ stderr는 보지 않는다. `git pull`은 성공해도 fetch 진행상황을 stderr에 쓴다
+ *    ("From https://...", "* [new branch] ..."). 크기로 실패를 판정하면 상시 오탐이다.
+ * ⚠️ 로그는 append-only이고 회전 장치가 없다(실측 35KB/23회차). tail만 읽는다.
+ */
+const SYNC_LOG_TAIL_BYTES = 8192
+
+function collectSyncEvidence(dir: string): SyncEvidence | null {
+  // sync 장치가 있는 곳은 unao-prod 하나뿐이다(§18-4).
+  // 나머지는 evidence가 없는 게 정상이고, 판정은 headAgeHours 폴백으로 간다.
+  if (rootOfDir(dir) !== 'prod') return null
+
+  const logPath = join(dir, 'logs/unao-prod-sync.log')
+  if (!existsSync(logPath)) {
+    return unknownSyncEvidence(logPath, 'sync 로그 없음 — 한 번도 실행되지 않았거나 경로가 바뀌었다')
+  }
+
+  let lastAttemptAgeHours: number | null = null
+  try {
+    lastAttemptAgeHours = (Date.now() - statSync(logPath).mtimeMs) / 3_600_000
+  } catch {
+    return unknownSyncEvidence(logPath, 'sync 로그 stat 실패')
+  }
+
+  // 전체를 읽지 않는다 — 마지막 회차만 필요하다
+  let tail = ''
+  try {
+    const size = statSync(logPath).size
+    const start = Math.max(0, size - SYNC_LOG_TAIL_BYTES)
+    const fd = openSync(logPath, 'r')
+    try {
+      const buf = Buffer.alloc(Math.min(SYNC_LOG_TAIL_BYTES, size))
+      readSync(fd, buf, 0, buf.length, start)
+      tail = buf.toString('utf8')
+    } finally {
+      closeSync(fd)
+    }
+  } catch {
+    // 시각은 얻었으니 그것만이라도 넘긴다. outcome은 모른다고 남긴다.
+    return { logPath, lastAttemptAgeHours, lastOutcome: null, reason: 'sync 로그 tail 읽기 실패' }
+  }
+
+  return { logPath, lastAttemptAgeHours, lastOutcome: parseSyncLogTail(tail) }
+}
+
 function collectFreshness(dir: string): WorktreeFreshness {
   const root = rootOfDir(dir)
   const base: WorktreeFreshness = {
@@ -169,6 +223,8 @@ function collectFreshness(dir: string): WorktreeFreshness {
     divergedFromRemote: null, headAgeHours: null,
     // 자동 sync 장치가 있는 곳은 unao-prod 하나뿐이다(§18-4). 나머지는 방치하면 영원히 뒤처진다.
     syncIntervalHours: rootOfDir(dir) === 'prod' ? PROD_SYNC_INTERVAL_HOURS : null,
+    // sync 실행 흔적 — 있으면 stale 판정이 headAgeHours 대신 이걸 쓴다 (P0-1C)
+    sync: collectSyncEvidence(dir),
   }
 
   if (!existsSync(dir)) return { ...base, reason: '디렉토리 없음' }
