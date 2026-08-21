@@ -839,8 +839,13 @@
         <tr>
           <td><strong>하는 것</strong></td>
           <td>
-            GHA 자체 cron 외에 <em>추가로</em> workflow_dispatch를 전송 → GHA 자체 cron이 지연되더라도 dispatch 트리거는 이중으로 발사됨<br>
-            <span style="color:var(--muted);font-size:12px;">runner.ts 10분 중복방지 로직이 이중 실행을 차단함</span>
+            <b>실행 트리거의 대부분을 담당한다.</b> GHA 자체 <code>*/5</code> cron은 실측상 하루 16~19회(약 7%)만 발화하므로,
+            나머지를 cron-job.org의 workflow_dispatch가 채운다 — <code>agents-cafe-wave</code> 기준 <b>288회/일</b><br>
+            <span style="color:var(--muted);font-size:12px;">
+              <s>GHA 자체 cron 외에 추가로 전송 → 트리거가 이중으로 발사됨</s>
+              → 2026-08-21 실측 정정: 이중화가 아니라 주 경로다. schedule은 보조에 가깝다.<br>
+              둘이 겹칠 때는 runner.ts 10분 중복방지 로직이 이중 실행을 차단한다
+            </span>
           </td>
         </tr>
         <tr>
@@ -861,10 +866,18 @@
     </table>
   </div>
   <div class="alert info">
-    <strong>왜 cron-job.org를 쓰나?</strong>
+    <strong>왜 cron-job.org를 쓰나? — 보조가 아니라 <em>주 실행 경로</em>다 (2026-08-21 실측 정정)</strong>
     GHA 자체 cron은 GitHub 정책상 실행 순서가 보장되지 않으며 지연이 잦다.
-    cron-job.org는 <em>더 신뢰성 높은 외부 스케줄링</em>을 통해 dispatch 트리거 자체를 놓치지 않기 위한 이중 안전망이다.
-    단, dispatch 이후의 실행 지연은 GitHub runner 자체 문제이며 cron-job.org가 제어할 수 없다.
+    <br><s>cron-job.org는 더 신뢰성 높은 외부 스케줄링을 통해 dispatch 트리거 자체를 놓치지 않기 위한 <b>이중 안전망</b>이다.</s>
+    <br><b>🔴 위 표현은 위험을 과소평가한다.</b> 실측하면 <code>agents-cafe-wave</code>는
+    GitHub <code>*/5</code> schedule 단독으로 <b>하루 16~19회(약 7% 커버리지)</b>밖에 발화하지 않았다
+    (2026-05-16 19회 · 2026-05-17 16회 · 이론값 288회/일).
+    cron-job.org 도입(2026-05-18) 후 dispatch가 <b>288회/일</b>로 정확히 채워지고 있다(2026-06~08 무결).
+    즉 이것은 백업이 아니라 <b>실제로 일을 돌리는 주 경로</b>이며,
+    끄면 백업으로 내려앉는 것이 아니라 <b>커버리지가 7%로 붕괴</b>한다.
+    그리고 그 붕괴는 알림 없이 <b>조용히</b> 일어난다 — 댓글 파동과 큐 소비가 서서히 느려질 뿐이다.
+    단, dispatch 이후의 실행 지연은 GitHub runner 자체 문제이며 cron-job.org가 제어할 수 없다(위 ⚠️ 참조).
+    <br>운영 자산 상세 → <code>docs/operations/cron-job-dispatcher-ops.md</code>
   </div>
 
   <h3 class="mt24">Mac 켜짐/꺼짐 경계 — 한눈에 보기</h3>
