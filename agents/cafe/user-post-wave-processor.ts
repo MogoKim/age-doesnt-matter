@@ -184,6 +184,9 @@ export async function main() {
   if (expired.count > 0) console.log(`[UserPostWave] 만료 정리: ${expired.count}건`)
 
   const processedQueueIds = new Set<string>()
+  // 사고 역추적용 — 실제로 댓글이 생성된 postId만 모은다(P0-2B).
+  // 기존에는 {processed, failed} 집계뿐이라 어느 글에 달렸는지 BotLog로 되짚을 수 없었다.
+  const touchedPostIds = new Set<string>()
 
   for (const waveNum of [1, 2, 3, 4, 5] as WaveNum[]) {
     const doneField = `wave${waveNum}Done` as WaveDoneKey
@@ -208,6 +211,8 @@ export async function main() {
         const count = await processUserWave(queue, waveNum)
         processed += count
         processedQueueIds.add(queue.id)
+        // count === 0 이면 guard·중복 등으로 실제 생성이 없었다는 뜻이다
+        if (count > 0) touchedPostIds.add(queue.postId)
 
         await prisma.userPostWaveQueue.update({
           where: { id: queue.id },
@@ -226,7 +231,13 @@ export async function main() {
       botType: 'CAFE_CRAWLER',
       action: 'USER_POST_WAVE',
       status: failed === 0 ? 'SUCCESS' : processed > 0 ? 'PARTIAL' : 'FAILED',
-      details: JSON.stringify({ processed, failed }),
+      // summary가 첫 키 — ops-daily-report가 details를 90자에서 자른다.
+      details: JSON.stringify({
+        summary: `회원 글 댓글 파동 완료: ${processed}건 생성, ${failed}건 실패`,
+        processed,
+        failed,
+        postIds: [...touchedPostIds],
+      }),
       itemCount: processed,
     },
   })

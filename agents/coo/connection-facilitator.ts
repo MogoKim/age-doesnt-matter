@@ -16,6 +16,8 @@ export async function main() {
   console.log('[COO] 연결 촉진 시작')
   const start = Date.now()
   let facilitatedCount = 0
+  // 사고 역추적용 — 실제로 댓글이 생성된 postId만 모은다(P0-2B).
+  const touchedPostIds = new Set<string>()
 
   try {
     const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000)
@@ -84,6 +86,7 @@ export async function main() {
         ])
 
         facilitatedCount++
+        touchedPostIds.add(post.id)
         console.log(`[COO] 연결 촉진: "${post.title}" ← ${personaId}`)
       } catch (err) {
         console.error(`[COO] 댓글 생성 실패 (post ${post.id}):`, err)
@@ -92,7 +95,10 @@ export async function main() {
 
     const summary = `연결 촉진 완료: ${facilitatedCount}건 댓글 (대상 ${selectedPosts.length}건)`
 
-    await safeBotLog({ botType: 'COO', action: 'CONNECTION_FACILITATE', status: 'SUCCESS', details: summary, itemCount: facilitatedCount, executionTimeMs: Date.now() - start })
+    // summary가 첫 키 — ops-daily-report가 90자에서 자른다.
+    const details = JSON.stringify({ summary, postIds: [...touchedPostIds] })
+
+    await safeBotLog({ botType: 'COO', action: 'CONNECTION_FACILITATE', status: 'SUCCESS', details, itemCount: facilitatedCount, executionTimeMs: Date.now() - start })
 
     if (facilitatedCount > 0) {
       await notifySlack({

@@ -31,6 +31,9 @@ export async function main() {
   const start = Date.now()
   let activatedCount = 0
   let postCount = 0
+  // 사고 역추적용 — 실제로 댓글이 생성된 postId만 모은다(P0-2B).
+  // 집계 숫자만 남기면 어떤 글에 무엇을 만들었는지 되짚을 수 없다.
+  const touchedPostIds = new Set<string>()
 
   try {
     const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000)
@@ -132,6 +135,7 @@ export async function main() {
 
         if (commentsAdded > 0) {
           postCount++
+          touchedPostIds.add(post.id)
           await refreshPostTrendingScore(post.id).catch(() => {})
         }
 
@@ -143,7 +147,11 @@ export async function main() {
 
     const summary = `댓글 활성화 완료: ${postCount}개 게시글에 ${activatedCount}개 댓글 배치`
 
-    await safeBotLog({ botType: 'COO', action: 'COMMENT_ACTIVATE', status: 'SUCCESS', details: summary, itemCount: activatedCount, executionTimeMs: Date.now() - start })
+    // summary가 첫 키다 — ops-daily-report가 details를 90자에서 자르므로 요약이 먼저 와야 살아남는다.
+    // error/message/reason/detail 키는 쓰지 않는다 — admin.bots.ts pickString이 실패 사유로 집는다.
+    const details = JSON.stringify({ summary, postIds: [...touchedPostIds] })
+
+    await safeBotLog({ botType: 'COO', action: 'COMMENT_ACTIVATE', status: 'SUCCESS', details, itemCount: activatedCount, executionTimeMs: Date.now() - start })
 
     if (activatedCount > 0) {
       await notifySlack({
