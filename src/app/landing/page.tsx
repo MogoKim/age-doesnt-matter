@@ -13,8 +13,11 @@ import { redirect } from 'next/navigation'
  * 되돌릴 때도 CafePost 직접 조회로는 복구하지 않는다.
  *
  * 이 redirect 는 legacy raw-source 노출을 막기 위한 것이므로 그대로 유지한다.
+ *
+ * ⚠️ `dynamic = 'force-static'` 을 붙이지 않는다. 정적 페이지에서 redirect() 는
+ *   Location 헤더 없는 307 + 클라이언트 네비게이션 payload 로 나가서, 브라우저는
+ *   홈으로 가지만 크롤러·봇은 /landing 에 머문다(2026-08-24 실측).
  */
-export const dynamic = 'force-static'
 
 export default function LandingPage() {
   redirect('/')
