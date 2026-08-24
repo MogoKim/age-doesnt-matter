@@ -11,6 +11,8 @@ import { redirect } from 'next/navigation'
  *   404보다 홈 착지가 낫다. 쿼리(`?t=`)는 무시한다.
  *
  * 되돌릴 때도 CafePost 직접 조회로는 복구하지 않는다.
+ *
+ * 이 redirect 는 legacy raw-source 노출을 막기 위한 것이므로 그대로 유지한다.
  */
 export const dynamic = 'force-static'
 
