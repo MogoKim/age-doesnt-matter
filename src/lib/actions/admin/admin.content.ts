@@ -411,6 +411,8 @@ export async function adminMovePost(
   revalidatePath('/search')
   revalidateTag('post-detail')
   revalidateTag('post-meta')
+  // sitemap-posts는 revalidate 3600 — 누락 시 숨긴 글이 최대 1시간 sitemap에 남는다.
+  revalidateTag('sitemap-posts')
   revalidateTag('home-trending')
   revalidateTag('home-stories')
   revalidateTag('home-humor')
