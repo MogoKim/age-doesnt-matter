@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { authenticateBot } from '@/lib/bot-auth'
+import { isBotWriteEnabled, logBotWriteBlocked, BOT_WRITE_BLOCKED_MESSAGE } from '@/lib/bot-write-gate'
 import { sanitizeHtml } from '@/lib/sanitize'
 
 /** POST /api/bot/jobs — 일자리 발행 */
@@ -8,6 +9,12 @@ export async function POST(req: NextRequest) {
   const auth = authenticateBot(req)
   if (!auth.ok) {
     return NextResponse.json({ error: auth.error }, { status: 401 })
+  }
+
+  // Rescue R4: 외부 봇 write 입구는 기본 차단 (BOT_WRITE_ENABLED='true' 일 때만 통과)
+  if (!isBotWriteEnabled()) {
+    logBotWriteBlocked('/api/bot/jobs', auth.botType)
+    return NextResponse.json({ error: BOT_WRITE_BLOCKED_MESSAGE }, { status: 403 })
   }
 
   try {
