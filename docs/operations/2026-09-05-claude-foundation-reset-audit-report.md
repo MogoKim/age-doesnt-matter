@@ -7,6 +7,24 @@
 
 ---
 
+## 0. 후속 조치로 해소된 항목 (2026-09-06 04:20 KST 기준 — 이 절만 현재 상태, 이하 §1~§8은 2026-09-05 감사 당시 실측 그대로 보존)
+
+| 감사 항목 | 당시 실측(§3) | 후속 조치 | 현재 상태 |
+|---|---|---|---|
+| A-01 production DB | `/api/health` 503, Postgres 28P01 | **R1-A** 창업자가 Vercel production `DATABASE_URL`/`DIRECT_URL` 정정 + redeploy (2026-09-05 22:2x KST) | **해소** — `/api/health` 200 healthy (`database: ok`), 이후 배포 `633dbe1`·`e2cbe8c`에서도 healthy 유지 |
+| A-02 `/api/health/auth` 캐시 HIT(12일 전 ts) | R1-D 미충족 | **R1-D · PR #410 merged**(`633dbe14`): `dynamic='force-dynamic'`, `revalidate=0`, `Cache-Control: no-store` | **해소** — `x-vercel-cache: MISS`, ts 실시간 갱신 확인 |
+| A-03 어드민 로그인 | POST 미시도 → 미확인 | R1-A 창업자 실브라우저 + PR #410 admin-auth 에러 원문 숨김 | **해소** — 어드민 로그인·`/admin` 진입 성공(창업자 확인). R1-B(카카오 로그인·/my·글·댓글)도 PASS |
+| A-04·A-05 launchd 16개 로드·DB 실패·자동 재개 위험 | 12개가 DB 자격 복구 시 자동 발행 재개 | **R4 launchd 차단**(2026-09-06 04:09 KST, /careful 승인): cafe-crawler 7 · popular 3 · magazine 2 `launchctl unload -w`, plist 보존, Disabled 플래그 | **해소** — 남은 우나어 launchd 4개(unao-prod-sync · opsboard · session-refresh · naver-cafe-sheet-scraper)는 유지/관찰. 로그 침묵 관찰(07:45 KST 이후) 진행 중 |
+| A-07 `automation_status: ACTIVE` 불일치 | 헌법이 실제와 반대 | 이 PR(#409)에서 `PAUSED`로 정정 | **이 PR merge 시 해소** |
+| §4-2b `coo:moderator` MONITORING_TASKS 미포함 (PAUSED 시 moderation 정지) | 결정 필요 | **R4 PR-A · PR #411 merged**(`9e867729`): `'coo:moderator'` 추가 | **해소** — PAUSED에서도 moderation 유지. 실행 스킵 여부는 2026-09-06 09:13 KST(00:13 UTC) 실행에서 관찰 예정 |
+| S-02 `/api/bot/posts·jobs` 외부 write 문 | 정적 키 4종만으로 개방, 호출자 불명 | **R4 PR-B · PR #412 merged**(`e2cbe8c5`): `BOT_WRITE_ENABLED='true'` 아니면 403, `check`·`logs` 유지 | **해소** — 비인증 401·가짜 키 401 확인. 유효 키 403 경로는 창업자 확인 항목 |
+| Vercel CLI 소란소란 계정(§4-2b) | Claude가 env 조작 불가 | 창업자가 대시보드에서 직접 수행 | 현행 유지(Claude는 env 미접근) |
+| PR #392 판정 자료(§6) | 이미 merged | 재지정 필요로 기록 | Codex 확인: merge 대상 아님 |
+
+미해소·진행 중: R2(네이버 신뢰) · R3(콘텐츠 오염) 미착수 · R5 문서 정리(이 PR이 첫 단계) · R6 코드 정리(하드코딩·env fallback·죽은 코드·주석, `agents/`·`scripts/` 타입 오류 953건 기준선) **미착수** · GHA 21개 disabled 상태 유지(REMOVE 목록 확정 대기) · `/api/bot` 외부 호출자 정체 미확인.
+
+---
+
 ## 1. 작업 범위
 
 | 항목 | 값 | 근거 |

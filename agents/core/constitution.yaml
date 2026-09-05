@@ -280,13 +280,15 @@ kpi:
       - "DAU/MAU (건전성 참고)"
       - "일자리 지원 클릭 (돈과 일 축 기능 참고)"
 
-# ⚠️ 2026-09-05 실측 정정 (Rescue Mode R4): 실제 자동화는 대부분 정지 상태다.
+# ⚠️ Rescue Mode R4 — 자동화는 의도적으로 정지 상태다 (2026-09-05 실측, 2026-09-06 04:20 KST 갱신).
 #   - GitHub Actions 26개 중 21개 disabled_manually (2026-08-24 ~06:15 UTC 이후 schedule 실행 없음). 활성: ci · lighthouse · post-deploy-qa · quarantine-check · agents-moderation
-#   - launchd 16개는 로드돼 있으나 DB 인증 실패(Postgres 28P01)로 매 슬롯 실패. 매거진 마지막 정상 발행 2026-08-22
-#   - production /api/health 503 (동일 28P01)
-#   근거: docs/operations/2026-09-05-claude-foundation-reset-audit-report.md §3 A-01~A-07
-#   효과: agents/cron/runner.ts:197 은 이 값이 ACTIVE가 아니면 MONITORING_TASKS 외 실행을 스킵한다.
-#   ⚠️ coo:moderator 는 MONITORING_TASKS에 없으므로 PAUSED 반영 시 agents-moderation 워크플로우도 스킵된다 — merge 전 Codex 결정 사항.
+#   - launchd: 콘텐츠 자동 발행 12개(cafe-crawler 7 · popular 3 · magazine 2)는 2026-09-06 04:09 KST `launchctl unload -w`로 차단 완료(plist 보존, Disabled 플래그).
+#     유지/관찰 4개: unao-prod-sync · opsboard · session-refresh · naver-cafe-sheet-scraper
+#   - production DB: 2026-09-05 감사 시 /api/health 503(28P01)이었으나 R1-A(Vercel env 정정)로 복구됨 — 현재 healthy
+#   - /api/bot/posts·jobs 외부 write 입구는 #412로 기본 차단(BOT_WRITE_ENABLED='true' 일 때만 허용)
+#   근거: docs/operations/2026-09-05-claude-foundation-reset-audit-report.md (§0 후속 조치 + §3 당시 실측)
+#   효과: agents/cron/runner.ts 는 이 값이 ACTIVE가 아니면 MONITORING_TASKS 외 실행을 스킵한다.
+#   coo:moderator 는 #411로 MONITORING_TASKS에 포함됨 → PAUSED 에서도 금지어 감지·숨김은 유지된다.
 #   재가동(ACTIVE 복귀)은 창업자 승인 + R4 KEEP/OFF/REMOVE 표 확정 후에만 한다.
 automation_status: "PAUSED"   # 2026-09-05 실측 정정. (이전: "ACTIVE" — 2026-03-24 창업자 승인)
 
