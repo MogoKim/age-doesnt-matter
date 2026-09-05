@@ -26,6 +26,7 @@ const MONITORING_TASKS = new Set([
   'cto:qa-verify',
   'cafe:session-refresh',  // LOCKED 상태에서도 세션 유지 필수 (크롤러 재가동 보장)
   'cmo:seo-snapshot',      // read-only 관측 — 자동화 중단 중에도 SEO 추이는 계속 봐야 한다
+  'coo:moderator',         // 안전 기능(금지어 감지·숨김, 헌법 auto_allowed) — automation_status=PAUSED/LOCKED 에서도 유지 (Rescue R4, 2026-09-05)
 ])
 
 const HANDLERS: Record<string, () => Promise<void>> = {
