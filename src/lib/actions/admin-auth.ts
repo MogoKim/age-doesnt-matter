@@ -51,8 +51,9 @@ export async function adminLogin(
 
     await setAdminCookie(token)
   } catch (e) {
+    // 내부 에러 원문(DB 접속 실패·Prisma 메시지 등)은 서버 로그에만 남기고, 화면에는 일반 문구만 노출한다 (R1-D / R6-E)
     console.error('[adminLogin] error:', e)
-    return { error: `로그인 처리 중 오류: ${e instanceof Error ? e.message : String(e)}` }
+    return { error: '로그인 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.' }
   }
 
   redirect('/admin')
