@@ -264,7 +264,9 @@ NORTH_STAR.md(§13만 손질) · CLAUDE.md · AGENTS.md(:72 typecheck 문구 정
 
 ---
 
-현재 상태:
+> 현재 상태는 §0(후속 조치로 해소된 항목)을 기준으로 본다. 아래 두 블록은 2026-09-05 감사 종료 시점의 기록이다.
+
+2026-09-05 감사 종료 당시 상태(후속 조치 전):
 - R1-A: **FAIL** — production `/api/health` 503, DB 28P01(user postgres). `/api/health/auth`는 12일 전 캐시(HIT)라 판정 도구로 부적합. Vercel/Supabase env 대조 미수행. 어드민 로그인 POST 미시도.
 - R2: **미착수** — sitemap.ts·robots.ts 내용 읽고 변경 없음만 확인. 신뢰 훼손 후보(복사글 노출·canonical·noindex 정책) 감사는 이번 범위 밖.
 - R3: **미착수** — 복사글/저품질/중복 판정 기준 미작성. 스키마상 출처 필드가 빈약하다는 전제 조건만 확인(S-01).
@@ -272,7 +274,7 @@ NORTH_STAR.md(§13만 손질) · CLAUDE.md · AGENTS.md(:72 typecheck 문구 정
 - R5: **PARTIAL** — KEEP/REWRITE/ARCHIVE/DELETE 후보표 확보(문서 177 + 루트 4 + memory 2 + constitution.yaml). 확정·PR 0건.
 - R6: **PARTIAL** — 하드코딩·fallback·죽은 코드·주석 불일치 후보 목록 확보(§3 C/H, §5). PR 0건, 로컬 typecheck 미실행.
 
-Codex 판단 필요:
+2026-09-05 당시 Codex 판단 필요(후속 조치 반영 전):
 1. **R1-A 복구 순서**: DB 자격 복구를 launchd 재가동 방지(unload/plist 제거/`automation_status` PAUSED) **전에** 할지 **후에** 할지. Claude 추천은 "방지 먼저"이나 어드민 접근 긴급도에 따라 뒤바뀔 수 있음.
 2. **R4/R5 P0 문서 PR 착수 승인**: `automation_status` → `PAUSED` 전환 + 헌법 KPI 정정 + REGISTRY 실측 배너(코드 무변경, 5파일). 승인 시 `[merge 금지]` PR로 올린다.
 3. **PR #392 재지정 여부**: #392는 이미 merged. 마스터가 판정하려던 PR이 다른 번호인지, 또는 열린 PR #394(소란소란 문서)의 처리(닫기/이관)를 뜻하는지.
