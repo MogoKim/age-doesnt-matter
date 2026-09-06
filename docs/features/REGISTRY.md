@@ -5,6 +5,13 @@
 
 마지막 갱신: 2026-05-14 (게시글 하단 연속읽기 + BEST 댓글 시스템)
 
+> ## ⚠️ 2026-09-05 실측 배너 — 이 표의 `ACTIVE`는 현재 자동화 상태를 뜻하지 않는다
+> - 이 레지스트리는 2026-05-14 이후 갱신되지 않았다. 아래 `ACTIVE` 59행은 "기능이 코드에 존재한다"는 뜻으로만 읽어라.
+> - **자동화(A·M 계열)는 의도적으로 정지 상태다.** GitHub Actions 26개 중 21개 `disabled_manually`(2026-08-24 이후 미실행). launchd 콘텐츠 발행 12개는 2026-09-06 04:09 KST unload 완료(4개 유지/관찰). production `/api/health`는 감사 당시 503이었으나 R1-A로 복구돼 현재 healthy. `/api/bot/posts·jobs`는 #412로 기본 차단.
+> - 실측으로 확인된 불일치: 문서상 ACTIVE인데 스케줄 자체가 없는 것 6(A09·A10·A11·A20·A21·A22), ARCHIVED인데 코드 잔존 5(A07·A08·A23·A28·A99), 경로·슬롯 불일치 13, 미등록 워크플로우 12·plist 3·agents 디렉터리 5.
+> - 개별 행의 실제 상태는 **실측 필요**: `gh workflow list --all`, `launchctl list | grep -iE 'unao|unaeo'`, `agents/core/constitution.yaml` `automation_status`(현재 `PAUSED` — coo:moderator는 #411로 MONITORING_TASKS 포함).
+> - 근거·행별 판정: `docs/operations/2026-09-05-claude-foundation-reset-audit-report.md` §3 A-06~A-08, 원본 검증 표는 Rescue R4/R5에서 REGISTRY 재작성 시 반영한다.
+
 ---
 
 ## 사용 방법
