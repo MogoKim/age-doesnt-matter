@@ -2,7 +2,7 @@
 
 기준: 2026-06-04 KST  
 용도: Codex/Claude Code 병렬 세션의 공통 기준판  
-짝 문서: `docs/backlog/unaeo-priority-roadmap-2026-06-02.html`
+짝 문서: `docs/backlog/unaeo-priority-roadmap-2026-06-02.html` (2026-09-06 삭제됨 — md가 정본)
 
 ## 현재 결론
 

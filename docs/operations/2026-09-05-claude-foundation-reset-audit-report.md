@@ -88,10 +88,10 @@
 | D-01 | 헌법 | `constitution.yaml:270-275` | `survival_reference_only: [DAU, MAU, ...]` 선언 직후 `targets`에 `"DAU/MAU > 0.15"`, `"일자리 지원 클릭 > 50/일"` — 같은 파일 안 자기모순. `:10 updated: 2026-05-21` < NORTH_STAR v5.0(08-05) | sed | P1 | R5 |
 | D-02 | 헌법 | `constitution.yaml:153, :580-581, :595` | "내 일 찾기 role: 유입 핵심" · moat "시드봇 콘텐츠 플라이휠" · "일자리 종합 플랫폼" — 에이전트 System Prompt에 주입되는 파일이 일자리 플랫폼·봇 공장 정의를 주입 중 | sed | P1 | R5 |
 | D-03 | 헌법 | `docs/constitution/NORTH_STAR.md:348-353` | §13 운영 원칙 "봇은 판을 깔고… Volume(자동화) 커뮤니티 글·유머·일자리" — §12 :318 "봇 글은 North Star를 올리지 못한다"와 긴장 | cat | P1 | R5 |
-| D-04 | 문서 | `docs/agents/POST_DEV_CHECKLIST.md:3,22,24,32,46-50` | "가상 유저 100명", "가스라이팅 전략", "'진짜 사람 사는 곳'처럼 보이게", "안티봇 우회", "하루 400글/600댓글 융단 폭격" — 본질 정반대 지시가 살아 있는 문서 | 문서 감사 에이전트 A 인용 | P1 | R5 |
+| D-04 | 문서 | `docs/agents/POST_DEV_CHECKLIST.md:3,22,24,32,46-50` (2026-09-06 삭제됨, PR-D1) | "가상 유저 100명", "가스라이팅 전략", "'진짜 사람 사는 곳'처럼 보이게", "안티봇 우회", "하루 400글/600댓글 융단 폭격" — 본질 정반대 지시가 살아 있는 문서 | 문서 감사 에이전트 A 인용 | P1 | R5 |
 | D-05 | 문서 | `README.md:4,13` · `docs/SERVICE_ARCHITECTURE.md:15,24` · `docs/prd/PRD_Final_A:328,333,338,462` | 서비스를 "커뮤니티 + 일자리 플랫폼", 히어로 첫 CTA "일자리 보기"로 정의 | 에이전트 A/B 인용 | P1 | R5 |
 | D-06 | 문서 | `docs/operations/soransoran-*.md` 3 + `m3-new-brand-readiness.md` + `cron-job-dispatcher-ops.md:176-210` | 소란소란 문서가 우나어 origin/main에 존재. `soransoran-d7-dday-milestone.md:781` "우나어를 지금 고치는 작업 금지"가 우나어 세션 지시로 읽힐 수 있음. 열린 PR #394도 같은 계열 | `git grep`, 에이전트 A | P1 | R5 |
-| D-07 | 문서 | `memory/MEMORY.md`, `memory/project_status.md` | 자가 DEPRECATED, 링크 대상 부재, "MAU 21→500" 목표 | 에이전트 A | P2 | R5 |
+| D-07 | 문서 | `memory/MEMORY.md`, `memory/project_status.md` (2026-09-06 삭제됨, PR-D1) | 자가 DEPRECATED, 링크 대상 부재, "MAU 21→500" 목표 | 에이전트 A | P2 | R5 |
 | D-08 | 문서 | 33파일 | 금지어(시니어·어르신·노인·실버) 실사용 — PRD_A:188,848,984 · PRD_D:435 · DESIGN.md:164 · constitution.yaml:246 `senior_ux` 키 · ui/HOME:16,1837,1849 등 | 에이전트 A/B grep | P2 | R5 |
 | D-09 | 문서 | 5건 | 깨진 참조: F18:3→`docs/제안서-참여형-이벤트-리텐션-2026-07-10.html` 부재 · handoff-06-20.md:5→`verification-android-oauth-day2` 부재 · M05:14·OPERATING_MASTER_HARNESS→`OPERATING_BACKLOG.md` 경로 불일치 · OPERATING_BACKLOG.md:91→analysis 파일 부재 · memory/MEMORY.md:19-20 부재 | 에이전트 A/B `ls` | P2 | R5 |
 | C-01 | 코드 | `agents/cron/runner.ts:116-117` | 주석 "launchd: com.unao.fmkorea-scraper.plist (11:30, 21:30)" — 해당 plist가 repo `launchd/`에도 `~/Library/LaunchAgents`에도 없음 | ls 양쪽 | P2 | R6-C |
@@ -197,6 +197,7 @@
 C-01~C-07 (§3). 양은 TODO/FIXME 26곳으로 적고, 문제는 "자가 선언 죽은 코드"가 도구 통계상 정상으로 집계되는 구조(C-06).
 
 ### 5-5. 삭제 후보 (문서, R5)
+> 각주(2026-09-06): 아래 중 POST_DEV_CHECKLIST · memory/ 2 · retention-ideas · SERVICE_ARCHITECTURE.html · unaeo-priority-roadmap html · utm-links.html · login-preview · 비즈니스-프레임워크-복사본 · video-ads/Campaign_Strategy_Roadmap.html · analysis/insights-2026-06-07 은 PR-D1에서 삭제됨. 소란소란 3문서·jobs-bot·external-content는 미삭제(D2/D3).
 docs/agents/POST_DEV_CHECKLIST.md · memory/ 2파일 · docs/ideas/retention-ideas.md(항목 0) · md↔html 중복 4(SERVICE_ARCHITECTURE.html, kakao-auth-policy.html, marketing/utm-links.html 택1, backlog/unaeo-priority-roadmap.html) · docs/features/{jobs-bot,external-content}.md 구판 · reports/{login-preview, 비즈니스-프레임워크-복사본, video-ads/Campaign_Strategy_Roadmap(최상위와 동일)}.html · analysis/insights-2026-06-07.md · 소란소란 4문서(**이관 확인 후**)
 
 ### 5-6. 유지 후보 (문서, R5)
