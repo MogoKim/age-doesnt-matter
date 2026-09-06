@@ -176,12 +176,68 @@ scraped/{postKey}/{index}.{ext}
 
 ---
 
-## 현재 운영 상태
+## 운영 절차 (구 `external-content.md`에서 흡수 · 2026-09-06)
 
-✅ 트랙 1 (sheet-scraper, GHA): 11:00·21:00 KST 정상 운영  
-✅ 트랙 2 (fmkorea, launchd): 11:30·21:30 KST 정상 운영  
-✅ R2 이미지 파이프라인 정상  
-✅ 5 페르소나 계정 활성화
+> 2026-04-21 운영 기획서의 Sheets 운영·점검 절차를 정본(A04)으로 옮긴 것이다. 원문의 raw SQL·수동 트리거는 현재 운영 원칙(DB 직접 조회 금지, R4 자동화 PAUSED)에 맞게 표현을 바꿨다.
+
+### Google Sheets 운영 방법
+- 스프레드시트 ID: 환경변수 `SHEETS_SCRAPER_ID` (값은 `.env.local`/GitHub Secrets에만)
+- 탭: `사는이야기`(STORY), `활력충전소`(HUMOR)
+
+#### 열 구성
+| 열 | 내용 | 입력 주체 |
+|---|---|---|
+| A | 원본 URL | 창업자 |
+| B | 상태 (비우면 PENDING 자동) | 봇이 관리 |
+| C | 제목 (비우면 자동 추출) | 창업자 선택 |
+| D | 카테고리 (비우면 자동 분류) | 창업자 선택 |
+| E | 페르소나 (비우면 자동 선택) | 창업자 선택 |
+| F | 게시된 URL | 봇이 기록 |
+| G | 에러 메시지 | 봇이 기록 |
+| H | 게시 시각 | 봇이 기록 |
+| J | raw_content (본문 직접 붙여넣기) | 창업자 (CF 차단 시 수동) |
+
+#### 상태값 (B열)
+| 상태 | 의미 |
+|---|---|
+| (비어있음) | PENDING — 봇이 가져감 |
+| `PENDING` | 명시적 대기 |
+| `PROCESSING` | 봇이 처리 중 |
+| `PUBLISHED` | 게시 완료 |
+| `FAILED` | 실패 (G열에 오류 내용) |
+| `SKIPPED` | 중복 등으로 스킵 |
+
+#### FAILED / PROCESSING 재처리
+- 굳은 행을 다시 올리려면 **B열 내용을 지우거나 `PENDING`으로 변경**한다. 같은 원본 URL은 `Post.sourceUrl` unique로 중복 게시가 막힌다.
+- ⚠️ 현재(2026-09-06)는 R4로 GHA `agents-scraper.yml`이 `disabled_manually` 상태라 B열을 바꿔도 **자동 처리되지 않는다**. launchd `com.unao.naver-cafe-sheet-scraper`만 OBSERVE 상태로 남아 있다(`unao-ops` 체크아웃에서 실행). 재처리는 R4 KEEP/OFF/REMOVE 확정 후에만.
+
+### 점검 절차 (read-only)
+1. **GA 실행 이력 확인** — `gh run list --workflow=agents-scraper.yml --limit 20` (2026-04 당시 워크플로우명은 `agents-cafe.yml`이었다). `sheet-scrape` 잡이 `skipped`면 워크플로우 `if` 조건, 워크플로우 자체가 `disabled_manually`면 R4 정지 상태다.
+2. **BotLog 확인** — 어드민 패널의 봇 로그 화면, 또는 Prisma 기반 read-only 조회(`BotLog`에서 `action = 'SHEET_SCRAPE'` 최근 10건)로 본다. 운영 DB에 raw SQL을 직접 실행하지 않는다. `siteOnly:"fmkorea"` 기록만 있고 `siteExclude:"fmkorea"`가 없으면 GA 레인이 돌지 않은 것이다.
+3. **Sheets 상태 확인** — 두 탭의 B열이 `FAILED`/`PROCESSING`으로 굳어 있는지 본다(재처리는 위 절차, 단 현재는 자동 처리 안 됨).
+
+### 과거 트러블슈팅 기록 — 🚫 현재 실행 금지
+> R4(2026-09-05~)로 콘텐츠 자동 발행이 PAUSED다. 아래는 2026-04 당시 절차의 기록이며, 재가동 승인 전에는 실행하지 않는다.
+- 수동 GA 트리거(당시): `gh workflow run agents-cafe.yml -f step=sheet-scrape` → 15분 후 BotLog에 `siteExclude:"fmkorea"` 확인. 현재는 `workflow dispatch` 자체가 창업자 승인 대상이다.
+- 펨코 로컬 launchd 확인(당시): `launchctl list | grep fmkorea`. 현재 `com.unao.fmkorea-scraper` plist는 repo·설치본 어디에도 없고(`agents/cron/runner.ts` 주석만 잔존) `launchctl print-disabled`에 disabled 플래그만 남아 있다.
+- 2026-04-21 이슈 2건(오유/네이트판 게시 0건 — GA 잡 미실행 · Playwright chromium 버전 불일치)의 상세는 삭제된 `external-content.md`의 git 이력(2026-09-06 이전)에서 볼 수 있다.
+
+## 운영 상태 기록
+
+> 이 절을 읽기 전에 **`REGISTRY.md` 상단 실측 배너**와 `agents/core/constitution.yaml`의 **`automation_status`(현재 `PAUSED`)**를 먼저 본다. 아래 "현행"이 정본이며, 그 아래 과거 기록은 현재 상태가 아니다.
+
+### 현행 (2026-09-06 기준)
+- 콘텐츠 자동 발행은 **Rescue R4로 PAUSED**다. `automation_status: "PAUSED"`(constitution.yaml)이며 runner는 MONITORING_TASKS 외 실행을 스킵한다.
+- 트랙 1 GHA(`agents-scraper.yml`·`agents-scraper-dawn.yml`)는 **`disabled_manually`**(2026-08-24 이후 미실행). Sheets B열을 바꿔도 자동 처리되지 않는다.
+- 트랙 2 fmkorea 전용 launchd(`com.unao.fmkorea-scraper`)는 **현행 설치본 없음** — repo `launchd/`·`~/Library/LaunchAgents` 모두 부재, `agents/cron/runner.ts` 주석과 `launchctl print-disabled` 플래그만 잔존(과거 기록).
+- `com.unao.naver-cafe-sheet-scraper` launchd만 **OBSERVE**로 별도 관리(unao-ops 체크아웃에서 실행, 최근 매 실행 "PENDING 없음"). R4 KEEP/OFF/REMOVE 확정 전 조작 금지.
+- R2 이미지 파이프라인과 페르소나 계정은 **코드·자산이 존재**한다는 뜻이지 "자동 운영 중"이 아니다. 페르소나 계정 수·활성 여부는 DB 실측 전 단정하지 않는다(코드 정의와 REGISTRY 기재가 불일치, 감사 보고서 §3 참조).
+
+### 과거 상태 기록 (2026-04~06, 현재 상태 아님)
+- 트랙 1 (sheet-scraper, GHA): 11:00·21:00 KST 운영
+- 트랙 2 (fmkorea, launchd): 11:30·21:30 KST 운영
+- R2 이미지 파이프라인 운영
+- 5 페르소나 계정 사용
 
 ---
 
@@ -214,6 +270,8 @@ scraped/{postKey}/{index}.{ext}
 | 2026-05-29 | P0: todayhumor/natepann commentSelectors 셀렉터 수정(d44746c) + GHA 시스템 Chrome 전환(18c0051). P1: filterSourceComments() 추가(HARD_REMOVE_RE, @태그/URL 제거, 앞4자 dedup, 10자↑) + sc SKIP/PARTIAL/FULL 정책 — usable≤2→SHEET_WAVE_SKIP, usable=3→PARTIAL, usable≥4(일반)/7(화제성)→FULL. 좋아요 파동 sc 무관 항상 예약. PENDING details에 sourceComments(filtered)+sourceCommentsRaw(감사용) 분리 | 빈 sourceComments(sc=0) 100% 문제 해결 + 품질 낮은 댓글로 파동 소비 방지 |
 | 2026-05-29 | Shadow Mode 검수 도구 추가: `agents/scripts/_shadow-comment-pack.ts` — DB write 없이 raw댓글→P1필터→v2댓글팩 예상(MOCK/LLM)→Validator 7항목 콘솔 출력. `--dry-run`(기본, API키 불필요) / `--llm`(dynamic import, current-generator-preview) / `--postId` / `--limit` CLI 지원 | P1 운영 검증 후 창업자가 댓글 품질을 직접 검수할 수 있는 Shadow Mode 구현 |
 | 2026-06-07 | 미디어 파이프라인 개선(image-pipeline.ts): ① GIF/animated webp → mp4 변환(ffmpeg, sharp webp→gif 디코딩 경유) + content-type 우선 판정(네이버 `?type=w710_wp` webp 대응) ② 일반 이미지 5MB 초과 시 placeholder 대신 sharp 다운스케일 복구 ③ UI 아이콘은 placeholder→태그 제거 ④ sanitize.ts video `autoplay/loop/muted/playsinline` 허용 ⑤ `backfillPlaceholderMedia()` 추가 — 기존 placeholder 6개 전부 복구 + agents-scraper.yml ffmpeg 설치 | 14MB GIF 등 5MB 초과 미디어가 placeholder로 깨지던 문제 해결. GIF는 88% 압축 mp4(자동재생)로 시니어 모바일 데이터·OOM 절감 |
+| 2026-09-06 | 구 `external-content.md`의 Sheets 운영 방법·열 구성·상태값·재처리·점검 절차를 §운영 절차로 흡수(raw SQL·수동 트리거는 read-only/실행 금지 표현으로), 구판 삭제(R5 PR-D2) | Rescue R5 문서 정본화 |
+| 2026-09-06 | §현재 운영 상태 → §운영 상태 기록: 현행(R4 PAUSED·GHA disabled·fmkorea launchd 부재·sheet-scraper OBSERVE)을 먼저 적고 2026-04~06 "정상 운영" 문구를 과거 기록으로 격리 | Codex 검토(현행 충돌 제거) |
 
 ---
 

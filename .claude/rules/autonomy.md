@@ -41,7 +41,7 @@
 ### 2-A. AUTO 허용 ✅
 - read-only 진단·측정: `curl`/TTFB, `gh run` 확인, 코드 trace, 로그 분석
 - 문서 작성·갱신: `docs/**`, `.claude/**`
-  - ⚠️ repo `<repo>/memory/`는 **제외** — CC auto-memory 도입 전 stale 잔재다. 상태·핸드오프 기록은 CC auto-memory에만 한다(§0 참조)
+  - ⚠️ repo `<repo>/memory/`는 **2026-09-06 PR-D1에서 삭제됨**. 상태·핸드오프 기록은 CC auto-memory에만 한다(§0 참조)
 - 임시 파일 정리: `agents/scripts/_*.ts`(디버그), `docs/analysis/` 등 untracked 정리
 - **저위험 코드 수정**: `src/components/**`, `src/app/**` 페이지의 UI·스타일·복사문구 등
   - 🚫 **SEO 노출면은 제외** — `title`·`description`·`canonical`·`robots`·`sitemap`은 AUTO가 아니다(2-B)
