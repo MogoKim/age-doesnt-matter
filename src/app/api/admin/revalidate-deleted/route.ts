@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/admin-auth'
 // BoardType → 경로 (SSoT: board-registry — 구 로컬 중복 정의 제거)
@@ -41,9 +41,24 @@ export async function POST() {
   revalidatePath('/best')
   revalidatePath('/search')
 
+  // Data Cache 태그 무효화 — revalidatePath 만으로는 unstable_cache 엔트리가 남는다.
+  // 특히 sitemap-posts(revalidate 3600)를 지우지 않으면 SQL/스크립트로 숨긴 글이
+  // sitemap 에 계속 남는다(2026-09-06 attack-A 실측: 9시간 넘게 잔존, 수동 퍼지 필요했음).
+  const tags = [
+    'sitemap-posts',
+    'post-detail',
+    'post-meta',
+    'community-board-page',
+    'home-trending',
+    'home-stories',
+    'home-humor',
+  ]
+  for (const tag of tags) revalidateTag(tag)
+
   return NextResponse.json({
     total: posts.length,
     invalidated: invalidated.length,
+    tags,
     paths: invalidated,
   })
 }
