@@ -222,12 +222,22 @@ scraped/{postKey}/{index}.{ext}
 - 펨코 로컬 launchd 확인(당시): `launchctl list | grep fmkorea`. 현재 `com.unao.fmkorea-scraper` plist는 repo·설치본 어디에도 없고(`agents/cron/runner.ts` 주석만 잔존) `launchctl print-disabled`에 disabled 플래그만 남아 있다.
 - 2026-04-21 이슈 2건(오유/네이트판 게시 0건 — GA 잡 미실행 · Playwright chromium 버전 불일치)의 상세는 삭제된 `external-content.md`의 git 이력(2026-09-06 이전)에서 볼 수 있다.
 
-## 현재 운영 상태
+## 운영 상태 기록
 
-✅ 트랙 1 (sheet-scraper, GHA): 11:00·21:00 KST 정상 운영  
-✅ 트랙 2 (fmkorea, launchd): 11:30·21:30 KST 정상 운영  
-✅ R2 이미지 파이프라인 정상  
-✅ 5 페르소나 계정 활성화
+> 이 절을 읽기 전에 **`REGISTRY.md` 상단 실측 배너**와 `agents/core/constitution.yaml`의 **`automation_status`(현재 `PAUSED`)**를 먼저 본다. 아래 "현행"이 정본이며, 그 아래 과거 기록은 현재 상태가 아니다.
+
+### 현행 (2026-09-06 기준)
+- 콘텐츠 자동 발행은 **Rescue R4로 PAUSED**다. `automation_status: "PAUSED"`(constitution.yaml)이며 runner는 MONITORING_TASKS 외 실행을 스킵한다.
+- 트랙 1 GHA(`agents-scraper.yml`·`agents-scraper-dawn.yml`)는 **`disabled_manually`**(2026-08-24 이후 미실행). Sheets B열을 바꿔도 자동 처리되지 않는다.
+- 트랙 2 fmkorea 전용 launchd(`com.unao.fmkorea-scraper`)는 **현행 설치본 없음** — repo `launchd/`·`~/Library/LaunchAgents` 모두 부재, `agents/cron/runner.ts` 주석과 `launchctl print-disabled` 플래그만 잔존(과거 기록).
+- `com.unao.naver-cafe-sheet-scraper` launchd만 **OBSERVE**로 별도 관리(unao-ops 체크아웃에서 실행, 최근 매 실행 "PENDING 없음"). R4 KEEP/OFF/REMOVE 확정 전 조작 금지.
+- R2 이미지 파이프라인과 페르소나 계정은 **코드·자산이 존재**한다는 뜻이지 "자동 운영 중"이 아니다. 페르소나 계정 수·활성 여부는 DB 실측 전 단정하지 않는다(코드 정의와 REGISTRY 기재가 불일치, 감사 보고서 §3 참조).
+
+### 과거 상태 기록 (2026-04~06, 현재 상태 아님)
+- 트랙 1 (sheet-scraper, GHA): 11:00·21:00 KST 운영
+- 트랙 2 (fmkorea, launchd): 11:30·21:30 KST 운영
+- R2 이미지 파이프라인 운영
+- 5 페르소나 계정 사용
 
 ---
 
@@ -261,6 +271,7 @@ scraped/{postKey}/{index}.{ext}
 | 2026-05-29 | Shadow Mode 검수 도구 추가: `agents/scripts/_shadow-comment-pack.ts` — DB write 없이 raw댓글→P1필터→v2댓글팩 예상(MOCK/LLM)→Validator 7항목 콘솔 출력. `--dry-run`(기본, API키 불필요) / `--llm`(dynamic import, current-generator-preview) / `--postId` / `--limit` CLI 지원 | P1 운영 검증 후 창업자가 댓글 품질을 직접 검수할 수 있는 Shadow Mode 구현 |
 | 2026-06-07 | 미디어 파이프라인 개선(image-pipeline.ts): ① GIF/animated webp → mp4 변환(ffmpeg, sharp webp→gif 디코딩 경유) + content-type 우선 판정(네이버 `?type=w710_wp` webp 대응) ② 일반 이미지 5MB 초과 시 placeholder 대신 sharp 다운스케일 복구 ③ UI 아이콘은 placeholder→태그 제거 ④ sanitize.ts video `autoplay/loop/muted/playsinline` 허용 ⑤ `backfillPlaceholderMedia()` 추가 — 기존 placeholder 6개 전부 복구 + agents-scraper.yml ffmpeg 설치 | 14MB GIF 등 5MB 초과 미디어가 placeholder로 깨지던 문제 해결. GIF는 88% 압축 mp4(자동재생)로 시니어 모바일 데이터·OOM 절감 |
 | 2026-09-06 | 구 `external-content.md`의 Sheets 운영 방법·열 구성·상태값·재처리·점검 절차를 §운영 절차로 흡수(raw SQL·수동 트리거는 read-only/실행 금지 표현으로), 구판 삭제(R5 PR-D2) | Rescue R5 문서 정본화 |
+| 2026-09-06 | §현재 운영 상태 → §운영 상태 기록: 현행(R4 PAUSED·GHA disabled·fmkorea launchd 부재·sheet-scraper OBSERVE)을 먼저 적고 2026-04~06 "정상 운영" 문구를 과거 기록으로 격리 | Codex 검토(현행 충돌 제거) |
 
 ---
 
