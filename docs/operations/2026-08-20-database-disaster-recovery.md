@@ -1,8 +1,10 @@
 # DB 재해 복구 절차 (Database Disaster Recovery)
 
-> **작성 2026-08-20 · 근거: P0-3A 감사**
-> 대상: 우나어 운영 DB · M3 새 브랜드 빈 DB
-> 관련: `.claude/commands/prisma-guide/` · `docs/operations/m3-new-brand-readiness.md` §14-5~14-8 · §19 P0-3
+> **이 문서는 우나어 운영 DB 재해복구 절차다. 새 브랜드/M3 초기화 절차가 아니다.**
+> **작성 2026-08-20 · 근거: P0-3A 감사** · 2026-09-06 우나어 정본으로 정리(PR #413)
+> 대상: 우나어 운영 DB
+> 관련: `.claude/commands/prisma-guide/`
+> 역사적 출처: PR #394(`docs/m3-new-brand-readiness` 브랜치, 2026-08-20)에서 발췌. 그 브랜치의 M3(새 브랜드) 절차는 우나어 운영 복구에 **적용 금지** — 부록 A 참조.
 
 ---
 
@@ -274,28 +276,11 @@ SELECT count(*) FROM "Comment" WHERE "createdAt" > '<실행 시각>';
 
 ---
 
-### S8 — M3 D-day 새 DB 초기화
-
-```
-1. 새 Supabase project 생성 (창업자)
-2. S2 전 과정
-3. BoardConfig 3행 seed — 🔴 별도 스크립트
-   scripts/seed-m3-minimal-board-config.ts (D-day에 작성)
-   MENOPAUSE · STORY · MAGAZINE 만. upsert
-   🚫 기존 prisma/seed.ts 실행 금지
-4. S5 (AdminAccount 생성)
-5. 검증: BoardConfig 3행 · /community/* 200 · /jobs 404
-
-상세: docs/operations/m3-new-brand-readiness.md §14-2 · §14-4 · §14-8
-```
-
----
-
 ### S9 — 우나어 생존 후 migration 이력 정리
 
 ```
 🚫 네이버 생존 판정 전 착수 금지
-   근거: m3-new-brand-readiness.md §19-8
+   근거: 네이버 생존 판정 전에는 변수를 늘리지 않는다 (역사적 출처: PR #394 M3 문서 §19-8)
    수집이 10건/day라 무엇을 바꿔도 검증이 안 되고, 변수를 늘리면 원인 규명이 불가능해진다
 
 판정 후 절차 (고위험 · 별도 승인 필요)
@@ -352,7 +337,7 @@ create 9건   user.upsert · post.create · jobDetail.create · comment.create �
 
 ```
 🚫 운영 DB 복구에 seed.ts를 사용하지 않는다
-🚫 M3 D-day에도 사용하지 않는다 (§14-3)
+🚫 어떤 새 DB 초기화에도 사용하지 않는다 (역사적 출처: PR #394 M3 문서 §14-3)
 ✅ 필요한 것은 BoardConfig 1~3행뿐이다 → 개별 upsert 스크립트를 쓴다
 ```
 
@@ -583,7 +568,7 @@ DB 백업에 Storage 객체가 포함되지 않는다(확인됨).
   · 본문 첨부 이미지 · 썸네일 · OG 이미지
 
 → 별도 과제로 분리한다: **R2 / Supabase Storage 백업 전략**
-   docs/operations/m3-new-brand-readiness.md §19 backlog에 추가 대상
+   우나어 Rescue backlog(R6-D 인프라 경계)에 추가 대상
 ⚠️ 현재 이 영역의 백업 정책은 확인되지 않았다.
 ```
 
@@ -597,11 +582,34 @@ DB 백업에 Storage 객체가 포함되지 않는다(확인됨).
 .claude/commands/prisma-guide/references/enum-migration.md  enum 추가·변경
 .claude/commands/prisma-guide/references/common-errors.md
 .claude/commands/prisma-guide/gotchas.md
-docs/operations/m3-new-brand-readiness.md §14-5~14-8   M3 빈 DB 초기화
-docs/operations/m3-new-brand-readiness.md §19 P0-3     우나어 backlog
+docs/operations/2026-09-05-claude-foundation-reset-audit-report.md   Rescue 감사 보고서(R1-A DB 복구 경위)
+(역사적 출처, 실행 금지) PR #394 `docs/m3-new-brand-readiness` 브랜치 — M3 절차는 우나어에 적용하지 않는다
 ```
 
 ---
 
-*최종 갱신 2026-08-20 · P0-3A/3B + Supabase 백업 확인 반영*
+## 부록 A — PR #394에서 온 역사 기록 (우나어 운영 복구에는 적용 금지)
+
+> 아래는 2026-08-20 M3(새 브랜드) 준비 문서에 있던 절차다. **우나어 운영 DB 재해복구와 무관하며 실행하지 않는다.** 출처 보존 목적으로만 남긴다.
+
+### A-1. (역사 기록) S8 — M3 D-day 새 DB 초기화 — 🚫 우나어 운영 복구에 적용 금지
+
+```
+1. 새 Supabase project 생성 (창업자)
+2. S2 전 과정
+3. BoardConfig 3행 seed — 🔴 별도 스크립트
+   scripts/seed-m3-minimal-board-config.ts (D-day에 작성)
+   MENOPAUSE · STORY · MAGAZINE 만. upsert
+   🚫 기존 prisma/seed.ts 실행 금지
+4. S5 (AdminAccount 생성)
+5. 검증: BoardConfig 3행 · /community/* 200 · /jobs 404
+
+역사적 출처: PR #394 M3 문서 §14-2 · §14-4 · §14-8 (우나어 main에는 없음)
+```
+
+---
+
+---
+
+*최종 갱신 2026-08-20 · P0-3A/3B + Supabase 백업 확인 반영 · 2026-09-06 M3 절차 부록 격리(PR #413)*
 *다음 갱신: 미확정 5건(§8) 해소 시 · R2/Storage 백업 전략 확정 시*
