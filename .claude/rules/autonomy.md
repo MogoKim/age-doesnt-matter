@@ -20,7 +20,7 @@
 
 핸드오프·상태 메모리의 **단일 진실은 CC auto-memory**(세션 시작 시 자동 로드되는 `MEMORY.md` + 서브파일들, `/memory` 명령으로 관리)다. `pending_founder_actions.md`, `project_status.md` 등 23개가 모두 여기 실존한다.
 
-프로젝트 로컬 `<repo>/memory/`(MEMORY.md·project_status.md 2개, 5월자)는 **CC auto-memory 도입 전 stale 잔재**이므로 신뢰하지 않는다. 본 문서에서 "pending_founder_actions.md"는 항상 **CC auto-memory 본**을 가리킨다.
+프로젝트 로컬 `<repo>/memory/`(MEMORY.md·project_status.md, 5월자 stale 잔재)는 **2026-09-06 삭제됨(PR-D1)**. 상태 기록은 CC auto-memory에만 한다. 본 문서에서 "pending_founder_actions.md"는 항상 **CC auto-memory 본**을 가리킨다.
 
 ---
 

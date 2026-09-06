@@ -83,7 +83,7 @@ Claude Code + Codex 등 여러 AI 세션이 동시에 작업한다. 세션 간 �
 - **0이 아니면** 파일 존재·부재·내용 판단은 반드시 `git show origin/main:<path>` 기준으로 한다
 - `/context`·Memory files로 `.claude/**` 변경 효과를 판정할 땐 **로컬 최신 여부를 먼저 확인**
 - 작업 완료 시 CC auto-memory(`/memory`) 즉시 업데이트 · 대규모 작업 전 먼저 읽기
-- ⚠️ repo `memory/`는 CC auto-memory 도입 전 **stale 잔재** — 읽지도 갱신하지도 말 것
+- ⚠️ repo `memory/`(stale 잔재)는 2026-09-06 삭제됨(PR-D1). 상태·핸드오프 기록은 CC auto-memory에만 한다
 - 상세: `.claude/rules/context-management.md`
 
 ## 기능 라이프사이클 (자동 적용)

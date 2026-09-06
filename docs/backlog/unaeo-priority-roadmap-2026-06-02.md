@@ -2,7 +2,7 @@
 
 기준: 2026-06-04 KST  
 용도: Codex/Claude Code 병렬 세션의 공통 기준판  
-짝 문서: `docs/backlog/unaeo-priority-roadmap-2026-06-02.html`
+짝 문서: `docs/backlog/unaeo-priority-roadmap-2026-06-02.html` (2026-09-06 삭제됨 — md가 정본)
 
 ## 현재 결론
 
@@ -149,7 +149,7 @@ git diff --cached --name-only
 
 | 파일/경로 | 현재 판단 | 처리 |
 |---|---|---|
-| `docs/backlog/unaeo-priority-roadmap-2026-06-02.html` | 이번 goal 대상 | 최신화 후 커밋 후보 |
+| `docs/backlog/unaeo-priority-roadmap-2026-06-02.html` | 삭제됨 (2026-09-06 PR-D1) | md가 정본 — html 짝 문서는 더 이상 갱신하지 않는다 |
 | `docs/backlog/unaeo-priority-roadmap-2026-06-02.md` | 이번 goal 대상 | 신규 기준판, 커밋 후보 |
 | `docs/analysis/customer-behavior-2026-06.md` | 분석 자산 후보 | Data 세션 검토 후 커밋 여부 결정 |
 | `agents/scripts/_*.ts` | 일회성 read-only 진단 스크립트 | 삭제 후보. 지금 삭제하지 않음 |
