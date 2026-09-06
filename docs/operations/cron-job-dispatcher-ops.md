@@ -173,41 +173,15 @@ gh run list --workflow=agents-cafe-wave.yml --limit 400 --created 2026-08-20 \
 
 ```
 우나어 적용    ⬜ 별도 승인 대기 (구현하지 않음)
-M3 소란소란     ✅ D-day 체크리스트에 포함 (§7)
+M3 소란소란     — 소란소란 repo로 이관됨 (§7은 역사 기록)
 ```
 
 ---
 
-## 7. M3(소란소란) 적용 원칙
+## 7. (역사 기록) M3/소란소란 적용 원칙 — 우나어 실행 지시 아님
 
-외부 스케줄러 구조 자체는 **재사용한다.** 95일간 288회/일 무결 실적이 있다.
-GitHub cron 단독은 커버리지 7%로 실측 배제됐다.
-
-### 반드시 다르게 할 것
-
-```
-1. 토큰 이름에 용도를 넣는다
-   ❌ cron-job-trigger              — 모호. 이번 역추적의 원인
-   ✅ soran-cafe-wave-dispatch      — 무엇을 부르는지 이름만 봐도 안다
-
-2. 잡 목록을 repo에 고정한다
-   콘솔에만 있으면 계정 접근이 막히는 순간 재현 불가
-
-3. heartbeat를 처음부터 배선한다
-   D-day 24시간 오픈에서 파동이 16회/일로 떨어지면
-   방문자에게 "죽은 커뮤니티"로 보인다
-```
-
-### D-day 체크리스트
-
-```
-[ ] cron-job.org 계정에 M3 repo용 크론잡 등록
-[ ] 전용 fine-grained token 발급 (repo 단일 · Actions RW · Metadata R · user 권한 없음)
-[ ] 토큰명에 용도 명시 (soran-cafe-wave-dispatch 형식)
-[ ] 잡 목록·스케줄·대상 워크플로우를 이 문서 형식으로 기록
-[ ] wave heartbeat Slack 알림 배선
-[ ] D-day 전날 실측 — 실제 288회/일이 나오는지 확인
-```
+> 2026-08-21에 이 절에 있던 "M3(소란소란) 적용 원칙·D-day 체크리스트"는 **소란소란 repo로 이관**됐다(소란소란 `docs/archive/unao-origin-2026-08/`, 커밋 `580ca358`; 현행 소란소란 정본은 그 repo의 `docs/operations/`). 우나어에서는 실행하지 않는다.
+> 우나어에 남는 교훈만 적는다: 토큰 이름에 용도를 넣을 것(`cron-job-trigger` 같은 모호한 이름이 역추적 비용의 원인이었다) · 잡 목록을 repo에 고정할 것 · heartbeat를 처음부터 배선할 것. 이 셋의 우나어 적용은 §6과 함께 **별도 승인 대기**다.
 
 ---
 
@@ -230,5 +204,5 @@ GHA runner 부하로 최대 30~40분 지연될 수 있고, 이건 외부 스케�
 | 문서 | 내용 |
 |---|---|
 | `docs/handover-cafe-pipeline.html` | cron-job.org 역할·오해, GHA 지연 대응 |
-| `docs/operations/m3-new-brand-readiness.md` | M3 D-day 준비 (§18 runner 매니페스트) |
+| `docs/operations/2026-08-21-unao-as-is-scorecard.md` | 우나어 AS-IS 실측 발췌(구 m3 문서, 2026-09-06 삭제 — 원문은 소란소란 repo `docs/archive/unao-origin-2026-08/`) |
 | `scripts/ops-runner-manifest.ts` | launchd runner 등급 SSoT (GHA는 freshness 검사 대상 아님) |
