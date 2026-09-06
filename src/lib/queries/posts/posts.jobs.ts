@@ -3,6 +3,13 @@ import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { postSelect, buildTextSearch, SearchField } from './posts.base'
 
+/**
+ * JobDetail(회사·지역·급여·태그)이 붙은 공고만 목록에 낸다.
+ * 2026-09-06 실측: 게시 중 JOB 338건 전부 JobDetail 행이 없어 회사·지역·급여가 빈 문자열로 렌더됐다.
+ * `region`·`tags` 필터가 `jobDetail` 키를 직접 쓰므로 같은 레벨에 두면 키가 덮어써진다 → AND 배열로 분리.
+ */
+const REQUIRE_JOB_DETAIL = { AND: [{ jobDetail: { isNot: null } }] }
+
 /* ── 일자리 (홈용 간략) ── */
 
 async function _getLatestJobs(limit = 5) {
@@ -10,6 +17,7 @@ async function _getLatestJobs(limit = 5) {
     where: {
       status: 'PUBLISHED',
       boardType: 'JOB',
+      ...REQUIRE_JOB_DETAIL,
     },
     select: {
       ...postSelect,
@@ -80,6 +88,7 @@ export async function getJobList(
     where: {
       status: 'PUBLISHED',
       boardType: 'JOB',
+      ...REQUIRE_JOB_DETAIL,
       ...(options?.cursor ? { id: { lt: options.cursor } } : {}),
       ...(options?.region
         ? { jobDetail: { region: { contains: options.region, mode: 'insensitive' } } }
@@ -149,6 +158,7 @@ export async function getJobListPage(
   const where = {
     status: 'PUBLISHED' as const,
     boardType: 'JOB' as const,
+    ...REQUIRE_JOB_DETAIL,
     ...(options?.region
       ? { jobDetail: { region: { contains: options.region, mode: 'insensitive' as const } } }
       : {}),

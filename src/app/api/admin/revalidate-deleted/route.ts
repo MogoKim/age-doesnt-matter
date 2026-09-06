@@ -52,6 +52,9 @@ export async function POST() {
     'home-trending',
     'home-stories',
     'home-humor',
+    // 일자리 면 — SQL 로 JOB 글을 숨겨도 목록·홈 섹션이 그대로 남던 누락분(2026-09-06)
+    'jobs-list',
+    'home-jobs',
   ]
   for (const tag of tags) revalidateTag(tag)
 
