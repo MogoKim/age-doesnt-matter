@@ -58,8 +58,15 @@ export default function PostCTA({ postId, postTitle, isLoggedIn }: PostCTAProps)
     setIsAndroid(android)
   }, [authKnown, resolvedIsLoggedIn, isTWA, isStandalone, isCapacitor])
 
-  // 노출 이벤트 — 실제 렌더되는 CTA에 대해서만 1회 전송
-  // (환경 가드 제거: 비회원 가입 CTA는 앱/TWA/standalone 포함 모든 환경에서 노출/기록.
+  // 마운트 이벤트 — 실제 렌더되는 CTA에 대해서만 1회 전송
+  // ⚠️ post_cta_shown 은 **노출(viewport 진입) 지표가 아니다.** IntersectionObserver 없이
+  //    이 useEffect 가 도는 시점, 즉 컴포넌트가 마운트된 시점에 1회 보낸다.
+  //    이 CTA 는 글 상세 하단(댓글 목록 뒤)에 있어 대부분의 세션은 화면에서 보지 못한다.
+  //    실측(2026-09-07 · 30일 · 봇 제외): 마운트 6,403세션 / 클릭 4.
+  //    반면 진짜 노출 지표인 comment_input_view(IntersectionObserver 기반)는 898세션이다.
+  //    → 클릭률의 분모로 쓰면 안 된다. 노출 기준이 필요하면 useCommentFunnel 처럼
+  //      IntersectionObserver 로 바꿔야 한다(측정 방식 변경이므로 별도 PR).
+  // (환경 가드 제거: 비회원 가입 CTA는 앱/TWA/standalone 포함 모든 환경에서 마운트/기록.
   //  회원 설치 CTA는 아래 installCtaVisible 가드(blocked에 isCapacitor·isTWA·isStandalone 포함)로 차단됨)
   useEffect(() => {
     if (loggedRef.current) return

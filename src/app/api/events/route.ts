@@ -46,9 +46,14 @@ export async function POST(request: NextRequest) {
   // (inapp_redirect_*: 인앱→외부브라우저 유도 퍼널. signup_banner_clicked와 같은 클릭에서 함께 발생하므로
   //  같이 면제하지 않으면 page_view 버킷 공유로 429 유실 → attempted만 빠지고 opened만 남는 식으로 퍼널이 깨진다)
   // (comment_*: 댓글 작성 퍼널 [PR-C3]. 두 가지 이유로 면제한다.
-  //  ① comment_input_view는 **글 상세를 볼 때마다** 발생해 page_view와 1:1로 늘어난다 →
-  //     면제하지 않으면 event:ip 버킷 소진이 빨라져, 지금까지 유실 0이던 comment_create까지 새로 깨진다.
+  //  ① comment_input_view는 글 상세에서 **댓글 입력 영역이 화면에 들어올 때** 발생한다
+  //     (useCommentFunnel의 IntersectionObserver, threshold 0.01 — 컴포넌트당 1회).
+  //     글 상세를 열기만 하고 스크롤하지 않으면 발생하지 않으므로 page_view와 1:1이 아니다.
+  //     그래도 글뷰마다 발생할 수 있는 계열이라 event:ip 버킷 소진이 빨라지고,
+  //     면제하지 않으면 지금까지 유실 0이던 comment_create까지 새로 깨진다.
   //     (30일 실측: comment_create 112건 = DB 사람 댓글 112건. 이 무손실 상태를 이번 PR이 깨뜨리면 안 된다.)
+  //     ⚠️ 도달률 주의(2026-09-07 · 30일 · 봇 제외): post_read 6,513세션 대비
+  //        comment_input_view는 898세션(13.8%)이다. 이 값을 "글을 본 사람 수"로 읽으면 안 된다.
   //  ② 퍼널은 일부만 면제하면 단계 간 비율이 왜곡된다 — inapp_redirect_* 와 같은 이유다.
   //     그래서 성공 이벤트인 comment_create까지 같은 계열로 묶어 함께 면제한다.
   //  ⚠️ 무분별한 면제가 아님: view는 컴포넌트당 1회, focus·첫타이핑·신원단계도 각 1회로 클라에서 제한한다.
