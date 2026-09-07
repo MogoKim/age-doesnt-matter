@@ -1,6 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { readFileSync, writeFileSync, existsSync, unlinkSync } from 'node:fs'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { readFileSync, writeFileSync, mkdtempSync, rmSync, existsSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
+import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -48,8 +49,11 @@ async function loadAudit() {
   return import('../qa/post-deploy.js')
 }
 
-/** 모든 필수 결과 파일이 없는 상태 = 검사 불가 → FAIL 이 기대값이다. */
+/** 결과 파일이 하나도 없는 임시 디렉터리 — 검사 불가 → FAIL 이 기대값이다. */
+let dir: string
+
 beforeEach(() => {
+  dir = makeResults({ 'smoke-result.json': null, 'cron-result.json': null, 'ad-verify-result.json': null })
   vi.resetModules()
   for (const m of [postFindMany, postUpdate, botLogFindFirst, botLogCreate, adminQueueCreate, sendSlackMessage, disconnect]) {
     m.mockReset()
@@ -57,7 +61,7 @@ beforeEach(() => {
   postFindMany.mockResolvedValue([])
   botLogFindFirst.mockResolvedValue(null)
   botLogCreate.mockResolvedValue({ id: 1 })
-  adminQueueCreate.mockResolvedValue({ id: 42 })
+  adminQueueCreate.mockResolvedValue({ id: 'cq_seed_default' })
   sendSlackMessage.mockResolvedValue(undefined)
   disconnect.mockResolvedValue(undefined)
   vi.spyOn(console, 'log').mockImplementation(() => {})
@@ -81,7 +85,7 @@ describe('Promise 생명주기', () => {
 
     const { main } = await loadAudit()
     let settled = false
-    const running = main().catch(() => {}).then(() => { settled = true })
+    const running = main(dir).catch(() => {}).then(() => { settled = true })
 
     await Promise.resolve()
     await Promise.resolve()
@@ -94,7 +98,7 @@ describe('Promise 생명주기', () => {
 
   it('main 은 process.exit 도 disconnect 도 하지 않는다 — runner 담당', async () => {
     const { main } = await loadAudit()
-    await main().catch(() => {})
+    await main(dir).catch(() => {})
     expect(disconnect, 'imported main 이 연결을 끊으면 runner 가 쓸 수 없다').not.toHaveBeenCalled()
   })
 })
@@ -108,12 +112,12 @@ describe('실패 정책', () => {
     process.env.QA_AD_VERIFY_RESULT = 'success'
 
     const { main } = await loadAudit()
-    await expect(main()).rejects.toThrow(/FAIL/)
+    await expect(main(dir)).rejects.toThrow(/FAIL/)
   })
 
   it('FAIL 이면 AdminQueue 에 올린다', async () => {
     const { main } = await loadAudit()
-    await main().catch(() => {})
+    await main(dir).catch(() => {})
     expect(adminQueueCreate).toHaveBeenCalledTimes(1)
   })
 
@@ -122,7 +126,7 @@ describe('실패 정책', () => {
     sendSlackMessage.mockRejectedValue(new Error('slack down'))
 
     const { main } = await loadAudit()
-    await main().catch(() => {})
+    await main(dir).catch(() => {})
 
     expect(botLogCreate, 'Slack 이 죽어도 BotLog 는 남아야 한다').toHaveBeenCalledTimes(1)
   })
@@ -131,7 +135,7 @@ describe('실패 정책', () => {
     adminQueueCreate.mockRejectedValue(new Error('queue down'))
 
     const { main } = await loadAudit()
-    await expect(main()).rejects.toThrow(/AdminQueue 등록 실패/)
+    await expect(main(dir)).rejects.toThrow(/AdminQueue 등록 실패/)
     expect(botLogCreate, 'AdminQueue 가 죽어도 기록은 남겨야 한다').toHaveBeenCalledTimes(1)
   })
 
@@ -139,7 +143,7 @@ describe('실패 정책', () => {
     botLogCreate.mockRejectedValue(new Error('db down'))
 
     const { main } = await loadAudit()
-    await expect(main()).rejects.toThrow(/BotLog 기록 실패/)
+    await expect(main(dir)).rejects.toThrow(/BotLog 기록 실패/)
   })
 
   it('치명 오류가 여러 개면 모두 시도한 뒤 합쳐서 던진다', async () => {
@@ -147,7 +151,7 @@ describe('실패 정책', () => {
     botLogCreate.mockRejectedValue(new Error('db down'))
 
     const { main } = await loadAudit()
-    await expect(main()).rejects.toThrow(/치명 오류 2건/)
+    await expect(main(dir)).rejects.toThrow(/치명 오류 2건/)
     expect(adminQueueCreate).toHaveBeenCalled()
     expect(botLogCreate).toHaveBeenCalled()
   })
@@ -161,7 +165,7 @@ describe('콘텐츠 write 차단', () => {
     ])
 
     const { main } = await loadAudit()
-    await main().catch(() => {})
+    await main(dir).catch(() => {})
 
     expect(postUpdate, '감사가 콘텐츠를 말없이 바꾸면 원본을 아무도 모른다').not.toHaveBeenCalled()
   })
@@ -197,7 +201,7 @@ describe('runner 배선 — 정적 검사', () => {
   it('post-deploy.ts 는 top-level 에서 main 을 부르지 않는다', () => {
     const src = readFileSync(resolve(__dirname, '../qa/post-deploy.ts'), 'utf-8')
     expect(/^main\(\)/m.test(src), 'import 부작용이 되살아난다').toBe(false)
-    expect(src).toContain('export async function main()')
+    expect(src).toMatch(/export async function main\(/)
     expect(src).toMatch(/pathResolve\(entry\)\s*===\s*fileURLToPath\(import\.meta\.url\)/)
   })
 })
@@ -208,10 +212,9 @@ describe('runner 배선 — 정적 검사', () => {
  * post-deploy.ts 는 저장소 루트(ROOT)에서 결과 파일을 찾는다. 테스트는 실제 파일을
  * 만들었다 지우며, 만들지 않은 파일은 "없음" 경로를 그대로 태운다.
  */
-const REPO_ROOT = resolve(__dirname, '../..')
 const RESULT_FILES = ['smoke-result.json', 'cron-result.json', 'ad-verify-result.json'] as const
 
-/** 정상 통과하는 최소 내용 — 검사 중 하나만 골라 망가뜨리기 위한 기준선 */
+/** 정상 통과하는 최소 내용 — 검사 하나만 골라 망가뜨리기 위한 기준선 */
 const GOOD = {
   'smoke-result.json': JSON.stringify({ passed: 8, failed: 0, checks: [] }),
   'cron-result.json': JSON.stringify({
@@ -224,24 +227,28 @@ const GOOD = {
   'ad-verify-result.json': JSON.stringify({ stats: { expected: 6, unexpected: 0, flaky: 0 } }),
 }
 
-function writeResults(overrides: Partial<Record<(typeof RESULT_FILES)[number], string | null>> = {}) {
+const tmpDirs: string[] = []
+
+/**
+ * 결과 파일을 **임시 디렉터리에** 만들고 그 경로를 main 에 주입한다.
+ *
+ * 저장소 루트에 쓰고 지우면 CI 아티팩트나 개발자의 실제 결과 파일을 날린다.
+ * `null` 로 준 항목은 만들지 않아 "파일 없음" 경로를 그대로 태운다.
+ */
+function makeResults(overrides: Partial<Record<(typeof RESULT_FILES)[number], string | null>> = {}): string {
+  const dir = mkdtempSync(resolve(tmpdir(), 'gate2-results-'))
+  tmpDirs.push(dir)
   for (const f of RESULT_FILES) {
-    const target = resolve(REPO_ROOT, f)
     const value = f in overrides ? overrides[f] : GOOD[f]
-    if (value === null) {
-      if (existsSync(target)) unlinkSync(target)
-      continue
-    }
-    writeFileSync(target, value as string, 'utf-8')
+    if (value === null) continue
+    writeFileSync(resolve(dir, f), value as string, 'utf-8')
   }
+  return dir
 }
 
-function cleanResults() {
-  for (const f of RESULT_FILES) {
-    const target = resolve(REPO_ROOT, f)
-    if (existsSync(target)) unlinkSync(target)
-  }
-}
+afterAll(() => {
+  for (const d of tmpDirs) rmSync(d, { recursive: true, force: true })
+})
 
 /** verdict 는 BotLog 기록 payload 에서 읽는다 — 내부 함수를 노출하지 않고 결과만 본다. */
 function loggedVerdict(): string | undefined {
@@ -258,14 +265,13 @@ function loggedCheck(name: string): { pass: boolean; warn?: boolean; detail: str
 }
 
 describe('결과 파일 파서 — 결함별 독립 재현', () => {
-  afterEach(() => { cleanResults() })
-
+  
   it('cron 파일만 없으면 크론 연결이 FAIL 이다 (workflow outcome 으로 통과시키지 않는다)', async () => {
     process.env.QA_CRON_RESULT = 'success'
-    writeResults({ 'cron-result.json': null })
+    dir = makeResults({ 'cron-result.json': null })
 
     const { main } = await loadAudit()
-    await main().catch(() => {})
+    await main(dir).catch(() => {})
 
     expect(loggedCheck('크론 연결')?.pass).toBe(false)
     expect(loggedCheck('스모크 테스트')?.pass, '다른 검사는 멀쩡해야 한다').toBe(true)
@@ -274,10 +280,10 @@ describe('결과 파일 파서 — 결함별 독립 재현', () => {
 
   it('ad 파일만 없으면 광고 렌더링이 FAIL 이다', async () => {
     process.env.QA_AD_VERIFY_RESULT = 'success'
-    writeResults({ 'ad-verify-result.json': null })
+    dir = makeResults({ 'ad-verify-result.json': null })
 
     const { main } = await loadAudit()
-    await main().catch(() => {})
+    await main(dir).catch(() => {})
 
     expect(loggedCheck('광고 렌더링')?.pass).toBe(false)
     expect(loggedCheck('크론 연결')?.pass).toBe(true)
@@ -289,7 +295,7 @@ describe('결과 파일 파서 — 결함별 독립 재현', () => {
     ['workflowWithoutHandler', { workflowWithoutHandler: ['cmo:ghost'] }],
     ['launchdOrphans', { launchdOrphans: [{ plist: 'a.plist', missingFile: '/x.ts' }] }],
   ])('cron 실패 배열 %s 가 있으면 FAIL 이다', async (_label, patch) => {
-    writeResults({
+    dir = makeResults({
       'cron-result.json': JSON.stringify({
         total: 79, orphaned: [],
         unlinkedWithoutReason: [], workflowWithoutHandler: [], launchdOrphans: [],
@@ -298,7 +304,7 @@ describe('결과 파일 파서 — 결함별 독립 재현', () => {
     })
 
     const { main } = await loadAudit()
-    await main().catch(() => {})
+    await main(dir).catch(() => {})
 
     expect(loggedCheck('크론 연결')?.pass).toBe(false)
     expect(loggedVerdict()).toBe('FAIL')
@@ -307,7 +313,7 @@ describe('결과 파일 파서 — 결함별 독립 재현', () => {
   it('사유가 붙은 orphaned 만 있으면 통과한다 — orphaned 배열은 실패 기준이 아니다', async () => {
     // 저장소에는 DISPATCH/LOCAL ONLY 로 의도된 orphan 이 33개 있다.
     // 이걸 실패로 세면 Gate 2 가 영원히 빨간불이다.
-    writeResults({
+    dir = makeResults({
       'cron-result.json': JSON.stringify({
         total: 79,
         orphaned: Array.from({ length: 33 }, (_, i) => `agent:task${i}`),
@@ -318,16 +324,16 @@ describe('결과 파일 파서 — 결함별 독립 재현', () => {
     })
 
     const { main } = await loadAudit()
-    await main().catch(() => {})
+    await main(dir).catch(() => {})
 
     expect(loggedCheck('크론 연결')?.pass, 'orphaned 33개는 정상이다').toBe(true)
   })
 
   it('cron 결과가 예상 형식이 아니면 통과시키지 않는다', async () => {
-    writeResults({ 'cron-result.json': JSON.stringify({ total: 79 }) })
+    dir = makeResults({ 'cron-result.json': JSON.stringify({ total: 79 }) })
 
     const { main } = await loadAudit()
-    await main().catch(() => {})
+    await main(dir).catch(() => {})
 
     expect(loggedCheck('크론 연결')?.pass).toBe(false)
     expect(loggedCheck('크론 연결')?.detail).toMatch(/판정 불가/)
@@ -336,10 +342,10 @@ describe('결과 파일 파서 — 결함별 독립 재현', () => {
   it('ad stats.unexpected > 0 이면 FAIL 이다 (failed 가 아니라 unexpected)', async () => {
     // Playwright JSON reporter 의 실패 카운터는 `unexpected` 다.
     // `failed` 를 읽으면 undefined → 0 이 되어 몇 개가 깨졌든 통과한다.
-    writeResults({ 'ad-verify-result.json': JSON.stringify({ stats: { expected: 6, unexpected: 2, flaky: 0 } }) })
+    dir = makeResults({ 'ad-verify-result.json': JSON.stringify({ stats: { expected: 6, unexpected: 2, flaky: 0 } }) })
 
     const { main } = await loadAudit()
-    await main().catch(() => {})
+    await main(dir).catch(() => {})
 
     expect(loggedCheck('광고 렌더링')?.pass).toBe(false)
     expect(loggedCheck('광고 렌더링')?.detail).toContain('2개 실패')
@@ -347,20 +353,20 @@ describe('결과 파일 파서 — 결함별 독립 재현', () => {
   })
 
   it('ad stats.expected === 0 이면 FAIL 이다 — 아무것도 안 돌았다', async () => {
-    writeResults({ 'ad-verify-result.json': JSON.stringify({ stats: { expected: 0, unexpected: 0, flaky: 0 } }) })
+    dir = makeResults({ 'ad-verify-result.json': JSON.stringify({ stats: { expected: 0, unexpected: 0, flaky: 0 } }) })
 
     const { main } = await loadAudit()
-    await main().catch(() => {})
+    await main(dir).catch(() => {})
 
     expect(loggedCheck('광고 렌더링')?.pass).toBe(false)
     expect(loggedCheck('광고 렌더링')?.detail).toMatch(/0건/)
   })
 
   it('ad flaky 는 WARN 으로 남기고 통과시킨다', async () => {
-    writeResults({ 'ad-verify-result.json': JSON.stringify({ stats: { expected: 6, unexpected: 0, flaky: 2 } }) })
+    dir = makeResults({ 'ad-verify-result.json': JSON.stringify({ stats: { expected: 6, unexpected: 0, flaky: 2 } }) })
 
     const { main } = await loadAudit()
-    await main().catch(() => {})
+    await main(dir).catch(() => {})
 
     const ad = loggedCheck('광고 렌더링')
     expect(ad?.pass).toBe(true)
@@ -368,10 +374,10 @@ describe('결과 파일 파서 — 결함별 독립 재현', () => {
   })
 
   it('ad stats 필드가 없으면 통과시키지 않는다', async () => {
-    writeResults({ 'ad-verify-result.json': JSON.stringify({ suites: [] }) })
+    dir = makeResults({ 'ad-verify-result.json': JSON.stringify({ suites: [] }) })
 
     const { main } = await loadAudit()
-    await main().catch(() => {})
+    await main(dir).catch(() => {})
 
     expect(loggedCheck('광고 렌더링')?.pass).toBe(false)
   })
@@ -383,42 +389,40 @@ describe('AI 가 필수 검사 실패를 뒤집지 못한다', () => {
   const saved = process.env.ANTHROPIC_API_KEY
   beforeEach(() => { process.env.ANTHROPIC_API_KEY = 'test-key-not-real' })
   afterEach(() => {
-    cleanResults()
     if (saved === undefined) delete process.env.ANTHROPIC_API_KEY
     else process.env.ANTHROPIC_API_KEY = saved
   })
 
   it('필수 검사 1건만 실패하면 AI 가 PASS 라 해도 FAIL 이다', async () => {
     // mock 된 Anthropic 은 항상 PASS 를 돌려준다. 그래도 FAIL 이어야 한다.
-    writeResults({ 'ad-verify-result.json': JSON.stringify({ stats: { expected: 6, unexpected: 1, flaky: 0 } }) })
+    dir = makeResults({ 'ad-verify-result.json': JSON.stringify({ stats: { expected: 6, unexpected: 1, flaky: 0 } }) })
 
     const { main } = await loadAudit()
-    await main().catch(() => {})
+    await main(dir).catch(() => {})
 
     expect(loggedVerdict(), 'AI PASS 가 필수 실패를 덮으면 깨진 배포가 초록불로 나간다').toBe('FAIL')
   })
 
   it('보조 검사만 실패하면 AI 판단을 따른다 — 필수/보조 구분이 실제로 작동한다', async () => {
     // 이 테스트가 있어야 위 테스트가 "무조건 FAIL" 이라서 통과하는 게 아님이 드러난다.
-    writeResults()
+    dir = makeResults()
     postFindMany.mockRejectedValue(new Error('db down')) // 콘텐츠 품질 → WARN
 
     const { main } = await loadAudit()
-    await main().catch(() => {})
+    await main(dir).catch(() => {})
 
     expect(loggedVerdict(), '필수는 전부 통과했으므로 FAIL 이 아니어야 한다').not.toBe('FAIL')
   })
 })
 
 describe('AdminQueue 실패 시 Slack 문구', () => {
-  afterEach(() => { cleanResults() })
-
+  
   it('등록 실패면 "등록됨" 이라고 알리지 않는다', async () => {
-    writeResults({ 'smoke-result.json': JSON.stringify({ passed: 0, failed: 3, checks: [] }) })
+    dir = makeResults({ 'smoke-result.json': JSON.stringify({ passed: 0, failed: 3, checks: [] }) })
     adminQueueCreate.mockRejectedValue(new Error('queue down'))
 
     const { main } = await loadAudit()
-    await main().catch(() => {})
+    await main(dir).catch(() => {})
 
     const sent = sendSlackMessage.mock.calls.map((c) => String(c[1])).join('\n')
     expect(sent, '없는 큐를 보러 가게 만든다').not.toContain('AdminQueue 등록됨')
@@ -426,13 +430,91 @@ describe('AdminQueue 실패 시 Slack 문구', () => {
   })
 
   it('등록 성공이면 번호와 함께 알린다', async () => {
-    writeResults({ 'smoke-result.json': JSON.stringify({ passed: 0, failed: 3, checks: [] }) })
-    adminQueueCreate.mockResolvedValue({ id: 77 })
+    dir = makeResults({ 'smoke-result.json': JSON.stringify({ passed: 0, failed: 3, checks: [] }) })
+    // AdminQueue.id 는 스키마상 String @default(cuid()) 다 — 숫자가 아니다.
+    adminQueueCreate.mockResolvedValue({ id: 'cq_test_77' })
 
     const { main } = await loadAudit()
-    await main().catch(() => {})
+    await main(dir).catch(() => {})
 
     const sent = sendSlackMessage.mock.calls.map((c) => String(c[1])).join('\n')
-    expect(sent).toContain('AdminQueue #77 등록됨')
+    expect(sent).toContain('AdminQueue cq_test_77 등록됨')
+  })
+})
+
+describe('기록 실패를 Slack 이 반드시 알린다', () => {
+  it('필수 전부 PASS 인데 BotLog 가 실패하면 "프로덕션 정상"이라 하지 않는다', async () => {
+    // 기록이 없으면 Slack 이 유일한 외부 알림이다. 그때 성공 축약을 보내면
+    // 아무도 감사 흔적이 사라진 걸 모른다.
+    dir = makeResults()
+    botLogCreate.mockRejectedValue(new Error('db down'))
+
+    const { main } = await loadAudit()
+    await expect(main(dir)).rejects.toThrow(/BotLog 기록 실패/)
+
+    expect(sendSlackMessage, 'BotLog 가 죽어도 Slack 은 시도해야 한다').toHaveBeenCalledTimes(1)
+    const sent = String(sendSlackMessage.mock.calls[0][1])
+    expect(sent).not.toContain('프로덕션 정상')
+    expect(sent).toContain('BotLog 기록 실패')
+    expect(sent).toContain('유일한 외부 알림')
+  })
+
+  it('WARN + BotLog 실패도 Slack 에 기록 실패를 싣는다', async () => {
+    dir = makeResults({ 'ad-verify-result.json': JSON.stringify({ stats: { expected: 6, unexpected: 0, flaky: 2 } }) })
+    botLogCreate.mockRejectedValue(new Error('db down'))
+
+    const { main } = await loadAudit()
+    await main(dir).catch(() => {})
+
+    const sent = String(sendSlackMessage.mock.calls[0][1])
+    expect(sent).toContain('WARN')
+    expect(sent).toContain('BotLog 기록 실패')
+  })
+
+  it('AdminQueue 와 BotLog 가 동시에 실패하면 Slack 에 둘 다 싣는다', async () => {
+    dir = makeResults({ 'smoke-result.json': JSON.stringify({ passed: 0, failed: 3, checks: [] }) })
+    adminQueueCreate.mockRejectedValue(new Error('queue down'))
+    botLogCreate.mockRejectedValue(new Error('db down'))
+
+    const { main } = await loadAudit()
+    await expect(main(dir)).rejects.toThrow(/치명 오류 2건/)
+
+    const sent = String(sendSlackMessage.mock.calls[0][1])
+    expect(sent).toContain('기록 실패 2건')
+    expect(sent).toContain('AdminQueue 등록 실패')
+    expect(sent).toContain('BotLog 기록 실패')
+  })
+
+  it('Slack 은 AdminQueue·BotLog 시도 이후에 호출된다', async () => {
+    // 순서가 뒤집히면 기록이 실패했는지 모른 채 메시지를 보낸다.
+    dir = makeResults({ 'smoke-result.json': JSON.stringify({ passed: 0, failed: 3, checks: [] }) })
+    const order: string[] = []
+    adminQueueCreate.mockImplementation(async () => { order.push('adminQueue'); return { id: 'cq_x' } })
+    botLogCreate.mockImplementation(async () => { order.push('botLog'); return { id: 1 } })
+    sendSlackMessage.mockImplementation(async () => { order.push('slack') })
+
+    const { main } = await loadAudit()
+    await main(dir).catch(() => {})
+
+    expect(order).toEqual(['adminQueue', 'botLog', 'slack'])
+  })
+})
+
+describe('테스트가 저장소 결과 파일을 건드리지 않는다', () => {
+  it('실행 전 존재하던 루트 결과 파일이 그대로 보존된다', () => {
+    // 예전 버전은 저장소 루트에 쓰고 지워서 CI 아티팩트나 개발자의 실제 결과를 날렸다.
+    const repoRoot = resolve(__dirname, '../..')
+    const before = RESULT_FILES.map((f) => {
+      const p = resolve(repoRoot, f)
+      return { f, exists: existsSync(p), content: existsSync(p) ? readFileSync(p, 'utf-8') : null }
+    })
+    // 위 describe 들이 이미 전부 실행된 뒤다.
+    for (const b of before) {
+      const p = resolve(repoRoot, b.f)
+      expect(existsSync(p), `${b.f} 존재 여부가 바뀌면 안 된다`).toBe(b.exists)
+      if (b.exists) expect(readFileSync(p, 'utf-8')).toBe(b.content)
+    }
+    // 임시 디렉터리를 쓰므로 루트에는 애초에 생기지 않는다.
+    expect(tmpDirs.length, '임시 디렉터리를 실제로 사용했는지').toBeGreaterThan(0)
   })
 })

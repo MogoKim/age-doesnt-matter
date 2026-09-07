@@ -47,7 +47,8 @@ interface AuditReport {
   verdict: 'PASS' | 'WARN' | 'FAIL'
   checks: CheckItem[]
   autoFixedCount: number
-  adminQueueId?: number
+  /** AdminQueue.id 는 스키마상 String @default(cuid()) 다 */
+  adminQueueId?: string
 }
 
 // ---------------------------------------------------------------------------
@@ -72,8 +73,8 @@ function getEnv() {
 // 1. 스모크 테스트 결과 파싱
 // ---------------------------------------------------------------------------
 
-function parseSmokeResult(): CheckItem {
-  const path = resolve(ROOT, 'smoke-result.json')
+function parseSmokeResult(resultsDir: string = ROOT): CheckItem {
+  const path = resolve(resultsDir, 'smoke-result.json')
   // 결과 파일이 없으면 **검사를 못 한 것**이지 통과가 아니다.
   // 예전에는 워크플로우 outcome 으로 대체했는데, 그건 "스텝이 죽지 않았다"에 답할 뿐
   // "엔드포인트가 정상이다"에는 답하지 못한다.
@@ -113,9 +114,9 @@ function parseSmokeResult(): CheckItem {
  * 예전에는 로그 텍스트를 정규식으로 긁어 `❌.*orphaned` 개수를 셌는데,
  * 출력 형식이 조금만 바뀌어도 조용히 0을 세고 통과했다.
  */
-function parseCronResult(): CheckItem {
+function parseCronResult(resultsDir: string = ROOT): CheckItem {
   const name = '크론 연결'
-  const path = resolve(ROOT, 'cron-result.json')
+  const path = resolve(resultsDir, 'cron-result.json')
   // 파일이 없으면 검사를 못 한 것이다. 워크플로우 outcome 으로 대체하지 않는다.
   if (!existsSync(path)) {
     return { name, pass: false, detail: `결과 파일 없음 (outcome: ${process.env.QA_CRON_RESULT ?? 'unknown'})` }
@@ -163,9 +164,9 @@ function parseCronResult(): CheckItem {
  * flaky(재시도 끝에 통과)는 **WARN** 으로 둔다 — 광고가 결국 떴으므로 배포를 막을 근거는
  * 아니지만, 조용히 PASS 로 묻으면 불안정이 쌓이는 걸 아무도 모른다.
  */
-function parseAdResult(): CheckItem {
+function parseAdResult(resultsDir: string = ROOT): CheckItem {
   const name = '광고 렌더링'
-  const path = resolve(ROOT, 'ad-verify-result.json')
+  const path = resolve(resultsDir, 'ad-verify-result.json')
   if (!existsSync(path)) {
     return { name, pass: false, detail: `결과 파일 없음 (outcome: ${process.env.QA_AD_VERIFY_RESULT ?? 'unknown'})` }
   }
@@ -343,12 +344,19 @@ async function synthesize(checks: CheckItem[]): Promise<'PASS' | 'WARN' | 'FAIL'
 // Slack 알림 전송
 // ---------------------------------------------------------------------------
 
-async function sendReport(report: AuditReport, env: ReturnType<typeof getEnv>): Promise<void> {
+/**
+ * Slack 보고. `fatalNotes` 는 이 시점까지 쌓인 **치명 오류**다.
+ *
+ * BotLog 기록이 실패했으면 Slack 이 유일한 외부 알림이다. 그때 "프로덕션 정상"
+ * 한 줄만 보내면 아무도 기록이 없다는 걸 모른다 — 치명 오류가 있으면 성공 축약을
+ * 쓰지 않고 상세 메시지에 실패 사실을 함께 싣는다.
+ */
+async function sendReport(report: AuditReport, env: ReturnType<typeof getEnv>, fatalNotes: string[] = []): Promise<void> {
   const { verdict, checks, autoFixedCount } = report
   const verdictIcon = verdict === 'PASS' ? '✅' : verdict === 'WARN' ? '⚠️' : '❌'
 
-  if (verdict === 'PASS') {
-    // 1줄 성공 메시지
+  if (verdict === 'PASS' && fatalNotes.length === 0) {
+    // 1줄 성공 메시지 — 기록이 정상일 때만 쓴다
     const line = [
       `*[Gate 2] ✅ 프로덕션 정상 — ${PROJECT_LABEL}*`,
       `커밋: \`${env.commitSha}\` | ${checks.map(c => `${c.name.split(' ')[0]} ${c.pass ? '✅' : '⚠️'}`).join(' | ')}`,
@@ -357,7 +365,7 @@ async function sendReport(report: AuditReport, env: ReturnType<typeof getEnv>): 
     return
   }
 
-  // WARN/FAIL: 상세 메시지
+  // WARN/FAIL 이거나, 판정은 괜찮아도 기록이 실패한 경우
   const lines = [
     `*[Gate 2] ${verdictIcon} 프로덕션 감사 ${verdict} — ${PROJECT_LABEL}*`,
     `커밋: \`${env.commitSha}\`${env.commitMsg ? ` "${env.commitMsg.slice(0, 50)}"` : ''}`,
@@ -374,13 +382,19 @@ async function sendReport(report: AuditReport, env: ReturnType<typeof getEnv>): 
     lines.push(`\n✏️ ${autoFixedCount}건 자동 수정됨 (JSON unwrap)`)
   }
 
+  if (fatalNotes.length > 0) {
+    lines.push(DIVIDER)
+    lines.push(`🚨 *기록 실패 ${fatalNotes.length}건 — 이 Slack 메시지가 유일한 외부 알림입니다*`)
+    for (const n of fatalNotes) lines.push(`• ${n}`)
+  }
+
   lines.push(DIVIDER)
 
   if (verdict === 'FAIL') {
     // 등록이 실패했는데 "등록됨"이라고 알리면, 아무도 안 보는 큐를 보러 간다.
     lines.push(
       report.adminQueueId !== undefined
-        ? `→ AdminQueue #${report.adminQueueId} 등록됨. 즉시 확인이 필요합니다.`
+        ? `→ AdminQueue ${report.adminQueueId} 등록됨. 즉시 확인이 필요합니다.`
         : `→ ⚠️ AdminQueue 등록 실패 — 이 메시지가 유일한 알림입니다. 즉시 확인이 필요합니다.`,
     )
   } else {
@@ -394,7 +408,7 @@ async function sendReport(report: AuditReport, env: ReturnType<typeof getEnv>): 
 // AdminQueue 에스컬레이션 (FAIL 시)
 // ---------------------------------------------------------------------------
 
-async function escalateToAdmin(checks: CheckItem[], env: ReturnType<typeof getEnv>): Promise<number | undefined> {
+async function escalateToAdmin(checks: CheckItem[], env: ReturnType<typeof getEnv>): Promise<string> {
   const failedItems = checks.filter(c => !c.pass).map(c => `${c.name}: ${c.detail}`)
   try {
     const item = await prisma.adminQueue.create({
@@ -452,7 +466,7 @@ async function logResult(report: AuditReport, durationMs: number, env: ReturnTyp
  *   · 보조 조회 실패    → WARN (checks 안에서 처리)
  * 치명 오류가 여러 개면 **가능한 기록을 모두 시도한 뒤** 모아서 던진다.
  */
-export async function main(): Promise<void> {
+export async function main(resultsDir: string = ROOT): Promise<void> {
   const start = Date.now()
   const env = getEnv()
 
@@ -460,15 +474,15 @@ export async function main(): Promise<void> {
 
   const checks: CheckItem[] = []
 
-  const smoke = parseSmokeResult()
+  const smoke = parseSmokeResult(resultsDir)
   checks.push(smoke)
   console.log(`[Gate 2] 스모크: ${smoke.pass ? '✅' : '❌'} ${smoke.detail}`)
 
-  const cron = parseCronResult()
+  const cron = parseCronResult(resultsDir)
   checks.push(cron)
   console.log(`[Gate 2] 크론 연결: ${cron.pass ? '✅' : '❌'} ${cron.detail}`)
 
-  const ad = parseAdResult()
+  const ad = parseAdResult(resultsDir)
   checks.push(ad)
   console.log(`[Gate 2] 광고: ${ad.pass ? '✅' : '❌'} ${ad.detail}`)
 
@@ -486,11 +500,15 @@ export async function main(): Promise<void> {
   const report: AuditReport = { verdict, checks, autoFixedCount: 0 }
   const fatal: string[] = []
 
-  // 1) AdminQueue — 실패해도 아래 기록을 계속 시도한다
+  // 순서가 중요하다: AdminQueue → BotLog → **그 결과를 아는 상태로** Slack.
+  // Slack 을 먼저 보내면 기록이 실패했는지 모른 채 "프로덕션 정상"을 보낼 수 있다.
+  // 세 시도는 서로 다른 try 에 둔다 — 하나가 죽어도 나머지는 계속 간다.
+
+  // 1) AdminQueue — 치명이지만 아래 기록을 막지 않는다
   if (verdict === 'FAIL') {
     try {
       report.adminQueueId = await escalateToAdmin(checks, env)
-      console.log(`[Gate 2] AdminQueue #${report.adminQueueId} 등록됨`)
+      console.log(`[Gate 2] AdminQueue ${report.adminQueueId} 등록됨`)
     } catch (err) {
       fatal.push(err instanceof Error ? err.message : String(err))
     }
@@ -498,19 +516,19 @@ export async function main(): Promise<void> {
 
   const durationMs = Date.now() - start
 
-  // 2) Slack — 비치명. BotLog 와 **같은 try 에 두지 않는다**.
-  //    예전에는 한 블록이라 Slack 이 죽으면 BotLog 기록까지 통째로 건너뛰었다.
-  try {
-    await sendReport(report, env)
-  } catch (err) {
-    console.error('[Gate 2] Slack 보고 실패(비치명):', err instanceof Error ? err.message : String(err))
-  }
-
-  // 3) BotLog — 치명. 이 기록이 없으면 감사를 돌린 흔적이 남지 않는다.
+  // 2) BotLog — 치명. 이 기록이 없으면 감사를 돌린 흔적이 남지 않는다.
   try {
     await logResult(report, durationMs, env)
   } catch (err) {
     fatal.push(`BotLog 기록 실패: ${err instanceof Error ? err.message : String(err)}`)
+  }
+
+  // 3) Slack — 비치명이지만 **반드시 시도한다**. 기록이 다 실패했으면
+  //    이게 유일한 외부 알림이므로, 앞선 실패를 메시지에 실어 보낸다.
+  try {
+    await sendReport(report, env, fatal)
+  } catch (err) {
+    console.error('[Gate 2] Slack 보고 실패(비치명):', err instanceof Error ? err.message : String(err))
   }
 
   console.log(`[Gate 2] 완료 — ${verdict} (${durationMs}ms)`)
