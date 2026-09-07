@@ -132,16 +132,44 @@ describe('5·6. 단건 vs 일괄 무효화', () => {
 })
 
 describe('7. revalidate-deleted 태그', () => {
-  it('태그가 정확히 10개이고 job-detail 이 포함된다', async () => {
+  const readTagsBlock = async () => {
     const { readFileSync } = await import('node:fs')
     const src = readFileSync('src/app/api/admin/revalidate-deleted/route.ts', 'utf8')
-    const block = src.slice(src.indexOf('const tags = ['), src.indexOf('for (const tag of tags)'))
-    const tags = [...block.matchAll(/'([a-z-]+)'/g)].map((m) => m[1])
-    expect(tags).toHaveLength(10)
-    expect(tags).toContain('job-detail')
-    expect(tags).toContain('jobs-list')
-    expect(tags).toContain('home-jobs')
-    expect(tags).toContain('sitemap-posts')
+    return {
+      src,
+      block: src.slice(src.indexOf('const tags = ['), src.indexOf('for (const tag of tags)')),
+    }
+  }
+
+  it('태그 배열 엔트리가 정확히 10개다', async () => {
+    const { block } = await readTagsBlock()
+    // 주석·빈 줄·대괄호를 뺀 실제 엔트리만 센다(리터럴과 상수가 섞여 있다)
+    const entries = block
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l && !l.startsWith('//') && !l.startsWith('const tags') && l !== ']')
+      .filter((l) => l.endsWith(','))
+    expect(entries).toHaveLength(10)
+  })
+
+  it('JOB 관련 4개 태그는 리터럴이 아니라 job-cache 상수를 쓴다', async () => {
+    const { src, block } = await readTagsBlock()
+    for (const constName of ['SITEMAP_POSTS_TAG', 'JOBS_LIST_TAG', 'HOME_JOBS_TAG', 'JOB_DETAIL_TAG']) {
+      expect(block, `tags 배열이 ${constName} 를 써야 한다`).toContain(constName)
+    }
+    expect(src).toContain("from '@/lib/cache/job-cache'")
+  })
+
+  it('무효화되는 실제 태그 값에 JOB 4종이 모두 들어간다', async () => {
+    const { JOBS_LIST_TAG, HOME_JOBS_TAG, JOB_DETAIL_TAG, SITEMAP_POSTS_TAG } =
+      await import('@/lib/cache/job-cache')
+    // 상수 값 자체가 바뀌면 여기서 잡힌다
+    expect([JOBS_LIST_TAG, HOME_JOBS_TAG, JOB_DETAIL_TAG, SITEMAP_POSTS_TAG]).toEqual([
+      'jobs-list',
+      'home-jobs',
+      'job-detail',
+      'sitemap-posts',
+    ])
   })
 })
 
@@ -160,7 +188,7 @@ describe('8. 기존 계약 불변', () => {
     }
   })
 
-  it('태그 문자열이 호출부에 복붙되지 않고 job-cache 모듈에만 정의된다', async () => {
+  it('JOB 태그 문자열이 호출부에 복붙되지 않고 job-cache 모듈에만 정의된다', async () => {
     const { readFileSync } = await import('node:fs')
     const files = [
       'src/lib/queries/posts/posts.jobs.ts',
@@ -174,6 +202,12 @@ describe('8. 기존 계약 불변', () => {
       const src = readFileSync(f, 'utf8')
       expect(src, `${f} 에 jobs-list 리터럴이 있으면 안 된다`).not.toMatch(/'jobs-list'/)
       expect(src, `${f} 에 job-detail 리터럴이 있으면 안 된다`).not.toMatch(/'job-detail'/)
+    }
+
+    // revalidate-deleted 는 sitemap-posts·home-jobs 까지 상수로 바꿨으므로 4종 모두 검사한다
+    const revalidateSrc = readFileSync('src/app/api/admin/revalidate-deleted/route.ts', 'utf8')
+    for (const lit of ["'jobs-list'", "'home-jobs'", "'job-detail'", "'sitemap-posts'"]) {
+      expect(revalidateSrc, `revalidate-deleted 에 ${lit} 리터럴이 있으면 안 된다`).not.toContain(lit)
     }
   })
 })

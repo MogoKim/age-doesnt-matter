@@ -4,6 +4,13 @@ import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/admin-auth'
 // BoardType → 경로 (SSoT: board-registry — 구 로컬 중복 정의 제거)
 import { BOARD_URL_PREFIX as BOARD_PATHS } from '@/lib/board-registry'
+// 일자리 캐시 태그는 job-cache.ts 가 단일 정의처다 — 문자열을 여기 복붙하지 않는다.
+import {
+  JOBS_LIST_TAG,
+  HOME_JOBS_TAG,
+  JOB_DETAIL_TAG,
+  SITEMAP_POSTS_TAG,
+} from '@/lib/cache/job-cache'
 
 // DELETED/HIDDEN 글 전체 캐시 강제 무효화
 export async function POST() {
@@ -45,7 +52,7 @@ export async function POST() {
   // 특히 sitemap-posts(revalidate 3600)를 지우지 않으면 SQL/스크립트로 숨긴 글이
   // sitemap 에 계속 남는다(2026-09-06 attack-A 실측: 9시간 넘게 잔존, 수동 퍼지 필요했음).
   const tags = [
-    'sitemap-posts',
+    SITEMAP_POSTS_TAG,
     'post-detail',
     'post-meta',
     'community-board-page',
@@ -53,10 +60,10 @@ export async function POST() {
     'home-stories',
     'home-humor',
     // 일자리 면 — SQL 로 JOB 글을 숨겨도 목록·홈 섹션이 그대로 남던 누락분(2026-09-06)
-    'jobs-list',
-    'home-jobs',
+    JOBS_LIST_TAG,
+    HOME_JOBS_TAG,
     // 일자리 상세 — SQL 로 숨긴 공고가 최대 5분 stale 200 으로 남던 누락분(2026-09-07)
-    'job-detail',
+    JOB_DETAIL_TAG,
   ]
   for (const tag of tags) revalidateTag(tag)
 

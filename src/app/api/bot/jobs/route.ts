@@ -58,7 +58,22 @@ export async function POST(req: NextRequest) {
 
     // DB write 성공 후에만 무효화한다. 새 postId 에는 상세 캐시 엔트리가 없으므로
     // 목록·홈·sitemap 만 지운다(job-cache.ts revalidateJobCreated).
-    revalidateJobCreated()
+    //
+    // 무효화 실패를 바깥 catch 로 흘리면 **글은 이미 생성됐는데 500** 이 나간다.
+    // 호출한 봇은 실패로 판단해 같은 공고를 다시 만들고, 중복 발행이 된다.
+    // 캐시는 TTL 로 결국 갱신되므로 여기서만 삼키고 구조화 로그로 남긴다.
+    try {
+      revalidateJobCreated()
+    } catch (cacheErr) {
+      console.error(
+        JSON.stringify({
+          event: 'job_cache_revalidate_failed',
+          route: '/api/bot/jobs',
+          postId: post.id,
+          message: cacheErr instanceof Error ? cacheErr.message : String(cacheErr),
+        }),
+      )
+    }
 
     return NextResponse.json({ success: true, postId: post.id })
   } catch (err) {
