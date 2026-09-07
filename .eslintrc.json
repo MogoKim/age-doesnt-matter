@@ -4,11 +4,46 @@
     "plugin:@typescript-eslint/recommended"
   ],
   "parser": "@typescript-eslint/parser",
-  "plugins": ["@typescript-eslint"],
+  "plugins": [
+    "@typescript-eslint"
+  ],
   "rules": {
     "@typescript-eslint/no-explicit-any": "error",
     "react/no-unescaped-entities": "off",
-    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }]
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      {
+        "argsIgnorePattern": "^_"
+      }
+    ]
   },
-  "ignorePatterns": ["src/generated/**", "_quarantine/**"]
+  "ignorePatterns": [
+    "src/generated/**",
+    "_quarantine/**"
+  ],
+  "overrides": [
+    {
+      "files": [
+        "e2e/**/*.ts"
+      ],
+      "excludedFiles": [
+        "e2e/fixtures/first-party-header.ts",
+        "e2e/export-kakao-cookies.ts"
+      ],
+      "rules": {
+        "@typescript-eslint/no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@playwright/test",
+                "message": "e2e/fixtures/first-party-header 에서 test/expect 를 import 하세요. raw @playwright/test 를 쓰면 first-party 헤더 fixture 가 실행되지 않습니다.",
+                "allowTypeImports": true
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
 }

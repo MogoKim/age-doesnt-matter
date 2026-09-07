@@ -9,7 +9,7 @@
  *   - 사이드바 네비게이션
  *   - 주요 수치 렌더링 (에러 없음)
  */
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures/first-party-header'
 
 test.describe('어드민 대시보드', () => {
   test('대시보드 접근 + main 렌더링', async ({ page }) => {

@@ -8,7 +8,7 @@
  * 로컬 개발 환경에서는 GTM이 미로드 시 T1~T3 실패 가능.
  */
 
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect, type Page } from '../fixtures/first-party-header'
 
 // ── 헬퍼 ──────────────────────────────────────────────────────────────────
 

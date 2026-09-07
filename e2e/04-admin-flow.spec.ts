@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures/first-party-header'
 
 test.describe('시나리오 4: 어드민 로그인 + 보호 라우트', () => {
   // ── 어드민 로그인 폼 ──
@@ -70,9 +70,11 @@ test.describe('시나리오 4: 어드민 로그인 + 보호 라우트', () => {
   }
 
   // ── 일반 사용자 보호 라우트 ──
+  // ⚠️ `/community/write` 는 여기 없다. 비회원도 폼을 열고 글을 쓸 수 있는 것이
+  //    현재 정책이고(`src/middleware.ts` PROTECTED_PATHS 는 `/my` 뿐),
+  //    막아야 하는 쪽은 진입이 아니라 저장이다. 경계 검증은 아래 별도 테스트에서 한다.
   const protectedUserRoutes = [
     '/my',
-    '/community/write',
     '/onboarding',
     '/my/posts',
     '/my/comments',
@@ -89,4 +91,37 @@ test.describe('시나리오 4: 어드민 로그인 + 보호 라우트', () => {
       expect(page.url()).toMatch(/\/(login|api\/auth)/)
     })
   }
+
+  /**
+   * 글쓰기의 인증 경계 — 진입은 열려 있고 저장이 막힌다.
+   *
+   * 비회원을 입구에서 쫓아내면 "쓰다가 로그인" 동선이 사라진다. 그래서 폼은 열어 두고,
+   * 등록을 누르는 순간 로그인을 요청한다(`PostWriteForm` — createPost 를 호출하지 않고
+   * 로컬 임시저장 후 안내를 띄운다). 서버 쪽 `createPost` 도 첫 줄에서 세션을 확인한다.
+   *
+   * 이 테스트는 글을 만들지 않는다 — 클라이언트가 저장 호출 전에 멈추는 지점까지만 본다.
+   */
+  test('비회원 → /community/write 진입은 허용, 등록 시 로그인 경계 유지', async ({ page }) => {
+    await page.goto('/community/write?board=stories')
+
+    // 1) 로그인으로 튕기지 않는다
+    await expect(page).toHaveURL(/\/community\/write/)
+    const titleInput = page.getByPlaceholder('제목을 입력해 주세요')
+    await expect(titleInput).toBeVisible({ timeout: 15000 })
+
+    // 2) 비회원도 실제로 작성할 수 있다
+    await titleInput.fill('E2E 인증 경계 확인용 제목')
+    const editor = page.locator('[contenteditable="true"]').first()
+    await expect(editor).toBeVisible({ timeout: 20000 })
+    await editor.click()
+    await editor.pressSequentially('비회원 등록 경계를 확인하는 본문입니다 저장되지 않습니다', { delay: 20 })
+
+    const submit = page.getByRole('button', { name: '등록하기', exact: true })
+    await expect(submit).toBeEnabled({ timeout: 10000 })
+
+    // 3) 등록을 누르면 로그인을 요구하고, 글은 만들어지지 않는다
+    await submit.click()
+    await expect(page.getByRole('dialog', { name: '로그인하고 등록' })).toBeVisible({ timeout: 10000 })
+    await expect(page, '글이 생성되면 상세로 이동했을 것이다').toHaveURL(/\/community\/write/)
+  })
 })

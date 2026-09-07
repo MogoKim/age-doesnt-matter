@@ -4,7 +4,7 @@
  * 2. FAB → 글쓰기 진입 시 서브카테고리 정확도 (slug 소문자 수정)
  * 3. 각 게시판별 write URL 직접 접근 검증
  */
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures/first-party-header'
 
 const BASE_URL = process.env.E2E_BASE_URL ?? 'https://www.age-doesnt-matter.com'
 

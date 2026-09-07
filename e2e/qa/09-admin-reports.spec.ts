@@ -6,7 +6,7 @@
  *   - 신고 탭 (미처리/처리완료)
  *   - 처리 버튼 렌더링
  */
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures/first-party-header'
 
 test.describe('신고 관리', () => {
   test('신고 목록 접근 + 렌더링', async ({ page }) => {

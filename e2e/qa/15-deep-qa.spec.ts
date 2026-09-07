@@ -15,7 +15,7 @@
  *   G. 마이페이지·설정
  */
 
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect, type Page } from '../fixtures/first-party-header'
 import path from 'path'
 import { existsSync } from 'fs'
 

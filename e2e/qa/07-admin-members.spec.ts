@@ -8,7 +8,7 @@
  *   - 페이지네이션 존재
  *   - 회원 상세 접근 (읽기 전용)
  */
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures/first-party-header'
 
 test.describe('회원 목록', () => {
   test('회원 목록 접근 + 테이블 렌더링', async ({ page }) => {

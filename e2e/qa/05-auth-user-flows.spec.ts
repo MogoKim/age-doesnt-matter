@@ -11,7 +11,7 @@
  *   - 댓글 입력폼 활성화
  *   - 프로필 설정 접근
  */
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures/first-party-header'
 import path from 'path'
 import { existsSync } from 'fs'
 

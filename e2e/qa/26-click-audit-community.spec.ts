@@ -7,7 +7,7 @@
  *   npx playwright test e2e/qa/26-click-audit-community.spec.ts \
  *     --project=qa-ios-webkit --project=qa-galaxy --project=qa-audit-user-full --reporter=line
  */
-import { test, expect, type Page, type TestInfo } from '@playwright/test'
+import { test, expect, type Page, type TestInfo } from '../fixtures/first-party-header'
 import path from 'path'
 import fs from 'fs'
 

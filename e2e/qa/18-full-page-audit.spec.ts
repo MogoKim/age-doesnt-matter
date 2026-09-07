@@ -14,7 +14,7 @@
  * 출력: assets/qa-report/18-page-audit-result.json
  */
 
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect, type Page } from '../fixtures/first-party-header'
 import * as fs from 'fs'
 import * as path from 'path'
 

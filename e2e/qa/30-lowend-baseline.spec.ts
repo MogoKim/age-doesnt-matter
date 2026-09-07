@@ -1,4 +1,4 @@
-import { test, expect, type Page, type CDPSession } from '@playwright/test'
+import { test, expect, type Page, type CDPSession } from '../fixtures/first-party-header'
 
 /**
  * 저사양 기준선 측정 하네스 (1회차 측정 인프라)

@@ -6,7 +6,7 @@
  *   - 날짜/액션 유형 필터
  *   - 페이지네이션
  */
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures/first-party-header'
 
 test.describe('감사로그', () => {
   test('감사로그 접근 + 렌더링', async ({ page }) => {

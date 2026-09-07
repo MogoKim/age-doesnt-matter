@@ -6,7 +6,7 @@
  *   npx playwright test e2e/qa/21-write-devices-compare.spec.ts \
  *     --project=qa-write-iphone16pro --project=qa-write-s24ultra --reporter=line
  */
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures/first-party-header'
 import path from 'path'
 import fs from 'fs'
 

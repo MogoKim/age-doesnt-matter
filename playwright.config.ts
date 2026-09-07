@@ -24,7 +24,8 @@ export default defineConfig({
     baseURL: process.env.E2E_BASE_URL || 'http://localhost:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
-    extraHTTPHeaders: { 'x-bot-type': 'e2e-test' },
+    // x-bot-type 은 여기서 전역 부착하지 않는다 — 서드파티 요청까지 실려 광고 iframe 의
+    // CORS preflight 가 거부됐다. e2e/fixtures/first-party-header.ts 가 first-party 요청에만 붙인다.
   },
 
   projects: [
@@ -284,7 +285,6 @@ export default defineConfig({
       testMatch: /qa\/23-.*\.spec\.ts/,
       use: {
         ...desktopChrome,
-        extraHTTPHeaders: { 'x-bot-type': 'e2e-test' },
       },
     },
     // 16. 데이터 헬스 트래킹 QA — 인증 필요 (T6, user.json)
@@ -294,7 +294,6 @@ export default defineConfig({
       use: {
         ...desktopChrome,
         storageState: USER_AUTH,
-        extraHTTPHeaders: { 'x-bot-type': 'e2e-test' },
       },
     },
 
