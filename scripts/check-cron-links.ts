@@ -7,6 +7,7 @@
 import { readFileSync, readdirSync, existsSync } from 'fs'
 import { resolve, join, dirname } from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
+import ts from 'typescript'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -65,17 +66,108 @@ export interface Report {
   dispatchOnly: string[]
   localOnly: string[]
   unlinkedWithoutReason: string[]
+  /** 워크플로우가 부르는데 runner 에 없는 키 — 실행되면 즉시 exit 1 로 죽는다 */
+  workflowWithoutHandler: string[]
   launchdOrphans: LaunchdOrphan[]
 }
 
+/**
+ * 워크플로우가 쓰지만 핸들러가 아닌 예약값.
+ *
+ * determine 스텝이 "이번 시각엔 아무것도 실행하지 않는다"를 표현할 때 쓴다
+ * (`echo "agent=skip"; echo "task=skip"`). runner 로 넘어가지 않으므로 핸들러가 없어도 정상이다.
+ * 여기 값을 늘려서 역방향 가드를 무력화하지 마라 — 조용한 whitelist 는 가드를 죽인다.
+ */
+const RESERVED_WORKFLOW_KEYS = new Set(['skip:skip'])
+
+/**
+ * `import(...)` 호출의 정적 경로를 찾는다. 초기화식 어디에 있든 상관없다 —
+ * `() => import(x)` 도, `() => { ...; return import(x) }` 도 같은 방법으로 잡힌다.
+ */
+function findStaticImportPath(node: ts.Node): string | null {
+  let found: string | null = null
+  const walk = (n: ts.Node): void => {
+    if (found !== null) return
+    if (ts.isCallExpression(n) && n.expression.kind === ts.SyntaxKind.ImportKeyword) {
+      const arg = n.arguments[0]
+      if (arg && ts.isStringLiteralLike(arg)) {
+        found = arg.text
+        return
+      }
+    }
+    ts.forEachChild(n, walk)
+  }
+  walk(node)
+  return found
+}
+
+/**
+ * runner.ts 의 HANDLERS 객체에서 핸들러를 읽는다.
+ *
+ * 정규식이 아니라 **AST** 로 읽는다. 예전에는 `'키': () => import(` 라는 글자 모양을
+ * 찾았는데, 블록 바디로 등록된 핸들러(`() => { ...; return import(x) }`)가 통째로
+ * 안 보였다 — linked 도 orphaned 도 아닌 채 집계에서 빠졌다.
+ * `community:dawn-sheet-scrape` 가 그랬고, 그래서 total 이 79 가 아니라 78 이었다.
+ * 이 형태로 새 핸들러를 등록하면 크론이 끊겨도 가드가 침묵한다.
+ *
+ * AST 로 읽으면 주석 속 가짜 핸들러(삭제 기록 등)와 HANDLERS 밖의 객체 키는
+ * 애초에 후보에 오르지 않는다.
+ */
 export function extractHandlers(runnerPath: string = RUNNER_PATH): HandlerInfo[] {
   const src = readFileSync(runnerPath, 'utf-8')
-  const results: HandlerInfo[] = []
-  const re = /^\s*'([^']+)':\s*\(\)\s*=>\s*import\(['"]([^'"]+)['"]\)/gm
-  let m: RegExpExecArray | null
-  while ((m = re.exec(src)) !== null) {
-    results.push({ key: m[1], importPath: m[2] })
+  const sourceFile = ts.createSourceFile(runnerPath, src, ts.ScriptTarget.Latest, true)
+
+  let handlersObject: ts.ObjectLiteralExpression | undefined
+  const findHandlers = (node: ts.Node): void => {
+    if (
+      handlersObject === undefined &&
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text === 'HANDLERS' &&
+      node.initializer
+    ) {
+      let init: ts.Expression = node.initializer
+      // `= { ... } as const` / `satisfies X` 로 감싸도 안쪽을 본다.
+      while (ts.isAsExpression(init) || ts.isSatisfiesExpression(init) || ts.isParenthesizedExpression(init)) {
+        init = init.expression
+      }
+      if (ts.isObjectLiteralExpression(init)) handlersObject = init
+    }
+    ts.forEachChild(node, findHandlers)
   }
+  findHandlers(sourceFile)
+
+  if (!handlersObject) {
+    throw new Error(`${runnerPath} 에서 HANDLERS 객체를 찾지 못했다 — 선언이 바뀌었는지 확인하라.`)
+  }
+
+  const results: HandlerInfo[] = []
+  const withoutStaticImport: string[] = []
+
+  for (const prop of handlersObject.properties) {
+    if (!ts.isPropertyAssignment(prop)) continue // spread·shorthand 는 핸들러 등록이 아니다
+    const name = prop.name
+    let key: string
+    if (ts.isStringLiteralLike(name)) key = name.text
+    else if (ts.isIdentifier(name)) key = name.text
+    else continue // 계산된 키는 정적으로 알 수 없다
+
+    const importPath = findStaticImportPath(prop.initializer)
+    if (importPath === null) {
+      withoutStaticImport.push(key)
+      continue
+    }
+    results.push({ key, importPath })
+  }
+
+  // 조용히 빠뜨리면 그 핸들러는 가드에 영원히 안 보인다. 차라리 멈춘다.
+  if (withoutStaticImport.length > 0) {
+    throw new Error(
+      `정적 import 경로를 찾지 못한 핸들러 ${withoutStaticImport.length}개: ${withoutStaticImport.join(', ')}\n` +
+        `동적 경로를 쓰면 면제 주석도 읽을 수 없어 연결 검증이 불가능하다.`,
+    )
+  }
+
   return results
 }
 
@@ -184,6 +276,12 @@ export function buildReport(): Report {
     else unlinkedWithoutReason.push(key)
   }
 
+  // 역방향 — 워크플로우가 부르는데 runner 에 없는 키. 실행되면 즉시 exit 1 로 죽는다.
+  const handlerKeys = new Set(handlers.map((h) => h.key))
+  const workflowWithoutHandler = [...workflowKeys]
+    .filter((k) => !handlerKeys.has(k) && !RESERVED_WORKFLOW_KEYS.has(k))
+    .sort()
+
   const launchdOrphans = checkLaunchdOrphans()
 
   return {
@@ -193,14 +291,27 @@ export function buildReport(): Report {
     dispatchOnly,
     localOnly,
     unlinkedWithoutReason,
+    workflowWithoutHandler,
     launchdOrphans,
   }
+}
+
+/**
+ * CI 를 빨간불로 만들 조건. 이유가 붙은 orphan(dispatch/local)은 실패가 아니다 —
+ * 사유 없이 끊긴 것, 부르는데 없는 것, 파일이 사라진 plist 만 실패다.
+ */
+export function isFailingReport(report: Report): boolean {
+  return (
+    report.unlinkedWithoutReason.length > 0 ||
+    report.workflowWithoutHandler.length > 0 ||
+    report.launchdOrphans.length > 0
+  )
 }
 
 function main() {
   const report = buildReport()
   console.log(JSON.stringify(report, null, 2))
-  process.exit(report.unlinkedWithoutReason.length > 0 || report.launchdOrphans.length > 0 ? 1 : 0)
+  process.exit(isFailingReport(report) ? 1 : 0)
 }
 
 // 테스트가 import 할 때 실행·exit 되지 않도록 직접 실행일 때만 돈다.
