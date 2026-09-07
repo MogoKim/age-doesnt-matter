@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures/first-party-header'
 import AxeBuilder from '@axe-core/playwright'
 
 /**

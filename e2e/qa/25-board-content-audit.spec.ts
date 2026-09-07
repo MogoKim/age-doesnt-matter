@@ -12,7 +12,7 @@
  * 출력: docs/audit-board-content-YYYY-MM-DD.json
  */
 
-import { test } from '@playwright/test'
+import { test } from '../fixtures/first-party-header'
 import * as fs from 'fs'
 import * as path from 'path'
 

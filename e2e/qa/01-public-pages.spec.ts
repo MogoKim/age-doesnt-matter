@@ -7,7 +7,7 @@
  *   - <title> 태그 비어 있지 않음
  *   - 콘솔 에러 없음 (심각 수준만)
  */
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures/first-party-header'
 
 // @smoke @public 태그 — CI smoke 필터 및 paths-filter 자동 선택 대상
 test.describe('QA 01 — 공개 페이지', { tag: ['@smoke', '@public'] }, () => {

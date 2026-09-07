@@ -7,7 +7,7 @@
  *   - 베스트 탭 3개 (오늘/주간/명예의전당) 전환
  *   - 각 탭 콘텐츠 렌더링
  */
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures/first-party-header'
 
 test.describe('통합 검색', () => {
   test('검색 페이지 접근', async ({ page }) => {

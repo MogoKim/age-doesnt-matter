@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures/first-party-header'
 
 test.describe('시나리오 4: 어드민 로그인 + 보호 라우트', () => {
   // ── 어드민 로그인 폼 ──

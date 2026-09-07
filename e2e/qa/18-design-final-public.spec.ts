@@ -14,7 +14,7 @@
  *   qa-audit-mobile  → 모바일 375×812, normal + xlarge 글씨
  */
 
-import { test, type Page } from '@playwright/test'
+import { test, type Page } from '../fixtures/first-party-header'
 import * as fs from 'fs'
 import * as path from 'path'
 

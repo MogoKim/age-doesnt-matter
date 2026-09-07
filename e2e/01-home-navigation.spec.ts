@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures/first-party-header'
 import { dismissGlobalPopups } from './helpers/global-popup'
 
 test.describe('시나리오 1: 비회원 홈 접근 + 주요 네비게이션', { tag: ['@smoke', '@public'] }, () => {

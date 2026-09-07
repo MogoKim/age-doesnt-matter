@@ -16,7 +16,7 @@
  *   프로덕션: E2E_BASE_URL=https://www.age-doesnt-matter.com npx playwright test e2e/qa/23 --project=qa-tracking
  */
 
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect, type Page } from '../fixtures/first-party-header'
 
 // ── GTM spy 헬퍼 (22-signup-banner-gtm.spec.ts 패턴과 동일) ──────────────────
 

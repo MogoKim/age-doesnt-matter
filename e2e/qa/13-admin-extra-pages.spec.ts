@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures/first-party-header'
 
 const ADMIN_AUTH = 'e2e/.auth/admin.json'
 

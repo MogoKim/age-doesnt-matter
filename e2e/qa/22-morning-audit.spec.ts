@@ -9,7 +9,7 @@
  *   npx playwright test e2e/qa/22-morning-audit.spec.ts --project=qa-audit
  */
 
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures/first-party-header'
 import { readFileSync, existsSync, mkdirSync } from 'fs'
 
 // ── 타입 정의 ──────────────────────────────────────────

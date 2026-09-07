@@ -7,7 +7,7 @@
  *   - 매거진 목록 렌더링
  *   - 매거진 상세 콘텐츠 + 광고 슬롯
  */
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures/first-party-header'
 
 test.describe('일자리', { tag: ['@smoke', '@public'] }, () => {
   test('일자리 목록 200 + 아이템 존재', async ({ page }) => {

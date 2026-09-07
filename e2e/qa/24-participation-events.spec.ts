@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures/first-party-header'
 
 /**
  * 참여 이벤트 QA — 노출 리스크 0 격리 (participation-events-qa.md 계층 A + B).

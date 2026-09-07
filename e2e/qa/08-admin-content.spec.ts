@@ -6,7 +6,7 @@
  *   - 게시글 상태 변경 UI (버튼 렌더링만)
  *   - 타입 필터 (STORY/QNA 등)
  */
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures/first-party-header'
 
 test.describe('콘텐츠 목록', () => {
   test('콘텐츠 관리 접근 + 테이블 렌더링', async ({ page }) => {

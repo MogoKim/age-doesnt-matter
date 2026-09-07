@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures/first-party-header'
 
 test.describe('시나리오 7: 광고 렌더링 검증', { tag: ['@smoke', '@ads'] }, () => {
 

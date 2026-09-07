@@ -9,7 +9,7 @@
  * 6. 툴바 (B/I/U 등) 화면 하단 존재
  * 7. 수정(edit) 화면도 동일 레이아웃 검증
  */
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures/first-party-header'
 
 const BASE_URL = process.env.E2E_BASE_URL ?? 'https://www.age-doesnt-matter.com'
 

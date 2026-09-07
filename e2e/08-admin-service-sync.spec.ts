@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect, type Page } from './fixtures/first-party-header'
 
 /**
  * 시나리오 8: 어드민 ↔ 서비스 동기화 QA 시트

@@ -3,7 +3,7 @@
  * 이미지/동영상 업로드 포함 전체 흐름 스크린샷 수집 + 이슈 감지
  * 실행: npx playwright test e2e/qa/write-upload-analysis.spec.ts --project=qa-write-mobile --headed
  */
-import { test } from '@playwright/test'
+import { test } from '../fixtures/first-party-header'
 import path from 'path'
 import fs from 'fs'
 

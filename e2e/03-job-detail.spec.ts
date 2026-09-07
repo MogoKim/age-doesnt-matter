@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures/first-party-header'
 
 test.describe('시나리오 3: 일자리 목록 → 상세 + 매거진 플로우', { tag: ['@smoke', '@public'] }, () => {
   // ── 일자리 ──

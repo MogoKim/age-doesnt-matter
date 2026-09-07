@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures/first-party-header'
 
 test.describe('시나리오 5: 접근성 + 시니어 친화 UI 검증', () => {
   const publicPages = [

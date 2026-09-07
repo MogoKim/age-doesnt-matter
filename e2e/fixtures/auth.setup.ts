@@ -7,7 +7,7 @@
  *   E2E_ADMIN_PASSWORD — 어드민 계정 비밀번호
  *   E2E_BASE_URL       — 테스트 대상 URL (기본: http://localhost:3000)
  */
-import { test as setup, expect } from '@playwright/test'
+import { test as setup, expect } from './first-party-header'
 import path from 'path'
 
 const ADMIN_AUTH = path.join(__dirname, '../.auth/admin.json')

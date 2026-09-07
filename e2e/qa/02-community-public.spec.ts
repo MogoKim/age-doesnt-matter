@@ -8,7 +8,7 @@
  *   - 공감/스크랩 버튼 존재 (비로그인 시 로그인 유도 여부)
  *   - 글쓰기 버튼 — 비로그인 클릭 시 로그인 페이지로 이동
  */
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures/first-party-header'
 
 test.describe('커뮤니티 목록', { tag: ['@smoke', '@public'] }, () => {
   test('커뮤니티 홈 200 + 게시글 아이템 존재', async ({ page }) => {

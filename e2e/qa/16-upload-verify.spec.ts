@@ -2,7 +2,7 @@
  * 업로드 직접 검증 테스트
  * 이미지/동영상 업로드 실제 동작 확인 + 에러 수집
  */
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures/first-party-header'
 import path from 'path'
 import fs from 'fs'
 

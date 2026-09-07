@@ -1,7 +1,7 @@
 /**
  * QA 11 — 어드민 팝업 관리 (admin.json storageState)
  */
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures/first-party-header'
 
 test.describe('팝업 관리', () => {
   test('팝업 목록 접근 + 렌더링', async ({ page }) => {

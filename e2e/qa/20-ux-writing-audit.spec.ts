@@ -14,7 +14,7 @@
  * 출력: assets/qa-report/20-ux-writing-result.json
  */
 
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect, type Page } from '../fixtures/first-party-header'
 import * as fs from 'fs'
 import * as path from 'path'
 

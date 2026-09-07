@@ -6,7 +6,7 @@
  *   - 금지어 목록 접근
  *   - 설정 폼 렌더링
  */
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures/first-party-header'
 
 test.describe('어드민 설정', () => {
   test('설정 페이지 접근 + 렌더링', async ({ page }) => {

@@ -6,7 +6,7 @@
  *   - 배너 생성 폼 렌더링 (저장 금지)
  *   - 배너 상태 표시
  */
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures/first-party-header'
 
 test.describe('배너 관리', () => {
   test('배너 목록 접근 + 렌더링', async ({ page }) => {
