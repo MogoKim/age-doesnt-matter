@@ -5,7 +5,7 @@
  */
 
 import { readFileSync, readdirSync, existsSync } from 'fs'
-import { resolve, join, dirname } from 'path'
+import { resolve, join, dirname, basename } from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
 import ts from 'typescript'
 
@@ -101,6 +101,12 @@ function findStaticImportPath(node: ts.Node): string | null {
   return found
 }
 
+/** 오류 메시지에 `runner.ts:113` 처럼 찾아갈 수 있는 위치를 붙인다. */
+function describePosition(sourceFile: ts.SourceFile, node: ts.Node): string {
+  const { line } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile))
+  return `${basename(sourceFile.fileName)}:${line + 1}`
+}
+
 /**
  * runner.ts 의 HANDLERS 객체에서 핸들러를 읽는다.
  *
@@ -112,6 +118,10 @@ function findStaticImportPath(node: ts.Node): string | null {
  *
  * AST 로 읽으면 주석 속 가짜 핸들러(삭제 기록 등)와 HANDLERS 밖의 객체 키는
  * 애초에 후보에 오르지 않는다.
+ *
+ * **fail-closed**: 읽는 법을 모르는 형태(spread·shorthand·메서드·동적 계산 키)나
+ * 중복 키를 만나면 건너뛰지 않고 위치와 문법 종류를 담아 throw 한다.
+ * 조용히 넘기면 "런타임에는 등록됐는데 가드에는 안 보이는" 핸들러가 생긴다.
  */
 export function extractHandlers(runnerPath: string = RUNNER_PATH): HandlerInfo[] {
   const src = readFileSync(runnerPath, 'utf-8')
@@ -142,29 +152,59 @@ export function extractHandlers(runnerPath: string = RUNNER_PATH): HandlerInfo[]
   }
 
   const results: HandlerInfo[] = []
-  const withoutStaticImport: string[] = []
+  const problems: string[] = []
+  const seen = new Map<string, number>()
 
   for (const prop of handlersObject.properties) {
-    if (!ts.isPropertyAssignment(prop)) continue // spread·shorthand 는 핸들러 등록이 아니다
+    const where = describePosition(sourceFile, prop)
+
+    // 읽는 법을 아는 형태는 PropertyAssignment 하나뿐이다.
+    // 나머지를 `continue` 로 넘기면 **런타임에는 등록됐는데 가드에는 안 보이는** 핸들러가 생긴다.
+    if (!ts.isPropertyAssignment(prop)) {
+      problems.push(`${where}: 지원하지 않는 property 형태 ${ts.SyntaxKind[prop.kind]}`)
+      continue
+    }
+
     const name = prop.name
     let key: string
-    if (ts.isStringLiteralLike(name)) key = name.text
-    else if (ts.isIdentifier(name)) key = name.text
-    else continue // 계산된 키는 정적으로 알 수 없다
+    if (ts.isStringLiteralLike(name)) {
+      key = name.text
+    } else if (ts.isIdentifier(name)) {
+      key = name.text
+    } else if (ts.isComputedPropertyName(name)) {
+      // 정적 문자열이면 값을 알 수 있다. 그 외(변수·연산)는 정적으로 확정 불가다.
+      if (ts.isStringLiteralLike(name.expression)) {
+        key = name.expression.text
+      } else {
+        problems.push(`${where}: 정적으로 확정할 수 없는 계산된 키 ${ts.SyntaxKind[name.expression.kind]}`)
+        continue
+      }
+    } else {
+      problems.push(`${where}: 지원하지 않는 키 형태 ${ts.SyntaxKind[name.kind]}`)
+      continue
+    }
+
+    // 같은 키를 두 번 쓰면 런타임은 뒤엣것으로 조용히 덮어쓴다. 앞엣것은 죽은 코드다.
+    const previous = seen.get(key)
+    if (previous !== undefined) {
+      problems.push(`${where}: 키 '${key}' 가 중복이다(앞선 정의: ${previous}행). 런타임은 뒤엣것만 쓴다`)
+      continue
+    }
+    seen.set(key, sourceFile.getLineAndCharacterOfPosition(prop.getStart(sourceFile)).line + 1)
 
     const importPath = findStaticImportPath(prop.initializer)
     if (importPath === null) {
-      withoutStaticImport.push(key)
+      problems.push(`${where}: '${key}' 에서 정적 import 경로를 찾지 못했다. 동적 경로는 면제 주석도 읽을 수 없어 연결 검증이 불가능하다`)
       continue
     }
     results.push({ key, importPath })
   }
 
   // 조용히 빠뜨리면 그 핸들러는 가드에 영원히 안 보인다. 차라리 멈춘다.
-  if (withoutStaticImport.length > 0) {
+  if (problems.length > 0) {
     throw new Error(
-      `정적 import 경로를 찾지 못한 핸들러 ${withoutStaticImport.length}개: ${withoutStaticImport.join(', ')}\n` +
-        `동적 경로를 쓰면 면제 주석도 읽을 수 없어 연결 검증이 불가능하다.`,
+      `HANDLERS 를 읽지 못한 항목 ${problems.length}개 — 가드가 놓치느니 멈춘다:\n` +
+        problems.map((p) => `  · ${p}`).join('\n'),
     )
   }
 

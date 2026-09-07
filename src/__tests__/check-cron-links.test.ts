@@ -305,6 +305,72 @@ const ALSO_NOT = { 'another:key': () => import('./nope2.js') }
     expect(() => extractHandlers(p)).toThrow(/ceo:dynamic/)
   })
 
+  it('spread 는 조용히 누락되지 않고 실패한다', () => {
+    // 넘겨 버리면 런타임에는 등록됐는데 가드에는 안 보이는 핸들러가 생긴다.
+    const p = runnerFile(`const EXTRA = { 'ceo:extra': () => import('../ceo/extra.js') }
+const HANDLERS: Record<string, () => Promise<void>> = {
+  'ceo:ok': () => import('../ceo/ok.js').then(() => {}),
+  ...EXTRA,
+}
+`)
+    expect(() => extractHandlers(p)).toThrow(/SpreadAssignment/)
+  })
+
+  it('shorthand 는 실패한다', () => {
+    const p = runnerFile(`const handler = () => import('../ceo/x.js')
+const HANDLERS: Record<string, () => Promise<void>> = {
+  'ceo:ok': () => import('../ceo/ok.js').then(() => {}),
+  handler,
+}
+`)
+    expect(() => extractHandlers(p)).toThrow(/ShorthandPropertyAssignment/)
+  })
+
+  it('메서드 선언은 실패한다', () => {
+    const p = runnerFile(`const HANDLERS: Record<string, () => Promise<void>> = {
+  'ceo:ok': () => import('../ceo/ok.js').then(() => {}),
+  async 'ceo:method'() { await import('../ceo/method.js') },
+}
+`)
+    expect(() => extractHandlers(p)).toThrow(/MethodDeclaration/)
+  })
+
+  it('동적 계산 키는 실패한다', () => {
+    const p = runnerFile(`const NAME = 'ceo:dynamic'
+const HANDLERS: Record<string, () => Promise<void>> = {
+  'ceo:ok': () => import('../ceo/ok.js').then(() => {}),
+  [NAME]: () => import('../ceo/dynamic.js').then(() => {}),
+}
+`)
+    expect(() => extractHandlers(p)).toThrow(/확정할 수 없는 계산된 키/)
+  })
+
+  it('정적 문자열 계산 키는 읽는다', () => {
+    const p = runnerFile(`const HANDLERS: Record<string, () => Promise<void>> = {
+  ['cmo:test']: () => import('../cmo/test.js').then(() => {}),
+}
+`)
+    expect(extractHandlers(p)).toEqual([{ key: 'cmo:test', importPath: '../cmo/test.js' }])
+  })
+
+  it('중복 키는 실패한다 — 런타임은 뒤엣것만 쓴다', () => {
+    const p = runnerFile(`const HANDLERS: Record<string, () => Promise<void>> = {
+  'ceo:dup': () => import('../ceo/first.js').then(() => {}),
+  'ceo:dup': () => import('../ceo/second.js').then(() => {}),
+}
+`)
+    expect(() => extractHandlers(p)).toThrow(/중복/)
+  })
+
+  it('오류 메시지에 파일과 줄 번호가 들어간다', () => {
+    const p = runnerFile(`const HANDLERS: Record<string, () => Promise<void>> = {
+  'ceo:ok': () => import('../ceo/ok.js').then(() => {}),
+  ...OTHER,
+}
+`)
+    expect(() => extractHandlers(p)).toThrow(/runner\.ts:3/)
+  })
+
   it('HANDLERS 선언이 없으면 실패한다', () => {
     expect(() => extractHandlers(runnerFile('export const NOTHING = {}\n'))).toThrow(/HANDLERS/)
   })

@@ -1,13 +1,11 @@
 /**
  * 에이전트 핸들러 레지스트리 — 어드민 현황 탭 + 모닝 리포트 공통 사용
  *
- * runner.ts HANDLERS 와 **1:1 이 아니다**. 여기 있는 키는 전부 runner 에 있어야 하지만
- * (registry ⊆ runner), 반대는 성립하지 않는다 — 어드민에 굳이 띄우지 않는 핸들러가 있다.
- * 실측(2026-09-07): runner 79개 · registry 53개.
+ * 계약은 한 방향뿐이다: **여기 있는 키는 전부 runner.ts HANDLERS 에 있어야 한다.**
+ * runner 에 없는 키를 두면 어드민이 없는 작업을 돌아가는 것처럼 보여준다.
+ * 반대(runner 의 모든 키가 여기 있어야 한다)는 계약이 아니다.
  *
- * ⚠️ runner 에 없는 키를 여기 두면 어드민이 **없는 작업을 돌아가는 것처럼** 보여준다.
- * 실제로 cmo:knowledge-responder · cmo:social-poster-visual 이 2026-05-15 코드 삭제 후에도
- * 남아 GHA 작업으로 표시됐다. 그 방향은 `src/__tests__/agent-registry-handlers.test.ts` 가 막는다.
+ * 이 방향은 `src/__tests__/agent-registry-handlers.test.ts` 가 지킨다.
  */
 
 export type HandlerRunType = 'GHA' | 'LOCAL' | 'DISPATCH'

@@ -7,13 +7,12 @@ import { extractHandlers } from '../../scripts/check-cron-links'
 /**
  * 어드민 레지스트리 ↔ runner.ts HANDLERS 정합성.
  *
- * runner 에 없는 키를 레지스트리에 두면 어드민 현황 탭이 **없는 작업을 돌아가는 것처럼**
- * 보여준다. 실제로 `cmo:knowledge-responder` 와 `cmo:social-poster-visual` 은
- * 2026-05-15 에 코드가 지워졌는데도 레지스트리에 남아 GHA 작업으로 표시됐고,
- * 워크플로우에도 죽은 job 이 그대로 있었다. 세 곳이 서로 다른 사실을 말한 셈이다.
+ * 계약은 한 방향뿐이다 — **registry ⊆ runner**. runner 에 없는 키를 레지스트리에 두면
+ * 어드민 현황 탭이 없는 작업을 돌아가는 것처럼 보여준다. 반대 방향(runner ⊆ registry)은
+ * 계약이 아니므로 여기서 강제하지 않는다.
  *
- * 방향은 **registry ⊆ runner 한쪽만** 고정한다. 반대(runner ⊆ registry)는 계약이 아니다 —
- * 어드민에 굳이 띄우지 않는 핸들러가 있다(실측: runner 79 · registry 53).
+ * HANDLER_GROUPS 는 레지스트리를 팀별로 묶어 보여주는 뷰라, 키 집합이 레지스트리와
+ * **정확히 같아야** 한다. 어긋나면 어드민에서 항목이 사라지거나 두 번 뜬다.
  */
 
 const handlerKeys = new Set(extractHandlers().map((h) => h.key))
@@ -25,19 +24,26 @@ describe('HANDLER_REGISTRY ⊆ runner HANDLERS', () => {
     expect(ghosts, `runner 에 없는 레지스트리 키: ${ghosts.join(', ')}`).toEqual([])
   })
 
-  it('HANDLER_GROUPS 의 모든 키도 실제 핸들러로 존재한다', () => {
-    const ghosts = HANDLER_GROUPS.flatMap((g) => g.keys).filter((k) => !handlerKeys.has(k))
-    expect(ghosts, `runner 에 없는 그룹 키: ${ghosts.join(', ')}`).toEqual([])
-  })
-
   it('레지스트리 키에 중복이 없다', () => {
-    expect(registryKeys).toHaveLength(new Set(registryKeys).size)
+    const dupes = registryKeys.filter((k, i) => registryKeys.indexOf(k) !== i)
+    expect(dupes, `중복 키: ${dupes.join(', ')}`).toEqual([])
+  })
+})
+
+describe('HANDLER_GROUPS 는 레지스트리의 뷰다', () => {
+  const groupKeys = HANDLER_GROUPS.flatMap((g) => g.keys)
+
+  it('그룹 키 집합이 레지스트리 키 집합과 정확히 같다', () => {
+    // 그룹에만 있으면 어드민이 없는 항목을 그리고, 레지스트리에만 있으면 어디에도 안 뜬다.
+    const onlyInGroups = [...new Set(groupKeys)].filter((k) => !registryKeys.includes(k)).sort()
+    const onlyInRegistry = registryKeys.filter((k) => !groupKeys.includes(k)).sort()
+    expect({ onlyInGroups, onlyInRegistry }).toEqual({ onlyInGroups: [], onlyInRegistry: [] })
   })
 
-  it('반대 방향은 계약이 아니다 — runner 가 레지스트리보다 크다', () => {
-    // 이 테스트는 "registry ⊆ runner 만 고정한다"는 결정을 눈에 보이게 남긴다.
-    // 언젠가 1:1 로 맞추기로 하면 여기가 먼저 깨진다.
-    expect(handlerKeys.size).toBeGreaterThan(registryKeys.length)
+  it('그룹 전체에서 키 중복이 없다', () => {
+    // 두 팀에 같은 키가 들어가면 어드민에 두 번 뜬다.
+    const dupes = groupKeys.filter((k, i) => groupKeys.indexOf(k) !== i)
+    expect(dupes, `중복 키: ${dupes.join(', ')}`).toEqual([])
   })
 })
 
