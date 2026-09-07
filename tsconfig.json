@@ -19,5 +19,9 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "agents", "e2e", "prisma/seed.ts", "scripts", "_quarantine", "outputs", "test-query.ts", "analyze-posts.ts", "query_logs.ts"]
+  "exclude": ["node_modules", "agents", "e2e", "prisma/seed.ts", "scripts", "_quarantine", "outputs", "test-query.ts", "analyze-posts.ts", "query_logs.ts",
+    // agents/ 는 위에서 제외돼 있지만, agents 모듈을 **import 하는** 파일이 있으면 그쪽으로
+    // 딸려 들어와 agents 의 기존 타입 오류가 여기서 터진다(agents 는 tsconfig.ops.json 담당).
+    // 이 테스트는 runner↔moderator 의 Promise 계약을 실제 모듈로 검증해야 해서 import 가 필요하다.
+    "src/__tests__/moderator-promise-lifecycle.test.ts"]
 }
