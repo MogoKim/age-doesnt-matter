@@ -1,6 +1,11 @@
 /**
- * 에이전트 핸들러 레지스트리
- * runner.ts HANDLERS와 1:1 대응 — 어드민 현황 탭 + 모닝 리포트 공통 사용
+ * 에이전트 핸들러 레지스트리 — 어드민 현황 탭 + 모닝 리포트 공통 사용
+ *
+ * 계약은 한 방향뿐이다: **여기 있는 키는 전부 runner.ts HANDLERS 에 있어야 한다.**
+ * runner 에 없는 키를 두면 어드민이 없는 작업을 돌아가는 것처럼 보여준다.
+ * 반대(runner 의 모든 키가 여기 있어야 한다)는 계약이 아니다.
+ *
+ * 이 방향은 `src/__tests__/agent-registry-handlers.test.ts` 가 지킨다.
  */
 
 export type HandlerRunType = 'GHA' | 'LOCAL' | 'DISPATCH'
@@ -43,9 +48,7 @@ export const HANDLER_REGISTRY: HandlerMeta[] = [
   { key: 'cmo:source-expander',           label: 'CMO 소스 확장',      botType: 'CMO', action: 'SOURCE_ANALYSIS',        schedule: '월 09:00',             type: 'GHA',      workflow: 'agents-weekly' },
   { key: 'cmo:content-gap-finder',        label: 'CMO 콘텐츠 갭',      botType: 'CMO', action: 'CONTENT_GAP_ANALYSIS',   schedule: '금 09:00',             type: 'GHA',      workflow: 'agents-weekly' },
   { key: 'cmo:channel-seeder',            label: 'CMO 채널 시더',      botType: 'CMO', action: 'CHANNEL_SEED',           schedule: '매일 11:30',           type: 'GHA',      workflow: 'agents-daily',  note: '효과 미확인' },
-  { key: 'cmo:knowledge-responder',       label: 'CMO 지식 응답',      botType: 'CMO', action: 'KNOWLEDGE_RESPOND',      schedule: '화목토 12:00',         type: 'GHA',      workflow: 'agents-daily',  note: '네이버 세션 필요' },
   { key: 'cmo:seo-optimizer',             label: 'CMO SEO 최적화',     botType: 'CMO', action: 'SEO_MONITOR',            schedule: '월 08:00',             type: 'GHA',      workflow: 'agents-weekly' },
-  { key: 'cmo:social-poster-visual',      label: 'CMO 카드뉴스 게시',  botType: 'CMO', action: null,                     schedule: '15:00',                type: 'GHA',      workflow: 'agents-social', note: '이미지 생성 의존' },
   { key: 'cmo:band-manager',              label: 'CMO Band 관리',      botType: 'CMO', action: 'BAND_MANAGE',            schedule: '—',                    type: 'DISPATCH',                            note: 'Band API 심사 대기' },
   { key: 'cmo:google-ads-report',         label: 'CMO Google Ads',     botType: 'CMO', action: null,                     schedule: '—',                    type: 'DISPATCH',                            note: 'API 미설치' },
 
@@ -103,7 +106,7 @@ export const HANDLER_REGISTRY: HandlerMeta[] = [
 export const HANDLER_GROUPS = [
   { team: 'CEO',          emoji: '👑', keys: ['ceo:morning-cycle','ceo:morning-sns-briefing','ceo:approval-reminder','ceo:weekly-report'] },
   { team: 'CTO',          emoji: '🔧', keys: ['cto:health-check','cto:error-monitor','cto:security-audit','cto:crawler-health','cto:arch-review','cto:garbage-collect','cto:qa-verify'] },
-  { team: 'CMO',          emoji: '📣', keys: ['cmo:trend-analyzer','cmo:caregiving-curator','cmo:health-anxiety-responder','cmo:humor-curator','cmo:social-poster','cmo:social-metrics','cmo:threads-token-refresh','cmo:source-expander','cmo:content-gap-finder','cmo:channel-seeder','cmo:knowledge-responder','cmo:seo-optimizer','cmo:social-poster-visual','cmo:band-manager','cmo:google-ads-report'] },
+  { team: 'CMO',          emoji: '📣', keys: ['cmo:trend-analyzer','cmo:caregiving-curator','cmo:health-anxiety-responder','cmo:humor-curator','cmo:social-poster','cmo:social-metrics','cmo:threads-token-refresh','cmo:source-expander','cmo:content-gap-finder','cmo:channel-seeder','cmo:seo-optimizer','cmo:band-manager','cmo:google-ads-report'] },
   { team: 'COO',          emoji: '⚙️', keys: ['coo:moderator','coo:content-scheduler','coo:trending-scorer','coo:comment-activator','coo:reply-chain-driver','coo:connection-facilitator','coo:job-scraper','coo:job-matcher'] },
   { team: 'CPO',          emoji: '📦', keys: ['cpo:ux-analyzer','cpo:feature-tracker','cpo:journey-analyzer','cpo:persona-diversity-checker'] },
   { team: 'CDO',          emoji: '📊', keys: ['cdo:kpi-collector','cdo:anomaly-detector','cdo:engagement-optimizer'] },

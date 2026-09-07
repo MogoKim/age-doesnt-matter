@@ -5,8 +5,10 @@ import { tmpdir } from 'node:os'
 
 import {
   buildReport,
+  extractHandlers,
   extractWorkflowKeys,
   hasExemptComment,
+  isFailingReport,
 } from '../../scripts/check-cron-links'
 
 /**
@@ -34,6 +36,14 @@ function workflowDir(files: Record<string, string>): string {
     writeFileSync(join(dir, name), content, 'utf-8')
   }
   return dir
+}
+
+function runnerFile(body: string): string {
+  const dir = mkdtempSync(join(tmpdir(), 'cron-links-runner-'))
+  tmpRoots.push(dir)
+  const path = join(dir, 'runner.ts')
+  writeFileSync(path, body, 'utf-8')
+  return path
 }
 
 function sourceFile(name: string, content: string): string {
@@ -221,13 +231,19 @@ describe('buildReport — 실제 저장소 기준 분류', () => {
       total: report.total,
       linked: report.linked,
       orphaned: report.orphaned.length,
+      dispatchOnly: report.dispatchOnly.length,
+      localOnly: report.localOnly.length,
       unlinkedWithoutReason: report.unlinkedWithoutReason.length,
+      workflowWithoutHandler: report.workflowWithoutHandler.length,
       launchdOrphans: report.launchdOrphans.length,
     }).toEqual({
-      total: 78,
-      linked: 45,
+      total: 79,
+      linked: 46,
       orphaned: 33,
+      dispatchOnly: 25,
+      localOnly: 8,
       unlinkedWithoutReason: 0,
+      workflowWithoutHandler: 0,
       launchdOrphans: 0,
     })
   })
@@ -238,3 +254,155 @@ describe('buildReport — 실제 저장소 기준 분류', () => {
     expect(report.unlinkedWithoutReason, '사유 없는 orphan').toEqual([])
   })
 })
+
+describe('extractHandlers — AST 로 HANDLERS 를 읽는다', () => {
+  it('한 줄 `() => import(...)` 을 읽는다', () => {
+    const p = runnerFile(`const HANDLERS: Record<string, () => Promise<void>> = {
+  'ceo:morning-cycle': () => import('../ceo/morning-cycle.js').then(() => {}),
+}
+`)
+    expect(extractHandlers(p)).toEqual([{ key: 'ceo:morning-cycle', importPath: '../ceo/morning-cycle.js' }])
+  })
+
+  it('블록 바디 `() => { ... return import(...) }` 도 읽는다', () => {
+    // 정규식 시절 통째로 안 보이던 형태. 이걸 놓치면 크론이 끊겨도 가드가 침묵한다.
+    const p = runnerFile(`const HANDLERS: Record<string, () => Promise<void>> = {
+  'community:dawn-sheet-scrape': () => { if (!process.env.MODE) process.env.MODE = 'dawn'; return import('../community/sheet-scraper.js').then(m => m.main()) },
+}
+`)
+    expect(extractHandlers(p)).toEqual([
+      { key: 'community:dawn-sheet-scrape', importPath: '../community/sheet-scraper.js' },
+    ])
+  })
+
+  it('주석 속 가짜 핸들러는 읽지 않는다', () => {
+    const p = runnerFile(`const HANDLERS: Record<string, () => Promise<void>> = {
+  // 'cmo:knowledge-responder': () => import('../cmo/knowledge.js').then(() => {}),  삭제됨 2026-05-15
+  /* 'cmo:card-news': () => import('../cmo/card.js').then(() => {}), */
+  'cmo:seo-optimizer': () => import('../cmo/seo-optimizer.js').then(() => {}),
+}
+`)
+    expect(extractHandlers(p).map((h) => h.key)).toEqual(['cmo:seo-optimizer'])
+  })
+
+  it('HANDLERS 밖의 객체 키는 읽지 않는다', () => {
+    const p = runnerFile(`const OTHER = { 'fake:key': () => import('./nope.js') }
+const HANDLERS: Record<string, () => Promise<void>> = {
+  'qa:deploy-audit': () => import('../qa/post-deploy.js').then(() => {}),
+}
+const ALSO_NOT = { 'another:key': () => import('./nope2.js') }
+`)
+    expect(extractHandlers(p).map((h) => h.key)).toEqual(['qa:deploy-audit'])
+  })
+
+  it('정적 import 경로가 없으면 조용히 빠뜨리지 않고 실패한다', () => {
+    // 조용히 넘기면 그 핸들러는 가드에 영원히 안 보인다.
+    const p = runnerFile(`const HANDLERS: Record<string, () => Promise<void>> = {
+  'ceo:ok': () => import('../ceo/ok.js').then(() => {}),
+  'ceo:dynamic': () => import(process.env.MOD_PATH!).then(() => {}),
+}
+`)
+    expect(() => extractHandlers(p)).toThrow(/ceo:dynamic/)
+  })
+
+  it('spread 는 조용히 누락되지 않고 실패한다', () => {
+    // 넘겨 버리면 런타임에는 등록됐는데 가드에는 안 보이는 핸들러가 생긴다.
+    const p = runnerFile(`const EXTRA = { 'ceo:extra': () => import('../ceo/extra.js') }
+const HANDLERS: Record<string, () => Promise<void>> = {
+  'ceo:ok': () => import('../ceo/ok.js').then(() => {}),
+  ...EXTRA,
+}
+`)
+    expect(() => extractHandlers(p)).toThrow(/SpreadAssignment/)
+  })
+
+  it('shorthand 는 실패한다', () => {
+    const p = runnerFile(`const handler = () => import('../ceo/x.js')
+const HANDLERS: Record<string, () => Promise<void>> = {
+  'ceo:ok': () => import('../ceo/ok.js').then(() => {}),
+  handler,
+}
+`)
+    expect(() => extractHandlers(p)).toThrow(/ShorthandPropertyAssignment/)
+  })
+
+  it('메서드 선언은 실패한다', () => {
+    const p = runnerFile(`const HANDLERS: Record<string, () => Promise<void>> = {
+  'ceo:ok': () => import('../ceo/ok.js').then(() => {}),
+  async 'ceo:method'() { await import('../ceo/method.js') },
+}
+`)
+    expect(() => extractHandlers(p)).toThrow(/MethodDeclaration/)
+  })
+
+  it('동적 계산 키는 실패한다', () => {
+    const p = runnerFile(`const NAME = 'ceo:dynamic'
+const HANDLERS: Record<string, () => Promise<void>> = {
+  'ceo:ok': () => import('../ceo/ok.js').then(() => {}),
+  [NAME]: () => import('../ceo/dynamic.js').then(() => {}),
+}
+`)
+    expect(() => extractHandlers(p)).toThrow(/확정할 수 없는 계산된 키/)
+  })
+
+  it('정적 문자열 계산 키는 읽는다', () => {
+    const p = runnerFile(`const HANDLERS: Record<string, () => Promise<void>> = {
+  ['cmo:test']: () => import('../cmo/test.js').then(() => {}),
+}
+`)
+    expect(extractHandlers(p)).toEqual([{ key: 'cmo:test', importPath: '../cmo/test.js' }])
+  })
+
+  it('중복 키는 실패한다 — 런타임은 뒤엣것만 쓴다', () => {
+    const p = runnerFile(`const HANDLERS: Record<string, () => Promise<void>> = {
+  'ceo:dup': () => import('../ceo/first.js').then(() => {}),
+  'ceo:dup': () => import('../ceo/second.js').then(() => {}),
+}
+`)
+    expect(() => extractHandlers(p)).toThrow(/중복/)
+  })
+
+  it('오류 메시지에 파일과 줄 번호가 들어간다', () => {
+    const p = runnerFile(`const HANDLERS: Record<string, () => Promise<void>> = {
+  'ceo:ok': () => import('../ceo/ok.js').then(() => {}),
+  ...OTHER,
+}
+`)
+    expect(() => extractHandlers(p)).toThrow(/runner\.ts:3/)
+  })
+
+  it('HANDLERS 선언이 없으면 실패한다', () => {
+    expect(() => extractHandlers(runnerFile('export const NOTHING = {}\n'))).toThrow(/HANDLERS/)
+  })
+
+  it('실제 runner.ts 를 읽으면 79개이고 dawn-sheet-scrape 가 들어 있다', () => {
+    const handlers = extractHandlers()
+    expect(handlers).toHaveLength(79)
+    expect(handlers.map((h) => h.key)).toContain('community:dawn-sheet-scrape')
+  })
+})
+
+describe('workflowWithoutHandler — 역방향 가드', () => {
+  it('실제 저장소에는 없다', () => {
+    expect(buildReport().workflowWithoutHandler).toEqual([])
+  })
+
+  it('`skip:skip` 은 예약값이라 걸리지 않는다', () => {
+    // determine 스텝이 "이번엔 실행 안 함"을 표현하는 값. runner 로 넘어가지 않는다.
+    const keys = extractWorkflowKeys()
+    expect(keys.has('skip:skip'), '워크플로우는 실제로 이 값을 쓴다').toBe(true)
+    expect(buildReport().workflowWithoutHandler).not.toContain('skip:skip')
+  })
+
+  it('부르는데 없는 키가 있으면 실패로 판정한다', () => {
+    const report = { ...buildReport(), workflowWithoutHandler: ['cmo:knowledge-responder'] }
+    expect(isFailingReport(report)).toBe(true)
+  })
+
+  it('사유 붙은 orphan 만으로는 실패하지 않는다', () => {
+    const report = buildReport()
+    expect(report.orphaned.length).toBeGreaterThan(0)
+    expect(isFailingReport(report), '현재 저장소는 통과 상태여야 한다').toBe(false)
+  })
+})
+
