@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 /**
  * R6-E — `coo:moderator` false-green 회귀 테스트.
@@ -19,12 +23,12 @@ import { readFileSync } from 'node:fs'
 
 const executeMock = vi.fn()
 
-vi.mock('../../agents/core/db.js', () => ({
+vi.mock('../core/db.js', () => ({
   prisma: {},
   disconnect: vi.fn(async () => {}),
 }))
-vi.mock('../../agents/core/notifier.js', () => ({ notifyAdmin: vi.fn(async () => {}) }))
-vi.mock('../../agents/core/agent.js', () => ({
+vi.mock('../core/notifier.js', () => ({ notifyAdmin: vi.fn(async () => {}) }))
+vi.mock('../core/agent.js', () => ({
   BaseAgent: class {
     execute = executeMock
     protected async run() {
@@ -37,7 +41,7 @@ vi.mock('../../agents/core/agent.js', () => ({
 }))
 
 async function loadModerator() {
-  return import('../../agents/coo/moderator')
+  return import('../coo/moderator.js')
 }
 
 describe('coo:moderator — Promise 생명주기 계약', () => {
@@ -132,7 +136,7 @@ describe('coo:moderator — Promise 생명주기 계약', () => {
 })
 
 describe('runner 등록 형태 — 정적 검사', () => {
-  const runnerSrc = readFileSync('agents/cron/runner.ts', 'utf-8')
+  const runnerSrc = readFileSync(resolve(__dirname, '../cron/runner.ts'), 'utf-8')
 
   it("coo:moderator 는 m.main() 을 반환한다", () => {
     // `.then(() => {})` 로 되돌아가면 runner 가 import 만 기다리고 작업을 잘라 버린다.
@@ -142,8 +146,21 @@ describe('runner 등록 형태 — 정적 검사', () => {
     expect(line, 'then(() => {}) 은 완료를 기다리지 않는다').not.toContain('then(() => {})')
   })
 
+  it('direct-run 판별이 부분일치가 아니라 정확한 경로 비교다', () => {
+    // `includes('moderator')` 는 경로에 그 단어가 든 다른 진입점에서도 참이 되어
+    // runner 경로에서까지 이중 실행될 수 있다.
+    const src = readFileSync(resolve(__dirname, '../coo/moderator.ts'), 'utf-8')
+    // 주석에는 그 표현이 설명으로 등장하므로 **코드 줄만** 본다.
+    const code = src
+      .split('\n')
+      .filter((l) => !l.trimStart().startsWith('//') && !l.trimStart().startsWith('*'))
+      .join('\n')
+    expect(code, '부분일치 판별이 코드에 남아 있다').not.toContain("includes('moderator')")
+    expect(code).toMatch(/resolve\(entry\)\s*===\s*fileURLToPath\(import\.meta\.url\)/)
+  })
+
   it('moderator.ts 는 top-level 에서 execute 를 시작하지 않는다', () => {
-    const src = readFileSync('agents/coo/moderator.ts', 'utf-8')
+    const src = readFileSync(resolve(__dirname, '../coo/moderator.ts'), 'utf-8')
     const topLevelStart = /^\s*agent\.execute\(\)/m
     expect(topLevelStart.test(src), 'top-level 실행이 남아 있으면 import 부작용이 되살아난다').toBe(false)
     expect(src).toContain('export async function main()')

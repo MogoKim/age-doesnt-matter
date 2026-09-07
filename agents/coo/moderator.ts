@@ -1,3 +1,6 @@
+import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 import { BaseAgent } from '../core/agent.js'
 import { prisma, disconnect } from '../core/db.js'
 import { notifyAdmin } from '../core/notifier.js'
@@ -140,7 +143,11 @@ export async function main(): Promise<void> {
 
 // `tsx coo/moderator.ts` 로 직접 돌릴 때만 실행한다.
 // import 만으로 시작하면 runner 가 기다릴 Promise 가 다시 사라진다.
-const isDirect = process.argv[1]?.includes('moderator') ?? false
+//
+// 경로를 정확히 대조한다 — 파일명 부분일치(`includes('moderator')`)로 판정하면
+// 경로에 그 단어가 든 다른 진입점에서도 참이 되어 이중 실행이 된다.
+const entry = process.argv[1]
+const isDirect = entry !== undefined && resolve(entry) === fileURLToPath(import.meta.url)
 if (isDirect) {
   main()
     .then(() => disconnect())
