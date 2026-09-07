@@ -185,20 +185,31 @@ test.describe('시나리오 5: 접근성 + 시니어 친화 UI 검증', () => {
   })
 
   // ── 오프라인 배너 ──
+  /**
+   * `OfflineBanner` 는 `window` 의 online/offline **이벤트**로만 상태를 바꾼다.
+   * `context.setOffline(true)` 는 네트워크를 끊을 뿐 그 이벤트 발화를 보장하지 않아서,
+   * 예전 버전은 3초 안에 배너가 뜨는지를 `catch(() => false)` 로 재고 결과만 단언했다 —
+   * 타이밍이 어긋나면 제품이 멀쩡해도 실패했다.
+   *
+   * 이벤트를 명시적으로 쏴서 결정적으로 만든다. 배너의 계약은
+   * "offline 이벤트가 오면 뜨고 online 이 오면 사라진다" 이고, 그걸 그대로 검증한다.
+   */
   test('오프라인 상태 → 배너 노출', async ({ page, context }) => {
     await page.goto('/')
 
-    // 네트워크를 오프라인으로 변경
-    await context.setOffline(true)
-
-    // offline 이벤트 트리거 후 배너 확인
     const banner = page.getByText('인터넷 연결을 확인해주세요')
-    const bannerVisible = await banner.isVisible({ timeout: 3000 }).catch(() => false)
+    await expect(banner).toHaveCount(0) // 온라인에서는 없다
 
-    // 다시 온라인으로
-    await context.setOffline(false)
+    try {
+      await context.setOffline(true)
+      await page.evaluate(() => window.dispatchEvent(new Event('offline')))
+      await expect(banner).toBeVisible({ timeout: 10000 })
+    } finally {
+      // 배너를 띄운 채로 컨텍스트를 넘기면 뒤 테스트가 영향을 받는다.
+      await context.setOffline(false)
+      await page.evaluate(() => window.dispatchEvent(new Event('online'))).catch(() => {})
+    }
 
-    // 오프라인 배너가 보였어야 함
-    expect(bannerVisible).toBeTruthy()
+    await expect(banner).toHaveCount(0) // 복구되면 사라진다
   })
 })
