@@ -352,10 +352,13 @@ async function synthesize(checks: CheckItem[]): Promise<'PASS' | 'WARN' | 'FAIL'
  * 쓰지 않고 상세 메시지에 실패 사실을 함께 싣는다.
  */
 async function sendReport(report: AuditReport, env: ReturnType<typeof getEnv>, fatalNotes: string[] = []): Promise<void> {
-  const { verdict, checks, autoFixedCount } = report
+  const { checks, autoFixedCount } = report
+  // 기록이 실패했으면 판정이 무엇이었든 Slack 에서는 FAIL 로 보여준다.
+  // 이 메시지가 유일한 알림인데 제목이 ✅ PASS 면 아무도 열어보지 않는다.
+  const verdict = fatalNotes.length > 0 ? 'FAIL' : report.verdict
   const verdictIcon = verdict === 'PASS' ? '✅' : verdict === 'WARN' ? '⚠️' : '❌'
 
-  if (verdict === 'PASS' && fatalNotes.length === 0) {
+  if (verdict === 'PASS') {
     // 1줄 성공 메시지 — 기록이 정상일 때만 쓴다
     const line = [
       `*[Gate 2] ✅ 프로덕션 정상 — ${PROJECT_LABEL}*`,
@@ -390,7 +393,11 @@ async function sendReport(report: AuditReport, env: ReturnType<typeof getEnv>, f
 
   lines.push(DIVIDER)
 
-  if (verdict === 'FAIL') {
+  if (fatalNotes.length > 0) {
+    // 판정이 PASS/WARN 이어도 기록이 없으면 workflow 는 exit 1 로 죽는다.
+    // "경고 있음, 다음 배포 전 확인" 같은 문구로 미루게 두면 안 된다.
+    lines.push(`→ 기록 실패로 **workflow 실패 처리**됩니다. 즉시 확인이 필요합니다.`)
+  } else if (verdict === 'FAIL') {
     // 등록이 실패했는데 "등록됨"이라고 알리면, 아무도 안 보는 큐를 보러 간다.
     lines.push(
       report.adminQueueId !== undefined
@@ -413,11 +420,25 @@ async function escalateToAdmin(checks: CheckItem[], env: ReturnType<typeof getEn
   try {
     const item = await prisma.adminQueue.create({
       data: {
-        type: 'CONTENT_PUBLISH',
+        // QA 실패는 콘텐츠 게시 승인이 아니다. CONTENT_PUBLISH 로 넣으면
+        // 어드민 승인 큐에서 '게시 대기 글'과 섞여 성격이 다른 항목이 한 줄로 보인다.
+        type: 'SYSTEM_ACTION',
         status: 'PENDING',
         requestedBy: 'QA',
         title: `[Gate 2] 프로덕션 QA 실패 — ${env.commitSha}`,
-        payload: JSON.stringify({ failedItems, deployTime: env.deployTime, commitSha: env.commitSha }),
+        // description 은 스키마상 필수(기본값 없음)다. 빠지면 create 자체가 실패해
+        // 에스컬레이션이 통째로 사라진다.
+        description: [
+          `배포 감사에서 ${failedItems.length}개 문제가 발견됐습니다.`,
+          ...failedItems.map((item) => `- ${item}`),
+        ].join('\n'),
+        // payload 는 Json 컬럼이다. 문자열을 넣으면 JSON 안에 JSON 문자열이 들어가
+        // 어드민에서 파싱을 한 번 더 해야 한다.
+        payload: {
+          failedItems,
+          deployTime: env.deployTime,
+          commitSha: env.commitSha,
+        },
       },
     })
     return item.id

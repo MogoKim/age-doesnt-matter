@@ -265,7 +265,7 @@ function loggedCheck(name: string): { pass: boolean; warn?: boolean; detail: str
 }
 
 describe('결과 파일 파서 — 결함별 독립 재현', () => {
-  
+
   it('cron 파일만 없으면 크론 연결이 FAIL 이다 (workflow outcome 으로 통과시키지 않는다)', async () => {
     process.env.QA_CRON_RESULT = 'success'
     dir = makeResults({ 'cron-result.json': null })
@@ -416,7 +416,7 @@ describe('AI 가 필수 검사 실패를 뒤집지 못한다', () => {
 })
 
 describe('AdminQueue 실패 시 Slack 문구', () => {
-  
+
   it('등록 실패면 "등록됨" 이라고 알리지 않는다', async () => {
     dir = makeResults({ 'smoke-result.json': JSON.stringify({ passed: 0, failed: 3, checks: [] }) })
     adminQueueCreate.mockRejectedValue(new Error('queue down'))
@@ -467,8 +467,11 @@ describe('기록 실패를 Slack 이 반드시 알린다', () => {
     await main(dir).catch(() => {})
 
     const sent = String(sendSlackMessage.mock.calls[0][1])
-    expect(sent).toContain('WARN')
     expect(sent).toContain('BotLog 기록 실패')
+    // 판정은 WARN 이었지만 기록이 없으므로 표시는 FAIL 로 올라간다.
+    expect(sent.split('\n')[0]).toContain('FAIL')
+    // WARN 을 만든 검사 자체는 본문에 그대로 남는다.
+    expect(sent).toContain('flaky')
   })
 
   it('AdminQueue 와 BotLog 가 동시에 실패하면 Slack 에 둘 다 싣는다', async () => {
@@ -516,5 +519,85 @@ describe('테스트가 저장소 결과 파일을 건드리지 않는다', () =>
     }
     // 임시 디렉터리를 쓰므로 루트에는 애초에 생기지 않는다.
     expect(tmpDirs.length, '임시 디렉터리를 실제로 사용했는지').toBeGreaterThan(0)
+  })
+})
+
+describe('AdminQueue 레코드 형태', () => {
+  it('스키마 필수 필드와 타입을 지킨다', async () => {
+    dir = makeResults({ 'smoke-result.json': JSON.stringify({ passed: 0, failed: 3, checks: [] }) })
+
+    const { main } = await loadAudit()
+    await main(dir).catch(() => {})
+
+    const arg = adminQueueCreate.mock.calls[0][0] as { data: Record<string, unknown> }
+    const data = arg.data
+
+    // description 은 스키마상 필수(기본값 없음)다. 빠지면 create 가 통째로 실패해
+    // 에스컬레이션이 사라지는데, 예전엔 catch 로 삼켜져 드러나지도 않았다.
+    expect(data.description, 'description 이 없으면 create 가 실패한다').toBeTypeOf('string')
+    expect(String(data.description)).toContain('배포 감사에서')
+
+    // QA 실패는 콘텐츠 게시 승인이 아니다.
+    expect(data.type).toBe('SYSTEM_ACTION')
+
+    // payload 는 Json 컬럼 — 문자열을 넣으면 어드민이 파싱을 한 번 더 해야 한다.
+    expect(typeof data.payload, 'payload 는 객체여야 한다').toBe('object')
+    expect(data.payload).not.toBeNull()
+    const payload = data.payload as { failedItems?: unknown; commitSha?: unknown }
+    expect(Array.isArray(payload.failedItems)).toBe(true)
+    expect(payload).toHaveProperty('deployTime')
+    expect(payload).toHaveProperty('commitSha')
+  })
+})
+
+describe('기록 실패 시 Slack 표시 판정', () => {
+  it('판정이 PASS 여도 BotLog 가 실패하면 제목이 FAIL 이다', async () => {
+    // 이 메시지가 유일한 알림인데 제목이 ✅ PASS 면 아무도 열어보지 않는다.
+    dir = makeResults()
+    botLogCreate.mockRejectedValue(new Error('db down'))
+
+    const { main } = await loadAudit()
+    await main(dir).catch(() => {})
+
+    const sent = String(sendSlackMessage.mock.calls[0][1])
+    const title = sent.split('\n')[0]
+    expect(title).toContain('❌')
+    expect(title).toContain('FAIL')
+    expect(title).not.toContain('✅')
+    expect(title).not.toContain('PASS')
+  })
+
+  it('기록 실패 메시지의 판정 줄에 PASS·✅·"프로덕션 정상" 이 없다', async () => {
+    dir = makeResults()
+    botLogCreate.mockRejectedValue(new Error('db down'))
+
+    const { main } = await loadAudit()
+    await main(dir).catch(() => {})
+
+    const sent = String(sendSlackMessage.mock.calls[0][1])
+    // 성공 축약("프로덕션 정상") 자체를 쓰지 않는다.
+    expect(sent).not.toContain('프로덕션 정상')
+
+    // 판정을 말하는 줄에는 PASS·✅ 가 없어야 한다.
+    // 개별 검사 줄의 `✅ *스모크 테스트*` 는 "그 검사는 통과했다"는 정보라 남긴다 —
+    // 그걸 지우면 무엇이 멀쩡했는지 알 수 없어진다.
+    const verdictLines = sent.split('\n').filter((l) => l.includes('프로덕션 감사') || l.includes('→'))
+    for (const l of verdictLines) {
+      expect(l, `판정 줄에 성공 표시가 남았다: ${l}`).not.toContain('PASS')
+      expect(l, `판정 줄에 성공 표시가 남았다: ${l}`).not.toContain('✅')
+    }
+  })
+
+  it('기록 실패면 "경고 있음"이 아니라 workflow 실패를 알린다', async () => {
+    dir = makeResults({ 'ad-verify-result.json': JSON.stringify({ stats: { expected: 6, unexpected: 0, flaky: 2 } }) })
+    botLogCreate.mockRejectedValue(new Error('db down'))
+
+    const { main } = await loadAudit()
+    await main(dir).catch(() => {})
+
+    const sent = String(sendSlackMessage.mock.calls[0][1])
+    expect(sent).toContain('workflow 실패 처리')
+    expect(sent).toContain('즉시 확인')
+    expect(sent, '미뤄도 되는 것처럼 읽히면 안 된다').not.toContain('다음 배포 전 확인하세요')
   })
 })
