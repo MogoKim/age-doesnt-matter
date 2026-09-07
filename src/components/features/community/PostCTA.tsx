@@ -58,8 +58,9 @@ export default function PostCTA({ postId, postTitle, isLoggedIn }: PostCTAProps)
     setIsAndroid(android)
   }, [authKnown, resolvedIsLoggedIn, isTWA, isStandalone, isCapacitor])
 
-  // 노출 이벤트 — 실제 렌더되는 CTA에 대해서만 1회 전송
-  // (환경 가드 제거: 비회원 가입 CTA는 앱/TWA/standalone 포함 모든 환경에서 노출/기록.
+  // 마운트 이벤트이며 viewport 노출 이벤트가 아니다.
+  // IntersectionObserver 없이 이 effect 실행 시 1회 전송하므로 실제 노출률 계산에는 사용하지 않는다.
+  // (환경 가드 제거: 비회원 가입 CTA는 앱/TWA/standalone 포함 모든 환경에서 마운트/기록.
   //  회원 설치 CTA는 아래 installCtaVisible 가드(blocked에 isCapacitor·isTWA·isStandalone 포함)로 차단됨)
   useEffect(() => {
     if (loggedRef.current) return
