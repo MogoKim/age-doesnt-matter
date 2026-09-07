@@ -1,4 +1,5 @@
-// DISPATCH ONLY — Gate 2는 post-deploy-qa.yml(deployment_status)에서 자동 실행. 크론 미연결 의도적.
+// 크론 면제 대상이 아니다 — post-deploy-qa.yml 이 deployment_status 이벤트에서
+// `runner.ts qa deploy-audit` 를 직접 호출하므로 check-cron-links 가 연결로 잡는다.
 /**
  * QA 에이전트 — 프로덕션 배포 감사 (post-deploy)
  *
