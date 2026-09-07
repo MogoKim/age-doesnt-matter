@@ -8,6 +8,7 @@ import { checkAndPromotePost } from '@/lib/actions/promotion'
 import type { PostStatus, PromotionLevel, BoardType } from '@/generated/prisma/client'
 import { assertGreetingByMember } from '@/lib/greeting'
 import { BOARD_URL_PREFIX } from '@/lib/board-registry'
+import { revalidateJobPost, revalidateJobPostsBulk } from '@/lib/cache/job-cache'
 
 async function requireAdmin() {
   const session = await getAdminSession()
@@ -65,6 +66,7 @@ export async function adminSetPostPromotionLevel(postId: string, level: Promotio
   })
 
   revalidateServicePaths(existing?.boardType, postId)
+  if (existing?.boardType === 'JOB') revalidateJobPost(postId, { includeSitemap: false })
   revalidatePath('/admin/content')
   revalidatePath('/best')
 }
@@ -133,6 +135,7 @@ export async function adminBulkDeleteExpiredJobs() {
   })
 
   revalidateServicePaths('JOB')
+  revalidateJobPostsBulk()
   revalidatePath('/admin/content')
   return { deleted: ids.length }
 }
@@ -169,6 +172,8 @@ export async function adminUpdatePostStatus(postId: string, status: PostStatus) 
   })
 
   revalidateServicePaths(existing?.boardType, postId)
+  // 상태 변경은 sitemap 노출에도 영향을 준다
+  if (existing?.boardType === 'JOB') revalidateJobPost(postId)
   revalidatePath('/admin/content')
 }
 
@@ -194,6 +199,7 @@ export async function adminTogglePin(postId: string, isPinned: boolean) {
   })
 
   revalidateServicePaths(existing?.boardType, postId)
+  if (existing?.boardType === 'JOB') revalidateJobPost(postId, { includeSitemap: false })
   revalidatePath('/admin/content')
 }
 
@@ -222,6 +228,7 @@ export async function adminToggleFeatured(postId: string, isFeatured: boolean) {
   })
 
   revalidateServicePaths(existing?.boardType, postId)
+  if (existing?.boardType === 'JOB') revalidateJobPost(postId, { includeSitemap: false })
   revalidatePath('/admin/content')
 }
 
@@ -272,6 +279,9 @@ export async function adminBulkAction(
     if (bp) revalidatePath(`${bp}/${pid}`)
   }
 
+  // 일괄 변경은 대상이 다건이라 per-id 태그를 나열할 수 없다 → 전역 job-detail 사용
+  if (boardTypes.includes('JOB')) revalidateJobPostsBulk()
+
   revalidatePath('/admin/content')
 }
 
@@ -306,6 +316,7 @@ export async function adminUpdatePostContent(
 
   revalidatePath(`/admin/content/${postId}`)
   revalidateServicePaths(post.boardType, postId)
+  if (post.boardType === 'JOB') revalidateJobPost(postId)
 }
 
 export async function adminUpdateComment(commentId: string, content: string) {
@@ -417,4 +428,6 @@ export async function adminMovePost(
   revalidateTag('home-stories')
   revalidateTag('home-humor')
   revalidateTag('community-board-page')
+  // 이동 전·후 어느 쪽이든 JOB 이면 일자리 면도 갱신해야 한다
+  if (existing.boardType === 'JOB' || boardType === 'JOB') revalidateJobPost(postId)
 }

@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/admin-auth'
 import type { ReportAction } from '@/generated/prisma/client'
 import { BOARD_URL_PREFIX } from '@/lib/board-registry'
+import { revalidateJobPost } from '@/lib/cache/job-cache'
 
 async function requireAdmin() {
   const session = await getAdminSession()
@@ -54,6 +55,7 @@ export async function adminProcessReport(
         data: { status: action === 'DELETED' ? 'DELETED' : 'HIDDEN' },
       })
       revalidateServicePaths(report.post?.boardType, report.postId)
+      if (report.post?.boardType === 'JOB') revalidateJobPost(report.postId)
     }
     if (report.commentId) {
       await prisma.comment.update({

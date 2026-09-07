@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import type { ReportReason } from '@/generated/prisma/client'
+import { revalidateJobPost } from '@/lib/cache/job-cache'
 
 interface ReportResult {
   error?: string
@@ -70,7 +71,7 @@ export async function reportPost(
   // 신고 3회 누적 시 자동 숨김
   const updatedPost = await prisma.post.findUnique({
     where: { id: postId },
-    select: { reportCount: true, authorId: true },
+    select: { reportCount: true, authorId: true, boardType: true },
   })
   if (updatedPost && updatedPost.reportCount >= 3) {
     await prisma.$transaction([
@@ -87,6 +88,8 @@ export async function reportPost(
         },
       }),
     ])
+    // transaction 성공 후에만 무효화한다. 자동 숨김은 boardType 을 가리지 않으므로 JOB 도 대상이다.
+    if (updatedPost.boardType === 'JOB') revalidateJobPost(postId)
   }
 
   revalidatePath('/community')
