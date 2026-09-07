@@ -10,7 +10,10 @@ export default defineConfig({
     environment: 'happy-dom',
     globals: true,
     setupFiles: ['./src/__tests__/setup.ts'],
-    include: ['src/**/*.test.{ts,tsx}'],
+    // agents/ 도 포함한다 — runner↔에이전트의 Promise 계약처럼 agents 모듈을 실제로
+    // import 해야 검증되는 테스트가 있다. src 아래 두면 root tsconfig 가 agents 를
+    // 프로그램에 끌어들여 agents 의 기존 타입 오류가 typecheck 에서 터진다.
+    include: ['src/**/*.test.{ts,tsx}', 'agents/**/*.test.ts'],
     coverage: {
       provider: 'v8',
       include: ['src/lib/**/*.ts', 'src/types/**/*.ts'],

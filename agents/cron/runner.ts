@@ -45,7 +45,9 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cpo:journey-analyzer': () => import('../cpo/journey-analyzer.js').then(() => {}),
   'cfo:cost-tracker': () => import('../cfo/cost-tracker.js').then(() => {}),
   'cfo:revenue-tracker': () => import('../cfo/revenue-tracker.js').then(() => {}),
-  'coo:moderator': () => import('../coo/moderator.js').then(() => {}),
+  // main() 을 반환해야 runner 가 모더레이션 **완료까지** 기다린다.
+  // `.then(() => {})` 이면 import 만 끝나고 곧바로 disconnect + exit 해서 판정이 잘린다.
+  'coo:moderator': () => import('../coo/moderator.js').then((m) => m.main()),
   'coo:content-scheduler': () => import('../coo/content-scheduler.js').then(m => m.main()),
   'coo:job-scraper': () => import('../coo/job-scraper.js').then(m => m.main()),
   'coo:trending-scorer': () => import('../coo/trending-scorer.js').then(m => m.main()),

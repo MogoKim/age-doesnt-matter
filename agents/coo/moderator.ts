@@ -1,5 +1,8 @@
+import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 import { BaseAgent } from '../core/agent.js'
-import { prisma } from '../core/db.js'
+import { prisma, disconnect } from '../core/db.js'
 import { notifyAdmin } from '../core/notifier.js'
 import type { AgentResult } from '../core/types.js'
 
@@ -118,7 +121,40 @@ class COOModerator extends BaseAgent {
 }
 
 const agent = new COOModerator()
-agent.execute().then((result) => {
+
+/**
+ * 모더레이션 1회 실행. **작업이 끝나기 전에는 resolve 하지 않는다.**
+ *
+ * 예전에는 top-level 에서 `agent.execute().then(...)` 을 시작만 하고 그 Promise 를
+ * 아무도 들고 있지 않았다. runner 는 `import()` 가 끝나면 곧바로 disconnect + exit 해서
+ * 판정이 중간에 끊겼고, GHA 는 그걸 **success 로 기록**했다 —
+ * 로그에 `[Runner] coo:moderator 시작` 만 있고 완료 줄이 없던 이유다.
+ *
+ * `execute()` 는 run() 이 던진 에러를 삼키고 `success:false` 로 돌려준다.
+ * 그대로 두면 실패해도 exit 0 이라 초록불이 되므로 여기서 throw 해서 runner 로 올린다.
+ */
+export async function main(): Promise<void> {
+  const result = await agent.execute()
+  if (!result.success) {
+    throw new Error(`모더레이션 실패: ${result.error ?? result.summary}`)
+  }
   console.log('[COO] 모더레이션:', result.summary)
-  process.exit(0)
-})
+}
+
+// `tsx coo/moderator.ts` 로 직접 돌릴 때만 실행한다.
+// import 만으로 시작하면 runner 가 기다릴 Promise 가 다시 사라진다.
+//
+// 경로를 정확히 대조한다 — 파일명 부분일치(`includes('moderator')`)로 판정하면
+// 경로에 그 단어가 든 다른 진입점에서도 참이 되어 이중 실행이 된다.
+const entry = process.argv[1]
+const isDirect = entry !== undefined && resolve(entry) === fileURLToPath(import.meta.url)
+if (isDirect) {
+  main()
+    .then(() => disconnect())
+    .then(() => process.exit(0))
+    .catch(async (err) => {
+      console.error('[COO] 모더레이션 실패:', err instanceof Error ? err.message : String(err))
+      await disconnect().catch(() => {})
+      process.exit(1)
+    })
+}
