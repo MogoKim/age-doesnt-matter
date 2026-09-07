@@ -1,9 +1,11 @@
 // RLS 가시성 가드 — ops_board_ro 가 읽을 수 있는 테이블 집합이 의도와 같은지 검사한다.
 //
-// 배경: RLS 가 켜져 있고 유효한 SELECT 정책이 없는 테이블은 **에러 없이 0행**을 돌려준다.
+// 배경: RLS 가 켜져 있는데 현재 role 이 **전체 행을 읽을 수 없는** 테이블은
+//       에러 없이 0행(또는 일부 행)을 돌려준다.
 //       그래서 "데이터 없음"과 "안 보임"이 구분되지 않아 진단이 조용히 틀린다.
-//       db-probe.ts 는 "이 쿼리"를 막지만, 정책 없는 테이블이 **새로 생기는 것** 자체는 못 잡는다.
+//       db-probe.ts 는 "이 쿼리"를 막지만, 가려진 테이블이 **새로 생기는 것** 자체는 못 잡는다.
 //       이 스크립트가 그 drift 를 잡는다.
+//       판정 기준(RLS_BLOCKED_SQL)은 db-probe.ts 와 같은 모듈을 쓴다 — 두 곳이 어긋나지 않게 한다.
 //
 // 두 방향을 모두 실패로 본다.
 //   ① 예상 밖 테이블이 차단됨  → 새 테이블이 정책 없이 추가된 경우(진단이 조용히 틀어진다)
@@ -12,6 +14,7 @@
 // 실행: npx tsx scripts/check-rls-visibility.ts
 import { config } from 'dotenv'
 import pg from 'pg'
+import { RLS_BLOCKED_SQL } from './ops-board/probes/rls-visibility.js'
 
 config({ path: '.env.local' })
 
@@ -34,28 +37,6 @@ export const EXPECTED_BLOCKED = [
   'FcmToken',
   'AppHandoffToken',
 ] as const
-
-/** db-probe.ts 의 RLS_BLOCKED_SQL 과 동일 기준(유효한 SELECT/ALL 정책이 없는 RLS 테이블). */
-const RLS_BLOCKED_SQL = `
-  SELECT c.relname AS t
-  FROM pg_class c
-  JOIN pg_namespace n ON n.oid = c.relnamespace
-  WHERE n.nspname = 'public'
-    AND c.relkind = 'r'
-    AND c.relrowsecurity
-    AND NOT EXISTS (
-      SELECT 1
-      FROM pg_policies p
-      WHERE p.schemaname = 'public'
-        AND p.tablename = c.relname
-        AND p.cmd IN ('SELECT', 'ALL')
-        AND EXISTS (
-          SELECT 1 FROM unnest(p.roles) AS r
-          WHERE r = 'public' OR pg_has_role(current_user, r, 'MEMBER')
-        )
-    )
-  ORDER BY 1
-`
 
 export interface RlsVisibilityReport {
   expectedBlocked: string[]
