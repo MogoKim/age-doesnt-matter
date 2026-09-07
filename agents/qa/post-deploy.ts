@@ -20,7 +20,7 @@
  */
 
 import { readFileSync, existsSync } from 'fs'
-import { resolve, dirname } from 'path'
+import { resolve, dirname, resolve as pathResolve } from 'path'
 import { fileURLToPath } from 'url'
 import { execSync } from 'child_process'
 import Anthropic from '@anthropic-ai/sdk'
@@ -74,12 +74,14 @@ function getEnv() {
 
 function parseSmokeResult(): CheckItem {
   const path = resolve(ROOT, 'smoke-result.json')
+  // 결과 파일이 없으면 **검사를 못 한 것**이지 통과가 아니다.
+  // 예전에는 워크플로우 outcome 으로 대체했는데, 그건 "스텝이 죽지 않았다"에 답할 뿐
+  // "엔드포인트가 정상이다"에는 답하지 못한다.
   if (!existsSync(path)) {
-    const outcome = process.env.QA_SMOKE_RESULT
     return {
       name: '스모크 테스트',
-      pass: outcome === 'success',
-      detail: outcome === 'success' ? '8개 엔드포인트 정상' : `결과 파일 없음 (outcome: ${outcome ?? 'unknown'})`,
+      pass: false,
+      detail: `결과 파일 없음 (outcome: ${process.env.QA_SMOKE_RESULT ?? 'unknown'})`,
     }
   }
   try {
@@ -124,7 +126,8 @@ function parseCronResult(): CheckItem {
       detail: orphaned === 0 ? `${total}개 핸들러 전체 연결됨` : `orphaned ${orphaned}개 감지`,
     }
   } catch {
-    return { name: '크론 연결', pass: process.env.QA_CRON_RESULT === 'success', detail: '결과 파일 파싱 실패' }
+    // outcome 으로 대체하지 않는다 — 파싱 실패는 orphan 유무를 모른다는 뜻이다.
+    return { name: '크론 연결', pass: false, detail: '결과 파일 파싱 실패' }
   }
 }
 
@@ -153,7 +156,7 @@ function parseAdResult(): CheckItem {
       detail: failed === 0 ? `광고 ${expected}개 정상` : `${failed}개 실패`,
     }
   } catch {
-    return { name: '광고 렌더링', pass: outcome === 'success', detail: '결과 파일 파싱 실패' }
+    return { name: '광고 렌더링', pass: false, detail: '결과 파일 파싱 실패' }
   }
 }
 
@@ -193,7 +196,8 @@ async function checkCpoUx(): Promise<CheckItem> {
     const freshness = ageHours > 24 ? ` — ${Math.floor(ageHours)}시간 전 데이터` : ''
     return { name: 'CPO UX 점수', pass: true, detail: `${score}${prevScore ? ` (전날 ${prevScore}, ${drop >= 0 ? '+' : ''}${drop.toFixed(0)}%)` : ''}${freshness}` }
   } catch {
-    return { name: 'CPO UX 점수', pass: true, detail: 'DB 조회 실패 — 스킵' }
+    // 보조 지표라 FAIL 로 올리지 않는다. 다만 조용히 통과시키지도 않는다.
+    return { name: 'CPO UX 점수', pass: true, warn: true, detail: 'DB 조회 실패 — 확인 필요' }
   }
 }
 
@@ -218,48 +222,35 @@ async function checkRecentContent(): Promise<CheckItem & { autoFixedCount: numbe
       return { name: '콘텐츠 품질', pass: true, detail: '최근 1시간 내 새 글 없음', autoFixedCount: 0 }
     }
 
+    // Gate 2 는 **검사·기록·알림 전용**이다. 사용자 콘텐츠는 건드리지 않는다.
+    // 예전에는 여기서 JSON unwrap 을 prisma.post.update 로 바로 고쳤는데,
+    // 배포 감사가 게시글을 말없이 바꾸면 무엇이 원본이었는지 아무도 모른다.
+    // 발견한 문제는 check 결과와 AdminQueue 로만 올린다.
     const issues: string[] = []
-    let autoFixed = 0
 
     for (const post of posts) {
-      const hasJsonWrapped = post.content.includes('```json') || post.content.includes('```\n{')
-      const hasPlaceholder = ['이미지를 넣어주세요', 'placeholder', 'TODO'].some(p => post.content.includes(p))
-
-      if (hasJsonWrapped) {
-        // JSON unwrap 시도
-        try {
-          const match = post.content.match(/```json\n?([\s\S]+?)\n?```/)
-          if (match) {
-            await prisma.post.update({
-              where: { id: post.id },
-              data: { content: match[1].trim() },
-            })
-            autoFixed++
-          }
-        } catch { /* 수정 실패 무시 */ }
+      const label = `"${post.title.slice(0, 20)}"`
+      if (post.content.includes('```json') || post.content.includes('```\n{')) {
+        issues.push(`${label} — JSON 래핑된 본문`)
       }
-
-      if (hasPlaceholder) {
-        issues.push(`"${post.title.slice(0, 20)}" — placeholder 텍스트`)
+      if (['이미지를 넣어주세요', 'placeholder', 'TODO'].some(p => post.content.includes(p))) {
+        issues.push(`${label} — placeholder 텍스트`)
       }
     }
 
-    if (issues.length === 0 && autoFixed === 0) {
+    if (issues.length === 0) {
       return { name: '콘텐츠 품질', pass: true, detail: `최근 ${posts.length}건 정상`, autoFixedCount: 0 }
     }
 
     return {
       name: '콘텐츠 품질',
-      pass: issues.length === 0,
-      warn: autoFixed > 0 && issues.length === 0,
-      detail: [
-        autoFixed > 0 ? `${autoFixed}건 자동 수정됨(JSON unwrap)` : '',
-        issues.length > 0 ? `수동 확인 필요 ${issues.length}건` : '',
-      ].filter(Boolean).join(', '),
-      autoFixedCount: autoFixed,
+      pass: false,
+      detail: `수동 확인 필요 ${issues.length}건: ${issues.slice(0, 2).join(' / ')}`,
+      autoFixedCount: 0,
     }
   } catch {
-    return { name: '콘텐츠 품질', pass: true, detail: 'DB 조회 실패 — 스킵', autoFixedCount: 0 }
+    // 보조 검사라 WARN — 다만 '스킵'으로 조용히 통과시키지 않는다.
+    return { name: '콘텐츠 품질', pass: true, warn: true, detail: 'DB 조회 실패 — 확인 필요', autoFixedCount: 0 }
   }
 }
 
@@ -365,8 +356,10 @@ async function escalateToAdmin(checks: CheckItem[], env: ReturnType<typeof getEn
       },
     })
     return item.id
-  } catch {
-    return undefined
+  } catch (err) {
+    // 조용히 undefined 를 돌려주면 FAIL 인데 아무도 모르는 상태가 된다.
+    // 다만 여기서 바로 던지면 BotLog 기록까지 막히므로 호출부가 모아서 처리한다.
+    throw new Error(`AdminQueue 등록 실패: ${err instanceof Error ? err.message : String(err)}`)
   }
 }
 
@@ -393,68 +386,103 @@ async function logResult(report: AuditReport, durationMs: number, env: ReturnTyp
 // 메인
 // ---------------------------------------------------------------------------
 
-async function main() {
+/**
+ * Gate 2 배포 감사 1회. **검사·기록·알림 전용** — 사용자 콘텐츠를 바꾸지 않는다.
+ *
+ * 이 함수는 `process.exit` 도 `disconnect` 도 하지 않는다. 둘 다 runner 담당이다.
+ * 예전에는 모듈이 top-level 에서 스스로 실행하고 exit 까지 해서,
+ * runner 의 exit code 계약을 우회하고 완료 대기도 불가능했다.
+ *
+ * 실패 정책:
+ *   · verdict FAIL      → throw (runner exit 1)
+ *   · AdminQueue 실패   → 치명. 단 BotLog 기록 시도를 막지 않는다
+ *   · BotLog 실패       → 치명. 기록이 없으면 감사 자체가 없던 일이 된다
+ *   · Slack 실패        → 비치명. BotLog 는 계속 시도한다
+ *   · 보조 조회 실패    → WARN (checks 안에서 처리)
+ * 치명 오류가 여러 개면 **가능한 기록을 모두 시도한 뒤** 모아서 던진다.
+ */
+export async function main(): Promise<void> {
   const start = Date.now()
   const env = getEnv()
 
   console.log(`[Gate 2] 프로덕션 배포 감사 시작 — 커밋: ${env.commitSha}`)
 
   const checks: CheckItem[] = []
-  let totalAutoFixed = 0
 
-  // 1. 스모크 테스트
   const smoke = parseSmokeResult()
   checks.push(smoke)
   console.log(`[Gate 2] 스모크: ${smoke.pass ? '✅' : '❌'} ${smoke.detail}`)
 
-  // 2. 크론 연결
   const cron = parseCronResult()
   checks.push(cron)
   console.log(`[Gate 2] 크론 연결: ${cron.pass ? '✅' : '❌'} ${cron.detail}`)
 
-  // 3. 광고
   const ad = parseAdResult()
   checks.push(ad)
   console.log(`[Gate 2] 광고: ${ad.pass ? '✅' : '❌'} ${ad.detail}`)
 
-  // 4. CPO UX 점수
   const cpoUx = await checkCpoUx()
   checks.push(cpoUx)
   console.log(`[Gate 2] CPO UX: ${cpoUx.pass ? '✅' : '❌'}${cpoUx.warn ? '⚠️' : ''} ${cpoUx.detail}`)
 
-  // 5. 콘텐츠 품질
   const content = await checkRecentContent()
-  totalAutoFixed += content.autoFixedCount
   checks.push(content)
   console.log(`[Gate 2] 콘텐츠: ${content.pass ? '✅' : '❌'}${content.warn ? '⚠️' : ''} ${content.detail}`)
 
-  // 6. AI 종합 판단
   const verdict = await synthesize(checks)
   console.log(`[Gate 2] 판정: ${verdict}`)
 
-  const report: AuditReport = { verdict, checks, autoFixedCount: totalAutoFixed }
+  const report: AuditReport = { verdict, checks, autoFixedCount: 0 }
+  const fatal: string[] = []
 
-  // AdminQueue 에스컬레이션 (FAIL 시)
+  // 1) AdminQueue — 실패해도 아래 기록을 계속 시도한다
   if (verdict === 'FAIL') {
-    report.adminQueueId = await escalateToAdmin(checks, env)
-    if (report.adminQueueId) {
+    try {
+      report.adminQueueId = await escalateToAdmin(checks, env)
       console.log(`[Gate 2] AdminQueue #${report.adminQueueId} 등록됨`)
+    } catch (err) {
+      fatal.push(err instanceof Error ? err.message : String(err))
     }
   }
 
   const durationMs = Date.now() - start
 
+  // 2) Slack — 비치명. BotLog 와 **같은 try 에 두지 않는다**.
+  //    예전에는 한 블록이라 Slack 이 죽으면 BotLog 기록까지 통째로 건너뛰었다.
   try {
     await sendReport(report, env)
+  } catch (err) {
+    console.error('[Gate 2] Slack 보고 실패(비치명):', err instanceof Error ? err.message : String(err))
+  }
+
+  // 3) BotLog — 치명. 이 기록이 없으면 감사를 돌린 흔적이 남지 않는다.
+  try {
     await logResult(report, durationMs, env)
   } catch (err) {
-    console.error('[Gate 2] DB/Slack 기록 실패:', err)
-  } finally {
-    await disconnect()
+    fatal.push(`BotLog 기록 실패: ${err instanceof Error ? err.message : String(err)}`)
   }
 
   console.log(`[Gate 2] 완료 — ${verdict} (${durationMs}ms)`)
-  process.exit(verdict === 'FAIL' ? 1 : 0)
+
+  if (fatal.length > 0) {
+    throw new Error(`[Gate 2] 치명 오류 ${fatal.length}건: ${fatal.join(' | ')}`)
+  }
+  if (verdict === 'FAIL') {
+    const failed = checks.filter((c) => !c.pass).map((c) => c.name).join(', ')
+    throw new Error(`[Gate 2] 배포 감사 FAIL — ${failed}`)
+  }
 }
 
-main()
+// `tsx qa/post-deploy.ts` 로 직접 돌릴 때만 실행한다.
+// 경로를 정확히 대조한다 — 부분일치로 판정하면 다른 진입점에서도 참이 되어 이중 실행이 된다.
+const entry = process.argv[1]
+const isDirect = entry !== undefined && pathResolve(entry) === fileURLToPath(import.meta.url)
+if (isDirect) {
+  main()
+    .then(async () => { await disconnect(); process.exit(0) })
+    .catch(async (err) => {
+      console.error('[Gate 2]', err instanceof Error ? err.message : String(err))
+      await disconnect().catch(() => {})
+      process.exit(1)
+    })
+}

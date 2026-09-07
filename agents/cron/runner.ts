@@ -27,6 +27,9 @@ const MONITORING_TASKS = new Set([
   'cafe:session-refresh',  // LOCKED 상태에서도 세션 유지 필수 (크롤러 재가동 보장)
   'cmo:seo-snapshot',      // read-only 관측 — 자동화 중단 중에도 SEO 추이는 계속 봐야 한다
   'coo:moderator',         // 안전 기능(금지어 감지·숨김, 헌법 auto_allowed) — automation_status=PAUSED/LOCKED 에서도 유지 (Rescue R4, 2026-09-05)
+  // 배포 감사는 검사·기록·알림만 한다(콘텐츠 write 없음). 자동화를 멈춘 것과
+  // 배포 품질 확인을 멈추는 것은 다른 결정이다 — PAUSED 라고 무검증 배포를 내보낼 이유가 없다.
+  'qa:deploy-audit',
 ])
 
 const HANDLERS: Record<string, () => Promise<void>> = {
@@ -137,7 +140,9 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   // DISPATCH ONLY — Gate 1은 /done 스킬에서 자동 실행, 독립 실행 시에만 이 핸들러 사용
   'qa:code-gate': () => import('../qa/pre-deploy-gate.js').then(() => {}),
   // Gate 2: post-deploy-qa.yml에서 자동 실행 (Vercel 배포 완료 후)
-  'qa:deploy-audit': () => import('../qa/post-deploy.js').then(() => {}),
+  // main() 을 반환해야 runner 가 감사 **완료까지** 기다린다.
+  // 예전엔 `.then(() => {})` 이라 import 만 끝나고 곧바로 disconnect + exit 했다.
+  'qa:deploy-audit': () => import('../qa/post-deploy.js').then((m) => m.main()),
   // LOCAL ONLY — 매일 02:00 KST launchd, NID_SES 5일 이내 만료 시 자동 갱신
   // NID_AUT(~1년)로 headless Playwright naver.com 접속 → 새 NID_SES 획득
   // 실패 시: SESSION_HALTED 플래그 + #대시보드/#시스템/#qa 3채널 긴급 알림
