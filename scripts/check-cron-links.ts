@@ -15,6 +15,16 @@ const RUNNER_PATH = join(ROOT, 'agents/cron/runner.ts')
 const WORKFLOWS_DIR = join(ROOT, '.github/workflows')
 
 /**
+ * 핸들러 키에 쓰이는 문자 범위.
+ *
+ * 이 제한이 파서의 방어선이다. `\S+` 로 받으면 한국어 산문·`${{ ... }}` 템플릿·
+ * `$INPUT_AGENT` 같은 셸 변수까지 키로 둔갑한다. 실제로
+ * `- name: Run Content Curator (45분 간격 5건 — runner.ts 25분 중복 방지 내장)`
+ * 이 `25분:중복` 이라는 키를 만들었다.
+ */
+const KEY_TOKEN = '[a-z0-9:_-]+'
+
+/**
  * 워크플로우에서 핸들러 키를 뽑는 패턴.
  *
  * `CRON_LINK_ANNOTATION` 은 주석인데도 연결로 **인정한다**. 워크플로우가
@@ -22,11 +32,15 @@ const WORKFLOWS_DIR = join(ROOT, '.github/workflows')
  * 정하면 정적 스캔으로는 키를 알 수 없어서, 저장소가 쓰는 기존 규약이다.
  * 그 외 주석 줄은 전부 버린다 — 예전에는 주석 처리된 `echo "agent=..."` 를 세는 바람에
  * launchd 로 이관해 GHA 를 껐는데도 "연결됨"으로 나왔다(cafe_crawler:magazine-generate).
+ *
+ * `RUNNER_CALL` 은 **실제 셸 실행 형식만** 인정한다 — `tsx <경로>runner.ts a b`.
+ * `runner.ts` 라는 글자만 찾으면 그 이름을 언급하는 YAML `name:` 설명문까지 걸린다.
+ * 동적 인자(`${{ ... }}`)는 KEY_TOKEN 에 걸러지고, 그런 워크플로우는 위 규약으로 고정한다.
  */
-const CRON_LINK_ANNOTATION = /^\s*#\s*cron-link-check:\s*runner\.ts\s+(\S+)\s+(\S+)/
-const RUNNER_CALL = /runner\.ts\s+(\S+)\s+(\S+)/g
-const ECHO_AGENT = /echo\s+["']agent=([^"'\s]+)["']/g
-const ECHO_TASK = /echo\s+["']task=([^"'\s]+)["']/g
+const CRON_LINK_ANNOTATION = new RegExp(`^\\s*#\\s*cron-link-check:\\s*runner\\.ts\\s+(${KEY_TOKEN})\\s+(${KEY_TOKEN})`, 'i')
+const RUNNER_CALL = new RegExp(`tsx\\s+\\S*runner\\.ts\\s+(${KEY_TOKEN})\\s+(${KEY_TOKEN})`, 'gi')
+const ECHO_AGENT = new RegExp(`echo\\s+["']agent=(${KEY_TOKEN})["']`, 'gi')
+const ECHO_TASK = new RegExp(`echo\\s+["']task=(${KEY_TOKEN})["']`, 'gi')
 
 /**
  * 크론 미연결이 의도적임을 알리는 면제 표기.
@@ -80,8 +94,6 @@ export function extractWorkflowKeys(workflowsDir: string = WORKFLOWS_DIR): Set<s
   for (const file of files) {
     const lines = readFileSync(join(workflowsDir, file), 'utf-8').split('\n')
 
-    // 주석을 걷어낸 '실행되는 줄'만 남긴다. 규약 주석은 따로 먼저 건진다.
-    const executable: string[] = []
     for (const line of lines) {
       const annotated = CRON_LINK_ANNOTATION.exec(line)
       if (annotated) {
@@ -90,25 +102,25 @@ export function extractWorkflowKeys(workflowsDir: string = WORKFLOWS_DIR): Set<s
       }
       // 줄 전체가 주석이면 버린다. 뒤에 붙은 주석(`... ;; # 중단`)은 앞부분이 살아 있으므로 남긴다.
       if (line.trimStart().startsWith('#')) continue
-      executable.push(line)
-    }
-    const content = executable.join('\n')
 
-    let m: RegExpExecArray | null
-    RUNNER_CALL.lastIndex = 0
-    while ((m = RUNNER_CALL.exec(content)) !== null) {
-      keys.add(`${m[1].toLowerCase()}:${m[2]}`)
-    }
+      let m: RegExpExecArray | null
+      RUNNER_CALL.lastIndex = 0
+      while ((m = RUNNER_CALL.exec(line)) !== null) {
+        keys.add(`${m[1].toLowerCase()}:${m[2]}`)
+      }
 
-    // determine 스텝의 출력 쌍 — 등장 순서로 짝짓는다.
-    const agents: string[] = []
-    const tasks: string[] = []
-    ECHO_AGENT.lastIndex = 0
-    ECHO_TASK.lastIndex = 0
-    while ((m = ECHO_AGENT.exec(content)) !== null) agents.push(m[1].toLowerCase())
-    while ((m = ECHO_TASK.exec(content)) !== null) tasks.push(m[1])
-    for (let i = 0; i < Math.min(agents.length, tasks.length); i++) {
-      keys.add(`${agents[i]}:${tasks[i]}`)
+      // determine 스텝의 출력 쌍 — **같은 줄**에 있을 때만 묶는다.
+      // 파일 전체를 배열로 모아 순서로 짝지으면, 서로 다른 step·분기에 흩어진
+      // agent 와 task 가 남남끼리 엮여 있지도 않은 조합이 연결로 잡힌다.
+      const agents: string[] = []
+      const tasks: string[] = []
+      ECHO_AGENT.lastIndex = 0
+      ECHO_TASK.lastIndex = 0
+      while ((m = ECHO_AGENT.exec(line)) !== null) agents.push(m[1].toLowerCase())
+      while ((m = ECHO_TASK.exec(line)) !== null) tasks.push(m[1])
+      for (let i = 0; i < Math.min(agents.length, tasks.length); i++) {
+        keys.add(`${agents[i]}:${tasks[i]}`)
+      }
     }
   }
   return keys

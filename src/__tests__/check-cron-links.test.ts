@@ -117,6 +117,54 @@ describe('extractWorkflowKeys — 워크플로우에서 키를 뽑는 규칙', (
     expect(keys.has('community:dawn-sheet-cleanup')).toBe(true)
   })
 
+  it('YAML name: 의 설명문 속 runner.ts 는 키로 뽑지 않는다', () => {
+    // 실제 저장소 줄(agents-cafe-hourly-curation.yml:119). `runner.ts` 라는 글자만 찾으면
+    // 이 한국어 산문에서 `25분:중복` 이라는 키가 나온다.
+    const dir = workflowDir({
+      'a.yml': '      - name: Run Content Curator (45분 간격 5건 — runner.ts 25분 중복 방지 내장)\n',
+    })
+    const keys = extractWorkflowKeys(dir)
+    expect(keys.has('25분:중복')).toBe(false)
+    expect([...keys]).toEqual([])
+  })
+
+  it('셸 실행 형식이 아니면 인정하지 않는다 — tsx 로 실행되는 것만 호출이다', () => {
+    const dir = workflowDir({
+      'a.yml': [
+        '      - name: runner.ts qa deploy-audit 를 설명하는 문장',
+        '        run: cd agents && npx tsx cron/runner.ts coo moderator',
+      ].join('\n'),
+    })
+    const keys = extractWorkflowKeys(dir)
+    expect(keys.has('coo:moderator'), '실제 실행은 잡아야 한다').toBe(true)
+    expect(keys.has('qa:deploy-audit'), '설명문은 잡으면 안 된다').toBe(false)
+  })
+
+  it('동적 인자는 키로 뽑지 않는다', () => {
+    const dir = workflowDir({
+      'a.yml': [
+        '        run: cd agents && npx tsx cron/runner.ts ${{ steps.determine.outputs.agent }} ${{ steps.determine.outputs.task }}',
+        '            echo "agent=$INPUT_AGENT" >> $GITHUB_OUTPUT',
+        '            echo "task=$INPUT_TASK" >> $GITHUB_OUTPUT',
+      ].join('\n'),
+    })
+    // 런타임에 정해지는 값이라 정적으로는 알 수 없다. 이런 워크플로우는 cron-link-check 규약으로 고정한다.
+    expect([...extractWorkflowKeys(dir)]).toEqual([])
+  })
+
+  it('서로 다른 줄에 흩어진 agent/task 는 묶지 않는다', () => {
+    // 파일 전체를 배열로 모아 순서로 짝지으면 남남끼리 엮여 없는 조합이 연결로 잡힌다.
+    const dir = workflowDir({
+      'a.yml': [
+        '              "0 1 * * *")',
+        '                echo "agent=ceo" >> $GITHUB_OUTPUT ;;',
+        '              "0 2 * * *")',
+        '                echo "task=kpi-collector" >> $GITHUB_OUTPUT ;;',
+      ].join('\n'),
+    })
+    expect([...extractWorkflowKeys(dir)], 'ceo:kpi-collector 는 존재하지 않는 조합이다').toEqual([])
+  })
+
   it('설명 문장 속 runner.ts 는 키로 뽑지 않는다', () => {
     // push-scheduled.yml 의 안내 주석이 `등록·check-cron-links:대상` 같은 가짜 키를 만들던 문제.
     const dir = workflowDir({
