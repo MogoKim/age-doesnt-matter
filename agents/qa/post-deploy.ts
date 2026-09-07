@@ -104,60 +104,96 @@ function parseSmokeResult(): CheckItem {
 // 2. 크론 연결 결과
 // ---------------------------------------------------------------------------
 
+/**
+ * `cron-result.json` = `scripts/check-cron-links.ts` 의 JSON 리포트.
+ *
+ * 실패 기준은 **사유 없는 것 세 종류뿐**이다. `orphaned` 배열 자체는 실패가 아니다 —
+ * `DISPATCH ONLY`·`LOCAL ONLY` 로 크론 미연결이 의도된 핸들러가 33개 들어 있고,
+ * 그걸 실패로 세면 Gate 2 가 영원히 빨간불이다.
+ * 예전에는 로그 텍스트를 정규식으로 긁어 `❌.*orphaned` 개수를 셌는데,
+ * 출력 형식이 조금만 바뀌어도 조용히 0을 세고 통과했다.
+ */
 function parseCronResult(): CheckItem {
+  const name = '크론 연결'
   const path = resolve(ROOT, 'cron-result.json')
+  // 파일이 없으면 검사를 못 한 것이다. 워크플로우 outcome 으로 대체하지 않는다.
   if (!existsSync(path)) {
-    const outcome = process.env.QA_CRON_RESULT
-    return {
-      name: '크론 연결',
-      pass: outcome === 'success',
-      detail: outcome === 'success' ? '전체 연결됨' : `결과 파일 없음 (outcome: ${outcome ?? 'unknown'})`,
-    }
+    return { name, pass: false, detail: `결과 파일 없음 (outcome: ${process.env.QA_CRON_RESULT ?? 'unknown'})` }
+  }
+  let report: {
+    total?: unknown
+    unlinkedWithoutReason?: unknown
+    workflowWithoutHandler?: unknown
+    launchdOrphans?: unknown
   }
   try {
-    const raw = readFileSync(path, 'utf-8')
-    // check-cron-links.ts 출력에서 orphaned 감지
-    const orphaned = (raw.match(/❌.*orphaned/gi) ?? []).length
-    const handlersMatch = raw.match(/(\d+)개 핸들러/)
-    const total = handlersMatch ? handlersMatch[1] : '?'
-    return {
-      name: '크론 연결',
-      pass: orphaned === 0,
-      detail: orphaned === 0 ? `${total}개 핸들러 전체 연결됨` : `orphaned ${orphaned}개 감지`,
-    }
+    report = JSON.parse(readFileSync(path, 'utf-8')) as typeof report
   } catch {
-    // outcome 으로 대체하지 않는다 — 파싱 실패는 orphan 유무를 모른다는 뜻이다.
-    return { name: '크론 연결', pass: false, detail: '결과 파일 파싱 실패' }
+    return { name, pass: false, detail: '결과 파일 파싱 실패' }
   }
+
+  const asArray = (v: unknown): unknown[] | null => (Array.isArray(v) ? v : null)
+  const unlinked = asArray(report.unlinkedWithoutReason)
+  const noHandler = asArray(report.workflowWithoutHandler)
+  const launchd = asArray(report.launchdOrphans)
+
+  // 필드가 없거나 배열이 아니면 판정 불가 — 통과시키지 않는다.
+  if (unlinked === null || noHandler === null || launchd === null) {
+    return { name, pass: false, detail: '결과 형식이 예상과 다름 — 판정 불가' }
+  }
+
+  const problems = [
+    unlinked.length > 0 ? `사유 없는 orphan ${unlinked.length}개` : '',
+    noHandler.length > 0 ? `핸들러 없는 workflow 키 ${noHandler.length}개` : '',
+    launchd.length > 0 ? `launchd orphan ${launchd.length}개` : '',
+  ].filter(Boolean)
+
+  const total = typeof report.total === 'number' ? report.total : '?'
+  return problems.length === 0
+    ? { name, pass: true, detail: `${total}개 핸들러 — 사유 없는 미연결 없음` }
+    : { name, pass: false, detail: problems.join(', ') }
 }
 
-// ---------------------------------------------------------------------------
-// 3. 광고 렌더링 결과
-// ---------------------------------------------------------------------------
-
+/**
+ * `ad-verify-result.json` = Playwright JSON reporter 출력.
+ *
+ * 판정은 `stats.unexpected` 로 한다 — Playwright 의 실패 카운터는 `failed` 가 아니다.
+ * 없는 필드를 읽어 `?? 0` 으로 떨어뜨리면 **몇 개가 깨졌든 항상 0** 이 되어 통과한다.
+ *
+ * flaky(재시도 끝에 통과)는 **WARN** 으로 둔다 — 광고가 결국 떴으므로 배포를 막을 근거는
+ * 아니지만, 조용히 PASS 로 묻으면 불안정이 쌓이는 걸 아무도 모른다.
+ */
 function parseAdResult(): CheckItem {
-  const outcome = process.env.QA_AD_VERIFY_RESULT
+  const name = '광고 렌더링'
   const path = resolve(ROOT, 'ad-verify-result.json')
   if (!existsSync(path)) {
-    return {
-      name: '광고 렌더링',
-      pass: outcome === 'success',
-      detail: outcome === 'success' ? 'AdSense/쿠팡 정상' : `결과 파일 없음 (outcome: ${outcome ?? 'unknown'})`,
-    }
+    return { name, pass: false, detail: `결과 파일 없음 (outcome: ${process.env.QA_AD_VERIFY_RESULT ?? 'unknown'})` }
   }
+  let report: { stats?: { expected?: unknown; unexpected?: unknown; flaky?: unknown } }
   try {
-    const raw = readFileSync(path, 'utf-8')
-    const report = JSON.parse(raw) as { stats?: { expected: number; failed: number } }
-    const failed = report.stats?.failed ?? 0
-    const expected = report.stats?.expected ?? 0
-    return {
-      name: '광고 렌더링',
-      pass: failed === 0,
-      detail: failed === 0 ? `광고 ${expected}개 정상` : `${failed}개 실패`,
-    }
+    report = JSON.parse(readFileSync(path, 'utf-8')) as typeof report
   } catch {
-    return { name: '광고 렌더링', pass: false, detail: '결과 파일 파싱 실패' }
+    return { name, pass: false, detail: '결과 파일 파싱 실패' }
   }
+
+  const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null)
+  const expected = num(report.stats?.expected)
+  const unexpected = num(report.stats?.unexpected)
+  const flaky = num(report.stats?.flaky) ?? 0
+
+  if (expected === null || unexpected === null) {
+    return { name, pass: false, detail: 'stats.expected/unexpected 없음 — 판정 불가' }
+  }
+  if (unexpected > 0) {
+    return { name, pass: false, detail: `${unexpected}개 실패` }
+  }
+  // 통과 0건은 "다 통과"가 아니라 "아무것도 안 돌았다" 이다.
+  if (expected === 0) {
+    return { name, pass: false, detail: '실행된 광고 검사가 0건 — 검사가 돌지 않았다' }
+  }
+  return flaky > 0
+    ? { name, pass: true, warn: true, detail: `광고 ${expected}개 정상, flaky ${flaky}개(재시도 후 통과)` }
+    : { name, pass: true, detail: `광고 ${expected}개 정상` }
 }
 
 // ---------------------------------------------------------------------------
@@ -258,16 +294,26 @@ async function checkRecentContent(): Promise<CheckItem & { autoFixedCount: numbe
 // 6. AI 종합 판단
 // ---------------------------------------------------------------------------
 
+/**
+ * 배포 가부를 가르는 필수 검사. 하나라도 실패하면 그것으로 끝이다.
+ * 판단을 AI 에 맡기지 않는다 — 모델이 필수 실패를 PASS/WARN 으로 뒤집으면
+ * 깨진 배포가 초록불로 나간다. AI 는 보조 지표만 있는 경계 케이스에서만 쓴다.
+ */
+const REQUIRED_CHECKS = ['스모크 테스트', '크론 연결', '광고 렌더링'] as const
+
 async function synthesize(checks: CheckItem[]): Promise<'PASS' | 'WARN' | 'FAIL'> {
   const failedCount = checks.filter(c => !c.pass).length
   const warnCount = checks.filter(c => c.warn).length
 
+  // 필수 검사 실패는 AI 호출 **이전에** 결정적으로 FAIL 이다.
+  const failedRequired = checks.filter(c => !c.pass && (REQUIRED_CHECKS as readonly string[]).includes(c.name))
+  if (failedRequired.length > 0) return 'FAIL'
+
   if (failedCount === 0 && warnCount === 0) return 'PASS'
   if (failedCount === 0 && warnCount > 0) return 'WARN'
 
-  // 스모크 실패 또는 2개 이상 실패 → 즉시 FAIL
-  const smokeCheck = checks.find(c => c.name === '스모크 테스트')
-  if (!smokeCheck?.pass || failedCount >= 2) return 'FAIL'
+  // 여기부터는 보조 검사만 실패한 경계 케이스다.
+  if (failedCount >= 2) return 'FAIL'
 
   // AI에게 판단 위임 (경계 케이스)
   try {
@@ -331,7 +377,12 @@ async function sendReport(report: AuditReport, env: ReturnType<typeof getEnv>): 
   lines.push(DIVIDER)
 
   if (verdict === 'FAIL') {
-    lines.push(`→ AdminQueue 등록됨. 즉시 확인이 필요합니다.`)
+    // 등록이 실패했는데 "등록됨"이라고 알리면, 아무도 안 보는 큐를 보러 간다.
+    lines.push(
+      report.adminQueueId !== undefined
+        ? `→ AdminQueue #${report.adminQueueId} 등록됨. 즉시 확인이 필요합니다.`
+        : `→ ⚠️ AdminQueue 등록 실패 — 이 메시지가 유일한 알림입니다. 즉시 확인이 필요합니다.`,
+    )
   } else {
     lines.push(`→ 경고 있음. 다음 배포 전 확인하세요.`)
   }
