@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { authenticateBot } from '@/lib/bot-auth'
 import { isBotWriteEnabled, logBotWriteBlocked, BOT_WRITE_BLOCKED_MESSAGE } from '@/lib/bot-write-gate'
 import { sanitizeHtml } from '@/lib/sanitize'
+import { revalidateJobCreated } from '@/lib/cache/job-cache'
 
 /** POST /api/bot/jobs — 일자리 발행 */
 export async function POST(req: NextRequest) {
@@ -54,6 +55,10 @@ export async function POST(req: NextRequest) {
       },
       include: { jobDetail: true },
     })
+
+    // DB write 성공 후에만 무효화한다. 새 postId 에는 상세 캐시 엔트리가 없으므로
+    // 목록·홈·sitemap 만 지운다(job-cache.ts revalidateJobCreated).
+    revalidateJobCreated()
 
     return NextResponse.json({ success: true, postId: post.id })
   } catch (err) {

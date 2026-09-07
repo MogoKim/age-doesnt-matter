@@ -55,6 +55,8 @@ export async function POST() {
     // 일자리 면 — SQL 로 JOB 글을 숨겨도 목록·홈 섹션이 그대로 남던 누락분(2026-09-06)
     'jobs-list',
     'home-jobs',
+    // 일자리 상세 — SQL 로 숨긴 공고가 최대 5분 stale 200 으로 남던 누락분(2026-09-07)
+    'job-detail',
   ]
   for (const tag of tags) revalidateTag(tag)
 

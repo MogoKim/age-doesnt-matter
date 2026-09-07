@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/admin-auth'
 import type { Grade, UserStatus } from '@/generated/prisma/client'
 import { BOARD_URL_PREFIX } from '@/lib/board-registry'
+import { revalidateJobPostsBulk } from '@/lib/cache/job-cache'
 
 export type UserPostItem = {
   id: string
@@ -87,6 +88,8 @@ export async function adminUpdateUserStatus(
     })
     const boardTypes = [...new Set(userPosts.map((p) => p.boardType))]
     for (const bt of boardTypes) revalidateServicePaths(bt)
+    // 회원 글에 JOB 이 섞여 있으면 일자리 캐시도 갱신한다(updateMany 라 대상 글 특정 불가 → 전역)
+    if (boardTypes.includes('JOB')) revalidateJobPostsBulk()
   }
 
   // 영구 차단 시 기존 글/댓글 전체 숨김 + 서비스 캐시 무효화
@@ -105,6 +108,8 @@ export async function adminUpdateUserStatus(
     })
     const boardTypes = [...new Set(userPosts.map((p) => p.boardType))]
     for (const bt of boardTypes) revalidateServicePaths(bt)
+    // 회원 글에 JOB 이 섞여 있으면 일자리 캐시도 갱신한다(updateMany 라 대상 글 특정 불가 → 전역)
+    if (boardTypes.includes('JOB')) revalidateJobPostsBulk()
   }
 
   // 제재 시 사용자에게 알림 발송

@@ -2,6 +2,7 @@ import { cache } from 'react'
 import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { postSelect, buildTextSearch, SearchField } from './posts.base'
+import { JOBS_LIST_TAG, JOB_DETAIL_TAG, jobDetailCacheTag } from '@/lib/cache/job-cache'
 
 /* ── 일자리 (홈용 간략) ── */
 
@@ -37,10 +38,12 @@ async function _getLatestJobs(limit = 5) {
     isUrgent: post.promotionLevel === 'HOT',
   }))
 }
+// 홈은 page.tsx의 getCachedJobs(home-jobs 태그)로 한 번 더 감싸지만
+// JobListBottom은 이 함수를 직접 부른다. jobs-list 태그를 붙여 두 경로의 갱신 시점을 맞춘다.
 export const getLatestJobs = unstable_cache(
   _getLatestJobs,
   ['latest-jobs'],
-  { revalidate: 60 },
+  { revalidate: 60, tags: [JOBS_LIST_TAG] },
 )
 
 /* ── 일자리 목록 (필터 지원) ── */
@@ -205,7 +208,7 @@ export async function getJobListPage(
 export const getCachedJobsPage = unstable_cache(
   () => getJobListPage({ skip: 0, limit: 12 }),
   ['jobs-list-page1'],
-  { revalidate: 120, tags: ['jobs-list'] },
+  { revalidate: 120, tags: [JOBS_LIST_TAG] },
 )
 
 /* ── 일자리 상세 ── */
@@ -236,66 +239,76 @@ export interface JobDetailItem {
 /** 공개 job 데이터만 cross-request 캐시 (userId 미포함 → 모든 방문자 공유) */
 export type JobDetailPublicItem = Omit<JobDetailItem, 'isLiked' | 'isScrapped'>
 
-export const getJobDetailPublic = unstable_cache(
-  async (postId: string): Promise<JobDetailPublicItem | null> => {
-    const post = await prisma.post.findUnique({
-      where: { id: postId, status: 'PUBLISHED', boardType: 'JOB' },
-      select: {
-        id: true,
-        title: true,
-        content: true,
-        viewCount: true,
-        likeCount: true,
-        commentCount: true,
-        createdAt: true,
-        seoTitle: true,
-        seoDescription: true,
-        jobDetail: {
-          select: {
-            company: true,
-            salary: true,
-            workHours: true,
-            workDays: true,
-            location: true,
-            region: true,
-            quickTags: true,
-            applyUrl: true,
-            pickPoints: true,
-          },
+async function _getJobDetailPublic(postId: string): Promise<JobDetailPublicItem | null> {
+  const post = await prisma.post.findUnique({
+    where: { id: postId, status: 'PUBLISHED', boardType: 'JOB' },
+    select: {
+      id: true,
+      title: true,
+      content: true,
+      viewCount: true,
+      likeCount: true,
+      commentCount: true,
+      createdAt: true,
+      seoTitle: true,
+      seoDescription: true,
+      jobDetail: {
+        select: {
+          company: true,
+          salary: true,
+          workHours: true,
+          workDays: true,
+          location: true,
+          region: true,
+          quickTags: true,
+          applyUrl: true,
+          pickPoints: true,
         },
       },
-    })
+    },
+  })
 
-    if (!post) return null
+  if (!post) return null
 
-    const pickPoints = Array.isArray(post.jobDetail?.pickPoints)
-      ? (post.jobDetail.pickPoints as Array<{ point: string; icon: string }>)
-      : []
+  const pickPoints = Array.isArray(post.jobDetail?.pickPoints)
+    ? (post.jobDetail.pickPoints as Array<{ point: string; icon: string }>)
+    : []
 
-    return {
-      id: post.id,
-      title: post.title,
-      content: post.content,
-      company: post.jobDetail?.company ?? '',
-      location: post.jobDetail?.location ?? '',
-      region: post.jobDetail?.region ?? '',
-      salary: post.jobDetail?.salary ?? '',
-      workHours: post.jobDetail?.workHours ?? null,
-      workDays: post.jobDetail?.workDays ?? null,
-      tags: post.jobDetail?.quickTags ?? [],
-      applyUrl: post.jobDetail?.applyUrl ?? null,
-      pickPoints,
-      viewCount: post.viewCount,
-      likeCount: post.likeCount,
-      commentCount: post.commentCount,
-      createdAt: post.createdAt.toISOString(),
-      seoTitle: post.seoTitle ?? null,
-      seoDescription: post.seoDescription ?? null,
-    }
-  },
-  ['job-detail-public'],
-  { revalidate: 300 },
-)
+  return {
+    id: post.id,
+    title: post.title,
+    content: post.content,
+    company: post.jobDetail?.company ?? '',
+    location: post.jobDetail?.location ?? '',
+    region: post.jobDetail?.region ?? '',
+    salary: post.jobDetail?.salary ?? '',
+    workHours: post.jobDetail?.workHours ?? null,
+    workDays: post.jobDetail?.workDays ?? null,
+    tags: post.jobDetail?.quickTags ?? [],
+    applyUrl: post.jobDetail?.applyUrl ?? null,
+    pickPoints,
+    viewCount: post.viewCount,
+    likeCount: post.likeCount,
+    commentCount: post.commentCount,
+    createdAt: post.createdAt.toISOString(),
+    seoTitle: post.seoTitle ?? null,
+    seoDescription: post.seoDescription ?? null,
+  }
+}
+
+/**
+ * TTL 300s 는 "아무도 안 건드린 공고"의 상한일 뿐이다.
+ * 상태·본문 변경 시 해당 글의 per-id 태그가 즉시 무효화된다(job-cache.ts).
+ * 전역 job-detail 태그는 일괄 변경처럼 대상 글을 특정할 수 없을 때 쓴다.
+ * getPostDetail 과 동일한 wrapper 패턴 — 외부 호출 시그니처와 반환값은 그대로다.
+ */
+export function getJobDetailPublic(postId: string): Promise<JobDetailPublicItem | null> {
+  return unstable_cache(
+    _getJobDetailPublic,
+    ['job-detail-public', postId],
+    { revalidate: 300, tags: [JOB_DETAIL_TAG, jobDetailCacheTag(postId)] },
+  )(postId)
+}
 
 export const getJobDetail = cache(async function getJobDetail(
   postId: string,
