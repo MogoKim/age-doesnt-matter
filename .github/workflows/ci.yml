@@ -257,6 +257,11 @@ jobs:
             src/__tests__/curator-empty-content.test.ts \
             src/__tests__/normalize-source-references.test.ts \
             src/__tests__/strip-cafe-boilerplate.test.ts
+      # agents/__tests__/ 는 src/** 밖이라 quality job(paths-filter: frontend) 이 안 잡는다.
+      # agents 모듈을 실제로 import 해야 검증되는 계약(runner↔에이전트 Promise 생명주기)이
+      # 여기 있으므로, agents 가 바뀐 PR 에서는 이 job 이 직접 돌린다.
+      - name: agents 회귀 테스트
+        run: npx vitest run agents
 
   # Step 6: 어드민 E2E — src/app/(admin)/** 변경 시
   e2e-admin:
