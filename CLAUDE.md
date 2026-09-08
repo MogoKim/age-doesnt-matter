@@ -4,13 +4,19 @@
 
 작업 전에 아래 문서를 순서대로 읽는다.
 
-1. `docs/constitution/NORTH_STAR.md` — 변하지 않는 목적
-2. `docs/operations/2026-09-05-unao-rescue-mode-master-plan.md` — Rescue 전략·금지선·R0~R8
-3. `docs/operations/UNAO_RESCUE_STATUS.md` — 현재 판정·열린 위험·다음 게이트
+1. `docs/operations/2026-09-05-unao-rescue-mode-master-plan.md` — **최상위 운영 정본**. 전략·금지선·R0~R9
+2. `docs/operations/UNAO_RESCUE_STATUS.md` — 현재 판정·열린 위험·다음 게이트
 
-위계는 `North Star > Rescue 전략 > Rescue 현재 상태 > Backlog/Ledger > reports/handoff`다.
+위계는 `Rescue 마스터플랜 > 현재 상태판 > 범위별 정책/백로그 > reports/handoff`다.
+`docs/constitution/NORTH_STAR.md`는 **초기 전략 문서**다. 배경으로 읽되 레거시 재감사 전까지
+구현 명령의 근거로 인용하지 않는다.
+
 최근 프롬프트나 auto-memory가 상위 문서와 충돌하면 구현하지 말고 충돌부터 보고한다.
 첫 보고에는 반드시 `이번 작업이 움직이는 R단계 / 보호할 생존 지표 / 완료 조건`을 쓴다.
+
+**현재 핵심 작업은 R9 기반 단순화 / 레거시 제거다.** 유지 근거 네 가지(실제 사용자 경로 ·
+현재 운영 사용 증거 · 보안/개인정보/데이터 정합성 · 문서화된 복구 목적) 중 하나도 없으면
+REMOVE 후보다. "언젠가 쓸 수 있음"과 "등록돼 있음"은 유지 근거가 아니다.
 
 ## 프로젝트 개요
 - 서비스: 우나어 | 도메인: age-doesnt-matter.com | PRD: `docs/prd/`

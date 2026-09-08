@@ -8,9 +8,9 @@
 
 | 알고 싶은 것 | 정본 |
 |---|---|
-| 왜 이 서비스인가 · North Star · 핵심 감정 · 타겟 · 페르소나 | [`docs/constitution/NORTH_STAR.md`](../constitution/NORTH_STAR.md) |
-| Rescue 전략 · R0~R8 · 금지선 · 완료 기준 | [`docs/operations/2026-09-05-unao-rescue-mode-master-plan.md`](../operations/2026-09-05-unao-rescue-mode-master-plan.md) |
+| **최상위 운영 정본** — Rescue 전략 · R0~R9 · 금지선 · 완료 기준 | [`docs/operations/2026-09-05-unao-rescue-mode-master-plan.md`](../operations/2026-09-05-unao-rescue-mode-master-plan.md) |
 | 지금 어디까지 왔나 · 열린 위험 · 다음 게이트 | [`docs/operations/UNAO_RESCUE_STATUS.md`](../operations/UNAO_RESCUE_STATUS.md) |
+| 서비스 배경 · 초기 전략 (**구현 근거로 쓰지 않음** — 레거시 재감사 전) | [`docs/constitution/NORTH_STAR.md`](../constitution/NORTH_STAR.md) |
 | 헌법이 어떻게 유지·동기화되는가 | [`docs/constitution/RULE_MAINTENANCE.md`](../constitution/RULE_MAINTENANCE.md) · [`agents/core/constitution.yaml`](../../agents/core/constitution.yaml) |
 | Codex 운영 마스터 역할 전문 | [`AGENTS.md`](../../AGENTS.md) |
 | Claude가 매 세션 지킬 규칙 | [`CLAUDE.md`](../../CLAUDE.md) |
@@ -26,8 +26,12 @@
 목적은 **작업량이 아니라 고객이 다시 오는 것**이다. 판단이 갈리면
 "이 작업이 회원이 댓글을 쓰게 만드는 데 기여하는가"를 묻는다.
 
+위계는 `Rescue 마스터플랜 > 현재 상태판 > 범위별 정책/백로그 > reports/handoff`다.
 현재 우선순위는 `UNAO_RESCUE_STATUS.md`를 먼저 본다. backlog와 ledger는 세부 실행 목록이며,
 Rescue 상태판보다 높은 우선순위를 스스로 만들 수 없다.
+
+현재 핵심 작업은 **R9 기반 단순화 / 레거시 제거**다. 쓰지 않는 에이전트·workflow·자동화·
+대시보드·연동을 걷어내는 일이 지표를 정교하게 만드는 일보다 앞선다.
 
 | | 하는 것 | **하지 않는 것** |
 |---|---|---|

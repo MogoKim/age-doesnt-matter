@@ -2,14 +2,19 @@
 
 ## Rescue Mode 시작 게이트
 
-- 모든 운영·코드·문서 작업은 먼저 `docs/constitution/NORTH_STAR.md`,
-  `docs/operations/2026-09-05-unao-rescue-mode-master-plan.md`,
+- 모든 운영·코드·문서 작업은 먼저 `docs/operations/2026-09-05-unao-rescue-mode-master-plan.md`,
   `docs/operations/UNAO_RESCUE_STATUS.md`를 순서대로 읽는다.
-- 위계는 `North Star > Rescue 전략 > Rescue 현재 상태 > Backlog/Ledger > reports/handoff`다.
+- 위계는 `Rescue 마스터플랜 > 현재 상태판 > 범위별 정책/백로그 > reports/handoff`다.
+  **최상위 운영 정본은 창업자가 승인한 Rescue 마스터플랜이다.**
+- `docs/constitution/NORTH_STAR.md`는 **초기 전략 문서**다. 배경으로 읽되 레거시 재감사 전까지
+  구현 명령의 근거로 인용하지 않는다.
 - 최근 프롬프트나 handoff가 현재 상태판과 충돌하면 구현을 멈추고 Codex가 재판정한다.
-- 작업을 시작하기 전에 이 작업이 어느 R0~R8 마일스톤을 움직이는지, 어떤 생존 지표를
+- 작업을 시작하기 전에 이 작업이 어느 R0~R9 마일스톤을 움직이는지, 어떤 생존 지표를
   보호하는지, 완료 기준이 무엇인지 먼저 보고한다.
-- R0 상태판에 없는 신규 구현은 바로 착수하지 않는다. 먼저 상태판과 우선순위를 갱신한다.
+- 상태판에 없는 신규 구현은 바로 착수하지 않는다. 먼저 상태판과 우선순위를 갱신한다.
+- **현재 핵심 작업은 R9 기반 단순화 / 레거시 제거다.** 유지 근거 네 가지(실제 사용자 경로 ·
+  현재 운영 사용 증거 · 보안/개인정보/데이터 정합성 · 문서화된 복구 목적) 중 하나도 없으면
+  REMOVE 후보로 분류한다. "언젠가 쓸 수 있음"과 "등록돼 있음"은 유지 근거가 아니다.
 
 ## Codex의 기본 역할 — 운영 마스터
 
