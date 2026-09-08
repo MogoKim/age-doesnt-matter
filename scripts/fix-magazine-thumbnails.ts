@@ -1,9 +1,13 @@
 /**
  * 매거진 썸네일 복구 스크립트
  *
- * 문제: 합성 썸네일 생성기(Playwright 기반)가 CI 에서 계속 실패해 thumbnailUrl 이 null 로 남았다.
- *       그 생성기는 폐기했다 — 지금은 원문/생성 이미지를 쓰고 누락분만 이 스크립트로 복구한다.
- *       하지만 히어로 이미지(DALL-E → R2)는 content HTML 안에 존재
+ * ⚠️ **수동 복구 도구다.** 크론·워크플로우·runner 어디에도 등록돼 있지 않다.
+ *    운영자가 필요할 때 직접 실행한다.
+ *
+ * 문제: 정상 경로에서는 magazine-generator 가 히어로 이미지 URL 을 thumbnailUrl 로 그대로 쓴다.
+ *       그런데 과거 합성 썸네일 생성기(Playwright 기반)가 CI 에서 계속 실패하던 시기에
+ *       thumbnailUrl 이 null 로 남은 글이 생겼다. 그 생성기는 폐기했다.
+ *       이때도 히어로 이미지(DALL-E → R2)는 content HTML 안에는 남아 있다.
  *
  * 해결: content HTML의 첫 번째 <img src="..."> R2 URL을 thumbnailUrl로 설정
  *

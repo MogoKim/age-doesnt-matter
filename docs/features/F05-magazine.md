@@ -106,7 +106,9 @@
 - 생성 엔진: `agents/cafe/magazine-generator.ts`
 - launchd 진입점: `agents/cafe/local-magazine-runner.ts`
 - 이미지 생성: `agents/cafe/local-image-generator.ts`
-- 썸네일: 원문/생성 이미지를 그대로 쓰고, 누락분은 `scripts/fix-magazine-thumbnails.ts` 로 사후 복구한다. **합성 썸네일 생성기는 없다.**
+- 썸네일: `agents/cafe/magazine-generator.ts` 가 **생성된 히어로 이미지 URL 을 `thumbnailUrl` 로 그대로 사용**한다(`thumbnailUrl = image?.url`).
+  `thumbnailUrl` 이 비면 운영자가 `scripts/fix-magazine-thumbnails.ts` 를 **수동 실행**해 본문 HTML 의 첫 R2 이미지로 백필한다(자동 실행 아님).
+  **별도 합성 썸네일 생성기는 없다.**
 - AI 프롬프트: `agents/magazine/prompt.ts`
 - 시리즈 계획: `agents/magazine/series-plan.ts`
 - CPS 매칭: `agents/cafe/cps-matcher.ts`
