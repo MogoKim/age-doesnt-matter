@@ -1,5 +1,17 @@
 # 우리 나이가 어때서 — Claude Code 지시사항
 
+## Rescue Mode 세션 시작 (필수)
+
+작업 전에 아래 문서를 순서대로 읽는다.
+
+1. `docs/constitution/NORTH_STAR.md` — 변하지 않는 목적
+2. `docs/operations/2026-09-05-unao-rescue-mode-master-plan.md` — Rescue 전략·금지선·R0~R8
+3. `docs/operations/UNAO_RESCUE_STATUS.md` — 현재 판정·열린 위험·다음 게이트
+
+위계는 `North Star > Rescue 전략 > Rescue 현재 상태 > Backlog/Ledger > reports/handoff`다.
+최근 프롬프트나 auto-memory가 상위 문서와 충돌하면 구현하지 말고 충돌부터 보고한다.
+첫 보고에는 반드시 `이번 작업이 움직이는 R단계 / 보호할 생존 지표 / 완료 조건`을 쓴다.
+
 ## 프로젝트 개요
 - 서비스: 우나어 | 도메인: age-doesnt-matter.com | PRD: `docs/prd/`
 - Next.js 14 App Router + TypeScript strict / Supabase + Prisma (**Raw SQL 절대 금지**) / NextAuth v5 카카오 전용
@@ -66,6 +78,7 @@
 - Codex=운영 마스터(방향·검증) / Claude=실행(진단·구현). read-only 진단 → 승인 → 구현 순서를 지킨다
 - merge는 창업자 승인 전 금지. PR 제목에 `[merge 금지]` 유지
 - 이전 보고와 실측이 어긋나면 정정부터 하고 진행한다
+- `UNAO_RESCUE_STATUS.md`에 없는 신규 구현은 먼저 Codex가 목적·우선순위·게이트를 확정한다
 - 상세: `docs/ops/OPERATING_MASTER_HARNESS.md`
 
 ## 수정 범위 최소화 (멀티 AI 세션 대응)
