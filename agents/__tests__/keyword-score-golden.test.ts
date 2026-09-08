@@ -12,11 +12,13 @@ import {
  * 매거진 키워드 점수 — golden test.
  *
  * GSC dead-path(`gsc-nearmiss.ts` · `nearmiss-gate.ts` · 미사용 스냅샷)를 지우면서
- * **살아 있는 노드의 점수가 단 하나도 바뀌지 않았음**을 고정한다.
+ * **대표 `gsc:null` 입력의 점수와 정렬 계약이 바뀌지 않았음**을 고정한다.
  *
- * 오늘 universe 의 모든 노드는 `gsc: null` 이다 — `run-full-collect.ts` 가
- * `node.gsc` 를 채우지 않는다. `gscSignalScore(null)` 은 0 이므로 점수식의
- * `0.25 · gscSignal` 항은 상수 0 이고, 죽은 경로를 지워도 산술 결과가 같다.
+ * 성립 근거는 코드 구조다 — `run-full-collect.ts` 는 autocomplete collector 가
+ * 생성한 노드만 병합하고(`expandKeywords` 결과), 그 collector 는 노드를 만들 때
+ * `gsc: null` 로 둔다. GSC dead-path 는 그 생성 경로에 연결돼 있지 않다.
+ * `gscSignalScore(null)` 은 0 이므로 점수식의 `0.25 · gscSignal` 항은 상수 0 이고,
+ * 죽은 경로를 지워도 산술 결과가 같다.
  *
  * ⚠️ 아래 기대값은 **삭제 이전 코드로 실행해 얻은 숫자를 그대로 박은 것**이다.
  *    `computeScore` 로 다시 계산해 비교하면 공식이 바뀌어도 테스트가 따라 움직여
