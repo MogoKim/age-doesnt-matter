@@ -1,7 +1,7 @@
 /**
  * DB 연결 포화/단절 에러 감지 — Supabase Supavisor(6543) "max client connections 200" 등.
  *
- * .github/workflows/agents-cafe-wave.yml 의 grep 기준과 동일하게 유지:
+ * 워크플로우의 EMAXCONN 재시도 grep 기준과 동일하게 유지:
  *   EMAXCONN | max client connections | Connection terminated due to connection timeout |
  *   Connection terminated unexpectedly
  *

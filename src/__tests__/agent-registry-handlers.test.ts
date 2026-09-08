@@ -67,6 +67,8 @@ describe('삭제된 핸들러의 잔재', () => {
     'coo:comment-activator', 'coo:reply-chain-driver', 'coo:connection-facilitator',
     'coo:author-reply-dryrun', 'coo:job-matcher', 'coo:persona-matcher-dryrun',
     'controversy-chain:execute',
+    // 합성 댓글 경로 (2026-09-09) — 봇 댓글 생성 재등록 방지선
+    'cafe_crawler:wave-process', 'cafe_crawler:user-post-wave-process',
   ] as const
 
   it('runner 에 없다', () => {

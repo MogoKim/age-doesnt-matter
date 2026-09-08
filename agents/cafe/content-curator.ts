@@ -298,7 +298,7 @@ async function getHaikuBlockedRefIds(): Promise<Set<string>> {
 
 /** 참고용 원본 글 가져오기 — 3단계 fallback (B19+B24)
  * 1단계: 48h + 키워드 / 2단계: 7일 + 키워드 / 3단계: 7일 + desireCategory만
- * usable≥5 필터: wave-processor BLOCK2 기준(usableCount<5)과 통일, wave4 full run 보장
+ * usable≥5 필터: usableCount<5 는 제외한다
  */
 // refs 조회 공통 select — getReferencePosts refs 와 killer self-ref fast lane 이 동일 shape 를 공유(타입 일치)
 // [PR-2 2026-07-29] killerScore 추가 — applyDiversitySort가 품질 밴드(10점) 계산에 쓴다.

@@ -54,8 +54,6 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   // launchd: com.unao.naver-cafe-sheet-scraper.plist (10:40, 13:00, 15:30, 23:00 KST)
   'cafe_crawler:image-route': () => import('../cafe/image-router.js').then(m => m.main()),
   'cafe_crawler:popular-sync': () => import('../cafe/popular-sync.js').then(() => {}), // DISPATCH ONLY — Mac launchd 전용. GHA 실행 불가 (네이버 Playwright).
-  'cafe_crawler:wave-process': () => import('../cafe/wave-processor.js').then(m => m.main()),
-  'cafe_crawler:user-post-wave-process': () => import('../cafe/user-post-wave-processor.js').then(m => m.main()),
   'cafe_crawler:brief-monitor': () => import('../cafe/brief-monitor.js').then(() => {}),
   // GHA 안전망 — Mac launchd 미실행 시 fallback_yesterday 자동 생성 (09:03 KST, 3 0 * * * UTC)
   'cafe_crawler:daily-brief-fallback': () => import('../cafe/daily-brief.js').then(async m => { await m.runFallbackBrief() }),
