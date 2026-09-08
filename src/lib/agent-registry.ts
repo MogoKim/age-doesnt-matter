@@ -30,8 +30,6 @@ export const HANDLER_REGISTRY: HandlerMeta[] = [
   { key: 'cto:error-monitor',        label: 'CTO 에러 모니터',    botType: 'CTO',          action: 'ERROR_MONITOR',          schedule: '매 4시간',             type: 'GHA',      workflow: 'agents-hourly' },
   { key: 'cto:security-audit',       label: 'CTO 보안 감사',      botType: 'CTO',          action: 'SECURITY_AUDIT',         schedule: '매일 06:00',           type: 'GHA',      workflow: 'agents-daily' },
   { key: 'cto:crawler-health',       label: 'CTO 크롤러 헬스',    botType: 'CTO',          action: 'CRAWLER_HEALTH',         schedule: '매일 07:00',           type: 'GHA',      workflow: 'agents-daily' },
-  { key: 'cto:arch-review',          label: 'CTO 아키텍처 리뷰',  botType: 'CTO',          action: 'ARCH_REVIEW',            schedule: '월 09:00',             type: 'GHA',      workflow: 'agents-weekly' },
-  { key: 'cto:garbage-collect',      label: 'CTO 코드 GC',        botType: 'CTO',          action: 'GARBAGE_COLLECT',        schedule: '월 09:30',             type: 'GHA',      workflow: 'agents-weekly' },
   { key: 'cto:qa-verify',            label: 'CTO QA 검증',        botType: 'CTO',          action: 'QA_VERIFY',              schedule: '매일 23:45',           type: 'GHA',      workflow: 'agents-daily' },
 
   // ─── CMO ───────────────────────────────────────────────────────────
@@ -62,11 +60,9 @@ export const HANDLER_REGISTRY: HandlerMeta[] = [
   // ─── CPO ───────────────────────────────────────────────────────────
 
   // ─── CDO ───────────────────────────────────────────────────────────
-  { key: 'cdo:kpi-collector',       label: 'CDO KPI 수집',    botType: 'CDO', action: 'KPI_DAILY',          schedule: '매일 22:00',  type: 'GHA', workflow: 'agents-daily' },
   { key: 'cdo:anomaly-detector',    label: 'CDO 이상 탐지',   botType: 'CDO', action: null,                 schedule: '매 4시간',    type: 'GHA', workflow: 'agents-hourly' },
 
   // ─── CFO ───────────────────────────────────────────────────────────
-  { key: 'cfo:cost-tracker',    label: 'CFO 비용 추적', botType: 'CFO', action: 'COST_TRACK',   schedule: '매일 23:00', type: 'GHA', workflow: 'agents-daily' },
 
   // ─── SEED ──────────────────────────────────────────────────────────
   { key: 'seed:scheduler', label: 'SEED 글쓰기',      botType: 'SEED', action: 'SCHEDULE', schedule: '09:00~22:00 (12슬롯)', type: 'GHA', workflow: 'agents-seed' },
@@ -94,11 +90,10 @@ export const HANDLER_REGISTRY: HandlerMeta[] = [
 /** 팀별 그룹핑 (어드민 UI용) */
 export const HANDLER_GROUPS = [
   { team: 'CEO',          emoji: '👑', keys: ['ceo:approval-reminder'] },
-  { team: 'CTO',          emoji: '🔧', keys: ['cto:health-check','cto:error-monitor','cto:security-audit','cto:crawler-health','cto:arch-review','cto:garbage-collect','cto:qa-verify'] },
+  { team: 'CTO',          emoji: '🔧', keys: ['cto:health-check','cto:error-monitor','cto:security-audit','cto:crawler-health','cto:qa-verify'] },
   { team: 'CMO',          emoji: '📣', keys: ['cmo:trend-analyzer','cmo:caregiving-curator','cmo:health-anxiety-responder','cmo:humor-curator','cmo:social-poster','cmo:social-metrics','cmo:threads-token-refresh','cmo:source-expander','cmo:content-gap-finder','cmo:channel-seeder','cmo:seo-optimizer','cmo:band-manager','cmo:google-ads-report'] },
   { team: 'COO',          emoji: '⚙️', keys: ['coo:moderator','coo:content-scheduler','coo:trending-scorer','coo:comment-activator','coo:reply-chain-driver','coo:connection-facilitator','coo:job-scraper','coo:job-matcher'] },
-  { team: 'CDO',          emoji: '📊', keys: ['cdo:kpi-collector','cdo:anomaly-detector'] },
-  { team: 'CFO',          emoji: '💰', keys: ['cfo:cost-tracker'] },
+  { team: 'CDO',          emoji: '📊', keys: ['cdo:anomaly-detector'] },
   { team: 'SEED',         emoji: '🌱', keys: ['seed:scheduler','seed:micro'] },
   { team: 'QA',           emoji: '✅', keys: ['qa:content-audit','qa:code-gate'] },
   { team: '커뮤니티',      emoji: '🎯', keys: ['community:sheet-scrape'] },

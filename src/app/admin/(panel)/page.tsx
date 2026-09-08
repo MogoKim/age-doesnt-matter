@@ -239,10 +239,6 @@ export default async function AdminDashboardPage() {
                 {Math.min(100, Math.round(((okr.d7RetentionPct ?? 0) / Q2_OKR.d7Retention.target) * 100))}%
               </span>
             </p>
-            <p className="mt-1 text-xs text-zinc-400">
-              GA4(legacy·수집중단): {okr.ga4D7RetentionPctLegacy ?? '–'}%
-              {okr.ga4LastCollectedAt && ` · 최종 ${new Date(okr.ga4LastCollectedAt).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}`}
-            </p>
             <p className="mt-2 text-xs text-zinc-400">{Q2_OKR.d7Retention.desc}</p>
           </div>
         </div>

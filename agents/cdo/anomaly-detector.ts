@@ -5,7 +5,7 @@ import type { AgentResult } from '../core/types.js'
 
 /**
  * CDO 에이전트 — 이상 감지
- * 매 시간: DAU 급락, 에러 급증 등 이상 감지
+ * 매 시간: 에러 급증 등 이상 감지
  */
 class CDOAnomalyDetector extends BaseAgent {
   constructor() {
@@ -14,7 +14,7 @@ class CDOAnomalyDetector extends BaseAgent {
       botType: 'CDO',
       role: 'CDO (이상 감지)',
       model: 'light',
-      tasks: 'DAU 급락, 에러 급증 등 이상 징후 실시간 감지',
+      tasks: '에러 급증 등 이상 징후 실시간 감지',
       canWrite: false,
     })
   }
@@ -22,37 +22,9 @@ class CDOAnomalyDetector extends BaseAgent {
   protected async run(): Promise<Omit<AgentResult, 'durationMs' | 'timestamp'>> {
     const anomalies: string[] = []
 
-    // 최근 KPI 로그 2개 비교 (오늘 vs 어제)
-    const recentKpis = await prisma.botLog.findMany({
-      where: { botType: 'CDO', action: 'KPI_DAILY' },
-      orderBy: { createdAt: 'desc' },
-      take: 2,
-    })
-
-    // DAU 비율 알림 최소 샘플 — 10명 미만은 1명 차이로 100% 급락이 발생해 오탐
-    const MIN_DAU_SAMPLE = 10
-
-    if (recentKpis.length >= 2) {
-      try {
-        const today = JSON.parse(recentKpis[0].details ?? '{}')
-        const yesterday = JSON.parse(recentKpis[1].details ?? '{}')
-
-        // DAU 30% 이상 하락 — 소량 샘플(< 10명) 구간은 비율 알림 억제
-        if (yesterday.dau >= MIN_DAU_SAMPLE && today.dau / yesterday.dau < 0.7) {
-          anomalies.push(`DAU 급락: ${yesterday.dau} → ${today.dau} (${((1 - today.dau / yesterday.dau) * 100).toFixed(0)}% 하락)`)
-        } else if (yesterday.dau > 0 && yesterday.dau < MIN_DAU_SAMPLE && today.dau === 0) {
-          // 소량 구간: 절대값 0 → CRITICAL 억제, WARNING 수준 기록만
-          anomalies.push(`🟡 DAU 0 감지 (소량 샘플: 어제 ${yesterday.dau}명 — 비율 알림 억제)`)
-        }
-
-        // 신고 급증 (전일 대비 3배 이상)
-        if (yesterday.reports > 0 && today.reports >= yesterday.reports * 3) {
-          anomalies.push(`신고 급증: ${yesterday.reports} → ${today.reports}건`)
-        }
-      } catch {
-        // KPI 파싱 실패 무시
-      }
-    }
+    // DAU·신고 급증 비교는 CDO:KPI_DAILY 생산자(cdo:kpi-collector)가 R4 에서 제거되면서
+    // 읽을 데이터가 사라져 함께 걷어냈다 (2026-09-08). 아래 에러 급증 감지는 EventLog 를
+    // 직접 읽으므로 그대로 동작한다.
 
     // 에러 이벤트 급증 (최근 1시간 vs 이전 1시간)
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)

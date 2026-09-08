@@ -78,17 +78,6 @@ schedules:
     agent: SEED
     task: "seed-22"
     handler: "seed/scheduler.ts"
-  - cron: "0 13 * * *"
-    agent: CDO
-    task: kpi-collector
-    handler: "cdo/kpi-collector.ts"
-
-  # 매일 23:00 KST (14:00 UTC)
-  - cron: "0 14 * * *"
-    agent: CFO
-    task: cost-tracker
-    handler: "cfo/cost-tracker.ts"
-
   # 트렌딩 스코어 갱신 (30분마다)
   - cron: "*/30 * * * *"
     agent: COO

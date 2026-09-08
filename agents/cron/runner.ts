@@ -38,14 +38,12 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cto:anonymize-withdrawn': () => import('../scripts/anonymize-withdrawn-users.js').then((m) => m.anonymizeWithdrawn(true)), // dry(미리보기) — 대상 수만 확인. 실제 익명화는 anonymize-withdrawn-apply
   'cto:anonymize-withdrawn-apply': () => import('../scripts/anonymize-withdrawn-users.js').then((m) => m.anonymizeWithdrawn(false)), // F-12: 매주 월 10:00 KST 자동. 30일 경과 탈퇴자만, 멱등(이미 익명화된 건 제외)
   'cmo:trend-analyzer': () => import('../cmo/trend-analyzer.js').then(() => {}), // DISPATCH ONLY — cron 중단 2026-05-16 (Slack 리포트만, 참고 안 함)
-  'cfo:cost-tracker': () => import('../cfo/cost-tracker.js').then(() => {}),
   // main() 을 반환해야 runner 가 모더레이션 **완료까지** 기다린다.
   // `.then(() => {})` 이면 import 만 끝나고 곧바로 disconnect + exit 해서 판정이 잘린다.
   'coo:moderator': () => import('../coo/moderator.js').then((m) => m.main()),
   'coo:content-scheduler': () => import('../coo/content-scheduler.js').then(m => m.main()),
   'coo:job-scraper': () => import('../coo/job-scraper.js').then(m => m.main()),
   'coo:trending-scorer': () => import('../coo/trending-scorer.js').then(m => m.main()),
-  'cdo:kpi-collector': () => import('../cdo/kpi-collector.js').then(() => {}),
   'cdo:anomaly-detector': () => import('../cdo/anomaly-detector.js').then(() => {}),
   'seed:scheduler': () => import('../seed/scheduler.js').then(m => m.main()),
   'seed:killer-post': () => import('../seed/scheduler.js').then(m => m.runKillerPostCycle()),
@@ -95,9 +93,6 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cto:crawler-health': () => import('../cto/crawler-health.js').then(() => {}),
   'cto:qa-verify': () => import('../cto/qa-verifier.js').then(() => {}),
   // CTO 주간 아키텍처 리뷰 (DISPATCH ONLY — 수동 트리거 전용)
-  'cto:arch-review': () => import('../cto/arch-review.js').then(() => {}),
-  // CTO 주간 코드 품질 가비지 컬렉션 (월요일 09:30 KST — arch-review 직후)
-  'cto:garbage-collect': () => import('../cto/garbage-collect.js').then(() => {}),
   // QA 에이전트 — 콘텐츠 품질 감사 (매일 08:20 KST)
   'qa:content-audit': () => import('../qa/content-audit.js').then(() => {}),
   'community:sheet-scrape': () => import('../community/sheet-scraper.js').then(m => m.main()),
