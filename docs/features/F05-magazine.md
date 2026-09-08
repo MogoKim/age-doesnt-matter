@@ -106,7 +106,7 @@
 - 생성 엔진: `agents/cafe/magazine-generator.ts`
 - launchd 진입점: `agents/cafe/local-magazine-runner.ts`
 - 이미지 생성: `agents/cafe/local-image-generator.ts`
-- 썸네일: `agents/cafe/thumbnail-generator.ts`
+- 썸네일: 원문/생성 이미지를 그대로 쓰고, 누락분은 `scripts/fix-magazine-thumbnails.ts` 로 사후 복구한다. **합성 썸네일 생성기는 없다.**
 - AI 프롬프트: `agents/magazine/prompt.ts`
 - 시리즈 계획: `agents/magazine/series-plan.ts`
 - CPS 매칭: `agents/cafe/cps-matcher.ts`

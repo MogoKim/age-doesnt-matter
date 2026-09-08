@@ -68,7 +68,6 @@ CDN 비용 없이 빠른 이미지 서빙을 제공하고, CSP 정책을 통일�
 |------|------|------------|
 | 카드뉴스 렌더링 | `agents/cmo/card-news/renderer.ts` | Playwright → Sharp JPEG → R2 |
 | 카드뉴스 이미지 | `agents/cmo/card-news/image-gen.ts` | DALL-E/Unsplash → R2 |
-| 매거진 썸네일 | `agents/cafe/thumbnail-generator.ts` | Playwright 1200×630 → R2 |
 | 매거진 이미지 | `agents/cafe/image-generator.ts` | Unsplash/Gemini/DALL-E → R2 |
 | 로컬 이미지 생성 | `agents/cafe/local-image-generator.ts` | Gemini/ChatGPT Playwright → R2 |
 | 외부 미디어 파이프라인 | `agents/community/image-pipeline.ts` | 외부 URL → WebP → R2 |
@@ -147,7 +146,7 @@ https://pub-b0ae348768da4b63a66112f4751f5ae5.r2.dev/{key}
 - R2 클라이언트: `src/lib/r2.ts`
 - 이미지 최적화: `src/lib/image-optimize.ts`
 - 업로드 API: `src/app/api/uploads/route.ts`
-- 에이전트 R2 사용: `agents/cmo/card-news/renderer.ts`, `agents/cafe/thumbnail-generator.ts`
+- 에이전트 R2 사용: `agents/cmo/card-news/renderer.ts`
 
 ---
 
