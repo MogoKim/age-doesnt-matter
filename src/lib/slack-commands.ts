@@ -463,56 +463,6 @@ async function handleKpi(): Promise<SlackCommandResult> {
   }
 }
 
-async function handleSocial(): Promise<SlackCommandResult> {
-  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-
-  const posts = await prisma.socialPost.findMany({
-    where: { status: 'POSTED', postedAt: { gte: weekAgo } },
-    select: { platform: true, metrics: true, contentType: true, promotionLevel: true, postText: true },
-  })
-
-  if (posts.length === 0) {
-    return { response_type: 'ephemeral', text: '이번 주 SNS 게시물이 없습니다.' }
-  }
-
-  let totalEngagement = 0
-  let bestPost = { text: '', engagement: 0, platform: '' }
-
-  for (const p of posts) {
-    const m = p.metrics as Record<string, number> | null
-    if (!m) continue
-    const eng = (m.likes ?? 0) + (m.replies ?? 0) + (m.reposts ?? m.retweets ?? 0)
-    totalEngagement += eng
-    if (eng > bestPost.engagement) {
-      bestPost = { text: p.postText.slice(0, 60), engagement: eng, platform: p.platform }
-    }
-  }
-
-  const byPlatform: Record<string, number> = {}
-  for (const p of posts) {
-    byPlatform[p.platform] = (byPlatform[p.platform] ?? 0) + 1
-  }
-
-  return {
-    response_type: 'in_channel',
-    text: '📱 이번 주 SNS 성과',
-    blocks: [
-      { type: 'header', text: { type: 'plain_text', text: '📱 이번 주 SNS 성과', emoji: true } },
-      {
-        type: 'section',
-        fields: [
-          { type: 'mrkdwn', text: `*게시물*\n${posts.length}개` },
-          { type: 'mrkdwn', text: `*총 참여*\n${totalEngagement}` },
-          ...Object.entries(byPlatform).map(([p, c]) => ({ type: 'mrkdwn' as const, text: `*${p}*\n${c}개` })),
-        ],
-      },
-      ...(bestPost.engagement > 0 ? [{
-        type: 'section' as const,
-        text: { type: 'mrkdwn' as const, text: `*🏆 최고 게시물* (${bestPost.platform}, 참여 ${bestPost.engagement})\n> ${bestPost.text}...` },
-      }] : []),
-    ],
-  }
-}
 
 async function handleMeeting(text: string): Promise<SlackCommandResult> {
   const topic = text.trim() || '긴급 안건'
@@ -554,7 +504,6 @@ function handleHelp(): SlackCommandResult {
             '`/una-trend` — 오늘의 5060 트렌드',
             '`/una-cafe` — 카페 크롤링 현황',
             '`/una-kpi` — KPI 대시보드',
-            '`/una-social` — 이번 주 SNS 성과',
             '`/una-approve [ID]` — 어드민 큐 승인',
             '`/una-reject [ID]` — 어드민 큐 거절',
             '`/una-stop` — 자동화 긴급 중지',
@@ -587,7 +536,6 @@ export async function handleSlashCommand(payload: SlackSlashCommand): Promise<Sl
     case 'reject':   return handleReject(text)
     case 'stop':     return handleStop()
     case 'meeting':  return handleMeeting(text)
-    case 'social':   return handleSocial()
     case 'help':     return handleHelp()
     default:
       return {

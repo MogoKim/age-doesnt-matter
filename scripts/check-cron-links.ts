@@ -259,7 +259,7 @@ export function extractWorkflowKeys(workflowsDir: string = WORKFLOWS_DIR): Set<s
 }
 
 function resolveSourcePath(importPath: string): string {
-  // Convert relative import like '../cmo/band-manager.js' to absolute .ts path
+  // Convert relative import like '../coo/moderator.js' to absolute .ts path
   const tsPath = importPath.replace(/\.js$/, '.ts')
   return resolve(join(ROOT, 'agents/cron'), tsPath)
 }

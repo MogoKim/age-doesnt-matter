@@ -49,11 +49,6 @@ export const BOT_API_KEY_SEED = optionalEnv('BOT_API_KEY_SEED', '')
 export const COUPANG_ACCESS_KEY = optionalEnv('COUPANG_ACCESS_KEY', '')
 export const COUPANG_SECRET_KEY = optionalEnv('COUPANG_SECRET_KEY', '')
 
-/** Threads / Meta (optional) */
-export const THREADS_APP_ID = optionalEnv('THREADS_APP_ID', '')
-export const THREADS_APP_SECRET = optionalEnv('THREADS_APP_SECRET', '')
-export const THREADS_ACCESS_TOKEN = optionalEnv('THREADS_ACCESS_TOKEN', '')
-
 /** Google Analytics / GTM (NEXT_PUBLIC_ — 클라이언트에서 직접 접근) */
 export const NEXT_PUBLIC_GTM_ID = optionalEnv('NEXT_PUBLIC_GTM_ID', '')
 export const NEXT_PUBLIC_GA4_ID = optionalEnv('NEXT_PUBLIC_GA4_ID', '')

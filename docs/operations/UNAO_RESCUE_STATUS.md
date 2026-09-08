@@ -230,6 +230,8 @@ T+0은 2026-09-05 KST다. 날짜가 지나도 증거가 없으면 PASS로 넘기
 - 이미 만든 read-only dependency closure는 **증거로 보존**하되 그 자체가 삭제 승인은 아니다.
 - ~~Gate 2와 PR #427 판정~~ → **2026-09-08 종결. Gate 2 = REMOVE, PR #427 = CLOSED.**
 - **타입 복구는 REMOVE 이후다.** 삭제 예정 코드의 타입 오류는 고치지 않는다. KEEP 범위 확정 후 최종 KEEP 코드만 ops tsc 0으로 만들며, 복원 방법은 그때 결정한다.
+- **SocialPost DB 모델**: 생산자(SNS 게시·메트릭 에이전트)는 2026-09-08 제거됐다. **DB 모델과 기존 데이터는 유지**하며
+  후속 **R6 데이터 모델 감사** 대상으로 넘긴다. 이번 PR 에서 migration 은 하지 않았다.
 - **후속 R6 재감사 항목 (Gate 2 제거 시 이관, 2026-09-08)**: `scripts/smoke-test.ts` 는 이번에 유지했으나
   두 결함이 남아 있다 — ① AdSense 슬롯 검사가 **구조적 false-red**(광고는 `'use client'` 지연 로드라
   초기 HTML에 `adsbygoogle` 이 없는 것이 정상) ② `/api/events` POST 에 `x-bot-type` 헤더 미부착.

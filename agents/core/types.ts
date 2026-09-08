@@ -62,7 +62,7 @@ export type AgentBotType = 'CEO' | 'CTO' | 'CMO' | 'CPO' | 'CDO' | 'CFO' | 'COO'
  * constitution 모듈 식별자
  * - audience: target + site_structure + content_policy + brand
  * - strategy: current_phase + kpi + q2_okr + positioning + competitors
- * - ops: trending_policy + sns_platform_strategy + cmo_content_ratios + ad_policy + intelligence_policy
+ * - ops: trending_policy + ad_policy + intelligence_policy
  * - infra: security + cto_governance + qa_agent
  * undefined = 원본 constitution.yaml 전체 로드 (안전 fallback)
  */
