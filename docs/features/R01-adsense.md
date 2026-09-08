@@ -165,7 +165,7 @@ pathname 변경 감지 (useEffect)
 ⚠️ 2026-06-14 "배포 후 Gate 2 통과" 기록은 **실제 감사 완주가 아니다.** Gate 2 판정 에이전트는
   `runner.ts` 핸들러가 `.then(() => {})` 라 도입 이래 완주한 적이 없고, workflow job 이 success 로
   보인 것은 검사 스텝이 전부 `continue-on-error` 였기 때문이다(false-green). Gate 2 는 R4 에서 제거됐다
-  (2026-09-08 — 근거: `unao-reports/r4-gate2-keep-remove-audit.md`)
+  (2026-09-08 — 근거: `docs/operations/UNAO_RESCUE_STATUS.md` §5, PR #434)
 ✅ CSP 완벽 설정  
 ⚠️ PC_SIDEBAR, MobileStickyAd 미사용 (코드 정리 필요)  
 ⚠️ 퍼블리셔 ID 하드코딩 (환경변수와 값 불일치)

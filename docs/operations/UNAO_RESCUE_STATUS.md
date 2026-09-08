@@ -75,7 +75,7 @@ R6 정리 과정에서 agents/scripts 타입 오류는 `953 -> 932`로 줄었다
 | production health/auth | **PASS** - 최근 배포 200, 창업자 실제 로그인 정상 확인 | 재발 시에만 재검증 |
 | GHA DB 인증 | **PASS / 종결** - 2026-09-08 04:32 UTC 자연 실행 성공 (아래 증거) | 재발 시에만 재검증 |
 | Moderation | **PASS** - lifecycle 수정 후 자연 실행 success, AuthenticationFailed 0 | 정기 실행 유지 |
-| Gate 2 | **REMOVE 종결 (2026-09-08)** — workflow disabled + dependency closure 제거 PR. PR #427은 **CLOSED**(merge 0) | 없음 — 재조사 금지. 판정 근거: `unao-reports/r4-gate2-keep-remove-audit.md` |
+| Gate 2 | **REMOVE 종결 (2026-09-08)** — workflow disabled + dependency closure 제거(PR #434). PR #427은 **CLOSED**(merge 0) | 없음 — 재조사 금지. 판정 근거는 이 상태판과 PR #434다 |
 | 커뮤니티 회복 | **FAIL** - 네 숫자 단순 관찰 중 (§5-A) | 회복 추세. 기존 North Star 1명은 **임시 참고치** |
 | 어드민 대시보드 | `northStar=4`는 재방문+작성이 아니라 7일 WAU. `DailyKpiSnapshot` 최신 행은 2026-08-23에서 정지 | **R6 대상** — 오래된 KPI·지표·스냅샷·대시보드 KEEP/REMOVE 판정 |
 | 네이버 | 기술 노출면 정상, 유입 고점 대비 **99.3% 감소** | Search Advisor 수집·색인·노출, 브랜드 홈 색인 확인 |
@@ -133,8 +133,16 @@ R6 정리 과정에서 agents/scripts 타입 오류는 `953 -> 932`로 줄었다
 
 ### 병렬 진행 규칙
 
-- 순위 3은 **REMOVE로 종결됐다.** Gate 2는 배포를 차단할 수 없는 위치에서 실행됐고, 판정 에이전트는
-  도입 이래 완주한 적이 없어 Slack·AdminQueue·BotLog 산출이 0건이었다. PR #427은 merge 없이 close했다.
+- 순위 3은 **REMOVE로 종결됐다(PR #434).** 판정 근거는 다음 다섯이다.
+  ① `deployment_status` 는 배포 성공 **후** 이벤트라 Gate 2 는 배포를 차단할 수 없었다.
+  ② runner 핸들러가 `.then(() => {})` 라 `main()` 의 첫 `await` 에서 프로세스가 죽어
+     **도입(2026-04-07) 이래 완주 0회** — Slack·AdminQueue·BotLog 산출 0건, 최근 100 run failure 0건.
+  ③ 검사 스텝이 전부 `continue-on-error` 라 무검증 배포가 초록불로 보였다(false-green).
+  ④ cron-links 는 `ci.yml` `agents-check` 와 동일 스크립트, 광고는 `E2E Ads` 와 동일 spec 중복이고
+     Lighthouse·참여이벤트 결과는 판정 에이전트가 참조조차 하지 않았다.
+  ⑤ 유일한 고유 검사인 smoke 는 실서비스 도메인이 아니라 `SITE_URL`(`*.vercel.app`)을 검사했다.
+  PR #427 은 merge 없이 close 했다. 상세 조사 기록은 저장소 밖 `unao-reports/r4-gate2-keep-remove-audit.md`
+  에 **보조 증거**로 남아 있으나, 판정 정본은 이 상태판과 PR #434다.
 - **순위 4가 현재 핵심 프로그램이다.** 지표 작업이 기반 단순화를 막지 않는다.
 - 순위 2·4·5는 병렬 진행한다.
 - 순위 6은 관찰이므로 다른 작업을 막지 않는다. R8 관찰 결과를 기다리느라 기반 단순화를 미루지 않는다.

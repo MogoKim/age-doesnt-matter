@@ -26,8 +26,9 @@ description: 배포 QA 규칙 — 광고/에이전트/워크플로우 변경 시
 | `docs/**`, `*.md`, `.claude/**` | QA 스킵 |
 
 > **배포 후 자동 QA(Layer 3 / Gate 2)는 없다.** `post-deploy-qa.yml` 은 R4 에서 제거됐다
-> (2026-09-08 — 판정 근거: `unao-reports/r4-gate2-keep-remove-audit.md`).
-> 배포 후 확인이 필요하면 `npm run smoke-test -- --url https://age-doesnt-matter.com` 을 직접 실행한다.
+> (2026-09-08 · 판정과 근거: `docs/operations/UNAO_RESCUE_STATUS.md`, PR #434).
+> 검증은 아래 **변경 유형별 CI**와 **작업별 검증 절차**를 따른다. 배포 후 일괄 실행하는
+> 공식 대체 절차는 두지 않는다.
 
 ### 변경 유형별 QA 매핑
 | 변경 | Layer 0 | Layer 2 |
@@ -45,8 +46,8 @@ description: 배포 QA 규칙 — 광고/에이전트/워크플로우 변경 시
 - 변경한 페이지/API 최소 1개 curl/WebFetch 200 확인
 
 ## 광고 컴포넌트 변경 시 (src/components/ad/)
-- smoke test 필수: `npm run smoke-test -- --url https://age-doesnt-matter.com`
-- SSR HTML에 광고 마커 포함 확인 (adsbygoogle 클래스, coupang 배너 URL)
+- `@ads` E2E 확인: `npx playwright test --grep "@ads" --project=chromium --project=mobile-chrome`
+  (CI `E2E Ads` job 과 같은 경로. 광고는 hydration 후 동적 삽입이라 **초기 HTML 문자열 검사로는 판정할 수 없다**)
 - CSP 도메인 추가 필요 여부 확인 (next.config.js connect-src/script-src/img-src)
 
 ## 에이전트 스크립트 변경 시 (agents/)
@@ -80,6 +81,6 @@ MCP Playwright 한계: `mcp__playwright__*` 도구는 Chromium만 지원.
 WebKit 테스트는 반드시 spec 파일 실행 방식으로만 가능.
 
 ## 배포 후 프로덕션 검증 (커밋+푸시 후)
-- `npm run smoke-test -- --url https://age-doesnt-matter.com` 실행
+- 변경한 페이지/API를 직접 200 확인 (자사 요청에는 `x-bot-type` 헤더를 붙인다)
 - 에이전트 변경 시: `gh run list --workflow=해당워크플로우.yml --limit=3`으로 최근 실행 확인
 - 실패 시 즉시 사용자에게 보고 + 롤백 여부 확인

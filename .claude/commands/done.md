@@ -203,7 +203,7 @@ Feature 문서: [ID] [기능명] — [신규생성 / 수정이력추가 / ARCHIV
 
 **성공한 단계는 나열하지 않는다.** 전부 통과면 "Gates: all passed" 한 줄로 끝.
 
-Slack 자동 알림은 없다 (배포 후 Gate 2는 R4에서 제거됐다). 배포 확인이 필요하면 `npm run smoke-test -- --url https://age-doesnt-matter.com` 을 직접 실행한다.
+배포 후 Slack 자동 알림은 없다 (Gate 2는 R4에서 제거됐다). 검증은 변경 유형별 CI와 작업별 검증 절차(`.claude/rules/qa-deploy.md`)를 따른다.
 
 ---
 
