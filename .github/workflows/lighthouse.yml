@@ -2,7 +2,7 @@ name: Lighthouse CI
 on:
   pull_request:
     branches: [main]
-  # push 트리거 제거 — post-deploy-qa.yml이 배포 완료 후 실제 프로덕션 URL로 Lighthouse 실행함
+  # PR 에서만 돈다. 배포 후 Lighthouse 는 Gate 2 제거(R4, 2026-09-08)와 함께 사라졌다.
 
 env:
   DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy

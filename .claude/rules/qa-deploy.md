@@ -25,18 +25,18 @@ description: 배포 QA 규칙 — 광고/에이전트/워크플로우 변경 시
 | `src/app/(admin)/**` | qa-admin E2E |
 | `docs/**`, `*.md`, `.claude/**` | QA 스킵 |
 
-### Layer 3: 배포 후 자동 (deployment_status — post-deploy-qa.yml)
-- Smoke Test → 광고 렌더링 → **Lighthouse CI** → Gate 2 에이전트
-- 모든 결과 Slack #qa 자동 보고
+> **배포 후 자동 QA(Layer 3 / Gate 2)는 없다.** `post-deploy-qa.yml` 은 R4 에서 제거됐다
+> (2026-09-08 — 판정 근거: `unao-reports/r4-gate2-keep-remove-audit.md`).
+> 배포 후 확인이 필요하면 `npm run smoke-test -- --url https://age-doesnt-matter.com` 을 직접 실행한다.
 
 ### 변경 유형별 QA 매핑
-| 변경 | Layer 0 | Layer 2 | Layer 3 |
-|------|---------|---------|---------|
-| 단어/스타일 수정 | tsc ✅ | @smoke | Smoke |
-| 광고 컴포넌트 | tsc ✅ | @smoke @ads | Smoke+Lighthouse |
-| 에이전트 코드 | tsc ✅ | cron-links | Smoke |
-| Prisma 스키마 | tsc ✅ | @smoke | Smoke |
-| docs만 수정 | 스킵 | 스킵 | Smoke |
+| 변경 | Layer 0 | Layer 2 |
+|------|---------|---------|
+| 단어/스타일 수정 | tsc ✅ | @smoke |
+| 광고 컴포넌트 | tsc ✅ | @smoke @ads |
+| 에이전트 코드 | tsc ✅ | cron-links |
+| Prisma 스키마 | tsc ✅ | @smoke |
+| docs만 수정 | 스킵 | 스킵 |
 
 ---
 

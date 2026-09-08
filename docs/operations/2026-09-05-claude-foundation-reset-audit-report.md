@@ -193,6 +193,11 @@
 | **agents-moderation** | 활성, 금지어 감지·숨김(헌법 auto_allowed) | **KEEP** |
 | ci · post-deploy-qa · lighthouse · quarantine-check | 가드 | **KEEP** |
 
+> ⚠️ **2026-09-08 정정** — 위 `post-deploy-qa`(Gate 2) KEEP 판정은 **뒤집혔다.** R4 재판정 결과
+> **REMOVE**로 확정되어 workflow와 dependency closure를 제거했다. 이 문서는 2026-09-05 시점
+> 실측 기록으로 보존하며, 현재 판정은 `docs/operations/UNAO_RESCUE_STATUS.md` 와
+> `unao-reports/r4-gate2-keep-remove-audit.md` 를 따른다.
+
 ### 5-4. 주석과 실제 동작 불일치 (R6-C)
 C-01~C-07 (§3). 양은 TODO/FIXME 26곳으로 적고, 문제는 "자가 선언 죽은 코드"가 도구 통계상 정상으로 집계되는 구조(C-06).
 
