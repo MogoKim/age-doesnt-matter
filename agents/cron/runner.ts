@@ -23,7 +23,6 @@ const MONITORING_TASKS = new Set([
   'cto:error-monitor',
   'cto:security-audit',
   'cdo:anomaly-detector',
-  'cto:qa-verify',
   'cafe:session-refresh',  // LOCKED 상태에서도 세션 유지 필수 (크롤러 재가동 보장)
   'cmo:seo-snapshot',      // read-only 관측 — 자동화 중단 중에도 SEO 추이는 계속 봐야 한다
   'coo:moderator',         // 안전 기능(금지어 감지·숨김, 헌법 auto_allowed) — automation_status=PAUSED/LOCKED 에서도 유지 (Rescue R4, 2026-09-05)
@@ -91,7 +90,6 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'coo:persona-matcher-dryrun': () => import('../coo/persona-matcher-driver.js').then(m => m.main()), // DISPATCH ONLY — dry-run 검수 단계, 크론 미연결
   'controversy-chain:execute': () => import('../seed/controversy-chain.js').then(m => m.main()),
   'cto:crawler-health': () => import('../cto/crawler-health.js').then(() => {}),
-  'cto:qa-verify': () => import('../cto/qa-verifier.js').then(() => {}),
   // CTO 주간 아키텍처 리뷰 (DISPATCH ONLY — 수동 트리거 전용)
   // QA 에이전트 — 콘텐츠 품질 감사 (매일 08:20 KST)
   'qa:content-audit': () => import('../qa/content-audit.js').then(() => {}),

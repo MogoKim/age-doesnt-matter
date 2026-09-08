@@ -62,8 +62,6 @@ on:
     - cron: "11 22 * * *"
     # 04:00 KST = 19:00 UTC — 비정규화 카운트 정합성 재계산 (reconcile, 멱등)
     - cron: "0 19 * * *"
-    # 23:45 KST = 14:45 UTC — CTO QA 크론 실행 감사
-    - cron: "45 14 * * *"
     # ─── Phase 5: CTO 거버넌스 + QA 에이전트 ───
     # 08:20 KST = 23:20 UTC (전날) — QA 콘텐츠 감사
     - cron: "20 23 * * *"
@@ -187,8 +185,6 @@ jobs:
                 echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=crawler-health" >> $GITHUB_OUTPUT ;;
               "0 19 * * *")
                 echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=count-reconcile" >> $GITHUB_OUTPUT ;;
-              "45 14 * * *")
-                echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=qa-verify" >> $GITHUB_OUTPUT ;;
               "20 23 * * *")
                 echo "agent=qa" >> $GITHUB_OUTPUT; echo "task=content-audit" >> $GITHUB_OUTPUT ;;
               # "11 4 * * *") cmo:card-news-generator — 중단 2026-05-15
@@ -196,9 +192,6 @@ jobs:
                 echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;;
             esac
           fi
-      - name: Set QA env
-        if: github.event.schedule == '45 14 * * *'
-        run: echo "QA_MODE=cron-audit" >> $GITHUB_ENV
       - name: Install Playwright Chromium (magazine thumbnail + job scraper)
         if: steps.determine.outputs.task == 'magazine-generate' || steps.determine.outputs.task == 'job-scraper'
         run: npx playwright install chromium --with-deps

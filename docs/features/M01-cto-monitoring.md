@@ -30,7 +30,6 @@ DB·서비스·API·크롤러·보안·아키텍처를 자동으로 감시해
 | M01-B | `error-monitor.ts` | 에러 이벤트 급증 감지 | 매 4시간 |
 | M01-C | `crawler-health.ts` | 카페 크롤러 건강 + 품질 추세 | 매일 07:00 |
 | M01-D | `security-audit.ts` | 로그인 실패·비용 이상·어드민 감사 | 매일 06:00 |
-| M01-E | `qa-verifier.ts` | 일일 에이전트 실행 감사 (cron-audit) | 23:45 |
 
 ---
 
@@ -104,14 +103,6 @@ DB·서비스·API·크롤러·보안·아키텍처를 자동으로 감시해
 
 ---
 
-### M01-E: QA 검증 + 아키텍처 리뷰
-
-**qa-verifier.ts (23:45 KST 매일):**
-- DAILY_EXPECTED 에이전트들의 당일 실행 여부 확인
-- 미실행 감지 → Slack 알림
-
----
-
 ### 하루 실행 흐름
 
 ```
@@ -121,7 +112,6 @@ DB·서비스·API·크롤러·보안·아키텍처를 자동으로 감시해
 13:00 KST — health-check.ts + error-monitor.ts
 17:00 KST — health-check.ts + error-monitor.ts
 21:00 KST — health-check.ts + error-monitor.ts
-23:45 KST — qa-verifier.ts (일일 에이전트 실행 감사)
 ```
 
 ---
@@ -134,7 +124,6 @@ DB·서비스·API·크롤러·보안·아키텍처를 자동으로 감시해
 | `cto:error-monitor` | `agents-hourly.yml` | `0 */4 * * *` | 4시간마다 |
 | `cto:security-audit` | `agents-daily.yml` | `0 21 * * *` | 06:00 |
 | `cto:crawler-health` | `agents-daily.yml` | `0 22 * * *` | 07:00 |
-| `cto:qa-verify` | `agents-daily.yml` | `45 14 * * *` | 23:45 |
 
 **실행 환경**: GHA ubuntu-latest, Node 20  
 **LOCKED 상태**: automation_status=LOCKED에서도 실행 (MONITORING_TASKS 포함)
@@ -163,7 +152,6 @@ DB·서비스·API·크롤러·보안·아키텍처를 자동으로 감시해
 | error-monitor | 0회 | 0회 | $0 |
 | crawler-health | 0회 | 0회 | $0 |
 | security-audit | 0회 | 0회 | $0 |
-| qa-verifier | 배포실패 시 Haiku 1회 | 0회 | 거의 $0 |
 | **합계** | | | **~$0/월** |
 
 ---
@@ -174,7 +162,6 @@ DB·서비스·API·크롤러·보안·아키텍처를 자동으로 감시해
 - `agents/cto/error-monitor.ts`
 - `agents/cto/crawler-health.ts`
 - `agents/cto/security-audit.ts`
-- `agents/cto/qa-verifier.ts`
 - GHA 워크플로우: `.github/workflows/agents-hourly.yml`, `agents-daily.yml`
 - Runner 핸들러: `agents/cron/runner.ts` — `cto:*`
 - DB 모델: `prisma/schema.prisma` — BotLog, EventLog, CafePost

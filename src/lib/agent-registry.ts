@@ -30,7 +30,6 @@ export const HANDLER_REGISTRY: HandlerMeta[] = [
   { key: 'cto:error-monitor',        label: 'CTO 에러 모니터',    botType: 'CTO',          action: 'ERROR_MONITOR',          schedule: '매 4시간',             type: 'GHA',      workflow: 'agents-hourly' },
   { key: 'cto:security-audit',       label: 'CTO 보안 감사',      botType: 'CTO',          action: 'SECURITY_AUDIT',         schedule: '매일 06:00',           type: 'GHA',      workflow: 'agents-daily' },
   { key: 'cto:crawler-health',       label: 'CTO 크롤러 헬스',    botType: 'CTO',          action: 'CRAWLER_HEALTH',         schedule: '매일 07:00',           type: 'GHA',      workflow: 'agents-daily' },
-  { key: 'cto:qa-verify',            label: 'CTO QA 검증',        botType: 'CTO',          action: 'QA_VERIFY',              schedule: '매일 23:45',           type: 'GHA',      workflow: 'agents-daily' },
 
   // ─── CMO ───────────────────────────────────────────────────────────
   { key: 'cmo:trend-analyzer',            label: 'CMO 트렌드 분석',    botType: 'CMO', action: 'TREND_ANALYSIS',         schedule: '매일 10:00',           type: 'GHA',      workflow: 'agents-daily' },
@@ -57,12 +56,8 @@ export const HANDLER_REGISTRY: HandlerMeta[] = [
   { key: 'coo:job-scraper',           label: 'COO 일자리 수집',   botType: 'COO', action: 'JOB_SCRAPE',           schedule: '12:00, 16:00, 20:00',  type: 'GHA', workflow: 'agents-jobs' },
   { key: 'coo:job-matcher',           label: 'COO 일자리 매칭',   botType: 'COO', action: 'JOB_MATCH',            schedule: '매일 11:45',           type: 'GHA', workflow: 'agents-daily', note: '매칭 효과 미확인' },
 
-  // ─── CPO ───────────────────────────────────────────────────────────
-
   // ─── CDO ───────────────────────────────────────────────────────────
   { key: 'cdo:anomaly-detector',    label: 'CDO 이상 탐지',   botType: 'CDO', action: null,                 schedule: '매 4시간',    type: 'GHA', workflow: 'agents-hourly' },
-
-  // ─── CFO ───────────────────────────────────────────────────────────
 
   // ─── SEED ──────────────────────────────────────────────────────────
   { key: 'seed:scheduler', label: 'SEED 글쓰기',      botType: 'SEED', action: 'SCHEDULE', schedule: '09:00~22:00 (12슬롯)', type: 'GHA', workflow: 'agents-seed' },
@@ -71,8 +66,6 @@ export const HANDLER_REGISTRY: HandlerMeta[] = [
   // ─── QA ────────────────────────────────────────────────────────────
   { key: 'qa:content-audit', label: 'QA 콘텐츠 감사', botType: 'QA', action: 'CONTENT_AUDIT', schedule: '매일 08:20', type: 'GHA',      workflow: 'agents-daily' },
   { key: 'qa:code-gate',     label: 'QA 코드 게이트', botType: 'QA', action: 'CODE_GATE',     schedule: '—',         type: 'DISPATCH',                   note: '/done 스킬 자동 실행' },
-
-  // ─── STRATEGIST ────────────────────────────────────────────────────
 
   // ─── COMMUNITY ─────────────────────────────────────────────────────
   { key: 'community:sheet-scrape', label: '커뮤니티 시트 스크랩', botType: 'COMMUNITY', action: 'SHEET_SCRAPE', schedule: '11:00, 21:00', type: 'GHA', workflow: 'agents-cafe' },
@@ -90,7 +83,7 @@ export const HANDLER_REGISTRY: HandlerMeta[] = [
 /** 팀별 그룹핑 (어드민 UI용) */
 export const HANDLER_GROUPS = [
   { team: 'CEO',          emoji: '👑', keys: ['ceo:approval-reminder'] },
-  { team: 'CTO',          emoji: '🔧', keys: ['cto:health-check','cto:error-monitor','cto:security-audit','cto:crawler-health','cto:qa-verify'] },
+  { team: 'CTO',          emoji: '🔧', keys: ['cto:health-check','cto:error-monitor','cto:security-audit','cto:crawler-health'] },
   { team: 'CMO',          emoji: '📣', keys: ['cmo:trend-analyzer','cmo:caregiving-curator','cmo:health-anxiety-responder','cmo:humor-curator','cmo:social-poster','cmo:social-metrics','cmo:threads-token-refresh','cmo:source-expander','cmo:content-gap-finder','cmo:channel-seeder','cmo:seo-optimizer','cmo:band-manager','cmo:google-ads-report'] },
   { team: 'COO',          emoji: '⚙️', keys: ['coo:moderator','coo:content-scheduler','coo:trending-scorer','coo:comment-activator','coo:reply-chain-driver','coo:connection-facilitator','coo:job-scraper','coo:job-matcher'] },
   { team: 'CDO',          emoji: '📊', keys: ['cdo:anomaly-detector'] },

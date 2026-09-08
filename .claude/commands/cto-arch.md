@@ -43,7 +43,7 @@ CTO 관점에서 코드/에이전트/인프라 변경의 아키텍처 영향을 
 
 ### 1-2. 에이전트 간 의존성
 - BotLog 공유: 변경 에이전트의 BotLog를 다른 에이전트가 읽는가?
-  (CDO anomaly-detector, CTO qa-verifier 등)
+  (CDO anomaly-detector, CTO health-check 등)
 - DailyBrief 파이프라인 영향: 크롤링→분석→브리프 흐름 변경 없는가?
 - AdminQueue: 새 승인 유형이 필요한가?
 

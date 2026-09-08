@@ -5,7 +5,7 @@
 > **변경 시**: 이 문서 하단 [문서 업데이트 가이드](#문서-업데이트-가이드) 참고
 
 > ## ⚠️ 2026-09-05 실측 배너 — 이 문서의 "가동 중" 서술은 현재 상태가 아니다
-> - 2026-05-11(v11) 시점 문서다. "93핸들러·17GHA" 등 수치는 당시 값이며, 현재 실측은 runner HANDLERS **64개** · GitHub Actions **25개 중 21개 `disabled_manually`, 활성 4개**(ci · lighthouse · quarantine-check · agents-moderation). 2026-09-08 Gate 2(`post-deploy-qa`) 제거와 C-level ORG_THEATER 10개 제거를 반영한 값이다. launchd 콘텐츠 발행 12개는 2026-09-06 04:09 KST unload 완료(4개 유지/관찰). production `/api/health`는 2026-09-05 감사 당시 503(DB 28P01)이었으나 R1-A로 복구돼 현재 healthy.
+> - 2026-05-11(v11) 시점 문서다. "93핸들러·17GHA" 등 수치는 당시 값이며, 현재 실측은 runner HANDLERS **63개** · GitHub Actions **25개 중 21개 `disabled_manually`, 활성 4개**(ci · lighthouse · quarantine-check · agents-moderation). 2026-09-08 Gate 2(`post-deploy-qa`) 제거와 C-level ORG_THEATER 10개 제거를 반영한 값이다. launchd 콘텐츠 발행 12개는 2026-09-06 04:09 KST unload 완료(4개 유지/관찰). production `/api/health`는 2026-09-05 감사 당시 503(DB 28P01)이었으나 R1-A로 복구돼 현재 healthy.
 > - §1 "제2의 인생 플랫폼 — 일자리 + 커뮤니티 + 매거진" 정의는 헌법 v5.0(`docs/constitution/NORTH_STAR.md` §2·§14 "일자리 플랫폼이 아니라 커뮤니티")과 충돌한다. Rescue R5에서 REWRITE 대상.
 > - 시드봇 글쓰기는 2026-06-03 retired, `CoupangSearchWidget`은 2026-06-12 제거됐으나 본문에 미반영.
 > - 근거: `docs/operations/2026-09-05-claude-foundation-reset-audit-report.md` §3 A-06·C-07·D-05.
@@ -513,7 +513,7 @@ CafeTrend → card-news/generator.ts
 | **콘텐츠 금지** | 정치, 혐오, 도박, 성인콘텐츠 (ABSOLUTE_ZERO) |
 | **모델 정책** | strategic=**Opus 4.7**(주간 전략 1-2회) / heavy=Sonnet 4.6(고객 대면) / light=Haiku 4.5(데이터·모니터링) |
 | **자동화 상태** | ACTIVE (2026-03-24 승인), EMERGENCY_STOP DB 플래그 + 1클릭 긴급 중지 가능 |
-| **MONITORING_TASKS** | 6개 태스크는 EMERGENCY_STOP 상태에서도 계속 실행 (cto:qa-verify, cafe:session-refresh 등) |
+| **MONITORING_TASKS** | 일부 태스크는 EMERGENCY_STOP 상태에서도 계속 실행 (coo:moderator, cafe:session-refresh 등 — 현재 목록은 `agents/cron/runner.ts` 참조) |
 
 ---
 

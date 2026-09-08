@@ -32,7 +32,7 @@ const kstDayIdx = (t: number) => Math.floor((t + 9 * 3600000) / DAY_MS)
 export interface RetentionPoint { denom: number; returned: number; rate: number | null }
 export interface GuestRetention { d1: RetentionPoint; d3: RetentionPoint; d7: RetentionPoint; d14: RetentionPoint; d30: RetentionPoint }
 
-// EventLog 비회원(userId=null) D-N 재방문율 — 공식 리텐션(GA4 대체).
+// EventLog 비회원(userId=null) D-N 재방문율 — 공식 리텐션.
 // 코호트 = sessionId 첫 page_view일(KST). 분모 = N일 경과한(성숙) 코호트만 — 아직 N일 안 지난 코호트는
 // '실패'로 세지 않고 분모에서 제외. 분자 = 첫방문+N일 이후 재방문 존재. 내부 세션(/admin·founder) 제외.
 async function computeGuestRetention(now: number, windowDays = 60): Promise<GuestRetention> {
@@ -283,7 +283,6 @@ export const getMonthlyOkrStats = unstable_cache(
         : 0
 
     // KR4(공식): EventLog 비회원 D7 재방문율 — 성숙 코호트만 분모.
-    // GA4/CDO cohort 참고값은 생산자(cdo:kpi-collector)가 R4 에서 제거되면서 함께 걷어냈다(2026-09-08).
     const guestRetention = await computeGuestRetention(Date.now())
     const d7RetentionPct = guestRetention.d7.rate
     const d1RetentionPct = guestRetention.d1.rate
@@ -299,10 +298,9 @@ export const getMonthlyOkrStats = unstable_cache(
       d1RetentionPct,
       d7RetentionPct,
       guestRetention,
-      // legacy 참고(수집중단)
     }
   },
-  ['admin-monthly-okr-stats-v3'], // v3: KR4 = EventLog 비회원 D7(성숙 코호트)로 교체, GA4는 legacy
+  ['admin-monthly-okr-stats-v3'], // v3: KR4 = EventLog 비회원 D7(성숙 코호트)
   { revalidate: 600 }
 )
 

@@ -147,7 +147,7 @@ gh workflow disable agents-seed.yml
 gh workflow list
 ```
 
-**LOCKED 시 유지:** cto:health-check / error-monitor / security-audit / qa-verify / cdo:anomaly-detector
+**LOCKED 시 유지:** cto:health-check / error-monitor / security-audit / cdo:anomaly-detector / coo:moderator (현재 목록은 `agents/cron/runner.ts` MONITORING_TASKS 참조)
 
 ---
 

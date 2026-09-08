@@ -125,7 +125,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | A12 | CEO 승인 리마인더 | `agents/cron/approval-reminder.ts` | GHA 09:00 KST | GHA | INFRA | — | — | ACTIVE | 2026-05-12 |
 | A13 | CTO 아키텍처 리뷰 | ~~`agents/cto/arch-review.ts`~~ 삭제됨 | — | — | INFRA | — | — | **ARCHIVED** | 2026-09-08 |
 | A14 | CTO 가비지 컬렉션 | ~~`agents/cto/garbage-collect.ts`~~ 삭제됨 | — | — | INFRA | — | — | **ARCHIVED** | 2026-09-08 |
-| A15 | CTO QA 검증 | `agents/cto/qa-verifier.ts` | GHA 주간 | GHA | INFRA | — | — | ACTIVE | 2026-05-12 |
+| A15 | CTO QA 검증 | ~~`agents/cto/qa-verifier.ts`~~ 삭제됨 | — | — | INFRA | — | — | **ARCHIVED** | 2026-09-08 |
 | A16 | COO 커넥션 퍼실리테이터 | `agents/coo/connection-facilitator.ts` | GHA 일간 | GHA | RELATION | ALL | — | ACTIVE | 2026-05-12 |
 | A17 | COO 일자리 매처 | `agents/coo/job-matcher.ts` | GHA 일간 | GHA | MONEY | P4 | — | ACTIVE | 2026-05-12 |
 | A18 | COO 댓글 활성화 | `agents/coo/comment-activator.ts` | GHA 일간 | GHA | RELATION | ALL | — | ACTIVE | 2026-05-23 |

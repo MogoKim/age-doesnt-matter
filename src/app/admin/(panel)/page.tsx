@@ -36,7 +36,7 @@ const Q2_OKR = {
   uv:          { label: 'KR1 — 월 순방문자 (UV)', target: 5000, unit: '명', desc: '비회원 포함 실방문 고유 세션 (봇·창업자 제외)' },
   avgPv:       { label: 'KR2 — 방문당 평균 PV', target: 5.0, unit: 'PV', desc: '광고로 온 사람이 머무는가? 콘텐츠 흡인력 지표' },
   conversion:  { label: 'KR3 — 방문→가입 전환율', target: 10, unit: '%', desc: '실방문 대비 신규가입 비율 — 광고 효율의 직접 지표' },
-  d7Retention: { label: 'KR4 — 비회원 D7 재방문율', target: 45, unit: '%', desc: 'GA4 Cohort — CDO 에이전트 매일 22:00 수집' },
+  d7Retention: { label: 'KR4 — 비회원 D7 재방문율', target: 45, unit: '%', desc: 'EventLog 기반 — 성숙 코호트(첫방문 후 7일 경과)만 분모' },
 } as const
 
 export default async function AdminDashboardPage() {
@@ -219,9 +219,9 @@ export default async function AdminDashboardPage() {
             decimals={1}
             tip="이달 신규가입(실고객 providerId 숫자) ÷ 이달 UV. 상단 '오늘 전환율'과 봇 기준 동일, 기간만 월 단위."
           />
-          {/* KR4 D7 — 공식: EventLog 비회원 D7(성숙 코호트). GA4는 legacy(수집중단) */}
+          {/* KR4 D7 — EventLog 비회원 D7(성숙 코호트) */}
           <div className="rounded-xl border border-zinc-200 bg-white p-4">
-            <p className="text-xs font-bold text-zinc-700">{Q2_OKR.d7Retention.label}<InfoTip text="EventLog 기반 비회원 D7 재방문율(공식). 성숙 코호트(첫방문 후 7일 경과)만 분모에 포함 — 아직 7일 안 지난 코호트는 실패로 세지 않음. GA4 코호트는 수집 중단되어 공식 지표에서 제외(아래 legacy 참고만)." /></p>
+            <p className="text-xs font-bold text-zinc-700">{Q2_OKR.d7Retention.label}<InfoTip text="EventLog 기반 비회원 D7 재방문율. 성숙 코호트(첫방문 후 7일 경과)만 분모에 포함 — 아직 7일 안 지난 코호트는 실패로 세지 않음." /></p>
             <div className="mt-2 flex items-baseline justify-between">
               <span className="text-xl font-bold text-zinc-900">
                 {okr.d7RetentionPct ?? 0}
