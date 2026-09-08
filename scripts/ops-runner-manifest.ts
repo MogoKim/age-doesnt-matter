@@ -236,7 +236,6 @@ export const GHA_RUNNERS: Readonly<Record<string, RunnerSpec>> = {
   'push-scheduled.yml': { grade: 'notification', what: '예약 푸시 발송' },
   'ci.yml': { grade: 'read-only', what: 'CI 가드 5종' },
   'lighthouse.yml': { grade: 'read-only', what: 'Lighthouse' },
-  'post-deploy-qa.yml': { grade: 'read-only', what: '배포 후 QA' },
   'ops-daily-report.yml': { grade: 'read-only', what: '일일 리포트' },
   'prewarm-detail-pages.yml': { grade: 'read-only', what: '상세 페이지 프리웜' },
   'quarantine-check.yml': { grade: 'read-only', what: '격리 점검' },

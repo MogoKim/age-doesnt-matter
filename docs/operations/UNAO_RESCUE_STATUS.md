@@ -1,7 +1,7 @@
 # 우나어 Rescue 현재 상태판
 
 최종 갱신: 2026-09-08 KST
-기준 main: `384a1e35` (PR #432)
+기준 main: `2861da77` (PR #433)
 상태: **Rescue 진행 중 — 로그인·GHA DB 인증 종결. 현재 핵심 프로그램은 기반 단순화 / 레거시 제거(R4·R5·R6)**
 
 이 문서는 현재 판정과 다음 게이트만 관리한다. **최상위 운영 정본은 창업자가 승인한
@@ -58,6 +58,7 @@ PV, DAU, 색인 수, 자동 발행량, 에이전트 수는 단독 성공 지표�
 | 문서 충돌 | obsolete Rescue/feature/소란소란 문서 일부 정리 (#414~#416) |
 | 삭제 후 stale 노출 | sitemap·JOB list/home 캐시 무효화 연결 (#417, #419) |
 | 죽은 코드 | design·scripts·thumbnail·cook82·GSC dead path 제거 (#428~#432) |
+| **false-green 배포 게이트** | **Gate 2 제거 — 무검증 배포가 초록불로 보이던 경로 차단 (R4, 2026-09-08)** |
 
 R6 정리 과정에서 agents/scripts 타입 오류는 `953 -> 932`로 줄었다. **932는 현황값일 뿐
 완료 기준도 목표도 아니다.** 지금 이 숫자를 줄이는 것을 작업 목표로 삼지 않는다.
@@ -74,7 +75,7 @@ R6 정리 과정에서 agents/scripts 타입 오류는 `953 -> 932`로 줄었다
 | production health/auth | **PASS** - 최근 배포 200, 창업자 실제 로그인 정상 확인 | 재발 시에만 재검증 |
 | GHA DB 인증 | **PASS / 종결** - 2026-09-08 04:32 UTC 자연 실행 성공 (아래 증거) | 재발 시에만 재검증 |
 | Moderation | **PASS** - lifecycle 수정 후 자연 실행 success, AuthenticationFailed 0 | 정기 실행 유지 |
-| Gate 2 | workflow는 active, `qa:deploy-audit`은 PAUSED에서 실질 스킵 | **Gate 2 자체의 KEEP/REMOVE 재판정(R4).** PR #427은 merge하지 않는다 |
+| Gate 2 | **REMOVE 종결 (2026-09-08)** — workflow disabled + dependency closure 제거(PR #434). PR #427은 **CLOSED**(merge 0) | 없음 — 재조사 금지. 판정 근거는 이 상태판과 PR #434다 |
 | 커뮤니티 회복 | **FAIL** - 네 숫자 단순 관찰 중 (§5-A) | 회복 추세. 기존 North Star 1명은 **임시 참고치** |
 | 어드민 대시보드 | `northStar=4`는 재방문+작성이 아니라 7일 WAU. `DailyKpiSnapshot` 최신 행은 2026-08-23에서 정지 | **R6 대상** — 오래된 KPI·지표·스냅샷·대시보드 KEEP/REMOVE 판정 |
 | 네이버 | 기술 노출면 정상, 유입 고점 대비 **99.3% 감소** | Search Advisor 수집·색인·노출, 브랜드 홈 색인 확인 |
@@ -109,7 +110,7 @@ R6 정리 과정에서 agents/scripts 타입 오류는 `953 -> 932`로 줄었다
 | ~~0~~ | ~~GHA DB 인증 증명~~ | **종결 2026-09-08** | run `34187374847` success · AuthenticationFailed 0 |
 | 1 | `DIRECT_URL` 정정 | 창업자 액션 | GitHub/local direct URL이 user `postgres`, port 5432 |
 | 2 | 네이버 Search Advisor 기준선 | 창업자 콘솔 확인 | 수집·색인·노출과 브랜드 홈 상태 기록 |
-| 3 | PR #427 Gate 2 | **merge하지 않음** | Gate 2 자체의 KEEP/REMOVE 재판정(R4) 대기. 유지로 판정될 때만 최신 main 재검증 → 승인 → merge |
+| ~~3~~ | ~~PR #427 Gate 2~~ | **종결 2026-09-08** | Gate 2 = **REMOVE** 판정. PR #427 **CLOSED**(merge commit 없음) · workflow `disabled_manually` · dependency closure 제거 PR 작성 |
 | 4 | **기반 단순화 / 레거시 제거 (R4·R5·R6)** | 대상별 read-only 판정부터 | 5종 분류 판정표 확정 → 승인된 작은 PR로 dependency closure 제거 |
 | 5 | R3 공개 non-USER 데이터룸 | Search Advisor와 병렬 가능 | 768건의 보존·noindex·격리·리라이트·삭제 후보표 |
 | 6 | R8 관찰 | 상시 | 네 숫자를 각각 기록. 구현 없음 |
@@ -132,8 +133,16 @@ R6 정리 과정에서 agents/scripts 타입 오류는 `953 -> 932`로 줄었다
 
 ### 병렬 진행 규칙
 
-- 순위 3은 DB 인증 종결로 기술적 차단이 풀렸지만, **Gate 2를 유지할지부터 R4에서 판정한다.**
-  유지 판정이 나기 전에는 merge하지 않는다.
+- 순위 3은 **REMOVE로 종결됐다(PR #434).** 판정 근거는 다음 다섯이다.
+  ① `deployment_status` 는 배포 성공 **후** 이벤트라 Gate 2 는 배포를 차단할 수 없었다.
+  ② runner 핸들러가 `.then(() => {})` 라 `main()` 의 첫 `await` 에서 프로세스가 죽어
+     **도입(2026-04-07) 이래 완주 0회** — Slack·AdminQueue·BotLog 산출 0건, 최근 100 run failure 0건.
+  ③ 검사 스텝이 전부 `continue-on-error` 라 무검증 배포가 초록불로 보였다(false-green).
+  ④ cron-links 는 `ci.yml` `agents-check` 와 동일 스크립트, 광고는 `E2E Ads` 와 동일 spec 중복이고
+     Lighthouse·참여이벤트 결과는 판정 에이전트가 참조조차 하지 않았다.
+  ⑤ 유일한 고유 검사인 smoke 는 실서비스 도메인이 아니라 `SITE_URL`(`*.vercel.app`)을 검사했다.
+  PR #427 은 merge 없이 close 했다. 상세 조사 기록은 저장소 밖 `unao-reports/r4-gate2-keep-remove-audit.md`
+  에 **보조 증거**로 남아 있으나, 판정 정본은 이 상태판과 PR #434다.
 - **순위 4가 현재 핵심 프로그램이다.** 지표 작업이 기반 단순화를 막지 않는다.
 - 순위 2·4·5는 병렬 진행한다.
 - 순위 6은 관찰이므로 다른 작업을 막지 않는다. R8 관찰 결과를 기다리느라 기반 단순화를 미루지 않는다.
@@ -219,8 +228,11 @@ T+0은 2026-09-05 KST다. 날짜가 지나도 증거가 없으면 PASS로 넘기
 - 판정은 read-only로 먼저 한다. 참조원(runner·registry·workflow·env·문서·테스트·패키지)까지 묶어 판정표를 만든다.
 - 제거는 되돌리기 쉬운 작은 PR로 나눈다. 삭제 전 재가동 방지선을 먼저 둔다.
 - 이미 만든 read-only dependency closure는 **증거로 보존**하되 그 자체가 삭제 승인은 아니다.
-- **Gate 2(`qa:deploy-audit`)와 PR #427도 이 판정 대상이다.** 유지로 판정될 때만 merge를 검토한다.
+- ~~Gate 2와 PR #427 판정~~ → **2026-09-08 종결. Gate 2 = REMOVE, PR #427 = CLOSED.**
 - **타입 복구는 REMOVE 이후다.** 삭제 예정 코드의 타입 오류는 고치지 않는다. KEEP 범위 확정 후 최종 KEEP 코드만 ops tsc 0으로 만들며, 복원 방법은 그때 결정한다.
+- **후속 R6 재감사 항목 (Gate 2 제거 시 이관, 2026-09-08)**: `scripts/smoke-test.ts` 는 이번에 유지했으나
+  두 결함이 남아 있다 — ① AdSense 슬롯 검사가 **구조적 false-red**(광고는 `'use client'` 지연 로드라
+  초기 HTML에 `adsbygoogle` 이 없는 것이 정상) ② `/api/events` POST 에 `x-bot-type` 헤더 미부착.
 - 기타 후보: 도메인·env fallback·모델 ID·localStorage key 단일화.
 
 ## 10. 역할과 보고 규칙

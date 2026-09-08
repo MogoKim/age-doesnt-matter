@@ -5,7 +5,7 @@
 > **변경 시**: 이 문서 하단 [문서 업데이트 가이드](#문서-업데이트-가이드) 참고
 
 > ## ⚠️ 2026-09-05 실측 배너 — 이 문서의 "가동 중" 서술은 현재 상태가 아니다
-> - 2026-05-11(v11) 시점 문서다. "93핸들러·17GHA" 등 수치는 당시 값이며, 2026-09-05 실측은 runner HANDLERS 78개 · GitHub Actions 26개 중 21개 `disabled_manually`. launchd 콘텐츠 발행 12개는 2026-09-06 04:09 KST unload 완료(4개 유지/관찰). production `/api/health`는 감사 당시 503(DB 28P01)이었으나 R1-A로 복구돼 현재 healthy.
+> - 2026-05-11(v11) 시점 문서다. "93핸들러·17GHA" 등 수치는 당시 값이며, 현재 실측은 runner HANDLERS **78개** · GitHub Actions **25개 중 21개 `disabled_manually`, 활성 4개**(ci · lighthouse · quarantine-check · agents-moderation). 2026-09-08 Gate 2(`post-deploy-qa`) 제거 반영 후 값이다. launchd 콘텐츠 발행 12개는 2026-09-06 04:09 KST unload 완료(4개 유지/관찰). production `/api/health`는 2026-09-05 감사 당시 503(DB 28P01)이었으나 R1-A로 복구돼 현재 healthy.
 > - §1 "제2의 인생 플랫폼 — 일자리 + 커뮤니티 + 매거진" 정의는 헌법 v5.0(`docs/constitution/NORTH_STAR.md` §2·§14 "일자리 플랫폼이 아니라 커뮤니티")과 충돌한다. Rescue R5에서 REWRITE 대상.
 > - 시드봇 글쓰기는 2026-06-03 retired, `CoupangSearchWidget`은 2026-06-12 제거됐으나 본문에 미반영.
 > - 근거: `docs/operations/2026-09-05-claude-foundation-reset-audit-report.md` §3 A-06·C-07·D-05.
@@ -369,7 +369,6 @@
 | **STRATEGIST** | `strategist/user-deep-analysis.ts` 확장 | 수동 | Opus | 사용자 심층 분석 v2 |
 | **QA** | `qa/content-auditor.ts` | 주간 | Haiku | 콘텐츠 품질 감사 |
 | **QA** | `qa/code-gate.ts` | PR 트리거 | Haiku | Gate 1 코드 검증 |
-| **QA** | `qa/deploy-auditor.ts` | deployment 트리거 | Haiku | Gate 2 배포 검증 |
 
 > **총 핸들러 수**: **93개** (`agents/cron/runner.ts` HANDLERS 맵 실측, MONITORING_TASKS 6개 별도 포함)
 
@@ -543,7 +542,6 @@ CafeTrend → card-news/generator.ts
 |------|--------|------|
 | `ci.yml` | PR, push to main | Lint → Typecheck → Test → Build (E2E: webServer 자동 시작) |
 | `lighthouse.yml` | PR, push to main | Lighthouse 접근성 감사 |
-| `post-deploy-qa.yml` | deployment_status | Gate 2: Smoke+Lighthouse → Slack #qa |
 | `run-script.yml` | workflow_dispatch | 일회성 스크립트 수동 실행 |
 
 ### 6.2 에이전트 크론 (13개)
@@ -909,7 +907,7 @@ Slack Workspace: 우나어-ops (14개 채널)
 - SEO JSON-LD + sitemap + Breadcrumbs + 동적 OG 이미지
 - GTM + GA4 애널리틱스 기반 (15개 커스텀 이벤트)
 - PWA (서비스 워커 + 푸시알림 + 오프라인 페이지)
-- Gate 1 (CI: tsc+lint+build) + Gate 2 (post-deploy: Smoke+Lighthouse)
+- Gate 1 (CI: tsc+lint+build). 배포 후 Gate 2 는 R4 에서 제거됐다 (2026-09-08)
 
 #### SNS 마케팅 시스템
 - SNS 바이럴 마케팅 실험 시스템 (A/B 테스트 8주 로드맵)
@@ -1039,7 +1037,6 @@ EXPERIMENT(설계) → EXECUTE(실행) → ⛔ Gate 2(사용자 피드백) → R
 | CI 빌드 검증 (ci.yml) | ✅ |
 | Lighthouse 접근성 (lighthouse.yml) | ✅ |
 | E2E Playwright (CI webServer 자동 시작) | ✅ |
-| 배포 후 Gate 2 (post-deploy-qa.yml) | ✅ Smoke + Lighthouse |
 | 크론 연결 검증 (check-cron-links.ts) | ✅ /done 자동 실행 |
 | 에이전트 프롬프트 QA | ⚠️ BotLog 기반 에러율 모니터링만 (eval 미구축) |
 
@@ -1084,12 +1081,12 @@ Layer 3: 배포 후 → Smoke+Lighthouse → Slack #qa
 ```
 ████████████  코드 (46페이지, 35+API, 77+컴포넌트)         ✅ 완료
 ████████████  에이전트 (93핸들러, 헌법 v5.0, Prompt Caching) ✅ 완료
-████████████  CI/CD (Gate 1 + Gate 2 + E2E)               ✅ 완료
+████████████  CI/CD (Gate 1 + E2E)                        ✅ 완료
 ████████████  SNS 실험 관리 + 학습 축적                     ✅ 완료
 ████████████  매거진 v2 (3회/일 + Gemini 커버)              ✅ 완료
 ████████████  PWA (서비스워커 + 푸시알림 + 오프라인)          ✅ 완료
 ████████████  킬러포스트 + 바이럴파동 파이프라인               ✅ 완료
-████████░░░░  QA (Gate 2 구축, AI Evals 미구축)            ⚠️ 부분
+████████░░░░  QA (Gate 1 운영, AI Evals 미구축)            ⚠️ 부분
 ████████░░░░  모니터링 (GTM+GA4 구축, 대시보드 미설정)        ⚠️ 부분
 ████████░░░░  에이전트 협업 (메시지 버스 부분 구축)            ⚠️ 부분
 ████████░░░░  SEO (JSON-LD 완성, Search Console 색인 복구 중) ⚠️ 진행중
@@ -1135,7 +1132,7 @@ Layer 3: 배포 후 → Smoke+Lighthouse → Slack #qa
 | **GHA 17개 체계** | agents-sheet-viral/killer-post/weekly 확장 + post-deploy-qa + quarantine-check | 2026-04~05 |
 | **봇 게시글 Slug 자동생성** | `/api/bot/posts` + `generateCommunitySlug()`, Google 12,533개 URL 색인 복구 | 2026-05-11 |
 | **SEO Article JSON-LD image 필드** | 커뮤니티 게시글 Google 리치 결과 필수 필드 충족 (3-tier fallback) | 2026-05-11 |
-| **Gate 2 자동화** | post-deploy-qa.yml: Smoke+Lighthouse → Slack #qa | 2026-04 |
+| **Gate 2 자동화** | post-deploy-qa.yml: Smoke+Lighthouse → Slack #qa. **R4 에서 제거됨(2026-09-08)** | 2026-04 |
 
 ---
 

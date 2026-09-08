@@ -203,7 +203,7 @@ Feature 문서: [ID] [기능명] — [신규생성 / 수정이력추가 / ARCHIV
 
 **성공한 단계는 나열하지 않는다.** 전부 통과면 "Gates: all passed" 한 줄로 끝.
 
-Slack에 별도 알림 불필요 (Gate 2가 배포 후 자동으로 #qa에 결과 전송).
+배포 후 Slack 자동 알림은 없다 (Gate 2는 R4에서 제거됐다). 검증은 변경 유형별 CI와 작업별 검증 절차(`.claude/rules/qa-deploy.md`)를 따른다.
 
 ---
 

@@ -20,10 +20,10 @@ import {
  * launchd 로 옮겼는데도, 주석 처리된 `echo "agent=..."` 줄을 스캐너가 세는 바람에
  * 계속 linked 로 보고됐다.
  *
- * 반대로 `qa:deploy-audit` 는 post-deploy-qa.yml 이 실제로 호출하는데도,
+ * 반대로 `agents-` 접두어가 없는 워크플로우가 실제로 호출하는 키는,
  * 스캔이 `agents-*.yml` 만 읽어서 orphan 으로 분류됐다.
  *
- * 두 오류가 서로를 가려 총계(45/33)는 맞아 보였다. 그래서 총계만 보는 테스트로는
+ * 두 오류가 서로를 가려 총계는 맞아 보였다. 그래서 총계만 보는 테스트로는
  * 부족하고, 아래처럼 **개별 키의 분류**까지 고정한다.
  */
 
@@ -61,19 +61,19 @@ afterAll(() => {
 describe('extractWorkflowKeys — 워크플로우에서 키를 뽑는 규칙', () => {
   it('활성 runner.ts 호출을 인식한다', () => {
     const dir = workflowDir({
-      'anything.yml': `jobs:\n  run:\n    steps:\n      - run: cd agents && npx tsx cron/runner.ts qa deploy-audit\n`,
+      'anything.yml': `jobs:\n  run:\n    steps:\n      - run: cd agents && npx tsx cron/runner.ts coo moderator\n`,
     })
-    expect([...extractWorkflowKeys(dir)]).toContain('qa:deploy-audit')
+    expect([...extractWorkflowKeys(dir)]).toContain('coo:moderator')
   })
 
   it('파일 이름이 agents- 로 시작하지 않아도 스캔한다', () => {
-    // 예전 버전은 `agents-*.yml` 만 읽어서 post-deploy-qa.yml 을 통째로 놓쳤다.
+    // 예전 버전은 `agents-*.yml` 만 읽어서 접두어가 다른 파일을 통째로 놓쳤다.
     const dir = workflowDir({
-      'post-deploy-qa.yml': `      - run: npx tsx cron/runner.ts qa deploy-audit\n`,
+      'custom-qa.yml': `      - run: npx tsx cron/runner.ts coo moderator\n`,
       'zz-other.yaml': `      - run: npx tsx cron/runner.ts cdo kpi-collector\n`,
     })
     const keys = extractWorkflowKeys(dir)
-    expect(keys.has('qa:deploy-audit')).toBe(true)
+    expect(keys.has('coo:moderator')).toBe(true)
     expect(keys.has('cdo:kpi-collector'), '.yaml 확장자도 읽어야 한다').toBe(true)
   })
 
@@ -141,13 +141,13 @@ describe('extractWorkflowKeys — 워크플로우에서 키를 뽑는 규칙', (
   it('셸 실행 형식이 아니면 인정하지 않는다 — tsx 로 실행되는 것만 호출이다', () => {
     const dir = workflowDir({
       'a.yml': [
-        '      - name: runner.ts qa deploy-audit 를 설명하는 문장',
+        '      - name: runner.ts cdo kpi-collector 를 설명하는 문장',
         '        run: cd agents && npx tsx cron/runner.ts coo moderator',
       ].join('\n'),
     })
     const keys = extractWorkflowKeys(dir)
     expect(keys.has('coo:moderator'), '실제 실행은 잡아야 한다').toBe(true)
-    expect(keys.has('qa:deploy-audit'), '설명문은 잡으면 안 된다').toBe(false)
+    expect(keys.has('cdo:kpi-collector'), '설명문은 잡으면 안 된다').toBe(false)
   })
 
   it('동적 인자는 키로 뽑지 않는다', () => {
@@ -216,11 +216,6 @@ describe('hasExemptComment — 크론 미연결이 의도적임을 알리는 표
 describe('buildReport — 실제 저장소 기준 분류', () => {
   const report = buildReport()
 
-  it('qa:deploy-audit 는 linked 다 (post-deploy-qa.yml 이 직접 호출한다)', () => {
-    expect(report.orphaned).not.toContain('qa:deploy-audit')
-    expect(report.dispatchOnly).not.toContain('qa:deploy-audit')
-  })
-
   it('cafe_crawler:magazine-generate 는 localOnly 다 (GHA 비활성 · launchd 이관)', () => {
     expect(report.orphaned).toContain('cafe_crawler:magazine-generate')
     expect(report.localOnly).toContain('cafe_crawler:magazine-generate')
@@ -237,8 +232,8 @@ describe('buildReport — 실제 저장소 기준 분류', () => {
       workflowWithoutHandler: report.workflowWithoutHandler.length,
       launchdOrphans: report.launchdOrphans.length,
     }).toEqual({
-      total: 79,
-      linked: 46,
+      total: 78,
+      linked: 45,
       orphaned: 33,
       dispatchOnly: 25,
       localOnly: 8,
@@ -288,11 +283,11 @@ describe('extractHandlers — AST 로 HANDLERS 를 읽는다', () => {
   it('HANDLERS 밖의 객체 키는 읽지 않는다', () => {
     const p = runnerFile(`const OTHER = { 'fake:key': () => import('./nope.js') }
 const HANDLERS: Record<string, () => Promise<void>> = {
-  'qa:deploy-audit': () => import('../qa/post-deploy.js').then(() => {}),
+  'qa:content-audit': () => import('../qa/content-audit.js').then(() => {}),
 }
 const ALSO_NOT = { 'another:key': () => import('./nope2.js') }
 `)
-    expect(extractHandlers(p).map((h) => h.key)).toEqual(['qa:deploy-audit'])
+    expect(extractHandlers(p).map((h) => h.key)).toEqual(['qa:content-audit'])
   })
 
   it('정적 import 경로가 없으면 조용히 빠뜨리지 않고 실패한다', () => {
@@ -375,9 +370,9 @@ const HANDLERS: Record<string, () => Promise<void>> = {
     expect(() => extractHandlers(runnerFile('export const NOTHING = {}\n'))).toThrow(/HANDLERS/)
   })
 
-  it('실제 runner.ts 를 읽으면 79개이고 dawn-sheet-scrape 가 들어 있다', () => {
+  it('실제 runner.ts 를 읽으면 78개이고 dawn-sheet-scrape 가 들어 있다', () => {
     const handlers = extractHandlers()
-    expect(handlers).toHaveLength(79)
+    expect(handlers).toHaveLength(78)
     expect(handlers.map((h) => h.key)).toContain('community:dawn-sheet-scrape')
   })
 })

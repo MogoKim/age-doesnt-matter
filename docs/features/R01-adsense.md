@@ -162,7 +162,10 @@ pathname 변경 감지 (useEffect)
 ✅ Unfilled → 쿠팡 배너 자동 폴백  
 ✅ SPA 라우팅 광고 재로드 처리  
 ✅ AdSense head preload/direct script 제거 + hydration 후 로드로 홈 hero LCP 대역폭 경쟁 완화
-✅ 2026-06-14 배포 후 Gate 2 Smoke·Ad Verification·Lighthouse·QA Deploy Audit 통과
+⚠️ 2026-06-14 "배포 후 Gate 2 통과" 기록은 **실제 감사 완주가 아니다.** Gate 2 판정 에이전트는
+  `runner.ts` 핸들러가 `.then(() => {})` 라 도입 이래 완주한 적이 없고, workflow job 이 success 로
+  보인 것은 검사 스텝이 전부 `continue-on-error` 였기 때문이다(false-green). Gate 2 는 R4 에서 제거됐다
+  (2026-09-08 — 근거: `docs/operations/UNAO_RESCUE_STATUS.md` §5, PR #434)
 ✅ CSP 완벽 설정  
 ⚠️ PC_SIDEBAR, MobileStickyAd 미사용 (코드 정리 필요)  
 ⚠️ 퍼블리셔 ID 하드코딩 (환경변수와 값 불일치)
@@ -191,7 +194,7 @@ pathname 변경 감지 (useEffect)
 | 2026-05-14 | AdSenseUnit에 `fixedWidth`/`fixedHeight` prop 추가 + 홈 데스크탑 728×90(슬롯 3367428779)·728×250(슬롯 7055392341) 배치 신규 추가 | 홈 데스크탑 UI 전면 재설계 |
 | 2026-05-17 | `LIST_PAGINATION_BOTTOM` 슬롯 상수 추가 + `BoardPaginationFooter`에 페이지네이션 하단 광고 배치 (베스트·커뮤니티·매거진·내일찾기 6개 페이지 공통, 모바일 auto / 데스크탑 728×90) | 목록 페이지 광고 수익 증대 — 페이지 전환 후 시선 이동 구간 공략 |
 | 2026-06-14 | `next/script afterInteractive` 제거 후 `AdSenseScriptLoader`로 hydration 후 동적 삽입. `AdSenseUnit`은 `unao:adsense-ready` 이벤트 기반 순차 push로 중복 push 경합 방어 | 광고 슬롯/위치/노출 기회는 유지하면서 홈 hero 이미지와 `adsbygoogle.js` 초기 대역폭 경쟁 제거 |
-| 2026-06-15 | prod HTML 기준 AdSense direct/preload script 제거와 hero preload 유지 확인. Gate 2 Ad Verification 통과 상태 반영 | 성능 변경이 실제 운영 배포에 반영됐음을 문서화 |
+| 2026-06-15 | prod HTML 기준 AdSense direct/preload script 제거와 hero preload 유지 확인. (당시 "Gate 2 Ad Verification 통과"로 적었으나 실제로는 감사 미완주 상태의 false-green이었다 — 2026-09-08 정정) | 성능 변경이 실제 운영 배포에 반영됐음을 문서화 |
 
 ---
 

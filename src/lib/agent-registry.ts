@@ -84,7 +84,6 @@ export const HANDLER_REGISTRY: HandlerMeta[] = [
   // ─── QA ────────────────────────────────────────────────────────────
   { key: 'qa:content-audit', label: 'QA 콘텐츠 감사', botType: 'QA', action: 'CONTENT_AUDIT', schedule: '매일 08:20', type: 'GHA',      workflow: 'agents-daily' },
   { key: 'qa:code-gate',     label: 'QA 코드 게이트', botType: 'QA', action: 'CODE_GATE',     schedule: '—',         type: 'DISPATCH',                   note: '/done 스킬 자동 실행' },
-  { key: 'qa:deploy-audit',  label: 'QA 배포 감사',   botType: 'QA', action: 'DEPLOY_AUDIT',  schedule: '—',         type: 'DISPATCH',                   note: 'Gate 2 자동 실행' },
 
   // ─── STRATEGIST ────────────────────────────────────────────────────
   { key: 'strategist:user-deep-analysis', label: '전략가 유저 심층 분석', botType: 'STRATEGIST', action: 'USER_DEEP_ANALYSIS', schedule: '목 09:00', type: 'GHA', workflow: 'agents-weekly' },
@@ -112,7 +111,7 @@ export const HANDLER_GROUPS = [
   { team: 'CDO',          emoji: '📊', keys: ['cdo:kpi-collector','cdo:anomaly-detector','cdo:engagement-optimizer'] },
   { team: 'CFO',          emoji: '💰', keys: ['cfo:cost-tracker','cfo:revenue-tracker'] },
   { team: 'SEED',         emoji: '🌱', keys: ['seed:scheduler','seed:micro'] },
-  { team: 'QA',           emoji: '✅', keys: ['qa:content-audit','qa:code-gate','qa:deploy-audit'] },
+  { team: 'QA',           emoji: '✅', keys: ['qa:content-audit','qa:code-gate'] },
   { team: '전략/커뮤니티', emoji: '🎯', keys: ['strategist:user-deep-analysis','community:sheet-scrape'] },
   { team: '카페 크롤러',  emoji: '☕', keys: ['cafe_crawler:trend-analysis','cafe_crawler:content-curate','cafe_crawler:cafe-pipeline','cafe_crawler:external-crawl'] },
   { team: 'Design',       emoji: '🎨', keys: ['design:ads-loop'] },

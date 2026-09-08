@@ -215,7 +215,7 @@ export function extractHandlers(runnerPath: string = RUNNER_PATH): HandlerInfo[]
  * 워크플로우 전체에서 `<agent>:<task>` 키를 모은다.
  *
  * 파일 이름으로 거르지 않는다 — 예전에는 `agents-*.yml` 만 읽어서
- * `post-deploy-qa.yml` 이 실제로 호출하는 `qa:deploy-audit` 가 orphan 으로 나왔다.
+ * 접두어가 다른 워크플로우가 실제로 호출하는 키가 orphan 으로 나왔다.
  * 대신 **줄 단위로** 읽어 주석을 걸러낸다. 파일 통째로 정규식을 돌리면
  * 주석 처리된 호출과 설명 문장까지 같이 걸린다.
  */
