@@ -280,17 +280,17 @@
     ┌────────┬───────────┼───────────┬────────┬────────┐
     ▼        ▼           ▼           ▼        ▼        ▼
 ┌───────┐┌───────┐┌──────────┐┌───────┐┌───────┐┌───────┐
-│ CTO   ││ CMO   ││   COO    ││ CPO   ││ CDO   ││ CFO   │
-│기술총괄││마케팅 ││  운영총괄  ││제품총괄││데이터 ││재무총괄│
-│       ││       ││          ││       ││       ││       │
-│헬스체크││트렌드 ││일자리수집 ││UX분석 ││KPI수집││비용   │
-│에러감시││SNS포스││모더레이션 ││기능사용││이상감지││수익   │
-│보안감사││팅+실험││콘텐츠편성 ││여정분석││참여최적││추적   │
-│크롤링 ││전략+리││댓글활성화 ││페르소나││화     ││       │
-│헬스   ││뷰+매거││연결촉진   ││다양성 ││       ││       │
-│       ││진+큐레││일자리매칭 ││       ││       ││       │
-│       ││이션   ││대댓글체인 ││       ││       ││       │
-└───────┘└───────┘└────┬─────┘└───────┘└───────┘└───────┘
+│ CTO   ││ CMO   ││   COO    ││ CDO   ││ CFO   │
+│기술총괄││마케팅 ││  운영총괄  ││데이터 ││재무총괄│
+│       ││       ││          ││       ││       │
+│헬스체크││트렌드 ││일자리수집 ││KPI수집││비용   │
+│에러감시││SNS포스││모더레이션 ││이상감지││추적   │
+│보안감사││팅+실험││콘텐츠편성 ││       ││       │
+│크롤링 ││전략+리││댓글활성화 ││       ││       │
+│헬스   ││뷰+매거││연결촉진   ││       ││       │
+│       ││진+큐레││일자리매칭 ││       ││       │
+│       ││이션   ││대댓글체인 ││       ││       │
+└───────┘└───────┘└────┬─────┘└───────┘└───────┘
                        │
               ┌────────┴─────────┐
               │   SEED (시드봇)    │ 하루 12회+마이크로4회
@@ -537,7 +537,7 @@ CafeTrend → card-news/generator.ts
 
 | 파일 | 스케줄 (KST) | 에이전트 |
 |------|-------------|---------|
-| `agents-daily.yml` | 06~23시 (30+ 크론) | CEO, CMO, CPO, COO, CDO, CFO, CTO + 13개 신규 에이전트 + controversy-chain, garbage-collector |
+| `agents-daily.yml` | 06~23시 (30+ 크론) | CMO, COO, CDO, CFO, CTO + 신규 에이전트 + controversy-chain, garbage-collector |
 | `agents-weekly.yml` | 월/수/목/금 09:00 | CMO(source-expander, content-gap-finder), **CTO(arch-review, weekly-report)** |
 | `agents-hourly.yml` | 2시간마다 | CTO(헬스체크, 에러감시), CDO(이상감지) |
 | `agents-jobs.yml` | 12, 16, 20시 | COO(일자리 수집) |
@@ -567,22 +567,21 @@ CafeTrend → card-news/generator.ts
 06:00      CTO 보안감사
 07:00      CTO 크롤링헬스
 08:00 (월) CMO SEO옵티마이저
-08:30      CEO SNS일일브리핑 | CAFE 크롤링(로컬)
-09:00      CEO 모닝사이클 | SEED 활동 | COO 모더레이션 | CMO 텍스트포스팅
+08:30      CAFE 크롤링(로컬)
+09:00      SEED 활동 | COO 모더레이션 | CMO 텍스트포스팅
  (월)      CMO 소스확장(weekly)
 09:15      COO 연결촉진(1차)
 09:30      승인 리마인더
 10:00      CMO 트렌드분석 | SEED 활동
  (월)      CMO 리뷰(10:00) → 전략(10:15)
 10:15      CMO 간병큐레이션
-10:30      COO 댓글활성화(1차) | CEO 주간리포트(월)
+10:30      COO 댓글활성화(1차)
 10:45      CMO 건강불안해소
-11:00      CPO UX분석 | CMO 카드뉴스→멀티플랫폼
+11:00      CMO 카드뉴스→멀티플랫폼
 11:15      CMO 유머큐레이션
 11:30      CMO 채널시딩
 11:45      COO 일자리매칭
 12:00      COO 일자리수집 | COO 트렌딩스코어 | CMO 지식iN(화/목/토)
- (월)      CPO 사용자여정
 12:15      COO 대댓글체인(1차)
 12:30      CAFE 크롤링(로컬)
 13:00      CAFE 크롤링(Actions) | SEED 활동
@@ -845,10 +844,9 @@ Slack Workspace: 우나어-ops (14개 채널)
 ├── 📁 agents/                       # AI 에이전트 시스템
 │   ├── 📁 core/                    # 기반 인프라 (agent, constitution, notifier, db, slack-commander, approval-helper, meeting, google-api)
 │   ├── 📁 cron/                    # 크론 스케줄러 (runner, schedules.yaml, dependencies)
-│   ├── 📁 ceo/ cto/ cmo/ cpo/ cdo/ cfo/ coo/  # C-level 에이전트
+│   ├── 📁 cto/ cmo/ cdo/ cfo/ coo/  # C-level 에이전트 (ceo·cpo·strategist 는 R4 에서 제거 — 2026-09-08)
 │   ├── 📁 seed/                    # 시드봇 (50명 페르소나 + 마이크로 스케줄러)
 │   ├── 📁 cafe/                    # 카페 크롤러 + 매거진 생성기
-│   ├── 📁 strategist/             # 전략 에이전트 (Opus 기반 심층 분석)
 │   └── 📁 skills/                  # SNS 전략 스킬 레지스트리
 │
 ├── 📁 prisma/                       # DB 스키마 + 마이그레이션

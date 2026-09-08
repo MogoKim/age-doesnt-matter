@@ -242,7 +242,7 @@ export const CARDS: Card[] = [
   s('C-BL-CTA-MISSING', 'PostCTA 클릭 누락 원인', 'T1-검증', '완료됨', '진단완료(2026-06-07): 유실 가능지점 ①rate limit 30/분 공유버킷(events route:30, page_view 합산→cta 429 유실 유력) ②sendBeacon text/plain ③isBot 오분류시 리포트 제외. 조치=C-BL-CTA-FIX'),
   s('C-BL-CTA-FIX', 'PostCTA 이벤트 유실 방지', 'T1-검증', '완료됨', '코드조치 완료(2026-06-07): 전환이벤트(post_cta_clicked/sign_up/signup_step) rate limit 면제 + sendBeacon Blob(application/json). 유실률 정밀검증은 EventLog DB(role 후)'),
   s('C-BL-REAL-FILTER', '실제 고객 기준 필터', 'T1-검증', '완료됨', '검증(2026-06-07): admin 웹/OKR(UV·PV·가입·monthlySignups)·members·insights 봇필터 완비. 슬랙 총유저 2곳(slack-commands+slack-commander) 봇제외 보강. 잔여=기준통일은 C-BL-FILTER-UNIFY'),
-  s('C-BL-FILTER-UNIFY', '봇 제외 기준 통일', 'T1-검증', '백로그', '파일별 상이(isRealUser 순수숫자 vs @unao.bot vs seed_) → 헬퍼로 통일. agents 내부분석(journey-analyzer·user-deep-analysis) 봇필터도 점검'),
+  s('C-BL-FILTER-UNIFY', '봇 제외 기준 통일', 'T1-검증', '백로그', '파일별 상이(isRealUser 순수숫자 vs @unao.bot vs seed_) → 헬퍼로 통일'),
   s('C-BL-GUEST-READ', '비회원 글 읽기 측정', 'T1-검증', '백로그', '익명 식별자 + PostView schema → 비회원 readPercent'),
   s('C-BL-DETAIL-MISS', '게시글 상세 첫 요청 MISS 비용 절감', 'T2-성능', '백로그', 'auth 개인화 분리/API화 → 상세 TTFB 안정'),
   s('C-BL-LIST-STATIC', '목록 정적화 확장', 'T2-성능', '백로그', '/community, /magazine, /jobs 정적화'),
