@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '⚠️  Stop hook: 작업 완료 전 검증 체크리스트 — tsc --noEmit 통과? 변경 페이지 200 확인? 크론/에이전트 변경 시 check-cron-links 실행? smoke-test 실행?'"
+            "command": "echo '⚠️  Stop hook: 작업 완료 전 검증 체크리스트 — tsc --noEmit 통과? 변경 페이지 200 확인? 크론/에이전트 변경 시 check-cron-links 실행?'"
           }
         ]
       }

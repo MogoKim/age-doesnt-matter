@@ -233,7 +233,6 @@ T+0은 2026-09-05 KST다. 날짜가 지나도 증거가 없으면 PASS로 넘기
 - **후속 R6 재감사 항목 (Gate 2 제거 시 이관, 2026-09-08)**: `scripts/smoke-test.ts` 는 이번에 유지했으나
   두 결함이 남아 있다 — ① AdSense 슬롯 검사가 **구조적 false-red**(광고는 `'use client'` 지연 로드라
   초기 HTML에 `adsbygoogle` 이 없는 것이 정상) ② `/api/events` POST 에 `x-bot-type` 헤더 미부착.
-  `.claude/rules/qa-deploy.md` 의 "SSR HTML 광고 마커 확인" 기대도 같은 오해에서 나온 것이라 함께 판정한다.
 - 기타 후보: 도메인·env fallback·모델 ID·localStorage key 단일화.
 
 ## 10. 역할과 보고 규칙
