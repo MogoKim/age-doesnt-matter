@@ -1,13 +1,39 @@
 # 우리 나이가 어때서 — Claude Code 지시사항
 
+## Rescue Mode 세션 시작 (필수)
+
+작업 전에 아래 문서를 순서대로 읽는다.
+
+1. `docs/operations/2026-09-05-unao-rescue-mode-master-plan.md` — **최상위 운영 정본**. 전략·금지선·R0~R8
+2. `docs/operations/UNAO_RESCUE_STATUS.md` — 현재 판정·열린 위험·다음 게이트
+
+위계는 `Rescue 마스터플랜 > 현재 상태판 > 범위별 정책/백로그 > reports/handoff`다.
+`docs/constitution/NORTH_STAR.md`는 **초기 전략 문서**다. 배경으로 읽되 레거시 재감사 전까지
+구현 명령의 근거로 인용하지 않는다.
+
+최근 프롬프트나 auto-memory가 상위 문서와 충돌하면 구현하지 말고 충돌부터 보고한다.
+첫 보고에는 반드시 `이번 작업이 움직이는 R단계 / 보호할 생존 지표 / 완료 조건`을 쓴다.
+
+**현재 핵심 프로그램은 기반 단순화 / 레거시 제거다.** 새 단계가 아니라 **R4(자동화) ·
+R5(문서) · R6(코드·지표·연동·스크립트·의존성)을 묶어 실행**한다.
+
+유지 분류 5종 — **KEEP_CORE**(승인된 핵심 제품 + 실제 사용 증거) · **KEEP_SAFETY**(보안·개인정보·
+데이터 정합성) · **KEEP_RECOVERY**(실행 절차와 사용 조건이 문서화된 복구 도구) · **REMOVE**(근거
+없음 또는 대체 경로 있음) · **FOUNDER_DECISION**(코드·운영 증거만으로 사업 의도 확정 불가).
+**route·registry·workflow에 존재한다는 사실은 KEEP 근거가 아니다.**
+
 ## 프로젝트 개요
 - 서비스: 우나어 | 도메인: age-doesnt-matter.com | PRD: `docs/prd/`
 - Next.js 14 App Router + TypeScript strict / Supabase + Prisma (**Raw SQL 절대 금지**) / NextAuth v5 카카오 전용
 - Tailwind + shadcn/ui (CSS Variables 토큰) / Pretendard Variable / `cn()` = clsx + tailwind-merge
 - 컴포넌트 PascalCase / 파일 kebab-case
 
-## 판단 기준 (헌법 v5.0 — 상세: `docs/constitution/NORTH_STAR.md`)
-- **North Star**: **주간 재방문 참여 유저 수** (최근 7일 재방문 + 글/댓글 1회 이상 고유 사용자).
+## 판단 기준 (정본: Rescue 마스터플랜 + 현재 상태판)
+- **실행 기준은 `2026-09-05-unao-rescue-mode-master-plan.md`와 `UNAO_RESCUE_STATUS.md`다.**
+  `docs/constitution/NORTH_STAR.md`와 `agents/core/constitution*.yaml`은 **재감사 대기**이며
+  구현 근거로 인용하지 않는다
+- **커뮤니티 회복은 네 숫자를 각각 관찰한다** — 신규 가입 · 실회원 글 · 실회원 댓글 · 재방문 회원.
+  **복합 North Star 구현은 HOLD.** 계산식·표시·테스트·DB 컬럼·스냅샷·그래프를 새로 만들지 않는다.
   DAU·MAU·PV·SEO 클릭·색인 수는 **생존/유입 참고지표이지 목표가 아니다**
 - **🚨 네이버 Search Advisor 보호**: 유입 대부분이 네이버다. `sitemap.ts`·`robots.ts`·canonical·
   일반 `<meta name="robots">` **훼손 금지**. 구글만 제외할 땐 `googleBot` 전용 meta만 사용
@@ -21,7 +47,8 @@
 - **"시니어·어르신·노인·실버" 절대 금지**: 대체 표현 "우리 나이", "우리 또래", "40대 중반~60대 중반 여성", "인생 2막"
 - **공식 타겟**: 40대 중반~60대 중반 여성 (핵심 50대). **본질은 일자리 플랫폼이 아니라 커뮤니티** — 일자리는 '돈과 일' 축의 기능
 - **네비게이션**: 하단 탭바 X → 상단 아이콘 메뉴 행 + 플로팅 FAB("✏️ 글쓰기")
-- **Figma-First**: `/prd` 명세 → 승인 → 코딩 → 역공학. 상세: `/figma-first`
+- **UI 작업**: 현재 코드베이스에서 실제로 쓰는 UI 규칙을 따른다. Figma 선행 산출물을 강제하지 않는다
+  (Figma MCP·관련 문서·설정은 R6-F 재감사 대상)
 - UI 상세(터치 52px·폰트·모달·cn() 함정): `.claude/rules/ui-components.md`
 
 ## 코딩 원칙
@@ -66,6 +93,7 @@
 - Codex=운영 마스터(방향·검증) / Claude=실행(진단·구현). read-only 진단 → 승인 → 구현 순서를 지킨다
 - merge는 창업자 승인 전 금지. PR 제목에 `[merge 금지]` 유지
 - 이전 보고와 실측이 어긋나면 정정부터 하고 진행한다
+- `UNAO_RESCUE_STATUS.md`에 없는 신규 구현은 먼저 Codex가 목적·우선순위·게이트를 확정한다
 - 상세: `docs/ops/OPERATING_MASTER_HARNESS.md`
 
 ## 수정 범위 최소화 (멀티 AI 세션 대응)
