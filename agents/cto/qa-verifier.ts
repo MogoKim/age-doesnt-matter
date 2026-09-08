@@ -41,7 +41,6 @@ interface CronResult {
  * - 주 1회 또는 DISPATCH ONLY 태스크는 WEEKLY_EXPECTED로 분리 관리 (아직 미구현)
  *
  * runner.ts 키 → BotLog (botType:action) 매핑:
- *   ceo:morning-cycle        → CEO:MORNING_CYCLE
  *   cto:health-check         → CTO:HEALTH_CHECK
  *   cto:security-audit       → CTO:SECURITY_AUDIT
  *   cmo:trend-analyzer       → CMO:TREND_ANALYSIS

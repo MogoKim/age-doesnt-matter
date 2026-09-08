@@ -47,8 +47,15 @@ describe('HANDLER_GROUPS 는 레지스트리의 뷰다', () => {
   })
 })
 
-describe('삭제된 두 핸들러의 잔재', () => {
-  const DELETED = ['cmo:knowledge-responder', 'cmo:social-poster-visual'] as const
+describe('삭제된 핸들러의 잔재', () => {
+  const DELETED = [
+    'cmo:knowledge-responder', 'cmo:social-poster-visual',
+    // R4 ORG_THEATER 10개 (2026-09-08) — 재등록 방지선
+    'cdo:engagement-optimizer', 'ceo:morning-cycle', 'ceo:morning-sns-briefing',
+    'ceo:weekly-report', 'cfo:revenue-tracker', 'cpo:feature-tracker',
+    'cpo:journey-analyzer', 'cpo:persona-diversity-checker', 'cpo:ux-analyzer',
+    'strategist:user-deep-analysis',
+  ] as const
 
   it('runner 에 없다', () => {
     for (const key of DELETED) expect(handlerKeys.has(key), key).toBe(false)

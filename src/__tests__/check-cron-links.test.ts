@@ -79,9 +79,9 @@ describe('extractWorkflowKeys — 워크플로우에서 키를 뽑는 규칙', (
 
   it('주석 처리된 runner.ts 호출은 연결로 세지 않는다', () => {
     const dir = workflowDir({
-      'a.yml': `      # - run: npx tsx cron/runner.ts ceo weekly-report\n`,
+      'a.yml': `      # - run: npx tsx cron/runner.ts cdo kpi-collector\n`,
     })
-    expect(extractWorkflowKeys(dir).has('ceo:weekly-report')).toBe(false)
+    expect(extractWorkflowKeys(dir).has('cdo:kpi-collector')).toBe(false)
   })
 
   it('활성 echo agent/task 쌍을 인식한다', () => {
@@ -232,10 +232,10 @@ describe('buildReport — 실제 저장소 기준 분류', () => {
       workflowWithoutHandler: report.workflowWithoutHandler.length,
       launchdOrphans: report.launchdOrphans.length,
     }).toEqual({
-      total: 78,
+      total: 68,
       linked: 45,
-      orphaned: 33,
-      dispatchOnly: 25,
+      orphaned: 23,
+      dispatchOnly: 15,
       localOnly: 8,
       unlinkedWithoutReason: 0,
       workflowWithoutHandler: 0,
@@ -253,10 +253,10 @@ describe('buildReport — 실제 저장소 기준 분류', () => {
 describe('extractHandlers — AST 로 HANDLERS 를 읽는다', () => {
   it('한 줄 `() => import(...)` 을 읽는다', () => {
     const p = runnerFile(`const HANDLERS: Record<string, () => Promise<void>> = {
-  'ceo:morning-cycle': () => import('../ceo/morning-cycle.js').then(() => {}),
+  'coo:moderator': () => import('../coo/moderator.js').then(() => {}),
 }
 `)
-    expect(extractHandlers(p)).toEqual([{ key: 'ceo:morning-cycle', importPath: '../ceo/morning-cycle.js' }])
+    expect(extractHandlers(p)).toEqual([{ key: 'coo:moderator', importPath: '../coo/moderator.js' }])
   })
 
   it('블록 바디 `() => { ... return import(...) }` 도 읽는다', () => {
@@ -370,9 +370,9 @@ const HANDLERS: Record<string, () => Promise<void>> = {
     expect(() => extractHandlers(runnerFile('export const NOTHING = {}\n'))).toThrow(/HANDLERS/)
   })
 
-  it('실제 runner.ts 를 읽으면 78개이고 dawn-sheet-scrape 가 들어 있다', () => {
+  it('실제 runner.ts 를 읽으면 68개이고 dawn-sheet-scrape 가 들어 있다', () => {
     const handlers = extractHandlers()
-    expect(handlers).toHaveLength(78)
+    expect(handlers).toHaveLength(68)
     expect(handlers.map((h) => h.key)).toContain('community:dawn-sheet-scrape')
   })
 })

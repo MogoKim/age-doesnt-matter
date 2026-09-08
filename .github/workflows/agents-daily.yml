@@ -183,7 +183,6 @@ jobs:
               "30 23 * * *")
                 echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;; # 중단 2026-05-16
               "11 3 * * *")
-                # cpo:journey-analyzer — 중단 2026-05-16
                 echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=trending-scorer" >> $GITHUB_OUTPUT
                 ;;
               "11 9 * * *")

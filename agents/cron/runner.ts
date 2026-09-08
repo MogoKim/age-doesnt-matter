@@ -30,8 +30,6 @@ const MONITORING_TASKS = new Set([
 ])
 
 const HANDLERS: Record<string, () => Promise<void>> = {
-  'ceo:morning-cycle': () => import('../ceo/morning-cycle.js').then(() => {}),
-  'ceo:weekly-report': () => import('../ceo/weekly-report.js').then(() => {}),
   'cto:health-check': () => import('../cto/health-check.js').then(() => {}),
   'cto:error-monitor': () => import('../cto/error-monitor.js').then(() => {}),
   'cto:security-audit': () => import('../cto/security-audit.js').then(() => {}),
@@ -40,11 +38,7 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cto:anonymize-withdrawn': () => import('../scripts/anonymize-withdrawn-users.js').then((m) => m.anonymizeWithdrawn(true)), // dry(미리보기) — 대상 수만 확인. 실제 익명화는 anonymize-withdrawn-apply
   'cto:anonymize-withdrawn-apply': () => import('../scripts/anonymize-withdrawn-users.js').then((m) => m.anonymizeWithdrawn(false)), // F-12: 매주 월 10:00 KST 자동. 30일 경과 탈퇴자만, 멱등(이미 익명화된 건 제외)
   'cmo:trend-analyzer': () => import('../cmo/trend-analyzer.js').then(() => {}), // DISPATCH ONLY — cron 중단 2026-05-16 (Slack 리포트만, 참고 안 함)
-  'cpo:ux-analyzer': () => import('../cpo/ux-analyzer.js').then(() => {}),
-  'cpo:feature-tracker': () => import('../cpo/feature-tracker.js').then(() => {}),
-  'cpo:journey-analyzer': () => import('../cpo/journey-analyzer.js').then(() => {}),
   'cfo:cost-tracker': () => import('../cfo/cost-tracker.js').then(() => {}),
-  'cfo:revenue-tracker': () => import('../cfo/revenue-tracker.js').then(() => {}),
   // main() 을 반환해야 runner 가 모더레이션 **완료까지** 기다린다.
   // `.then(() => {})` 이면 import 만 끝나고 곧바로 disconnect + exit 해서 판정이 잘린다.
   'coo:moderator': () => import('../coo/moderator.js').then((m) => m.main()),
@@ -84,9 +78,7 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cmo:google-ads-report': () => import('../marketing/google-ads/scripts/daily-report.js').then(() => {}), // DISPATCH ONLY — google-ads-api 패키지 미설치 + refresh_token 미설정. 준비 완료 시 크론 복원.
   'cmo:upload-creatives': () => import('../marketing/google-ads/scripts/upload-creatives.js').then(() => {}), // DISPATCH ONLY — 최초 1회 수동 실행
   'cmo:create-campaigns': () => import('../marketing/google-ads/scripts/create-campaigns.js').then(() => {}), // DISPATCH ONLY — 최초 1회 수동 실행
-  'ceo:morning-sns-briefing': () => import('../ceo/morning-sns-briefing.js').then(() => {}),
   'ceo:approval-reminder': () => import('./approval-reminder.js').then(() => {}),
-  'strategist:user-deep-analysis': () => import('../strategist/user-deep-analysis.js').then(() => {}),
   'cmo:caregiving-curator': () => import('../cmo/caregiving-curator.js').then(() => {}), // DISPATCH ONLY — cron 중단 2026-05-15 (Slack 알림만, 실용 가치 없음)
   'cmo:health-anxiety-responder': () => import('../cmo/health-anxiety-responder.js').then(() => {}),
   'cmo:humor-curator': () => import('../cmo/humor-curator.js').then(() => {}), // DISPATCH ONLY — cron 중단 2026-05-15 (Slack 알림만, 실용 가치 없음)
@@ -101,8 +93,6 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'coo:persona-matcher-dryrun': () => import('../coo/persona-matcher-driver.js').then(m => m.main()), // DISPATCH ONLY — dry-run 검수 단계, 크론 미연결
   'controversy-chain:execute': () => import('../seed/controversy-chain.js').then(m => m.main()),
   'cto:crawler-health': () => import('../cto/crawler-health.js').then(() => {}),
-  'cpo:persona-diversity-checker': () => import('../cpo/persona-diversity-checker.js').then(() => {}),
-  'cdo:engagement-optimizer': () => import('../cdo/engagement-optimizer.js').then(() => {}),
   'cto:qa-verify': () => import('../cto/qa-verifier.js').then(() => {}),
   // CTO 주간 아키텍처 리뷰 (DISPATCH ONLY — 수동 트리거 전용)
   'cto:arch-review': () => import('../cto/arch-review.js').then(() => {}),

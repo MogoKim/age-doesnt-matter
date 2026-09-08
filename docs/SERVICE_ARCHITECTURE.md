@@ -274,7 +274,7 @@
                          ▼
               ┌──────────────────────┐
               │    CEO (전략총괄)      │ 매일 09:00
-              │  morning-cycle.ts     │ KPI 분석 + 브리핑
+              │  approval-reminder.ts │ 승인 대기 리마인더
               └──────────┬───────────┘
                          │
     ┌────────┬───────────┼───────────┬────────┬────────┐
@@ -304,9 +304,6 @@
 
 | 에이전트 | 파일 | 스케줄 | AI 모델 | 역할 |
 |---------|------|--------|---------|------|
-| **CEO** | `ceo/morning-cycle.ts` | 매일 09:00 | Sonnet | DAU/게시글/댓글 KPI 분석, 창업자 브리핑 |
-| **CEO** | `ceo/morning-sns-briefing.ts` | 매일 08:30 | Haiku | SNS 일일 성과 브리핑 |
-| **CEO** | `ceo/weekly-report.ts` | 월요일 10:00 | Sonnet | 주간 KPI 종합 리포트 |
 | **CTO** | `cto/health-check.ts` | 2시간마다 | Haiku | 서비스 헬스체크 (API, DB 응답속도) |
 | **CTO** | `cto/error-monitor.ts` | 2시간마다 | Haiku | 에러 로그 분석 + 알림 |
 | **CTO** | `cto/security-audit.ts` | 매일 06:00 | Haiku | 보안 감사 (로그인 실패, 에러 급증, 비용 이상) |
@@ -319,13 +316,9 @@
 | **CMO** | `cmo/social-metrics.ts` | 매일 20:00 | AI 불필요 | 48시간 내 게시물 멀티플랫폼 메트릭 수집 |
 | **CMO** | `cmo/social-reviewer.ts` | 월요일 10:00 | Haiku | 주간 실험 분석 — 통제/실험군 비교, 인사이트 도출 |
 | **CMO** | `cmo/social-strategy.ts` | 월요일 10:15 | Sonnet | 주간 전략 설계 — 실험 로드맵 + 트렌드 교차 참조 |
-| **CPO** | `cpo/ux-analyzer.ts` | 매일 11:00 | Sonnet | UX 패턴 분석, 개선 제안 |
-| **CPO** | `cpo/feature-tracker.ts` | 월요일 11:30 | Haiku | 주간 기능별 사용률 집계 + 추세 분석 |
-| **CPO** | `cpo/journey-analyzer.ts` | 월요일 12:00 | Sonnet | 전환 퍼널, 등급 전환, 이탈 지점 분석 |
 | **CDO** | `cdo/kpi-collector.ts` | 매일 22:00 | Haiku | DAU, 게시글, 댓글 등 KPI 수집 |
 | **CDO** | `cdo/anomaly-detector.ts` | 2시간마다 | Haiku | KPI 이상치 감지 + 알림 |
 | **CFO** | `cfo/cost-tracker.ts` | 매일 23:00 | Haiku | API 비용 추적 + 예산 경고 |
-| **CFO** | `cfo/revenue-tracker.ts` | 매일 23:30 | Haiku | AdSense/CPS 수익 추적 |
 | **COO** | `coo/job-scraper.ts` | 12/16/20시 | Haiku | 50plus.or.kr 일자리 크롤링 → AI 가공 → DB |
 | **COO** | `coo/moderator.ts` | 09/15/21시 | Haiku | 신고 처리, 콘텐츠 모더레이션 |
 | **COO** | `coo/content-scheduler.ts` | 매일 14:00 | Haiku | 에디터스 픽 + 시드 콘텐츠 편성 |
@@ -347,9 +340,6 @@
 | **COO** | `coo/comment-activator.ts` | 매일 10:30, 14:30, 20:00 | Haiku | 댓글 없는 글에 시드봇 댓글 유도 |
 | **COO** | `coo/reply-chain-driver.ts` | 매일 12:15, 18:30 | Haiku | 대댓글 체인 형성 촉진 |
 | **CTO** | `cto/crawler-health.ts` | 매일 07:00 | Haiku | 크롤러(카페/일자리) 정상 가동 모니터링 |
-| **CDO** | `cdo/engagement-optimizer.ts` | 매일 22:30 | Sonnet | 참여도 패턴 분석 + 최적 활동 시간대 제안 |
-| **CPO** | `cpo/persona-diversity-checker.ts` | 수요일 09:00 (주간) | Haiku | 5대 페르소나 콘텐츠 분포 균형 체크 |
-| **Strategist** | `strategist/user-deep-analysis.ts` | 수동 | Opus | 사용자 심층 분석 — 페르소나/미션/비전 검증 |
 
 #### 신규 에이전트 (v11 — 2026-04~05 추가)
 
@@ -366,7 +356,6 @@
 | **CMO** | `cmo/jisik-answerer.ts` | 14:30 KST (로컬 launchd) | Sonnet | 지식iN 자동 답변 (로컬 전용, Playwright) |
 | **CMO** | `cmo/threads-token-refresher.ts` | 주간 | Haiku | Threads 60일 토큰 자동 갱신 |
 | **DESIGN** | `design/ads-loop.ts` | DISPATCH ONLY | Sonnet | 광고 소재 생성 루프 (agents-design.yml) |
-| **STRATEGIST** | `strategist/user-deep-analysis.ts` 확장 | 수동 | Opus | 사용자 심층 분석 v2 |
 | **QA** | `qa/content-auditor.ts` | 주간 | Haiku | 콘텐츠 품질 감사 |
 | **QA** | `qa/code-gate.ts` | PR 트리거 | Haiku | Gate 1 코드 검증 |
 
@@ -549,7 +538,7 @@ CafeTrend → card-news/generator.ts
 | 파일 | 스케줄 (KST) | 에이전트 |
 |------|-------------|---------|
 | `agents-daily.yml` | 06~23시 (30+ 크론) | CEO, CMO, CPO, COO, CDO, CFO, CTO + 13개 신규 에이전트 + controversy-chain, garbage-collector |
-| `agents-weekly.yml` | 월/수/목/금 09:00 | CMO(source-expander, content-gap-finder), CPO(persona-diversity-checker), **CTO(arch-review, weekly-report)**, strategist |
+| `agents-weekly.yml` | 월/수/목/금 09:00 | CMO(source-expander, content-gap-finder), **CTO(arch-review, weekly-report)** |
 | `agents-hourly.yml` | 2시간마다 | CTO(헬스체크, 에러감시), CDO(이상감지) |
 | `agents-jobs.yml` | 12, 16, 20시 | COO(일자리 수집) |
 | `agents-moderation.yml` | 09, 15, 21시 | COO(모더레이션) |
