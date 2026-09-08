@@ -11,9 +11,7 @@
     "coo:moderate": "tsx coo/moderator.ts",
     "coo:content": "tsx coo/content-scheduler.ts",
     "coo:seed": "tsx seed/scheduler.ts",
-    "cdo:kpi": "tsx cdo/kpi-collector.ts",
     "cdo:anomaly": "tsx cdo/anomaly-detector.ts",
-    "cfo:cost": "tsx cfo/cost-tracker.ts",
     "cron": "tsx cron/runner.ts"
   },
   "dependencies": {

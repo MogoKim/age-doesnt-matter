@@ -3,8 +3,6 @@ on:
   schedule:
     # (역사) 월/수/목/금 09:05 KST DOW 분기 cron 은 전 케이스 skip 처리로 2026-05-16 비활성화됐고,
     #        담당 에이전트는 이후 제거됐다. 재도입하지 않는다.
-    # 월요일 09:30 KST = 00:30 UTC — CTO 코드 품질 가비지 컬렉션
-    - cron: "30 0 * * 1"
     - cron: "0 1 * * 1"   # F-12: 매주 월 10:00 KST — 30일 경과 탈퇴회원 PII 자동 익명화
     - cron: "30 1 * * 1"  # PR-E: 매주 월 10:30 KST — 주간 Google SEO 스냅샷 (GSC read-only 관측)
   workflow_dispatch:
@@ -13,7 +11,7 @@ on:
         description: "runner HANDLERS 키의 agent 부분 (예: cto). 유효 키는 agents/cron/runner.ts 의 HANDLERS 참조"
         required: true
       task:
-        description: "runner HANDLERS 키의 task 부분 (예: garbage-collect)"
+        description: "runner HANDLERS 키의 task 부분 (예: anonymize-withdrawn-apply)"
         required: true
 
 env:
@@ -67,8 +65,6 @@ jobs:
           else
             CRON="${{ github.event.schedule }}"
             case "$CRON" in
-              "30 0 * * 1")
-                echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=garbage-collect" >> $GITHUB_OUTPUT ;;
               "0 1 * * 1")
                 echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=anonymize-withdrawn-apply" >> $GITHUB_OUTPUT ;;
               "30 1 * * 1")

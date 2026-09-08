@@ -70,18 +70,18 @@ describe('extractWorkflowKeys — 워크플로우에서 키를 뽑는 규칙', (
     // 예전 버전은 `agents-*.yml` 만 읽어서 접두어가 다른 파일을 통째로 놓쳤다.
     const dir = workflowDir({
       'custom-qa.yml': `      - run: npx tsx cron/runner.ts coo moderator\n`,
-      'zz-other.yaml': `      - run: npx tsx cron/runner.ts cdo kpi-collector\n`,
+      'zz-other.yaml': `      - run: npx tsx cron/runner.ts cdo anomaly-detector\n`,
     })
     const keys = extractWorkflowKeys(dir)
     expect(keys.has('coo:moderator')).toBe(true)
-    expect(keys.has('cdo:kpi-collector'), '.yaml 확장자도 읽어야 한다').toBe(true)
+    expect(keys.has('cdo:anomaly-detector'), '.yaml 확장자도 읽어야 한다').toBe(true)
   })
 
   it('주석 처리된 runner.ts 호출은 연결로 세지 않는다', () => {
     const dir = workflowDir({
-      'a.yml': `      # - run: npx tsx cron/runner.ts cdo kpi-collector\n`,
+      'a.yml': `      # - run: npx tsx cron/runner.ts cdo anomaly-detector\n`,
     })
-    expect(extractWorkflowKeys(dir).has('cdo:kpi-collector')).toBe(false)
+    expect(extractWorkflowKeys(dir).has('cdo:anomaly-detector')).toBe(false)
   })
 
   it('활성 echo agent/task 쌍을 인식한다', () => {
@@ -141,13 +141,13 @@ describe('extractWorkflowKeys — 워크플로우에서 키를 뽑는 규칙', (
   it('셸 실행 형식이 아니면 인정하지 않는다 — tsx 로 실행되는 것만 호출이다', () => {
     const dir = workflowDir({
       'a.yml': [
-        '      - name: runner.ts cdo kpi-collector 를 설명하는 문장',
+        '      - name: runner.ts cdo anomaly-detector 를 설명하는 문장',
         '        run: cd agents && npx tsx cron/runner.ts coo moderator',
       ].join('\n'),
     })
     const keys = extractWorkflowKeys(dir)
     expect(keys.has('coo:moderator'), '실제 실행은 잡아야 한다').toBe(true)
-    expect(keys.has('cdo:kpi-collector'), '설명문은 잡으면 안 된다').toBe(false)
+    expect(keys.has('cdo:anomaly-detector'), '설명문은 잡으면 안 된다').toBe(false)
   })
 
   it('동적 인자는 키로 뽑지 않는다', () => {
@@ -169,10 +169,10 @@ describe('extractWorkflowKeys — 워크플로우에서 키를 뽑는 규칙', (
         '              "0 1 * * *")',
         '                echo "agent=ceo" >> $GITHUB_OUTPUT ;;',
         '              "0 2 * * *")',
-        '                echo "task=kpi-collector" >> $GITHUB_OUTPUT ;;',
+        '                echo "task=anomaly-detector" >> $GITHUB_OUTPUT ;;',
       ].join('\n'),
     })
-    expect([...extractWorkflowKeys(dir)], 'ceo:kpi-collector 는 존재하지 않는 조합이다').toEqual([])
+    expect([...extractWorkflowKeys(dir)], 'ceo:anomaly-detector 는 존재하지 않는 조합이다').toEqual([])
   })
 
   it('설명 문장 속 runner.ts 는 키로 뽑지 않는다', () => {
@@ -232,10 +232,10 @@ describe('buildReport — 실제 저장소 기준 분류', () => {
       workflowWithoutHandler: report.workflowWithoutHandler.length,
       launchdOrphans: report.launchdOrphans.length,
     }).toEqual({
-      total: 68,
-      linked: 45,
-      orphaned: 23,
-      dispatchOnly: 15,
+      total: 63,
+      linked: 42,
+      orphaned: 21,
+      dispatchOnly: 13,
       localOnly: 8,
       unlinkedWithoutReason: 0,
       workflowWithoutHandler: 0,
@@ -370,9 +370,9 @@ const HANDLERS: Record<string, () => Promise<void>> = {
     expect(() => extractHandlers(runnerFile('export const NOTHING = {}\n'))).toThrow(/HANDLERS/)
   })
 
-  it('실제 runner.ts 를 읽으면 68개이고 dawn-sheet-scrape 가 들어 있다', () => {
+  it('실제 runner.ts 를 읽으면 63개이고 dawn-sheet-scrape 가 들어 있다', () => {
     const handlers = extractHandlers()
-    expect(handlers).toHaveLength(68)
+    expect(handlers).toHaveLength(63)
     expect(handlers.map((h) => h.key)).toContain('community:dawn-sheet-scrape')
   })
 })

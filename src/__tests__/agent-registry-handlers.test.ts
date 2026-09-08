@@ -54,6 +54,9 @@ describe('삭제된 핸들러의 잔재', () => {
     'ceo:weekly-report', 'cfo:revenue-tracker', 'cpo:feature-tracker',
     'cpo:journey-analyzer', 'cpo:persona-diversity-checker', 'cpo:ux-analyzer',
     'strategist:user-deep-analysis',
+    // R4 SUPERSEDED 4개 (2026-09-08) — 대체 경로가 있어 제거됨
+    'cdo:kpi-collector', 'cfo:cost-tracker', 'cto:arch-review', 'cto:garbage-collect',
+    'cto:qa-verify',
   ] as const
 
   it('runner 에 없다', () => {
