@@ -790,7 +790,7 @@ model BotLog {
   logData            Json?
 
   // AI 에이전트 전용 필드
-  action             String?   // 실행 액션 (MORNING_CYCLE, KPI_DAILY 등)
+  action             String?   // 실행 액션 식별자 (에이전트가 기록하는 대문자 스네이크 문자열)
   details            String?   // 실행 상세 (JSON string)
   itemCount          Int       @default(0)  // 처리 건수
   executionTimeMs    Int       @default(0)  // 실행 시간 (ms)
