@@ -144,7 +144,6 @@ jobs:
           else
             # github.event.schedule로 매칭 — cron 딜레이와 무관하게 정확히 동작
             CRON="${{ github.event.schedule }}"
-            DOW=$(date -u +%u)  # 1=Monday
             case "$CRON" in
               "11 5 * * *")
                 echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=content-scheduler" >> $GITHUB_OUTPUT ;;
