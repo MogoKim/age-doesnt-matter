@@ -8,7 +8,7 @@
 > ## ⚠️ 2026-09-05 실측 배너 — 이 표의 `ACTIVE`는 현재 자동화 상태를 뜻하지 않는다
 > - 이 레지스트리는 2026-05-14 이후 갱신되지 않았다. 아래 `ACTIVE` 59행은 "기능이 코드에 존재한다"는 뜻으로만 읽어라.
 > - **자동화(A·M 계열)는 의도적으로 정지 상태다.** GitHub Actions 26개 중 21개 `disabled_manually`(2026-08-24 이후 미실행). launchd 콘텐츠 발행 12개는 2026-09-06 04:09 KST unload 완료(4개 유지/관찰). production `/api/health`는 감사 당시 503이었으나 R1-A로 복구돼 현재 healthy. `/api/bot/posts·jobs`는 #412로 기본 차단.
-> - 실측으로 확인된 불일치: 문서상 ACTIVE인데 스케줄 자체가 없는 것 6(A09·A10·A11·A20·A21·A22), ARCHIVED인데 코드 잔존 5(A07·A08·A23·A28·A99), 경로·슬롯 불일치 13, 미등록 워크플로우 12·plist 3·agents 디렉터리 5.
+> - 실측으로 확인된 불일치: 문서상 ACTIVE인데 스케줄 자체가 없는 것 6(A09·A10·A11·A20·A21·A22 — **A11·A20·A21·A22는 2026-09-08 R4 ORG_THEATER 제거로 ARCHIVED 전환**), ARCHIVED인데 코드 잔존 5(A07·A08·A23·A28·A99), 경로·슬롯 불일치 13, 미등록 워크플로우 12·plist 3·agents 디렉터리 5.
 > - 개별 행의 실제 상태는 **실측 필요**: `gh workflow list --all`, `launchctl list | grep -iE 'unao|unaeo'`, `agents/core/constitution.yaml` `automation_status`(현재 `PAUSED` — coo:moderator는 #411로 MONITORING_TASKS 포함).
 > - 근거·행별 판정: `docs/operations/2026-09-05-claude-foundation-reset-audit-report.md` §3 A-06~A-08, 원본 검증 표는 Rescue R4/R5에서 REGISTRY 재작성 시 반영한다.
 
@@ -121,7 +121,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | A08 | 지식인 답변 | `agents/cmo/knowledge-responder.ts` | launchd 14:30 KST (화/목/토) | LOCAL_ONLY | HEALTH+MONEY | P2·P4 | - | ARCHIVED | 2026-05-15 |
 | A09 | SEO 최적화 | `agents/cmo/seo-optimizer.ts` | GHA 월 08:00 KST (매주 일요일 23:00 UTC) | GHA | INFRA | — | [A09](A09-seo-optimizer.md) | ACTIVE | 2026-05-12 |
 | A10 | 채널 시딩 | `agents/cmo/channel-seeder.ts` | GHA 11:30 KST | GHA | RELATION | — | [A10](A10-channel-seeder.md) | ACTIVE | 2026-04-27 |
-| A11 | CEO SNS 브리핑 | `agents/ceo/morning-sns-briefing.ts` | GHA 10:00 KST | GHA | INFRA | — | — | ACTIVE | 2026-05-12 |
+| A11 | CEO SNS 브리핑 | ~~`agents/ceo/morning-sns-briefing.ts`~~ 삭제됨 | — | — | INFRA | — | — | **ARCHIVED** | 2026-09-08 |
 | A12 | CEO 승인 리마인더 | `agents/cron/approval-reminder.ts` | GHA 09:00 KST | GHA | INFRA | — | — | ACTIVE | 2026-05-12 |
 | A13 | CTO 아키텍처 리뷰 | `agents/cto/arch-review.ts` | GHA 월 09:30 KST | GHA | INFRA | — | — | ACTIVE | 2026-05-12 |
 | A14 | CTO 가비지 컬렉션 | `agents/cto/garbage-collect.ts` | GHA 월 09:30 KST (arch-review 직후) | GHA | INFRA | — | — | ACTIVE | 2026-05-12 |
@@ -130,9 +130,9 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | A17 | COO 일자리 매처 | `agents/coo/job-matcher.ts` | GHA 일간 | GHA | MONEY | P4 | — | ACTIVE | 2026-05-12 |
 | A18 | COO 댓글 활성화 | `agents/coo/comment-activator.ts` | GHA 일간 | GHA | RELATION | ALL | — | ACTIVE | 2026-05-23 |
 | A19 | COO 답글 체인 드라이버 | `agents/coo/reply-chain-driver.ts` | GHA 일간 | GHA | RELATION | ALL | — | ACTIVE | 2026-05-12 |
-| A20 | CPO 페르소나 다양성 체커 | `agents/cpo/persona-diversity-checker.ts` | GHA 주간 | GHA | INFRA | — | — | ACTIVE | 2026-05-12 |
-| A21 | CDO 참여 최적화 | `agents/cdo/engagement-optimizer.ts` | GHA 일간 | GHA | INFRA | — | — | ACTIVE | 2026-05-12 |
-| A22 | Strategist 사용자 딥 분석 | `agents/strategist/user-deep-analysis.ts` | GHA 목 09:00 KST | GHA | INFRA | — | — | ACTIVE | 2026-05-12 |
+| A20 | CPO 페르소나 다양성 체커 | ~~`agents/cpo/persona-diversity-checker.ts`~~ 삭제됨 | — | — | INFRA | — | — | **ARCHIVED** | 2026-09-08 |
+| A21 | CDO 참여 최적화 | ~~`agents/cdo/engagement-optimizer.ts`~~ 삭제됨 | — | — | INFRA | — | — | **ARCHIVED** | 2026-09-08 |
+| A22 | Strategist 사용자 딥 분석 | ~~`agents/strategist/user-deep-analysis.ts`~~ 삭제됨 | — | — | INFRA | — | — | **ARCHIVED** | 2026-09-08 |
 | A23 | Seed 킬러 포스트 | `agents/seed/scheduler.ts` (killer-post) | GHA 09:10·22:10 KST | GHA | RELATION | ALL | — | ARCHIVED | 2026-06-03 |
 | A24 | Seed 바이럴 웨이브 | `agents/seed/scheduler.ts` (viral-waves) | GHA 5분마다 (agents-sheet-viral.yml) | GHA | RELATION | ALL | — | ACTIVE | 2026-06-01 |
 | A25 | 논란 체인 | `agents/seed/controversy-chain.ts` | GHA 하루 16회 (seed 동일) | GHA | RELATION | ALL | — | ACTIVE | 2026-05-12 |

@@ -258,34 +258,13 @@ async function main() {
 
     // 5. Gate 1 주간 통과율
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-    const [gate1Logs, cpoUxLogs] = await Promise.all([
-      prisma.botLog.findMany({
-        where: { botType: 'QA', action: 'CODE_GATE', createdAt: { gte: sevenDaysAgo } },
-        select: { status: true },
-      }),
-      prisma.botLog.findMany({
-        where: { botType: 'CPO', action: 'UX_ANALYZER', createdAt: { gte: sevenDaysAgo } },
-        select: { details: true, createdAt: true },
-        orderBy: { createdAt: 'asc' },
-      }),
-    ])
+    const gate1Logs = await prisma.botLog.findMany({
+      where: { botType: 'QA', action: 'CODE_GATE', createdAt: { gte: sevenDaysAgo } },
+      select: { status: true },
+    })
 
     const gate1Pass = gate1Logs.filter(l => l.status === 'SUCCESS').length
     const gate1Total = gate1Logs.length
-
-    // CPO UX 점수 추세 (7일 평균)
-    let cpoUxTrend = '데이터 없음'
-    if (cpoUxLogs.length >= 2) {
-      const parseScore = (log: { details: string | null }) => {
-        try { return (JSON.parse(log.details ?? '{}') as { uxScore?: number }).uxScore ?? null } catch { return null }
-      }
-      const first = parseScore(cpoUxLogs[0])
-      const last = parseScore(cpoUxLogs[cpoUxLogs.length - 1])
-      if (first !== null && last !== null) {
-        const change = last - first
-        cpoUxTrend = `${first} → ${last} (${change >= 0 ? '+' : ''}${change}점)`
-      }
-    }
 
     // 리포트 구성
     const issues: string[] = []
@@ -320,7 +299,6 @@ async function main() {
       `*기술 부채 지표:* ${debtLine}`,
       `*성능 추세 (7일):* ${perfLine}`,
       `*QA Gate 1 (7일):* ${gate1Line}`,
-      `*CPO UX 점수 추세 (7일):* ${cpoUxTrend}`,
       '',
       issues.length > 0 ? `*⚠️ 발견된 이슈:*\n${issues.join('\n\n')}` : '✅ 이슈 없음',
       '',

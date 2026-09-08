@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { readFileSync } from 'node:fs'
 
 import { HANDLER_REGISTRY, HANDLER_GROUPS } from '@/lib/agent-registry'
-import { extractHandlers } from '../../scripts/check-cron-links'
+import { extractHandlers, extractWorkflowKeys } from '../../scripts/check-cron-links'
 
 /**
  * 어드민 레지스트리 ↔ runner.ts HANDLERS 정합성.
@@ -47,8 +46,15 @@ describe('HANDLER_GROUPS 는 레지스트리의 뷰다', () => {
   })
 })
 
-describe('삭제된 두 핸들러의 잔재', () => {
-  const DELETED = ['cmo:knowledge-responder', 'cmo:social-poster-visual'] as const
+describe('삭제된 핸들러의 잔재', () => {
+  const DELETED = [
+    'cmo:knowledge-responder', 'cmo:social-poster-visual',
+    // R4 ORG_THEATER 10개 (2026-09-08) — 재등록 방지선
+    'cdo:engagement-optimizer', 'ceo:morning-cycle', 'ceo:morning-sns-briefing',
+    'ceo:weekly-report', 'cfo:revenue-tracker', 'cpo:feature-tracker',
+    'cpo:journey-analyzer', 'cpo:persona-diversity-checker', 'cpo:ux-analyzer',
+    'strategist:user-deep-analysis',
+  ] as const
 
   it('runner 에 없다', () => {
     for (const key of DELETED) expect(handlerKeys.has(key), key).toBe(false)
@@ -62,11 +68,15 @@ describe('삭제된 두 핸들러의 잔재', () => {
     }
   })
 
-  it('워크플로우에도 없다', () => {
+  it('어떤 워크플로우도 이 키를 실제로 호출하지 않는다', () => {
     // 죽은 job 이 남아 있으면 dispatch 시 runner 가 "알 수 없는 핸들러"로 죽는다.
-    const yaml = readFileSync('.github/workflows/agents-social.yml', 'utf-8')
-    for (const key of DELETED) {
-      expect(yaml, key).not.toContain(key.split(':')[1])
-    }
+    //
+    // 파일 하나만 읽거나 `key.split(':')[1]` 로 본문을 문자열 검색하면 두 방향으로 틀린다 —
+    // 다른 워크플로우의 살아 있는 호출을 놓치고, 주석·설명·역사 문구까지 실패로 잡는다.
+    // `extractWorkflowKeys` 는 `.github/workflows/**` 전체를 줄 단위로 읽어 주석을 걸러내고
+    // **실제 tsx 실행 형태만** `agent:task` 키로 뽑으므로, 이 계약에 정확히 맞는 도구다.
+    const called = extractWorkflowKeys()
+    const alive = DELETED.filter((key) => called.has(key))
+    expect(alive, `워크플로우가 아직 호출하는 삭제된 키: ${alive.join(', ')}`).toEqual([])
   })
 })

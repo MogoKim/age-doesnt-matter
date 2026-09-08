@@ -5,7 +5,6 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "ceo:morning": "tsx ceo/morning-cycle.ts",
     "cto:health": "tsx cto/health-check.ts",
     "cto:error": "tsx cto/error-monitor.ts",
     "cmo:trend": "tsx cmo/trend-analyzer.ts",

@@ -1,8 +1,8 @@
 name: Agents — Weekly
 on:
   schedule:
-    # 월/수/목/금 09:05 KST = 00:05 UTC — CMO/CPO/Strategist (DOW 분기)
-    # - cron: "5 0 * * 1,3,4,5"  # 전 DOW 케이스 skip 처리 2026-05-16 — 비활성화
+    # (역사) 월/수/목/금 09:05 KST DOW 분기 cron 은 전 케이스 skip 처리로 2026-05-16 비활성화됐고,
+    #        담당 에이전트는 이후 제거됐다. 재도입하지 않는다.
     # 월요일 09:30 KST = 00:30 UTC — CTO 코드 품질 가비지 컬렉션
     - cron: "30 0 * * 1"
     - cron: "0 1 * * 1"   # F-12: 매주 월 10:00 KST — 30일 경과 탈퇴회원 PII 자동 익명화
@@ -10,10 +10,10 @@ on:
   workflow_dispatch:
     inputs:
       agent:
-        description: "에이전트 (cmo, cpo, strategist, cto)"
+        description: "runner HANDLERS 키의 agent 부분 (예: cto). 유효 키는 agents/cron/runner.ts 의 HANDLERS 참조"
         required: true
       task:
-        description: "태스크"
+        description: "runner HANDLERS 키의 task 부분 (예: garbage-collect)"
         required: true
 
 env:
@@ -66,16 +66,7 @@ jobs:
             echo "task=$INPUT_TASK" >> $GITHUB_OUTPUT
           else
             CRON="${{ github.event.schedule }}"
-            DOW=$(date -u +%u)  # 1=Mon, 3=Wed, 4=Thu, 5=Fri
             case "$CRON" in
-              "5 0 * * 1,3,4,5")
-                case "$DOW" in
-                  1) echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;; # cmo:source-expander 중단 2026-05-16
-                  3) echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;; # cpo:persona-diversity-checker 중단 2026-05-16
-                  4) echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;; # strategist:user-deep-analysis 중단 2026-05-16
-                  5) echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;; # cmo:content-gap-finder 중단 2026-05-16
-                  *) echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;;
-                esac ;;
               "30 0 * * 1")
                 echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=garbage-collect" >> $GITHUB_OUTPUT ;;
               "0 1 * * 1")

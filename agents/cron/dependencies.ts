@@ -39,14 +39,6 @@ export const DEPENDENCY_MAP: Record<string, DependencyRule[]> = {
     maxWaitMinutes: 60,
     pollIntervalMinutes: 10,
   }],
-  // CEO 모닝 ← 전날 CDO KPI (대기 없이)
-  'ceo:morning-cycle': [{
-    requiredBotType: 'CDO',
-    requiredAction: 'KPI_DAILY',
-    dateOffset: -1,
-    maxWaitMinutes: 0,
-    pollIntervalMinutes: 0,
-  }],
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))

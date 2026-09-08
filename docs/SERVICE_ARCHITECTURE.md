@@ -5,7 +5,7 @@
 > **변경 시**: 이 문서 하단 [문서 업데이트 가이드](#문서-업데이트-가이드) 참고
 
 > ## ⚠️ 2026-09-05 실측 배너 — 이 문서의 "가동 중" 서술은 현재 상태가 아니다
-> - 2026-05-11(v11) 시점 문서다. "93핸들러·17GHA" 등 수치는 당시 값이며, 현재 실측은 runner HANDLERS **78개** · GitHub Actions **25개 중 21개 `disabled_manually`, 활성 4개**(ci · lighthouse · quarantine-check · agents-moderation). 2026-09-08 Gate 2(`post-deploy-qa`) 제거 반영 후 값이다. launchd 콘텐츠 발행 12개는 2026-09-06 04:09 KST unload 완료(4개 유지/관찰). production `/api/health`는 2026-09-05 감사 당시 503(DB 28P01)이었으나 R1-A로 복구돼 현재 healthy.
+> - 2026-05-11(v11) 시점 문서다. "93핸들러·17GHA" 등 수치는 당시 값이며, 현재 실측은 runner HANDLERS **68개** · GitHub Actions **25개 중 21개 `disabled_manually`, 활성 4개**(ci · lighthouse · quarantine-check · agents-moderation). 2026-09-08 Gate 2(`post-deploy-qa`) 제거와 C-level ORG_THEATER 10개 제거를 반영한 값이다. launchd 콘텐츠 발행 12개는 2026-09-06 04:09 KST unload 완료(4개 유지/관찰). production `/api/health`는 2026-09-05 감사 당시 503(DB 28P01)이었으나 R1-A로 복구돼 현재 healthy.
 > - §1 "제2의 인생 플랫폼 — 일자리 + 커뮤니티 + 매거진" 정의는 헌법 v5.0(`docs/constitution/NORTH_STAR.md` §2·§14 "일자리 플랫폼이 아니라 커뮤니티")과 충돌한다. Rescue R5에서 REWRITE 대상.
 > - 시드봇 글쓰기는 2026-06-03 retired, `CoupangSearchWidget`은 2026-06-12 제거됐으나 본문에 미반영.
 > - 근거: `docs/operations/2026-09-05-claude-foundation-reset-audit-report.md` §3 A-06·C-07·D-05.
@@ -274,23 +274,23 @@
                          ▼
               ┌──────────────────────┐
               │    CEO (전략총괄)      │ 매일 09:00
-              │  morning-cycle.ts     │ KPI 분석 + 브리핑
+              │  approval-reminder.ts │ 승인 대기 리마인더
               └──────────┬───────────┘
                          │
     ┌────────┬───────────┼───────────┬────────┬────────┐
     ▼        ▼           ▼           ▼        ▼        ▼
 ┌───────┐┌───────┐┌──────────┐┌───────┐┌───────┐┌───────┐
-│ CTO   ││ CMO   ││   COO    ││ CPO   ││ CDO   ││ CFO   │
-│기술총괄││마케팅 ││  운영총괄  ││제품총괄││데이터 ││재무총괄│
-│       ││       ││          ││       ││       ││       │
-│헬스체크││트렌드 ││일자리수집 ││UX분석 ││KPI수집││비용   │
-│에러감시││SNS포스││모더레이션 ││기능사용││이상감지││수익   │
-│보안감사││팅+실험││콘텐츠편성 ││여정분석││참여최적││추적   │
-│크롤링 ││전략+리││댓글활성화 ││페르소나││화     ││       │
-│헬스   ││뷰+매거││연결촉진   ││다양성 ││       ││       │
-│       ││진+큐레││일자리매칭 ││       ││       ││       │
-│       ││이션   ││대댓글체인 ││       ││       ││       │
-└───────┘└───────┘└────┬─────┘└───────┘└───────┘└───────┘
+│ CTO   ││ CMO   ││   COO    ││ CDO   ││ CFO   │
+│기술총괄││마케팅 ││  운영총괄  ││데이터 ││재무총괄│
+│       ││       ││          ││       ││       │
+│헬스체크││트렌드 ││일자리수집 ││KPI수집││비용   │
+│에러감시││SNS포스││모더레이션 ││이상감지││추적   │
+│보안감사││팅+실험││콘텐츠편성 ││       ││       │
+│크롤링 ││전략+리││댓글활성화 ││       ││       │
+│헬스   ││뷰+매거││연결촉진   ││       ││       │
+│       ││진+큐레││일자리매칭 ││       ││       │
+│       ││이션   ││대댓글체인 ││       ││       │
+└───────┘└───────┘└────┬─────┘└───────┘└───────┘
                        │
               ┌────────┴─────────┐
               │   SEED (시드봇)    │ 하루 12회+마이크로4회
@@ -304,9 +304,6 @@
 
 | 에이전트 | 파일 | 스케줄 | AI 모델 | 역할 |
 |---------|------|--------|---------|------|
-| **CEO** | `ceo/morning-cycle.ts` | 매일 09:00 | Sonnet | DAU/게시글/댓글 KPI 분석, 창업자 브리핑 |
-| **CEO** | `ceo/morning-sns-briefing.ts` | 매일 08:30 | Haiku | SNS 일일 성과 브리핑 |
-| **CEO** | `ceo/weekly-report.ts` | 월요일 10:00 | Sonnet | 주간 KPI 종합 리포트 |
 | **CTO** | `cto/health-check.ts` | 2시간마다 | Haiku | 서비스 헬스체크 (API, DB 응답속도) |
 | **CTO** | `cto/error-monitor.ts` | 2시간마다 | Haiku | 에러 로그 분석 + 알림 |
 | **CTO** | `cto/security-audit.ts` | 매일 06:00 | Haiku | 보안 감사 (로그인 실패, 에러 급증, 비용 이상) |
@@ -319,13 +316,9 @@
 | **CMO** | `cmo/social-metrics.ts` | 매일 20:00 | AI 불필요 | 48시간 내 게시물 멀티플랫폼 메트릭 수집 |
 | **CMO** | `cmo/social-reviewer.ts` | 월요일 10:00 | Haiku | 주간 실험 분석 — 통제/실험군 비교, 인사이트 도출 |
 | **CMO** | `cmo/social-strategy.ts` | 월요일 10:15 | Sonnet | 주간 전략 설계 — 실험 로드맵 + 트렌드 교차 참조 |
-| **CPO** | `cpo/ux-analyzer.ts` | 매일 11:00 | Sonnet | UX 패턴 분석, 개선 제안 |
-| **CPO** | `cpo/feature-tracker.ts` | 월요일 11:30 | Haiku | 주간 기능별 사용률 집계 + 추세 분석 |
-| **CPO** | `cpo/journey-analyzer.ts` | 월요일 12:00 | Sonnet | 전환 퍼널, 등급 전환, 이탈 지점 분석 |
 | **CDO** | `cdo/kpi-collector.ts` | 매일 22:00 | Haiku | DAU, 게시글, 댓글 등 KPI 수집 |
 | **CDO** | `cdo/anomaly-detector.ts` | 2시간마다 | Haiku | KPI 이상치 감지 + 알림 |
 | **CFO** | `cfo/cost-tracker.ts` | 매일 23:00 | Haiku | API 비용 추적 + 예산 경고 |
-| **CFO** | `cfo/revenue-tracker.ts` | 매일 23:30 | Haiku | AdSense/CPS 수익 추적 |
 | **COO** | `coo/job-scraper.ts` | 12/16/20시 | Haiku | 50plus.or.kr 일자리 크롤링 → AI 가공 → DB |
 | **COO** | `coo/moderator.ts` | 09/15/21시 | Haiku | 신고 처리, 콘텐츠 모더레이션 |
 | **COO** | `coo/content-scheduler.ts` | 매일 14:00 | Haiku | 에디터스 픽 + 시드 콘텐츠 편성 |
@@ -347,9 +340,6 @@
 | **COO** | `coo/comment-activator.ts` | 매일 10:30, 14:30, 20:00 | Haiku | 댓글 없는 글에 시드봇 댓글 유도 |
 | **COO** | `coo/reply-chain-driver.ts` | 매일 12:15, 18:30 | Haiku | 대댓글 체인 형성 촉진 |
 | **CTO** | `cto/crawler-health.ts` | 매일 07:00 | Haiku | 크롤러(카페/일자리) 정상 가동 모니터링 |
-| **CDO** | `cdo/engagement-optimizer.ts` | 매일 22:30 | Sonnet | 참여도 패턴 분석 + 최적 활동 시간대 제안 |
-| **CPO** | `cpo/persona-diversity-checker.ts` | 수요일 09:00 (주간) | Haiku | 5대 페르소나 콘텐츠 분포 균형 체크 |
-| **Strategist** | `strategist/user-deep-analysis.ts` | 수동 | Opus | 사용자 심층 분석 — 페르소나/미션/비전 검증 |
 
 #### 신규 에이전트 (v11 — 2026-04~05 추가)
 
@@ -366,7 +356,6 @@
 | **CMO** | `cmo/jisik-answerer.ts` | 14:30 KST (로컬 launchd) | Sonnet | 지식iN 자동 답변 (로컬 전용, Playwright) |
 | **CMO** | `cmo/threads-token-refresher.ts` | 주간 | Haiku | Threads 60일 토큰 자동 갱신 |
 | **DESIGN** | `design/ads-loop.ts` | DISPATCH ONLY | Sonnet | 광고 소재 생성 루프 (agents-design.yml) |
-| **STRATEGIST** | `strategist/user-deep-analysis.ts` 확장 | 수동 | Opus | 사용자 심층 분석 v2 |
 | **QA** | `qa/content-auditor.ts` | 주간 | Haiku | 콘텐츠 품질 감사 |
 | **QA** | `qa/code-gate.ts` | PR 트리거 | Haiku | Gate 1 코드 검증 |
 
@@ -548,8 +537,8 @@ CafeTrend → card-news/generator.ts
 
 | 파일 | 스케줄 (KST) | 에이전트 |
 |------|-------------|---------|
-| `agents-daily.yml` | 06~23시 (30+ 크론) | CEO, CMO, CPO, COO, CDO, CFO, CTO + 13개 신규 에이전트 + controversy-chain, garbage-collector |
-| `agents-weekly.yml` | 월/수/목/금 09:00 | CMO(source-expander, content-gap-finder), CPO(persona-diversity-checker), **CTO(arch-review, weekly-report)**, strategist |
+| `agents-daily.yml` | 06~23시 (다수 크론) | COO, CMO, CTO, QA + `ceo:approval-reminder` — **현재 `disabled_manually`** |
+| `agents-weekly.yml` | 월 09:30 / 10:00 / 10:30 KST | CTO(garbage-collect, anonymize-withdrawn-apply), CMO(seo-snapshot) — **현재 `disabled_manually`** |
 | `agents-hourly.yml` | 2시간마다 | CTO(헬스체크, 에러감시), CDO(이상감지) |
 | `agents-jobs.yml` | 12, 16, 20시 | COO(일자리 수집) |
 | `agents-moderation.yml` | 09, 15, 21시 | COO(모더레이션) |
@@ -578,22 +567,21 @@ CafeTrend → card-news/generator.ts
 06:00      CTO 보안감사
 07:00      CTO 크롤링헬스
 08:00 (월) CMO SEO옵티마이저
-08:30      CEO SNS일일브리핑 | CAFE 크롤링(로컬)
-09:00      CEO 모닝사이클 | SEED 활동 | COO 모더레이션 | CMO 텍스트포스팅
+08:30      CAFE 크롤링(로컬)
+09:00      SEED 활동 | COO 모더레이션 | CMO 텍스트포스팅
  (월)      CMO 소스확장(weekly)
 09:15      COO 연결촉진(1차)
 09:30      승인 리마인더
 10:00      CMO 트렌드분석 | SEED 활동
  (월)      CMO 리뷰(10:00) → 전략(10:15)
 10:15      CMO 간병큐레이션
-10:30      COO 댓글활성화(1차) | CEO 주간리포트(월)
+10:30      COO 댓글활성화(1차)
 10:45      CMO 건강불안해소
-11:00      CPO UX분석 | CMO 카드뉴스→멀티플랫폼
+11:00      CMO 카드뉴스→멀티플랫폼
 11:15      CMO 유머큐레이션
 11:30      CMO 채널시딩
 11:45      COO 일자리매칭
 12:00      COO 일자리수집 | COO 트렌딩스코어 | CMO 지식iN(화/목/토)
- (월)      CPO 사용자여정
 12:15      COO 대댓글체인(1차)
 12:30      CAFE 크롤링(로컬)
 13:00      CAFE 크롤링(Actions) | SEED 활동
@@ -856,10 +844,9 @@ Slack Workspace: 우나어-ops (14개 채널)
 ├── 📁 agents/                       # AI 에이전트 시스템
 │   ├── 📁 core/                    # 기반 인프라 (agent, constitution, notifier, db, slack-commander, approval-helper, meeting, google-api)
 │   ├── 📁 cron/                    # 크론 스케줄러 (runner, schedules.yaml, dependencies)
-│   ├── 📁 ceo/ cto/ cmo/ cpo/ cdo/ cfo/ coo/  # C-level 에이전트
+│   ├── 📁 cto/ cmo/ cdo/ cfo/ coo/  # C-level 에이전트 (ceo·cpo·strategist 는 R4 에서 제거 — 2026-09-08)
 │   ├── 📁 seed/                    # 시드봇 (50명 페르소나 + 마이크로 스케줄러)
 │   ├── 📁 cafe/                    # 카페 크롤러 + 매거진 생성기
-│   ├── 📁 strategist/             # 전략 에이전트 (Opus 기반 심층 분석)
 │   └── 📁 skills/                  # SNS 전략 스킬 레지스트리
 │
 ├── 📁 prisma/                       # DB 스키마 + 마이그레이션

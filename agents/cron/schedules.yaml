@@ -8,12 +8,6 @@ schedules:
     task: health-check
     handler: "cto/health-check.ts"
 
-  # 매일 09:00 KST (00:00 UTC)
-  - cron: "0 0 * * *"
-    agent: CEO
-    task: morning-cycle
-    handler: "ceo/morning-cycle.ts"
-
   # 매일 09:00 KST — 시드 콘텐츠 (크롤링 08:30 후)
   - cron: "0 0 * * *"
     agent: SEED
@@ -38,26 +32,6 @@ schedules:
     agent: SEED
     task: "seed-10"
     handler: "seed/scheduler.ts"
-
-  # 매일 11:00 KST (02:00 UTC)
-  - cron: "0 2 * * *"
-    agent: CPO
-    task: ux-analyzer
-    handler: "cpo/ux-analyzer.ts"
-
-  # 매주 월요일 11:30 KST (02:30 UTC) — CPO 기능 사용률 트래커
-  - cron: "30 2 * * 1"
-    agent: CPO
-    task: feature-tracker
-    handler: "cpo/feature-tracker.ts"
-    note: "주간 기능별 사용률 집계 + 추세 분석"
-
-  # 매주 월요일 12:00 KST (03:00 UTC) — CPO 사용자 여정 분석
-  - cron: "0 3 * * 1"
-    agent: CPO
-    task: journey-analyzer
-    handler: "cpo/journey-analyzer.ts"
-    note: "전환 퍼널, 등급 전환, 이탈 지점 분석"
 
   # 매일 13:00 KST (04:00 UTC) — 시드 댓글/좋아요 (크롤링 12:30 후)
   - cron: "0 4 * * *"
