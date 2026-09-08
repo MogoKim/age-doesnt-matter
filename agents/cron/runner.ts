@@ -43,13 +43,6 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'coo:job-scraper': () => import('../coo/job-scraper.js').then(m => m.main()),
   'coo:trending-scorer': () => import('../coo/trending-scorer.js').then(m => m.main()),
   'cdo:anomaly-detector': () => import('../cdo/anomaly-detector.js').then(() => {}),
-  'seed:scheduler': () => import('../seed/scheduler.js').then(m => m.main()),
-  'seed:killer-post': () => import('../seed/scheduler.js').then(m => m.runKillerPostCycle()),
-  'seed:micro': () => import('../seed/micro-scheduler.js').then(m => m.main()),
-  'seed:viral-waves': () => import('../seed/scheduler.js').then(async m => {
-    await m.processSheetEngagementWaves()
-    await m.processPendingSheetCommentWaves()
-  }),
   // LOCAL ONLY — run-pipeline.ts는 네이버 크롤링 통합 파이프라인, launchd로 로컬 실행
   // GitHub Actions 실행 불가 (네이버 IP 차단 + headless 탐지). 수동 실행만.
   'cafe_crawler:cafe-pipeline': () => import('../cafe/run-pipeline.js').then(async m => { await m.main('all') }),
@@ -72,13 +65,6 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cmo:upload-creatives': () => import('../marketing/google-ads/scripts/upload-creatives.js').then(() => {}), // DISPATCH ONLY — 최초 1회 수동 실행
   'cmo:create-campaigns': () => import('../marketing/google-ads/scripts/create-campaigns.js').then(() => {}), // DISPATCH ONLY — 최초 1회 수동 실행
   'ceo:approval-reminder': () => import('./approval-reminder.js').then(() => {}),
-  'coo:connection-facilitator': () => import('../coo/connection-facilitator.js').then(m => m.main()),
-  'coo:job-matcher': () => import('../coo/job-matcher.js').then(m => m.main()),
-  'coo:comment-activator': () => import('../coo/comment-activator.js').then(m => m.main()),
-  'coo:reply-chain-driver': () => import('../coo/reply-chain-driver.js').then(m => m.main()),
-  'coo:author-reply-dryrun': () => import('../coo/author-reply-driver.js').then(m => m.main()),
-  'coo:persona-matcher-dryrun': () => import('../coo/persona-matcher-driver.js').then(m => m.main()), // DISPATCH ONLY — dry-run 검수 단계, 크론 미연결
-  'controversy-chain:execute': () => import('../seed/controversy-chain.js').then(m => m.main()),
   'cto:crawler-health': () => import('../cto/crawler-health.js').then(() => {}),
   // CTO 주간 아키텍처 리뷰 (DISPATCH ONLY — 수동 트리거 전용)
   // QA 에이전트 — 콘텐츠 품질 감사 (매일 08:20 KST)

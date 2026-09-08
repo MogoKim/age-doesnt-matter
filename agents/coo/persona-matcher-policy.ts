@@ -1,6 +1,6 @@
 /**
  * persona matcher — 순수부 (글 분석·hard constraint·diversity penalty·final pick)
- * DB/SDK 의존 없음. 런타임(표본 조회·BotLog 기록)은 persona-matcher-driver.ts 참조.
+ * DB/SDK 의존 없음. 순수 정책 모듈이다(런타임 driver 는 R4 에서 제거 — 2026-09-09).
  *
  * 설계 원칙 (2026-07-15 창업자 결정):
  *  - 단순 best match 금지 — 글 분석 → hard 제외 → eligible 후보군 → penalty → reserve 판단 → final pick

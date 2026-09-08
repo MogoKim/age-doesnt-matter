@@ -5,7 +5,7 @@ const isRealUser = (pid: string | null | undefined): boolean => !!pid && /^\d+$/
 
 /**
  * 보드 → URL 접두사. src/lib/board-registry가 SSoT지만 agents→src 런타임 import 금지라
- * 여기서 재정의한다(agents/coo/author-reply-driver.ts BOARD_URL_PREFIX_LOCAL과 동일 관례).
+ * 여기서 재정의한다.
  * 봇 댓글이 달리는 회원 글 보드만 둔다 — 그 밖은 앵커 없이 기존 동작.
  */
 const BOARD_URL_PREFIX_LOCAL: Record<string, string> = {
@@ -20,7 +20,7 @@ const BOARD_URL_PREFIX_LOCAL: Record<string, string> = {
  * 글 상단이 아니라 "달린 댓글"이 바로 보이게 한다(리텐션 루프).
  * - slug가 있으면 canonical slug 사용(CUID→slug 301/308 왕복 제거).
  * - 보드 매핑이 없거나 댓글 id가 없으면 null → 기존 동작(postId 기반 글 URL).
- * author-reply-driver.buildAuthorReplyLinkUrl · src buildCommentAnchorUrl과 동일 출력 규격.
+ * src buildCommentAnchorUrl과 동일 출력 규격.
  */
 function buildBotCommentLinkUrl(i: {
   boardType: string

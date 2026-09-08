@@ -79,7 +79,7 @@ R6 정리 과정에서 agents/scripts 타입 오류는 `953 -> 932`로 줄었다
 | 커뮤니티 회복 | **FAIL** - 네 숫자 단순 관찰 중 (§5-A) | 회복 추세. 기존 North Star 1명은 **임시 참고치** |
 | 어드민 대시보드 | `northStar=4`는 재방문+작성이 아니라 7일 WAU. `DailyKpiSnapshot` 최신 행은 2026-08-23에서 정지 | **R6 대상** — 오래된 KPI·지표·스냅샷·대시보드 KEEP/REMOVE 판정 |
 | 네이버 | 기술 노출면 정상, 유입 고점 대비 **99.3% 감소** | Search Advisor 수집·색인·노출, 브랜드 홈 색인 확인 |
-| 콘텐츠 출혈 | **PASS - BOT·SHEET 신규 발행 16일간 0** | 자동화 재개 전까지 0 유지 |
+| 콘텐츠 출혈 | **PASS - BOT·SHEET 신규 발행 0. 2026-09-09 SEED 봇·참여 유도 자동화 코드 자체를 제거** | 자동화 재개 전까지 0 유지 |
 | 공개 콘텐츠 | 839건 중 non-USER 768건(91.5%) | 사용자 반응·검색 신호를 포함한 처분 데이터룸 |
 | 실회원 참여 | 188명, 최근 7일 신규 0명·글 9건·댓글 1건 | 네 숫자의 회복 추세 (§5-A) |
 
@@ -192,8 +192,8 @@ T+0은 2026-09-05 KST다. 날짜가 지나도 증거가 없으면 PASS로 넘기
 
 | 단계 | 대상 | 현재 파악된 것 |
 |---|---|---|
-| **R4** | C-level 및 역할극 에이전트 | **ORG_THEATER 10 + SUPERSEDED 4 + `cto:qa-verify` + GROWTH_LEGACY 13 제거(2026-09-08).** 삭제 후보 잔여 **0** |
-| **R4** | 사용하지 않는 workflow · runner · registry | 크론 키 **50개** 중 linked **35** · orphaned **15**(dispatchOnly **7** · localOnly **8**). GHA **24개** 중 20개 `disabled_manually`, 활성 4개(`agents-social.yml` 제거) |
+| **R4** | C-level 및 역할극 에이전트 | **ORG_THEATER 10 + SUPERSEDED 4 + `cto:qa-verify` + GROWTH_LEGACY 13 제거(09-08), SEED 봇 4 + COO 참여 유도 7 제거(09-09).** C-level 삭제 후보 잔여 **0** |
+| **R4** | 사용하지 않는 workflow · runner · registry | 크론 키 **39개** 중 linked **25** · orphaned **14**(dispatchOnly **6** · localOnly **8**). GHA **20개** 중 16개 `disabled_manually`, 활성 4개 |
 | **R4** | 보지 않는 Slack · 리포트 · AdminQueue 자동화 | Slack "NSM" 2벌(`ceo/weekly-report.ts` · `cdo/kpi-collector.ts`)이 **모두 삭제됨(2026-09-08)**. 남은 Slack 리포트는 개별 KEEP 근거로 재판정한다 |
 | **R5** | 오도·중복·정지된 문서 | `NORTH_STAR.md`·`constitution*.yaml` 재감사 대상. 정본이 아닌 것을 정본처럼 쓰지 않게 한다 |
 | **R6** | 오래된 KPI · 지표 · 스냅샷 · 대시보드 | `northStar`가 실제로는 WAU · `DailyKpiSnapshot` 2026-08-23 정지 · KPI 스냅샷 workflow `disabled_manually` |

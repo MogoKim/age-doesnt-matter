@@ -1,5 +1,10 @@
 # 시드봇 운영 기획서 (A05)
 
+> ⚠️ **ARCHIVED (2026-09-09)** — 시드봇 스케줄러·마이크로 스케줄러와 GHA workflow 는 R4 에서 제거됐다.
+> 봇 페르소나 데이터(`seed/persona-data.ts`)와 생성기(`seed/generator.ts`)는 카페 파이프라인이 아직 사용해 보존한다.
+> 아래 내용은 삭제 시점의 설계 기록이며 현재 운영 계약이 아니다. 현재 판정: `docs/operations/UNAO_RESCUE_STATUS.md`
+
+
 > 최초 작성: 2026-04-27 | 최근 수정: 2026-04-27
 
 ---

@@ -8,11 +8,6 @@ schedules:
     task: health-check
     handler: "cto/health-check.ts"
 
-  # 매일 09:00 KST — 시드 콘텐츠 (크롤링 08:30 후)
-  - cron: "0 0 * * *"
-    agent: SEED
-    task: "seed-09"
-    handler: "seed/scheduler.ts"
 
   # 매거진 자동발행 — 매일 16:00 KST (07:00 UTC)
   - cron: "0 7 * * *"
@@ -21,57 +16,18 @@ schedules:
     handler: "cafe/magazine-generator.ts"
     note: "CafeTrend 기반 매거진 자동생성 (매일 16시)"
 
-  # 매일 10:00 KST — 시드 콘텐츠
-  - cron: "0 1 * * *"
-    agent: SEED
-    task: "seed-10"
-    handler: "seed/scheduler.ts"
 
-  # 매일 13:00 KST (04:00 UTC) — 시드 댓글/좋아요 (크롤링 12:30 후)
-  - cron: "0 4 * * *"
-    agent: SEED
-    task: "seed-13"
-    handler: "seed/scheduler.ts"
 
   # 매일 14:00 KST (05:00 UTC) — 에디터스 픽 + 시드
   - cron: "0 5 * * *"
     agent: COO
     task: content-scheduler
     handler: "coo/content-scheduler.ts"
-  - cron: "0 5 * * *"
-    agent: SEED
-    task: "seed-14"
-    handler: "seed/scheduler.ts"
 
-  # 매일 15:00 KST (06:00 UTC) — 시드 오후 활동
-  - cron: "0 6 * * *"
-    agent: SEED
-    task: "seed-15"
-    handler: "seed/scheduler.ts"
 
-  # 매일 16:00 KST (07:00 UTC)
-  - cron: "0 7 * * *"
-    agent: SEED
-    task: "seed-16"
-    handler: "seed/scheduler.ts"
 
-  # 매일 19:00 KST (10:00 UTC)
-  - cron: "0 10 * * *"
-    agent: SEED
-    task: "seed-19"
-    handler: "seed/scheduler.ts"
 
-  # 매일 21:00 KST (12:00 UTC) — 시드 저녁 (크롤링 20:40 후)
-  - cron: "0 12 * * *"
-    agent: SEED
-    task: "seed-21"
-    handler: "seed/scheduler.ts"
 
-  # 매일 22:00 KST (13:00 UTC) — 시드 마무리 + CDO
-  - cron: "0 13 * * *"
-    agent: SEED
-    task: "seed-22"
-    handler: "seed/scheduler.ts"
   # 트렌딩 스코어 갱신 (30분마다)
   - cron: "*/30 * * * *"
     agent: COO

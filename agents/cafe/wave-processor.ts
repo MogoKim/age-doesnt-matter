@@ -101,7 +101,7 @@ const BOT_DAILY_COMMENT_CAP = 20
 // bot_cap으로 wave target 미달 시 재시도 간격 — Done 마킹 대신 waveAt을 미뤄 transient retry (15~30분 범위)
 const WAVE_BOT_CAP_RETRY_MS = 20 * 60 * 1000  // 20분
 
-// KST 자정 기준 — daily cap 집계가 로컬/UTC가 아닌 KST 하루 경계를 쓰도록 (seed/scheduler.ts와 동일 패턴)
+// KST 자정 기준 — daily cap 집계가 로컬/UTC가 아닌 KST 하루 경계를 쓰도록 한다
 function startOfKstDay(): Date {
   const KST_OFFSET = 9 * 60 * 60 * 1000
   const nowKst = new Date(Date.now() + KST_OFFSET)

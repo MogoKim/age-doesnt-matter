@@ -13,7 +13,6 @@
       "agents/community/",
       "agents/cafe/session-manager.ts",
       "agents/seed/generator.ts",
-      "agents/seed/scheduler.ts",
       "docs/handover-scraper-*",
       ".claude/"
     ]
