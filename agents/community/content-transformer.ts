@@ -75,7 +75,7 @@ export function transformContent(
   //    커뮤니티 정체성과 충돌한다. 이전에는 HUMOR에만 붙였으나 전 보드에서 제거한다.
   //    ⚠️ 원문 본문에 원래 들어있던 출처 문구는 건드리지 않는다 —
   //       그쪽은 normalize-source-references.ts가 일반화만 담당한다(수정 대상 아님).
-  //    내부 추적(Post.sourceUrl · Sheet A열 · note · cook82 queue)은 그대로 유지된다.
+  //    내부 추적(Post.sourceUrl · Sheet A열 · note)은 그대로 유지된다.
 
   return processed
 }
