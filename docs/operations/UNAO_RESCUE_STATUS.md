@@ -28,14 +28,14 @@ PV, DAU, 색인 수, 자동 발행량, 에이전트 수는 단독 성공 지표�
 | 단계 | 현재 판정 | 완료된 것 | 남은 완료 조건 |
 |---|---|---|---|
 | R0 싱크 고정 | **PASS** | North Star > Rescue 전략 > 현재 상태 > backlog 위계와 시작 게이트 확정 | 이후 모든 세션이 이 문서 세트를 먼저 읽고 충돌 시 중단 |
-| R1 로그인 소생 | **PASS** | health/auth no-store, 내부 DB 오류 노출 차단, 2026-09-08 창업자 production 실제 로그인 정상 확인 | 재발 시에만 진단 재개 |
-| R2 네이버 신뢰 방어 | **PARTIAL** | 없는/숨김 상세 404, 고유 description, raw 외부글 landing 차단 | 최신 수집·색인·노출·클릭과 브랜드 홈 색인 판정 |
-| R3 콘텐츠 오염 정리 | **PARTIAL** | 위험 자동 발행 차단, 기존 오염 콘텐츠 1차 정리 | source/reaction/search/duplication 데이터룸과 남은 처분표 확정 |
+| R1 로그인 소생 | **PASS** | health/auth no-store, 내부 DB 오류 노출 차단, 창업자 production 실제 로그인 정상 확인, 최근 7일 실회원 글 9건 | 재발 시에만 진단 재개 |
+| R2 네이버 신뢰 방어 | **PARTIAL / 위험** | sitemap·robots·canonical 기술 방어선 정상 | Search Advisor 수집·색인·노출 확인. 네이버 유입 고점 대비 99.3% 감소 원인 판정 |
+| R3 콘텐츠 오염 정리 | **PARTIAL** | BOT·SHEET 신규 발행 16일간 0, 기존 오염 콘텐츠 1차 격리 | 공개 non-USER 768건의 source/reaction/search/duplication 처분표 확정 |
 | R4 자동화 사망 정리 | **PARTIAL** | PAUSED, bot write 차단, cron/handler 가드, dead job 정리 | DB 인증 증명, PR #427, KEEP/OFF/REMOVE 최종 반영 |
 | R5 문서 정본화 | **PARTIAL** | 정본 위계와 시작 게이트 확정, 충돌 문서와 소란소란 혼입 일부 정리 | stale backlog/registry 정합화 |
 | R6 코드/인프라 | **PARTIAL** | RLS·캐시·계측·E2E·cron·레거시 일부 정리 | ops tsc 0, config 단일화, R6-F 디자인 시스템 |
 | R7 콘텐츠 재건 | **HOLD** | 기존 gate와 복구 도구 일부 존재 | R1~R6 이후 우나어식 원본 공급·발행 gate 승인 |
-| R8 커뮤니티 회복 | **미판정** | - | 최신 North Star와 실회원 글·댓글·재방문 추세 확보 |
+| R8 커뮤니티 회복 | **FAIL** | 2026-09-08 공식 North Star 기준선 1명 확보 | 재방문 참여 유저 증가와 실회원 글·댓글 추세 회복 |
 
 ## 4. 지금까지 줄인 운영 위험
 
@@ -64,9 +64,12 @@ R6 정리 과정에서 agents/scripts 타입 오류는 `953 -> 932`로 줄었다
 | production health/auth | **PASS** - 최근 배포 200, 창업자 실제 로그인 정상 확인 | 재발 시에만 재검증 |
 | Moderation | lifecycle 수정 PASS, 최근 자연 실행은 DB 인증 실패 | 갱신된 secret으로 완료 로그 + success |
 | Gate 2 | workflow는 active, `qa:deploy-audit`은 PAUSED에서 실질 스킵 | PR #427 merge 후 실제 audit 결과 |
-| 운영 대시보드 | 스냅샷이 2026-08-23에서 멈춘 상태 | 현재 시점 read-only snapshot |
-| 네이버 | 과거 수집·색인·유입 붕괴 이후 최신 회복 판정 없음 | 수집/색인/노출/클릭 분리 측정 |
-| 실회원 참여 | 최신 공식 기준선 없음 | 7일 재방문 참여 유저·글·댓글 |
+| North Star | **FAIL - 1명** | T+7 동일 정의 재측정 |
+| 어드민 대시보드 | `northStar=4`는 재방문+작성이 아니라 7일 WAU | 표시명·계산 계약 정합화 |
+| 네이버 | 기술 노출면 정상, 유입 고점 대비 **99.3% 감소** | Search Advisor 수집·색인·노출, 브랜드 홈 색인 확인 |
+| 콘텐츠 출혈 | **PASS - BOT·SHEET 신규 발행 16일간 0** | 자동화 재개 전까지 0 유지 |
+| 공개 콘텐츠 | 839건 중 non-USER 768건(91.5%) | 사용자 반응·검색 신호를 포함한 처분 데이터룸 |
+| 실회원 참여 | 188명, 최근 7일 신규 0명·글 9건·댓글 1건 | North Star와 댓글 추세 회복 |
 
 현재 숫자가 없는 항목을 PASS로 추정하지 않는다.
 
@@ -76,17 +79,18 @@ R6 정리 과정에서 agents/scripts 타입 오류는 `953 -> 932`로 줄었다
 |---:|---|---|---|
 | 0 | GHA DB 인증 증명 | 자연 Moderation 실행 대기 | 완료 로그 + success, AuthenticationFailed 없음 |
 | 1 | `DIRECT_URL` 정정 | 창업자 액션 | GitHub/local direct URL이 user `postgres`, port 5432 |
-| 2 | PR #427 Gate 2 | DB 인증 PASS 후 | 최신 main 재검증·merge·실제 deploy audit |
-| 3 | 현재 지표 복구 | #427과 독립 read-only 가능 | 대시보드·North Star·네이버 기준선 갱신 |
-| 4 | R2/R3 생존 판정 | 최신 지표 후 | 검색·콘텐츠 gate별 PASS/PARTIAL/FAIL |
-| 5 | R4/R6 구조 정리 재개 | 위 판정 후 | 승인된 작은 PR과 운영검증 |
+| 2 | 네이버 Search Advisor 기준선 | 창업자 콘솔 확인 | 수집·색인·노출과 브랜드 홈 상태 기록 |
+| 3 | PR #427 Gate 2 | DB 인증 PASS 후 | 최신 main 재검증·merge·실제 deploy audit |
+| 4 | North Star 계약 정합화 | read-only 설계부터 | 헌법 정의를 계산·표시·테스트에서 단일 사용 |
+| 5 | R3 공개 non-USER 데이터룸 | Search Advisor와 병렬 가능 | 768건의 보존·noindex·격리·리라이트·삭제 후보표 |
+| 6 | R4/R6 구조 정리 재개 | R2/R3 판정 후 | 승인된 작은 PR과 운영검증 |
 
 ### 병렬 진행 규칙
 
-- 순위 0~2는 같은 critical path다. DB 인증 자연 실행 PASS 전에는 PR #427을 merge하지 않는다.
-- 순위 3의 read-only 지표 복구는 자연 스케줄을 기다리는 동안 **즉시 병렬 진행**한다.
+- 순위 0·1·3은 같은 critical path다. DB 인증 자연 실행 PASS 전에는 PR #427을 merge하지 않는다.
+- 순위 2·4·5의 read-only 진단·설계는 자연 스케줄을 기다리는 동안 **즉시 병렬 진행**한다.
 - 대기 시간을 추가 코드 삭제로 채우지 않는다. 네이버·콘텐츠·실회원 기준선을 확보하는 데 쓴다.
-- 순위 4 판정이 끝나기 전에는 순위 5의 구조 정리 PR을 새로 만들지 않는다.
+- R2/R3 판정이 끝나기 전에는 순위 6의 구조 정리 PR을 새로 만들지 않는다.
 
 ## 7. 날짜별 Rescue 게이트와 기대값
 
