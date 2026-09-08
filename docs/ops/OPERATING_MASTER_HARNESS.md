@@ -8,10 +8,9 @@
 
 | 알고 싶은 것 | 정본 |
 |---|---|
-| **최상위 운영 정본** — Rescue 전략 · R0~R9 · 금지선 · 완료 기준 | [`docs/operations/2026-09-05-unao-rescue-mode-master-plan.md`](../operations/2026-09-05-unao-rescue-mode-master-plan.md) |
+| **최상위 운영 정본** — Rescue 전략 · R0~R8 · 금지선 · 완료 기준 | [`docs/operations/2026-09-05-unao-rescue-mode-master-plan.md`](../operations/2026-09-05-unao-rescue-mode-master-plan.md) |
 | 지금 어디까지 왔나 · 열린 위험 · 다음 게이트 | [`docs/operations/UNAO_RESCUE_STATUS.md`](../operations/UNAO_RESCUE_STATUS.md) |
-| 서비스 배경 · 초기 전략 (**구현 근거로 쓰지 않음** — 레거시 재감사 전) | [`docs/constitution/NORTH_STAR.md`](../constitution/NORTH_STAR.md) |
-| 헌법이 어떻게 유지·동기화되는가 | [`docs/constitution/RULE_MAINTENANCE.md`](../constitution/RULE_MAINTENANCE.md) · [`agents/core/constitution.yaml`](../../agents/core/constitution.yaml) |
+| **재감사 대기 — 구현 근거로 쓰지 않음.** 서비스 배경 · 초기 전략 | [`docs/constitution/NORTH_STAR.md`](../constitution/NORTH_STAR.md) · [`agents/core/constitution.yaml`](../../agents/core/constitution.yaml) · [`docs/constitution/RULE_MAINTENANCE.md`](../constitution/RULE_MAINTENANCE.md) — 파일명에 `constitution`이 있어도 정본으로 자동 인정하지 않는다 |
 | Codex 운영 마스터 역할 전문 | [`AGENTS.md`](../../AGENTS.md) |
 | Claude가 매 세션 지킬 규칙 | [`CLAUDE.md`](../../CLAUDE.md) |
 | 승인된 세부 작업 · 과거 백로그 | [`docs/backlog/OPERATING_BACKLOG.md`](../backlog/OPERATING_BACKLOG.md) · [`scripts/ops-board/cards/ledger.json`](../../scripts/ops-board/cards/ledger.json) |
@@ -30,7 +29,8 @@
 현재 우선순위는 `UNAO_RESCUE_STATUS.md`를 먼저 본다. backlog와 ledger는 세부 실행 목록이며,
 Rescue 상태판보다 높은 우선순위를 스스로 만들 수 없다.
 
-현재 핵심 작업은 **R9 기반 단순화 / 레거시 제거**다. 쓰지 않는 에이전트·workflow·자동화·
+현재 핵심 프로그램은 **기반 단순화 / 레거시 제거**다. 새 단계가 아니라 **R4(자동화) · R5(문서) ·
+R6(코드·지표·연동·스크립트·의존성)을 묶어 실행**한다. 쓰지 않는 에이전트·workflow·자동화·
 대시보드·연동을 걷어내는 일이 지표를 정교하게 만드는 일보다 앞선다.
 
 | | 하는 것 | **하지 않는 것** |

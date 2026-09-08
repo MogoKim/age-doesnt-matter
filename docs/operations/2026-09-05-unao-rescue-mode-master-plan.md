@@ -3,7 +3,7 @@
 작성일: 2026-09-05
 상태: **ACTIVE - Rescue 운영 전략 정본**
 적용 대상: 우리 나이가 어때서(age-doesnt-matter.com)
-상위 정본: `docs/constitution/NORTH_STAR.md`
+지위: **최상위 운영 정본** — 이 문서 위에 다른 정본을 두지 않는다
 현재 상태판: `docs/operations/UNAO_RESCUE_STATUS.md`
 
 ---
@@ -156,7 +156,9 @@ Claude가 손과 발이면, Codex 마스터는 목적, 순서, 금지선, 검증
 | R6 | 코드/인프라 전수 정리 | 하드코딩, 주석 불일치, 레거시 경로, 잘못된 fallback을 파일 단위로 제거한다 | 작은 PR 단위 typecheck/lint PASS |
 | R7 | 콘텐츠 재건 | 복사글이 아닌 우나어식 콘텐츠 공급 기준을 만든다 | 발행 gate와 운영 관찰 기준 확정 |
 | R8 | 커뮤니티 회복 | **실회원 가입·재방문·글·댓글이 회복된다** | 네 숫자를 각각 단순 관찰해 회복 추세 확인 |
-| **R9** | **기반 단순화 / 레거시 제거** | **서비스가 실제로 쓰는 것만 남긴다** | **대상별 KEEP/REMOVE 판정표 확정 후 승인된 작은 PR로 제거** |
+
+> **현재 핵심 프로그램 = 기반 단순화 / 레거시 제거.**
+> 새 단계가 아니라 **R4·R5·R6을 하나로 묶어 실행하는 프로그램**이다. §5-S 참조.
 
 ### R8 커뮤니티 회복 — 관찰 방식
 
@@ -174,37 +176,43 @@ Claude가 손과 발이면, Codex 마스터는 목적, 순서, 금지선, 검증
 - **충분한 실사용 표본이 생기기 전까지 DB 컬럼·스냅샷·그래프를 추가하지 않는다.**
 - 표본이 한 자릿수인 동안 지표 정의를 정교하게 만드는 일은 회복에 기여하지 않는다.
 
-### R9 기반 단순화 / 레거시 제거
+### 5-S. 기반 단순화 / 레거시 제거 — 현재 핵심 프로그램
 
-Rescue의 **핵심 작업**이다. "정리하면 좋은 것"이 아니라 서비스가 서 있는 기반을 단순하게
-만드는 일이며, 남아 있는 잔재가 운영 판단을 오도하고 유지비를 만든다.
+**새 마일스톤이 아니다.** 기존 R4·R5·R6을 하나의 목적으로 묶어 실행하는 프로그램이며,
+서비스가 실제로 쓰는 것만 남기는 일이다. 남아 있는 잔재가 운영 판단을 오도하고 유지비를 만든다.
 
-**대상**
+**역할 분리**
 
-| # | 대상 |
+| 단계 | 이 프로그램에서 맡는 범위 |
 |---|---|
-| 1 | C-level 및 역할극 에이전트 |
-| 2 | 사용하지 않는 workflow · runner · registry |
-| 3 | 보지 않는 Slack · 리포트 · AdminQueue 자동화 |
-| 4 | 오래된 KPI · North Star · 스냅샷 · 대시보드 |
-| 5 | Figma 및 사용하지 않는 외부 연동 |
-| 6 | 일회성 scripts · backfill |
-| 7 | 미사용 API · 패키지 · 환경변수 · 문서 · 테스트 |
+| **R4 자동화 단순화** | C-level 및 역할극 에이전트 · 사용하지 않는 workflow · runner · registry · 보지 않는 Slack · 리포트 · AdminQueue 자동화 |
+| **R5 문서 단순화** | 오도·중복·정지된 문서. 정본이 아닌 것을 정본처럼 쓰지 않게 한다 |
+| **R6 코드·지표·연동·스크립트·의존성 단순화** | 오래된 KPI·지표·스냅샷·대시보드 · UI·디자인 도구(Figma 포함) 및 사용하지 않는 외부 연동 · 일회성 scripts·backfill · 미사용 API·패키지·환경변수·테스트 |
 
-**유지 판정 기준**
+**유지 분류 (5종)**
 
-아래 네 가지 중 **하나라도 성립하면 KEEP**, **하나도 없으면 REMOVE 후보**다.
+| 분류 | 정의 |
+|---|---|
+| **KEEP_CORE** | 창업자가 승인한 핵심 제품이며 **실제 사용 증거가 있음** |
+| **KEEP_SAFETY** | 보안 · 개인정보 · 데이터 정합성에 필요 |
+| **KEEP_RECOVERY** | **실행 절차와 사용 조건이 문서화된** 복구 도구 |
+| **REMOVE** | 위 근거가 없거나 대체 경로가 있음 |
+| **FOUNDER_DECISION** | 코드와 운영 증거만으로 **사업 의도를 확정할 수 없음** |
 
-1. 실제 사용자 경로에 있다
-2. 현재 운영에서 쓰고 있다는 증거가 있다
-3. 보안 · 개인정보 · 데이터 정합성에 필요하다
-4. 문서화된 복구 목적이 있다
+> **route·registry·workflow에 존재한다는 사실 자체는 KEEP 근거가 아니다.**
+> "언젠가 쓸 수 있음", "등록돼 있음", "코드가 남아 있음"도 근거가 아니다.
+> 복구 도구는 실행 절차와 사용 조건이 문서로 있어야 KEEP_RECOVERY다. 이름만으로는 안 된다.
 
-> **"언젠가 쓸 수 있음"과 "등록돼 있음"은 유지 근거가 아니다.**
-> 코드가 존재한다는 사실, registry·schedules·문서에 이름이 올라 있다는 사실도 근거가 아니다.
+**완료 기준**
 
-제거는 참조원(runner·registry·workflow·문서·테스트)까지 함께 정리한 뒤 되돌리기 쉬운 작은 PR로 나눈다.
-삭제 전 재가동 방지선을 먼저 두고, KEEP/REMOVE 판정표는 창업자 승인 후 실행한다.
+1. REMOVE 대상은 코드뿐 아니라 **runner · registry · workflow · env · 문서 · 테스트 · 패키지 참조까지
+   dependency closure 전체가 제거**돼야 한다. 코드만 지우고 참조가 남으면 완료가 아니다.
+2. **남긴 항목마다 유지 분류(KEEP_CORE / KEEP_SAFETY / KEEP_RECOVERY)와 그 근거인 운영 증거가
+   기록**돼야 한다. 근거 없이 남은 항목이 하나라도 있으면 완료가 아니다.
+3. FOUNDER_DECISION 항목은 창업자 판단 전까지 미결로 두되, 목록과 판단에 필요한 정보를 함께 제시한다.
+
+제거는 되돌리기 쉬운 작은 PR로 나눈다. 삭제 전 재가동 방지선을 먼저 두고,
+판정표는 창업자 승인 후 실행한다.
 
 ### R1 하위 마일스톤
 
@@ -224,7 +232,7 @@ Rescue의 **핵심 작업**이다. "정리하면 좋은 것"이 아니라 서비
 | R6-C | 주석 정리 | 실제 동작과 맞지 않는 주석을 제거하거나 고친다 | 오도 주석 0개를 목표로 파일 단위 처리 |
 | R6-D | 인프라 경계 정리 | Vercel, Supabase, workflow, launchd 책임을 분리한다 | 문서와 실제 상태 일치 |
 | R6-E | 에러/관측 정리 | 운영자가 원인을 볼 수 있고 사용자는 내부 에러를 보지 않게 한다 | user-facing error와 server log 분리 |
-| R6-F | 디자인 시스템 정립 | 토큰, 컴포넌트, 사용 규칙, 검증을 한 체계로 묶는다 | 신규·수정 UI가 공용 규칙을 따르고 회귀 가드가 존재 |
+| R6-F | **UI·디자인 도구 재감사** | 실제 쓰고 있는 UI 규칙만 남기고, 쓰지 않는 디자인 도구·연동·문서를 걷어낸다 | **사용 중인 UI 규칙 보존 확인** + Figma MCP·figma-first·관련 문서·설정의 KEEP/REMOVE 판정 완료. **신규 디자인 체계 구축은 완료 조건이 아니다** |
 
 ---
 
@@ -280,13 +288,24 @@ Rescue Mode에서는 아래 작업을 창업자와 Codex 마스터의 별도 승
 
 ### KEEP 후보
 
-- `docs/constitution/NORTH_STAR.md`
-- `agents/core/constitution.yaml`
+- 이 문서
+- `docs/operations/UNAO_RESCUE_STATUS.md`
 - `AGENTS.md`
 - `CLAUDE.md`
-- `docs/features/REGISTRY.md`
 - `docs/ops/OPERATING_MASTER_HARNESS.md`
-- 이 문서
+- `docs/features/REGISTRY.md`
+
+### REVIEW 대상 — 정본으로 자동 인정하지 않는다
+
+**파일명에 `constitution`이 있다는 사실은 정본 근거가 아니다.** 아래는 레거시 재감사 대상이며,
+재감사 전까지 구현 명령의 근거로 인용하지 않는다.
+
+- `docs/constitution/NORTH_STAR.md` — 초기 전략 문서
+- `agents/core/constitution.yaml` · `constitution-core.yaml` · `constitution-strategy.yaml` ·
+  `constitution-infra.yaml` — 에이전트 프롬프트용 사본. 현재 운영 사용 증거를 따로 확인해야 한다
+- `docs/constitution/RULE_MAINTENANCE.md`
+
+재감사는 §5-S의 5종 분류(KEEP_CORE / KEEP_SAFETY / KEEP_RECOVERY / REMOVE / FOUNDER_DECISION)로 한다.
 
 ### REWRITE 우선 후보
 
