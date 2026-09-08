@@ -410,7 +410,7 @@ sns_platform_strategy:
   naver: "SEO 검색 유입 — 매거진 리퍼포징, 1000-3000자"
 
 # ──────────────────────────────────────────
-# 8-3b. CMO 콘텐츠 전략 비율 (social-poster.ts가 파싱하여 사용)
+# 8-3b. CMO 콘텐츠 전략 비율 (소비처였던 social-poster.ts 는 R4 에서 제거 — 2026-09-08)
 # ──────────────────────────────────────────
 cmo_content_ratios:
   exploit_ratio: 0.7       # exploit(검증 공식 자동 게시) 비율 — 0.0~1.0

@@ -7,7 +7,6 @@
     "typecheck": "tsc --noEmit",
     "cto:health": "tsx cto/health-check.ts",
     "cto:error": "tsx cto/error-monitor.ts",
-    "cmo:trend": "tsx cmo/trend-analyzer.ts",
     "coo:moderate": "tsx coo/moderator.ts",
     "coo:content": "tsx coo/content-scheduler.ts",
     "coo:seed": "tsx seed/scheduler.ts",

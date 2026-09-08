@@ -5,7 +5,7 @@
 > **변경 시**: 이 문서 하단 [문서 업데이트 가이드](#문서-업데이트-가이드) 참고
 
 > ## ⚠️ 2026-09-05 실측 배너 — 이 문서의 "가동 중" 서술은 현재 상태가 아니다
-> - 2026-05-11(v11) 시점 문서다. "93핸들러·17GHA" 등 수치는 당시 값이며, 현재 실측은 runner HANDLERS **63개** · GitHub Actions **25개 중 21개 `disabled_manually`, 활성 4개**(ci · lighthouse · quarantine-check · agents-moderation). 2026-09-08 Gate 2(`post-deploy-qa`) 제거와 C-level ORG_THEATER 10개 제거를 반영한 값이다. launchd 콘텐츠 발행 12개는 2026-09-06 04:09 KST unload 완료(4개 유지/관찰). production `/api/health`는 2026-09-05 감사 당시 503(DB 28P01)이었으나 R1-A로 복구돼 현재 healthy.
+> - 2026-05-11(v11) 시점 문서다. "93핸들러·17GHA" 등 수치는 당시 값이며, 현재 실측은 runner HANDLERS **50개** · GitHub Actions **25개 중 21개 `disabled_manually`, 활성 4개**(ci · lighthouse · quarantine-check · agents-moderation). 2026-09-08 Gate 2(`post-deploy-qa`) 제거와 C-level ORG_THEATER 10개 제거를 반영한 값이다. launchd 콘텐츠 발행 12개는 2026-09-06 04:09 KST unload 완료(4개 유지/관찰). production `/api/health`는 2026-09-05 감사 당시 503(DB 28P01)이었으나 R1-A로 복구돼 현재 healthy.
 > - §1 "제2의 인생 플랫폼 — 일자리 + 커뮤니티 + 매거진" 정의는 헌법 v5.0(`docs/constitution/NORTH_STAR.md` §2·§14 "일자리 플랫폼이 아니라 커뮤니티")과 충돌한다. Rescue R5에서 REWRITE 대상.
 > - 시드봇 글쓰기는 2026-06-03 retired, `CoupangSearchWidget`은 2026-06-12 제거됐으나 본문에 미반영.
 > - 근거: `docs/operations/2026-09-05-claude-foundation-reset-audit-report.md` §3 A-06·C-07·D-05.
@@ -307,13 +307,8 @@
 | **CTO** | `cto/health-check.ts` | 2시간마다 | Haiku | 서비스 헬스체크 (API, DB 응답속도) |
 | **CTO** | `cto/error-monitor.ts` | 2시간마다 | Haiku | 에러 로그 분석 + 알림 |
 | **CTO** | `cto/security-audit.ts` | 매일 06:00 | Haiku | 보안 감사 (로그인 실패, 에러 급증, 비용 이상) |
-| **CMO** | `cmo/trend-analyzer.ts` | 매일 10:00 | Sonnet | 트렌드 분석, 콘텐츠 주제 제안 |
-| **CMO** | `cmo/social-poster.ts` | 매일 15:00 | Haiku | Threads/X 텍스트 게시 (홍보 믹스 60/25/15) |
 | **CMO** | `cmo/social-poster-visual.ts` | 매일 11:00 | Haiku | 카드뉴스 → IG/FB/Threads/Band 멀티플랫폼 게시 |
-| **CMO** | `cmo/channel-seeder.ts` | 매일 11:30 | Haiku | 카카오 오픈챗/당근마켓/커뮤니티 홍보 초안 생성 |
 | **CMO** | `cmo/knowledge-responder.ts` | 화/목/토 12:00 | Sonnet | 네이버 지식iN Q&A 초안 생성 |
-| **CMO** | `cmo/seo-optimizer.ts` | 월요일 08:00 | Haiku | 주간 SEO 키워드 분석 + 메타데이터 커버리지 체크 |
-| **CMO** | `cmo/social-metrics.ts` | 매일 20:00 | AI 불필요 | 48시간 내 게시물 멀티플랫폼 메트릭 수집 |
 | **CMO** | `cmo/social-reviewer.ts` | 월요일 10:00 | Haiku | 주간 실험 분석 — 통제/실험군 비교, 인사이트 도출 |
 | **CMO** | `cmo/social-strategy.ts` | 월요일 10:15 | Sonnet | 주간 전략 설계 — 실험 로드맵 + 트렌드 교차 참조 |
 | **CDO** | `cdo/anomaly-detector.ts` | 2시간마다 | Haiku | KPI 이상치 감지 + 알림 |
@@ -328,11 +323,6 @@
 
 | 에이전트 | 파일 | 스케줄 | AI 모델 | 역할 |
 |---------|------|--------|---------|------|
-| **CMO** | `cmo/caregiving-curator.ts` | 매일 10:15 | Sonnet | P5(간병) 페르소나 전용 콘텐츠 큐레이션 |
-| **CMO** | `cmo/health-anxiety-responder.ts` | 매일 10:45 | Sonnet | P2(건강불안) 건강 걱정 글에 공감 응답 생성 |
-| **CMO** | `cmo/humor-curator.ts` | 매일 11:15 | Haiku | P3(유머소비) 유머 콘텐츠 큐레이션 + 추천 |
-| **CMO** | `cmo/source-expander.ts` | 월요일 09:00 (주간) | Haiku | 콘텐츠 소스 다양성 분석 + 신규 소스 발굴 |
-| **CMO** | `cmo/content-gap-finder.ts` | 금요일 09:00 (주간) | Haiku | 페르소나별 콘텐츠 갭 분석 + 보완 주제 제안 |
 | **COO** | `coo/connection-facilitator.ts` | 매일 09:15, 15:00 | Sonnet | P1(느슨한 연결) 사용자 간 연결 촉진 |
 | **COO** | `coo/job-matcher.ts` | 매일 11:45 | Haiku | P4(생계) 사용자 프로필 기반 일자리 매칭 |
 | **COO** | `coo/comment-activator.ts` | 매일 10:30, 14:30, 20:00 | Haiku | 댓글 없는 글에 시드봇 댓글 유도 |
@@ -348,7 +338,6 @@
 | **COMMUNITY** | `community/sheet-scraper.ts` | 30분마다 | Haiku | 구글 시트 4탭 화제성 파이프라인 스크래핑 → PostSource.SHEET |
 | **COMMUNITY** | `community/fmkorea-scraper.ts` | 30분마다 | Haiku | FM코리아 게시판 스크래핑 (agents-sheet-viral.yml) |
 | **COO** | `coo/controversy-chain.ts` | 매일 22:00 | Sonnet | 논쟁 체인 자동화 (댓글 논쟁 구조 생성) |
-| **CMO** | `cmo/band-manager.ts` | DISPATCH ONLY | Haiku | Band 게시글 관리 (API 심사 통과 후 활성화) |
 | **CMO** | `cmo/jisik-answerer.ts` | 14:30 KST (로컬 launchd) | Sonnet | 지식iN 자동 답변 (로컬 전용, Playwright) |
 | **CMO** | `cmo/threads-token-refresher.ts` | 주간 | Haiku | Threads 60일 토큰 자동 갱신 |
 | **DESIGN** | `design/ads-loop.ts` | DISPATCH ONLY | Sonnet | 광고 소재 생성 루프 (agents-design.yml) |

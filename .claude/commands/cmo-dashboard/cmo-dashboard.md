@@ -42,6 +42,6 @@ description: CMO 마케팅 대시보드 — 실험 현황, 플랫폼 성과, 콘
    - 다음 액션 추천
 
 3. 참고:
-   - `agents/cmo/knowledge-base.ts`의 `getCMOContext()` 함수가 동일한 데이터를 프로그래밍적으로 제공
+   - (구) `agents/cmo/knowledge-base.ts` 의 `getCMOContext()` 는 R4 에서 제거됐다 (2026-09-08)
    - SocialPost의 metrics 필드는 Json 타입 (`{ impressions, likes, comments, shares, clicks }`)
    - SocialPlatform enum: THREADS, X, INSTAGRAM, FACEBOOK, BAND

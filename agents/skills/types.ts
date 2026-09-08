@@ -5,7 +5,7 @@
  * 1. AdminQueue에 "스킬 등록 제안" 등록
  * 2. 창업자 승인
  * 3. registry.ts에 스킬 추가
- * 4. social-poster가 exploit 모드에서 자동 적용
+ * 4. (구) social-poster 가 exploit 모드에서 자동 적용 — R4 에서 제거됨(2026-09-08)
  */
 
 export interface ProvenSkill {
