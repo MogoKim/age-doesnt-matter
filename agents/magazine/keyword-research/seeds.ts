@@ -4,7 +4,6 @@
  * // LOCAL ONLY — 1회성 키워드 리서치 도구. cron/GitHub Actions/runner.ts 미등록.
  *
  * 시드 출처: 창업자 구글 연관검색어 캡처 17장 + 기존 prompt.ts SEO_KEYWORDS + constitution 페르소나.
- * GSC near-miss는 90일 재프로브(2026-06-22) 스냅샷 — 실제 추출은 gsc-nearmiss.ts에서 런타임 수행.
  */
 
 import type { SeedKeyword } from './scorer.js'
@@ -75,18 +74,6 @@ export const SEED_KEYWORDS: SeedKeyword[] = [
   { keyword: '50대 여성', cluster: '패션생활', intent: '정보', sensitivity: 'none' },
   { keyword: '60대 여성', cluster: '패션생활', intent: '정보', sensitivity: 'none' },
   { keyword: '50대 여자', cluster: '외로움관계', intent: '정보', sensitivity: 'low' },
-]
-
-/**
- * GSC near-miss 스냅샷 (2026-06-22 90일 재프로브) — 참고/폴백용.
- * 실제 런타임 추출은 gsc-nearmiss.ts (position 8~50, impressions≥1).
- */
-export const GSC_NEARMISS_SNAPSHOT: SeedKeyword[] = [
-  { keyword: '50대 여자 성욕', cluster: '부부성건강', intent: '정보', sensitivity: 'high' },
-  { keyword: '50대 성욕', cluster: '부부성건강', intent: '정보', sensitivity: 'high' },
-  { keyword: '50대 여성 갱년기 증상', cluster: '갱년기건강', intent: '질문', sensitivity: 'none' },
-  { keyword: '인생2막 새로운 도전', cluster: '외로움관계', intent: '정보', sensitivity: 'none' },
-  { keyword: '50대 취업 현실', cluster: '일자리', intent: '정보', sensitivity: 'none' },
 ]
 
 // ─── 자동완성 확장 매트릭스 ──────────────────────────────

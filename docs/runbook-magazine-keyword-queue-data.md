@@ -7,7 +7,7 @@
 
 | 파일 | 재생성 | 백업 필요 | 설명 |
 |---|---|---|---|
-| `keyword-universe.json` | ✅ 가능 (`keyword-research/run-full-collect.ts`) | 권장(재수집 비용·시간) | 리서치된 키워드 1,367개. autocomplete+GSC near-miss 재수집으로 복구 가능하나 수 시간·API 소요 |
+| `keyword-universe.json` | ✅ 가능 (`keyword-research/run-full-collect.ts`) | 권장(재수집 비용·시간) | 리서치된 키워드 1,367개. **autocomplete 재수집**으로 복구 가능하나 수 시간·API 소요 (GSC near-miss 경로는 폐기됨 — universe 생성에 쓰이지 않았다) |
 | `keyword-queue-state.json` | ❌ **불가** | **필수** | 소비 이력(consumedNormalized·retryCount·events). 소실 시 이미 발행한 주제를 다시 뽑아 중복 발행 |
 | `keyword-queue-preview.dry-run.json` | ✅ (dry-run 재실행) | 불필요 | 미리보기 산출물, 운영 무관 |
 
