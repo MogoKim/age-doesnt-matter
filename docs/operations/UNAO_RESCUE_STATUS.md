@@ -38,7 +38,7 @@ PV, DAU, 색인 수, 자동 발행량, 에이전트 수는 단독 성공 지표�
 | R3 콘텐츠 오염 정리 | **PARTIAL** | BOT·SHEET 신규 발행 16일간 0, 기존 오염 콘텐츠 1차 격리 | 공개 non-USER 768건의 source/reaction/search/duplication 처분표 확정 |
 | **R4 자동화 단순화** | **PARTIAL — 현재 핵심 프로그램** | PAUSED, bot write 차단, cron/handler 가드, dead job 정리, **GHA DB 인증 운영 PASS** | C-level·역할극 에이전트, 미사용 workflow·runner·registry, 안 보는 Slack·리포트·AdminQueue 자동화의 5종 분류 판정 → dependency closure 제거 |
 | **R5 문서 단순화** | **PARTIAL — 현재 핵심 프로그램** | 정본 위계와 시작 게이트 확정, 충돌 문서와 소란소란 혼입 일부 정리 | 오도·중복·정지 문서 판정. `NORTH_STAR.md`·`constitution*.yaml` 재감사 |
-| **R6 코드·지표·연동·스크립트·의존성 단순화** | **PARTIAL — 현재 핵심 프로그램** | RLS·캐시·계측·E2E·cron·레거시 일부 정리 | 오래된 KPI·지표·스냅샷·대시보드, UI·디자인 도구(R6-F), 일회성 scripts·backfill, 미사용 API·패키지·env·테스트 판정 → 제거. ops tsc 0 |
+| **R6 코드·지표·연동·스크립트·의존성 단순화** | **PARTIAL — 현재 핵심 프로그램** | RLS·캐시·계측·E2E·cron·레거시 일부 정리 | 오래된 KPI·지표·스냅샷·대시보드, UI·디자인 도구(R6-F), 일회성 scripts·backfill, 미사용 API·패키지·env·테스트 판정 → 제거. **REMOVE dependency closure를 먼저 완료하고, 최종 KEEP 코드의 ops 타입 오류를 0으로 만든다** |
 | R7 콘텐츠 재건 | **HOLD** | 기존 gate와 복구 도구 일부 존재 | R1~R6 이후 우나어식 원본 공급·발행 gate 승인 |
 | R8 커뮤니티 회복 | **FAIL / 단순 관찰 중** | 신규 가입·실회원 글·실회원 댓글·재방문 회원의 현재 값 확보(§5-A) | 네 숫자의 회복 추세. **복합 지표 구현은 HOLD** |
 
@@ -59,8 +59,13 @@ PV, DAU, 색인 수, 자동 발행량, 에이전트 수는 단독 성공 지표�
 | 삭제 후 stale 노출 | sitemap·JOB list/home 캐시 무효화 연결 (#417, #419) |
 | 죽은 코드 | design·scripts·thumbnail·cook82·GSC dead path 제거 (#428~#432) |
 
-R6 정리 과정에서 agents/scripts 타입 오류는 `953 -> 932`로 줄었다. 감소 자체가 완료 기준은
-아니며 `agents/core/db.ts` 타입 복원 후 0이 되어야 타입 안전성 복구로 판정한다.
+R6 정리 과정에서 agents/scripts 타입 오류는 `953 -> 932`로 줄었다. **932는 현황값일 뿐
+완료 기준도 목표도 아니다.** 지금 이 숫자를 줄이는 것을 작업 목표로 삼지 않는다.
+
+작업 순서는 다음과 같다. **REMOVE dependency closure를 먼저 완료하고, 그 뒤에 남은
+최종 KEEP 코드의 ops 타입 오류를 0으로 만든다.** 삭제 후보 코드의 타입 오류를 먼저 고치지
+않는다 — 지울 코드를 고치는 것은 버려질 작업이고, 삭제만으로 사라질 오류다.
+타입 기반 복원을 어떤 방법으로 할지는 KEEP 범위가 확정된 뒤에 결정한다.
 
 ## 5. 현재 생존 지표판
 
@@ -215,7 +220,8 @@ T+0은 2026-09-05 KST다. 날짜가 지나도 증거가 없으면 PASS로 넘기
 - 제거는 되돌리기 쉬운 작은 PR로 나눈다. 삭제 전 재가동 방지선을 먼저 둔다.
 - 이미 만든 read-only dependency closure는 **증거로 보존**하되 그 자체가 삭제 승인은 아니다.
 - **Gate 2(`qa:deploy-audit`)와 PR #427도 이 판정 대상이다.** 유지로 판정될 때만 merge를 검토한다.
-- 기타 후보: `agents/core/db.ts` 타입 복원(ops tsc 0), 도메인·env fallback·모델 ID·localStorage key 단일화.
+- **타입 복구는 REMOVE 이후다.** 삭제 예정 코드의 타입 오류는 고치지 않는다. KEEP 범위 확정 후 최종 KEEP 코드만 ops tsc 0으로 만들며, 복원 방법은 그때 결정한다.
+- 기타 후보: 도메인·env fallback·모델 ID·localStorage key 단일화.
 
 ## 10. 역할과 보고 규칙
 
