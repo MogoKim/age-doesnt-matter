@@ -49,30 +49,6 @@ export const BOT_API_KEY_SEED = optionalEnv('BOT_API_KEY_SEED', '')
 export const COUPANG_ACCESS_KEY = optionalEnv('COUPANG_ACCESS_KEY', '')
 export const COUPANG_SECRET_KEY = optionalEnv('COUPANG_SECRET_KEY', '')
 
-/** X (Twitter) API (optional) */
-export const X_CONSUMER_KEY = optionalEnv('X_CONSUMER_KEY', '')
-export const X_CONSUMER_SECRET = optionalEnv('X_CONSUMER_SECRET', '')
-export const X_ACCESS_TOKEN = optionalEnv('X_ACCESS_TOKEN', '')
-export const X_ACCESS_SECRET = optionalEnv('X_ACCESS_SECRET', '')
-export const X_BEARER_TOKEN = optionalEnv('X_BEARER_TOKEN', '')
-
-/** Threads / Meta (optional) */
-export const THREADS_APP_ID = optionalEnv('THREADS_APP_ID', '')
-export const THREADS_APP_SECRET = optionalEnv('THREADS_APP_SECRET', '')
-export const THREADS_ACCESS_TOKEN = optionalEnv('THREADS_ACCESS_TOKEN', '')
-
-/** Instagram (optional) */
-export const INSTAGRAM_ACCESS_TOKEN = optionalEnv('INSTAGRAM_ACCESS_TOKEN', '')
-export const INSTAGRAM_BUSINESS_ACCOUNT_ID = optionalEnv('INSTAGRAM_BUSINESS_ACCOUNT_ID', '')
-
-/** Facebook Page (optional) */
-export const FACEBOOK_PAGE_ACCESS_TOKEN = optionalEnv('FACEBOOK_PAGE_ACCESS_TOKEN', '')
-export const FACEBOOK_PAGE_ID = optionalEnv('FACEBOOK_PAGE_ID', '')
-
-/** Naver Band (optional) */
-export const BAND_ACCESS_TOKEN = optionalEnv('BAND_ACCESS_TOKEN', '')
-export const BAND_KEY = optionalEnv('BAND_KEY', '')
-
 /** Google Analytics / GTM (NEXT_PUBLIC_ — 클라이언트에서 직접 접근) */
 export const NEXT_PUBLIC_GTM_ID = optionalEnv('NEXT_PUBLIC_GTM_ID', '')
 export const NEXT_PUBLIC_GA4_ID = optionalEnv('NEXT_PUBLIC_GA4_ID', '')

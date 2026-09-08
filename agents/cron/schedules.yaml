@@ -14,12 +14,6 @@ schedules:
     task: "seed-09"
     handler: "seed/scheduler.ts"
 
-  # 매일 10:00 KST (01:00 UTC)
-  - cron: "0 1 * * *"
-    agent: CMO
-    task: trend-analyzer
-    handler: "cmo/trend-analyzer.ts"
-
   # 매거진 자동발행 — 매일 16:00 KST (07:00 UTC)
   - cron: "0 7 * * *"
     agent: CAFE_CRAWLER
@@ -155,11 +149,3 @@ schedules:
     agent: COO
     task: job-scraper
     handler: "coo/job-scraper.ts"
-
-  # ── 소셜미디어 자동 포스팅 (하루 1회) ──
-  # 15:00 KST (06:00 UTC)
-  - cron: "0 6 * * *"
-    agent: CMO
-    task: social-poster
-    handler: "cmo/social-poster.ts"
-    note: "인기글/매거진 → SNS 홍보 콘텐츠 생성 (Threads/X)"

@@ -57,6 +57,11 @@ describe('삭제된 핸들러의 잔재', () => {
     // R4 SUPERSEDED 4개 (2026-09-08) — 대체 경로가 있어 제거됨
     'cdo:kpi-collector', 'cfo:cost-tracker', 'cto:arch-review', 'cto:garbage-collect',
     'cto:qa-verify',
+    // R4 GROWTH_LEGACY 13개 (2026-09-08) — 재등록 방지선
+    'cmo:trend-analyzer', 'cmo:source-expander', 'cmo:content-gap-finder', 'cmo:humor-curator',
+    'cmo:caregiving-curator', 'cmo:channel-seeder', 'cmo:google-ads-report', 'cmo:social-poster',
+    'cmo:social-metrics', 'cmo:threads-token-refresh', 'cmo:seo-optimizer', 'cmo:band-manager',
+    'cmo:health-anxiety-responder',
   ] as const
 
   it('runner 에 없다', () => {

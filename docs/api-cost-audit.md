@@ -139,7 +139,7 @@
 
 # 2. 개별 workflow 비활성화
 gh workflow disable agents-daily.yml
-gh workflow disable agents-social.yml
+# (agents-social.yml 은 R4 에서 제거됨 — 2026-09-08)
 gh workflow disable agents-cafe.yml
 gh workflow disable agents-seed.yml
 
@@ -157,5 +157,5 @@ gh workflow list
 - [ ] Vercel 월누계 < $30 정상 / $50+ 이상 시 확인
 - [ ] OpenAI 월누계 < $5 정상 (platform.openai.com/billing)
 - [ ] Upstash Redis < 25K commands/일 (무료 한도)
-- [ ] Instagram/Threads 토큰 만료 확인 (60일 주기)
+- [x] ~~Instagram/Threads 토큰 만료 확인 (60일 주기)~~ — SNS 연동은 R4 에서 제거됐다(2026-09-08). 더 이상 점검 대상이 아니다
 - [ ] BotLog CAFE_CRAWLER 성공률 ≥ 80%

@@ -5,7 +5,7 @@
 > **변경 시**: 이 문서 하단 [문서 업데이트 가이드](#문서-업데이트-가이드) 참고
 
 > ## ⚠️ 2026-09-05 실측 배너 — 이 문서의 "가동 중" 서술은 현재 상태가 아니다
-> - 2026-05-11(v11) 시점 문서다. "93핸들러·17GHA" 등 수치는 당시 값이며, 현재 실측은 runner HANDLERS **63개** · GitHub Actions **25개 중 21개 `disabled_manually`, 활성 4개**(ci · lighthouse · quarantine-check · agents-moderation). 2026-09-08 Gate 2(`post-deploy-qa`) 제거와 C-level ORG_THEATER 10개 제거를 반영한 값이다. launchd 콘텐츠 발행 12개는 2026-09-06 04:09 KST unload 완료(4개 유지/관찰). production `/api/health`는 2026-09-05 감사 당시 503(DB 28P01)이었으나 R1-A로 복구돼 현재 healthy.
+> - 2026-05-11(v11) 시점 문서다. "93핸들러·17GHA" 등 수치는 당시 값이며, 현재 실측은 runner HANDLERS **50개** · GitHub Actions **24개 중 20개 `disabled_manually`, 활성 4개**(ci · lighthouse · quarantine-check · agents-moderation). 2026-09-08~09 Gate 2 제거와 R4 에이전트 정리(ORG_THEATER 10 · SUPERSEDED 4 · qa-verify · GROWTH_LEGACY 13)를 반영한 값이다. **SNS 자동 게시·메트릭·토큰 갱신과 `agents-social.yml` 은 제거됐다.** launchd 콘텐츠 발행 12개는 2026-09-06 04:09 KST unload 완료(4개 유지/관찰). production `/api/health`는 2026-09-05 감사 당시 503(DB 28P01)이었으나 R1-A로 복구돼 현재 healthy.
 > - §1 "제2의 인생 플랫폼 — 일자리 + 커뮤니티 + 매거진" 정의는 헌법 v5.0(`docs/constitution/NORTH_STAR.md` §2·§14 "일자리 플랫폼이 아니라 커뮤니티")과 충돌한다. Rescue R5에서 REWRITE 대상.
 > - 시드봇 글쓰기는 2026-06-03 retired, `CoupangSearchWidget`은 2026-06-12 제거됐으나 본문에 미반영.
 > - 근거: `docs/operations/2026-09-05-claude-foundation-reset-audit-report.md` §3 A-06·C-07·D-05.
@@ -151,16 +151,6 @@
 | `SLACK_BOT_TOKEN` | Slack 봇 토큰 | 에이전트 운영 채널 |
 | `SLACK_SIGNING_SECRET` | Slack 서명 시크릿 | Webhook 검증 |
 | `SLACK_CHANNEL_*` | 채널별 ID (14개) | 각 채널 메시지 발송 |
-| `X_API_KEY` / `X_API_SECRET` | X (Twitter) OAuth 1.0a | CMO SNS 포스팅 |
-| `X_ACCESS_TOKEN` / `X_ACCESS_SECRET` | X 사용자 토큰 | CMO SNS 포스팅 |
-| `THREADS_APP_ID` / `THREADS_APP_SECRET` | Threads OAuth | CMO SNS 포스팅 |
-| `THREADS_ACCESS_TOKEN` | Threads 장기 토큰 (60일) | CMO SNS 포스팅 |
-| `INSTAGRAM_ACCESS_TOKEN` | Instagram Graph API 토큰 | CMO 카드뉴스 캐러셀 |
-| `INSTAGRAM_BUSINESS_ACCOUNT_ID` | Instagram 비즈니스 계정 ID | CMO 카드뉴스 캐러셀 |
-| `FACEBOOK_PAGE_ACCESS_TOKEN` | Facebook 페이지 토큰 | CMO 카드뉴스 + 텍스트 게시 |
-| `FACEBOOK_PAGE_ID` | Facebook 페이지 ID | CMO 카드뉴스 + 텍스트 게시 |
-| `BAND_ACCESS_TOKEN` | Naver Band 액세스 토큰 | CMO Band 게시 |
-| `BAND_KEY` | Naver Band 앱 키 | CMO Band API |
 | `CLOUDFLARE_R2_*` | R2 스토리지 | 이미지 업로드 |
 | `ADMIN_JWT_SECRET` | 어드민 JWT | 어드민 인증 |
 | `BOT_API_KEY_*` | 봇 API 인증 | 봇 엔드포인트 |
@@ -284,7 +274,7 @@
 │기술총괄││마케팅 ││  운영총괄  ││데이터 ││재무총괄│
 │       ││       ││          ││       ││       │
 │헬스체크││트렌드 ││일자리수집 ││KPI수집││비용   │
-│에러감시││SNS포스││모더레이션 ││이상감지││추적   │
+│에러감시││트렌드 ││모더레이션 ││이상감지││추적   │
 │보안감사││팅+실험││콘텐츠편성 ││       ││       │
 │크롤링 ││전략+리││댓글활성화 ││       ││       │
 │헬스   ││뷰+매거││연결촉진   ││       ││       │
@@ -307,13 +297,7 @@
 | **CTO** | `cto/health-check.ts` | 2시간마다 | Haiku | 서비스 헬스체크 (API, DB 응답속도) |
 | **CTO** | `cto/error-monitor.ts` | 2시간마다 | Haiku | 에러 로그 분석 + 알림 |
 | **CTO** | `cto/security-audit.ts` | 매일 06:00 | Haiku | 보안 감사 (로그인 실패, 에러 급증, 비용 이상) |
-| **CMO** | `cmo/trend-analyzer.ts` | 매일 10:00 | Sonnet | 트렌드 분석, 콘텐츠 주제 제안 |
-| **CMO** | `cmo/social-poster.ts` | 매일 15:00 | Haiku | Threads/X 텍스트 게시 (홍보 믹스 60/25/15) |
-| **CMO** | `cmo/social-poster-visual.ts` | 매일 11:00 | Haiku | 카드뉴스 → IG/FB/Threads/Band 멀티플랫폼 게시 |
-| **CMO** | `cmo/channel-seeder.ts` | 매일 11:30 | Haiku | 카카오 오픈챗/당근마켓/커뮤니티 홍보 초안 생성 |
 | **CMO** | `cmo/knowledge-responder.ts` | 화/목/토 12:00 | Sonnet | 네이버 지식iN Q&A 초안 생성 |
-| **CMO** | `cmo/seo-optimizer.ts` | 월요일 08:00 | Haiku | 주간 SEO 키워드 분석 + 메타데이터 커버리지 체크 |
-| **CMO** | `cmo/social-metrics.ts` | 매일 20:00 | AI 불필요 | 48시간 내 게시물 멀티플랫폼 메트릭 수집 |
 | **CMO** | `cmo/social-reviewer.ts` | 월요일 10:00 | Haiku | 주간 실험 분석 — 통제/실험군 비교, 인사이트 도출 |
 | **CMO** | `cmo/social-strategy.ts` | 월요일 10:15 | Sonnet | 주간 전략 설계 — 실험 로드맵 + 트렌드 교차 참조 |
 | **CDO** | `cdo/anomaly-detector.ts` | 2시간마다 | Haiku | KPI 이상치 감지 + 알림 |
@@ -328,11 +312,6 @@
 
 | 에이전트 | 파일 | 스케줄 | AI 모델 | 역할 |
 |---------|------|--------|---------|------|
-| **CMO** | `cmo/caregiving-curator.ts` | 매일 10:15 | Sonnet | P5(간병) 페르소나 전용 콘텐츠 큐레이션 |
-| **CMO** | `cmo/health-anxiety-responder.ts` | 매일 10:45 | Sonnet | P2(건강불안) 건강 걱정 글에 공감 응답 생성 |
-| **CMO** | `cmo/humor-curator.ts` | 매일 11:15 | Haiku | P3(유머소비) 유머 콘텐츠 큐레이션 + 추천 |
-| **CMO** | `cmo/source-expander.ts` | 월요일 09:00 (주간) | Haiku | 콘텐츠 소스 다양성 분석 + 신규 소스 발굴 |
-| **CMO** | `cmo/content-gap-finder.ts` | 금요일 09:00 (주간) | Haiku | 페르소나별 콘텐츠 갭 분석 + 보완 주제 제안 |
 | **COO** | `coo/connection-facilitator.ts` | 매일 09:15, 15:00 | Sonnet | P1(느슨한 연결) 사용자 간 연결 촉진 |
 | **COO** | `coo/job-matcher.ts` | 매일 11:45 | Haiku | P4(생계) 사용자 프로필 기반 일자리 매칭 |
 | **COO** | `coo/comment-activator.ts` | 매일 10:30, 14:30, 20:00 | Haiku | 댓글 없는 글에 시드봇 댓글 유도 |
@@ -348,9 +327,7 @@
 | **COMMUNITY** | `community/sheet-scraper.ts` | 30분마다 | Haiku | 구글 시트 4탭 화제성 파이프라인 스크래핑 → PostSource.SHEET |
 | **COMMUNITY** | `community/fmkorea-scraper.ts` | 30분마다 | Haiku | FM코리아 게시판 스크래핑 (agents-sheet-viral.yml) |
 | **COO** | `coo/controversy-chain.ts` | 매일 22:00 | Sonnet | 논쟁 체인 자동화 (댓글 논쟁 구조 생성) |
-| **CMO** | `cmo/band-manager.ts` | DISPATCH ONLY | Haiku | Band 게시글 관리 (API 심사 통과 후 활성화) |
 | **CMO** | `cmo/jisik-answerer.ts` | 14:30 KST (로컬 launchd) | Sonnet | 지식iN 자동 답변 (로컬 전용, Playwright) |
-| **CMO** | `cmo/threads-token-refresher.ts` | 주간 | Haiku | Threads 60일 토큰 자동 갱신 |
 | **DESIGN** | `design/ads-loop.ts` | DISPATCH ONLY | Sonnet | 광고 소재 생성 루프 (agents-design.yml) |
 | **QA** | `qa/content-auditor.ts` | 주간 | Haiku | 콘텐츠 품질 감사 |
 | **QA** | `qa/code-gate.ts` | PR 트리거 | Haiku | Gate 1 코드 검증 |
@@ -367,7 +344,6 @@
 | `core/constitution/audience.yaml` | 5대 페르소나 정의, 타겟 사용자 가드레일 |
 | `core/constitution/ops.yaml` | 운영 정책, 콘텐츠 기준, 트렌딩 정책 |
 | `core/constitution/infra.yaml` | 인프라 및 비용 정책, DB write 규칙 |
-| `core/constitution/strategy.yaml` | SNS 전략, 성장 루프, 실험 정책 |
 | `core/types.ts` | 타입 정의 (AgentResult, AgentConfig, NotifyPayload 등) |
 | `core/db.ts` | Prisma 클라이언트 초기화 |
 | `core/notifier.ts` | Slack + 어드민큐 알림 |
@@ -375,11 +351,9 @@
 | `core/approval-helper.ts` | Slack 버튼 승인 + 만료 처리 |
 | `core/meeting.ts` | 에이전트 회의 관리 |
 | `core/google-api.ts` | GA4/Search Console 연동 |
-| `cmo/platforms/*-client.ts` | SNS 플랫폼 API 래퍼 (X, Threads, Instagram, Facebook, Band) |
 | `cmo/card-news/generator.ts` | AI 카드뉴스 슬라이드 생성 (요일별 유형 로테이션) |
 | `cmo/card-news/renderer.ts` | HTML → 1080×1350px JPEG 렌더링 (Playwright + Sharp + R2) |
 | `seed/persona-data.ts` | **50명 페르소나 정의** — 캐릭터 시트 방식 (성격·말투·습관·금지사항·예시문장) |
-| `skills/registry.ts` | 검증된 SNS 전략 스킬 레지스트리 (승률 기반 가중 선택) |
 
 ### 5.4 일자리 파이프라인 (COO)
 
@@ -402,39 +376,6 @@ GitHub Actions Cron (12:00, 16:00, 20:00 KST)
       │   + 규칙 기반: displayTags 최대 3개, 급여 정규화
       ├→ Step 5: Post + JobDetail DB INSERT (Prisma)
       └→ Step 6: Slack #로그-일자리 요약 알림
-```
-
-### 5.5 SNS 바이럴 마케팅 파이프라인 (CMO)
-
-```
-┌── OBSERVE (매일 20:00) ─────────────────────────────────┐
-│  social-metrics.ts → 메트릭 수집 → SocialPost 업데이트    │
-└──────────────────┬──────────────────────────────────────┘
-                   ▼
-┌── ANALYZE (매주 월 10:00) ──────────────────────────────┐
-│  social-reviewer.ts → A/B 비교 → AI 인사이트 도출        │
-└──────────────────┬──────────────────────────────────────┘
-                   ▼
-┌── ACT (매주 월 10:15) ──────────────────────────────────┐
-│  social-strategy.ts → 8주 로드맵 기반 다음 실험 설계       │
-└──────────────────┬──────────────────────────────────────┘
-                   ▼
-┌── EXECUTE (매일 15:00) ──────────────────────────────────┐
-│  social-poster.ts → 실험 config → 홍보 믹스 60/25/15     │
-│  → 4명 SNS 페르소나 → Threads + X 게시                    │
-└─────────────────────────────────────────────────────────┘
-```
-
-### 5.5.1 비주얼 카드뉴스 파이프라인 (CMO)
-
-```
-CafeTrend → card-news/generator.ts
-  ├→ 요일별 유형 로테이션 (월수금:NEWS / 화목:INFO / 토일:COMMUNITY)
-  ├→ Claude Haiku → JSON 슬라이드 3~7장 생성
-  └→ card-news/renderer.ts
-      ├→ HTML 템플릿 3종 + base.css → Playwright 렌더링 (1080×1350px)
-      └→ Sharp JPEG → R2 업로드 → social-poster-visual.ts
-          → IG 캐러셀 / FB 멀티포토 / Threads / Band 게시
 ```
 
 ### 5.5.2 매거진 자동 발행 (v2)
@@ -540,7 +481,6 @@ CafeTrend → card-news/generator.ts
 | `agents-moderation.yml` | 09, 15, 21시 | COO(모더레이션) |
 | `agents-seed.yml` | 09~22시 (12회) | SEED(시드 콘텐츠 + 댓글 + 좋아요) |
 | `agents-seed-micro.yml` | **23,3,9,14,15,16시 (6회)** | SEED(마이크로 — 댓글/대댓글/좋아요 전용) |
-| `agents-social.yml` | 09/11/11:30/12/20시 + 주간 | CMO(텍스트포스팅·카드뉴스·채널시딩·지식iN·SEO·메트릭·리뷰·전략·토큰갱신) |
 | `agents-cafe.yml` | 09, 13, 19시 | CAFE(네이버 카페 3곳 + 82cook 크롤링) |
 | **`agents-sheet-viral.yml`** | **매 30분** | SEED(viral-waves), COMMUNITY(sheet-scrape, fmkorea-scrape) |
 | **`agents-killer-post.yml`** | **00:10, 13:10 KST (2회)** | SEED(killer-post-generator) — 화제성 킬러포스트 |
@@ -589,7 +529,7 @@ CafeTrend → card-news/generator.ts
 18:30      COO 대댓글체인(2차) | CAFE 크롤링(로컬)
 19:00      SEED 활동 | CAFE 크롤링(Actions)
 19:30      매거진이브닝발행
-20:00      COO 일자리수집 | COO 댓글활성화(3차) | CMO SNS메트릭수집
+20:00      COO 일자리수집 | COO 댓글활성화(3차)
 21:00      COO 모더레이션 | SEED 활동
 22:00      CDO KPI수집 | SEED 활동
 22:30      CDO 참여최적화
@@ -610,11 +550,6 @@ CafeTrend → card-news/generator.ts
 | **Slack Web API** | `slack.com/api/*` | 아웃바운드 | 메시지 발송, 채널 관리 |
 | **Anthropic API** | `api.anthropic.com` | 아웃바운드 | AI 에이전트 호출 |
 | **Cloudflare R2** | `*.r2.cloudflarestorage.com` | 아웃바운드 | 이미지 업로드/서빙 |
-| **Threads API** | `graph.threads.net/*` | 아웃바운드 | SNS 게시 + 메트릭 (OAuth 2.0, 60일 토큰) |
-| **X API v2** | `api.x.com/2/*` | 아웃바운드 | SNS 게시 + 메트릭 (OAuth 1.0a HMAC-SHA1) |
-| **Instagram Graph API** | `graph.facebook.com/v21.0/*` | 아웃바운드 | 카드뉴스 캐러셀 게시 (3단계 프로세스) |
-| **Facebook Graph API** | `graph.facebook.com/v21.0/*` | 아웃바운드 | 멀티포토 + 텍스트 페이지 게시 |
-| **Naver Band API** | `openapi.band.us/v2.2/*` | 아웃바운드 | 밴드 텍스트+이미지 게시 |
 | **Google Tag Manager** | `www.googletagmanager.com` | 아웃바운드 | 태그 관리 (GTM 컨테이너 로드) |
 | **Google Analytics 4** | `www.google-analytics.com` | 아웃바운드 | 사용자 행동 분석 (GTM 경유) |
 | **50plus.or.kr** | 웹 크롤링 | 아웃바운드 | 일자리 수집 |
@@ -771,8 +706,6 @@ Slack Workspace: 우나어-ops (14개 채널)
 | `/api/ad-click` | POST | 광고 클릭 추적 |
 | `/api/events` | POST | 분석 이벤트 로깅 |
 | `/api/slack` | POST | Slack Events + 커맨드 |
-| `/api/threads/auth` | GET | Threads OAuth 시작 |
-| `/api/threads/callback` | GET | Threads OAuth 콜백 |
 | `/api/popups` | GET, POST, PATCH, DELETE | 팝업/띠배너 CRUD ← v11 신규 |
 | `/api/push/subscribe` | POST | PWA 푸시 구독 등록 ← v11 신규 |
 | `/api/user/pwa-status` | GET | PWA 설치 상태 조회 ← v11 신규 |

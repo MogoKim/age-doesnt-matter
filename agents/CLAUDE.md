@@ -21,9 +21,3 @@
 - supabase: SELECT 자유 / INSERT·UPDATE는 COO만
 - github: Issue 생성·PR 조회만 (push 절대 금지)
 - r2: 이미지 업로드만
-
-## 스킬 추가 프로세스
-1. 에이전트가 반복 패턴 감지
-2. skills/registry.ts에 스킬 정의서 초안 작성
-3. AdminQueue에 '진화 제안' 등록
-4. 창업자 승인 후 Claude Code가 구현

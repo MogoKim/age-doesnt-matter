@@ -36,7 +36,6 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cto:purge-old-logs': () => import('../scripts/purge-old-logs.js').then((m) => m.purgeOldLogs(true)), // DISPATCH ONLY — dry(미삭제)만. ⚠️ 불가역 삭제라 dispatch로는 삭제 안 됨. 실제 삭제는 --apply 수동만
   'cto:anonymize-withdrawn': () => import('../scripts/anonymize-withdrawn-users.js').then((m) => m.anonymizeWithdrawn(true)), // dry(미리보기) — 대상 수만 확인. 실제 익명화는 anonymize-withdrawn-apply
   'cto:anonymize-withdrawn-apply': () => import('../scripts/anonymize-withdrawn-users.js').then((m) => m.anonymizeWithdrawn(false)), // F-12: 매주 월 10:00 KST 자동. 30일 경과 탈퇴자만, 멱등(이미 익명화된 건 제외)
-  'cmo:trend-analyzer': () => import('../cmo/trend-analyzer.js').then(() => {}), // DISPATCH ONLY — cron 중단 2026-05-16 (Slack 리포트만, 참고 안 함)
   // main() 을 반환해야 runner 가 모더레이션 **완료까지** 기다린다.
   // `.then(() => {})` 이면 import 만 끝나고 곧바로 disconnect + exit 해서 판정이 잘린다.
   'coo:moderator': () => import('../coo/moderator.js').then((m) => m.main()),
@@ -70,18 +69,9 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   // 저녁 안전망 — 11:30 KST full 크롤 실패 시 최대 21시간 공백 방지 (18:00 KST, 0 9 * * * UTC)
   'cafe_crawler:evening-brief-safety': () => import('../cafe/daily-brief.js').then(async m => { await m.runFallbackBrief() }),
   'cafe_crawler:external-crawl': () => import('../cafe/external-crawler.js').then(() => {}), // DISPATCH ONLY — 82cook 외부 크롤, GHA 스케줄 제거됨 (2026-04-13)
-  'cmo:social-poster': () => import('../cmo/social-poster.js').then(() => {}),
-  'cmo:social-metrics': () => import('../cmo/social-metrics.js').then(() => {}),
-  'cmo:google-ads-report': () => import('../marketing/google-ads/scripts/daily-report.js').then(() => {}), // DISPATCH ONLY — google-ads-api 패키지 미설치 + refresh_token 미설정. 준비 완료 시 크론 복원.
   'cmo:upload-creatives': () => import('../marketing/google-ads/scripts/upload-creatives.js').then(() => {}), // DISPATCH ONLY — 최초 1회 수동 실행
   'cmo:create-campaigns': () => import('../marketing/google-ads/scripts/create-campaigns.js').then(() => {}), // DISPATCH ONLY — 최초 1회 수동 실행
   'ceo:approval-reminder': () => import('./approval-reminder.js').then(() => {}),
-  'cmo:caregiving-curator': () => import('../cmo/caregiving-curator.js').then(() => {}), // DISPATCH ONLY — cron 중단 2026-05-15 (Slack 알림만, 실용 가치 없음)
-  'cmo:health-anxiety-responder': () => import('../cmo/health-anxiety-responder.js').then(() => {}),
-  'cmo:humor-curator': () => import('../cmo/humor-curator.js').then(() => {}), // DISPATCH ONLY — cron 중단 2026-05-15 (Slack 알림만, 실용 가치 없음)
-  'cmo:content-gap-finder': () => import('../cmo/content-gap-finder.js').then(() => {}), // DISPATCH ONLY — cron 중단 2026-05-16 (Slack 리포트만, 참고 안 함)
-  'cmo:band-manager': () => import('../cmo/band-manager.js').then(() => {}),
-  'cmo:source-expander': () => import('../cmo/source-expander.js').then(() => {}), // DISPATCH ONLY — cron 중단 2026-05-16 (Slack 리포트만, 참고 안 함)
   'coo:connection-facilitator': () => import('../coo/connection-facilitator.js').then(m => m.main()),
   'coo:job-matcher': () => import('../coo/job-matcher.js').then(m => m.main()),
   'coo:comment-activator': () => import('../coo/comment-activator.js').then(m => m.main()),
@@ -104,14 +94,10 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   // LOCAL ONLY — 네이버 카페는 로그인 세션(storage-state.json) 필요, GHA 미지원
   // launchd: com.unao.naver-cafe-sheet-scraper.plist (10:40, 13:00, 15:30, 23:00 KST)
   'community:navercafe-scrape': () => import('../community/run-local-naver-cafe.js').then(() => {}),
-  'cmo:channel-seeder': () => import('../cmo/channel-seeder.js').then(() => {}),
   // cmo:knowledge-responder — 삭제됨 2026-05-15 (지식인 운영 중단, 코드 삭제)
   // cmo:jisik-answerer — 삭제됨 2026-05-15 (지식인 운영 중단, 코드 삭제)
   // cmo:card-news-generator — 삭제됨 2026-05-15 (카드뉴스 중단, 코드 삭제)
-  // cmo:social-poster-visual — 삭제됨 2026-05-15 (카드뉴스 SNS 게시 중단, 코드 삭제)
-  'cmo:seo-optimizer': () => import('../cmo/seo-optimizer.js').then(() => {}),
   'cmo:seo-snapshot': () => import('../cmo/seo-snapshot.js').then(() => {}), // 주간 GSC 관측 (read-only)
-  'cmo:threads-token-refresh': () => import('../cmo/platforms/threads-token-refresh.js').then(() => {}),
 
   // Design 에이전트 (LOCAL ONLY — Gemini API + Playwright)
   // LOCAL ONLY — 이미지 생성 비용 발생, 인터랙티브 세션 전용

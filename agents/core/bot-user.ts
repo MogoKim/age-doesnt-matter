@@ -3,7 +3,7 @@ import { prisma } from './db.js'
 /**
  * 봇 유저 조회/생성 공통 유틸
  *
- * caregiving-curator, humor-curator, health-anxiety-responder, job-scraper에서
+ * job-scraper 등에서
  * 각자 동일하게 구현하던 ensureBotUser 패턴을 통합.
  *
  * @param email        봇 유저 이메일 (예: 'bot-humor@unao.bot')

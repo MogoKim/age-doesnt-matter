@@ -106,7 +106,7 @@ async function writeAuthorReply(p: {
  */
 /**
  * 보드 → URL 접두사. src/lib/board-registry가 SSoT지만 agents→src 런타임 import 금지라
- * 여기서 재정의한다(agents/cmo/social-poster.ts·agents/community/sheet-scraper.ts와 동일 관례).
+ * 여기서 재정의한다(agents/community/sheet-scraper.ts와 동일 관례).
  * 후보 보드(ELIGIBLE_BOARDS)와 동일한 4개만 둔다 — 그 밖은 앵커 없이 기존 동작.
  */
 const BOARD_URL_PREFIX_LOCAL: Record<string, string> = {

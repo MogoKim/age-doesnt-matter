@@ -31,21 +31,6 @@ export const HANDLER_REGISTRY: HandlerMeta[] = [
   { key: 'cto:security-audit',       label: 'CTO 보안 감사',      botType: 'CTO',          action: 'SECURITY_AUDIT',         schedule: '매일 06:00',           type: 'GHA',      workflow: 'agents-daily' },
   { key: 'cto:crawler-health',       label: 'CTO 크롤러 헬스',    botType: 'CTO',          action: 'CRAWLER_HEALTH',         schedule: '매일 07:00',           type: 'GHA',      workflow: 'agents-daily' },
 
-  // ─── CMO ───────────────────────────────────────────────────────────
-  { key: 'cmo:trend-analyzer',            label: 'CMO 트렌드 분석',    botType: 'CMO', action: 'TREND_ANALYSIS',         schedule: '매일 10:00',           type: 'GHA',      workflow: 'agents-daily' },
-  { key: 'cmo:caregiving-curator',        label: 'CMO 간병 큐레이터',  botType: 'CMO', action: 'CAREGIVING_CURATE',      schedule: '매일 10:15',           type: 'GHA',      workflow: 'agents-daily' },
-  { key: 'cmo:health-anxiety-responder',  label: 'CMO 건강불안 응답',  botType: 'CMO', action: 'HEALTH_ANXIETY_RESPOND', schedule: '매일 10:45',           type: 'GHA',      workflow: 'agents-daily' },
-  { key: 'cmo:humor-curator',             label: 'CMO 유머 큐레이터',  botType: 'CMO', action: 'HUMOR_CURATE',           schedule: '매일 11:15',           type: 'GHA',      workflow: 'agents-daily' },
-  { key: 'cmo:social-poster',             label: 'CMO SNS 게시',       botType: 'CMO', action: 'SOCIAL_POST',            schedule: '07:00, 12:00, 15:00',  type: 'GHA',      workflow: 'agents-social' },
-  { key: 'cmo:social-metrics',            label: 'CMO SNS 메트릭',     botType: 'CMO', action: 'SOCIAL_METRICS',         schedule: '매일 20:00',           type: 'GHA',      workflow: 'agents-social' },
-  { key: 'cmo:threads-token-refresh',     label: 'CMO Threads 토큰',   botType: 'CMO', action: 'THREADS_TOKEN_REFRESH',  schedule: '수 10:00',             type: 'GHA',      workflow: 'agents-social' },
-  { key: 'cmo:source-expander',           label: 'CMO 소스 확장',      botType: 'CMO', action: 'SOURCE_ANALYSIS',        schedule: '월 09:00',             type: 'GHA',      workflow: 'agents-weekly' },
-  { key: 'cmo:content-gap-finder',        label: 'CMO 콘텐츠 갭',      botType: 'CMO', action: 'CONTENT_GAP_ANALYSIS',   schedule: '금 09:00',             type: 'GHA',      workflow: 'agents-weekly' },
-  { key: 'cmo:channel-seeder',            label: 'CMO 채널 시더',      botType: 'CMO', action: 'CHANNEL_SEED',           schedule: '매일 11:30',           type: 'GHA',      workflow: 'agents-daily',  note: '효과 미확인' },
-  { key: 'cmo:seo-optimizer',             label: 'CMO SEO 최적화',     botType: 'CMO', action: 'SEO_MONITOR',            schedule: '월 08:00',             type: 'GHA',      workflow: 'agents-weekly' },
-  { key: 'cmo:band-manager',              label: 'CMO Band 관리',      botType: 'CMO', action: 'BAND_MANAGE',            schedule: '—',                    type: 'DISPATCH',                            note: 'Band API 심사 대기' },
-  { key: 'cmo:google-ads-report',         label: 'CMO Google Ads',     botType: 'CMO', action: null,                     schedule: '—',                    type: 'DISPATCH',                            note: 'API 미설치' },
-
   // ─── COO ───────────────────────────────────────────────────────────
   { key: 'coo:moderator',             label: 'COO 모더레이션',    botType: 'COO', action: 'MODERATION',           schedule: '09:00, 15:00, 21:00',  type: 'GHA', workflow: 'agents-moderation' },
   { key: 'coo:content-scheduler',     label: 'COO 콘텐츠 스케줄', botType: 'COO', action: 'CONTENT_SCHEDULE',     schedule: '매일 14:00',           type: 'GHA', workflow: 'agents-daily' },
@@ -84,7 +69,6 @@ export const HANDLER_REGISTRY: HandlerMeta[] = [
 export const HANDLER_GROUPS = [
   { team: 'CEO',          emoji: '👑', keys: ['ceo:approval-reminder'] },
   { team: 'CTO',          emoji: '🔧', keys: ['cto:health-check','cto:error-monitor','cto:security-audit','cto:crawler-health'] },
-  { team: 'CMO',          emoji: '📣', keys: ['cmo:trend-analyzer','cmo:caregiving-curator','cmo:health-anxiety-responder','cmo:humor-curator','cmo:social-poster','cmo:social-metrics','cmo:threads-token-refresh','cmo:source-expander','cmo:content-gap-finder','cmo:channel-seeder','cmo:seo-optimizer','cmo:band-manager','cmo:google-ads-report'] },
   { team: 'COO',          emoji: '⚙️', keys: ['coo:moderator','coo:content-scheduler','coo:trending-scorer','coo:comment-activator','coo:reply-chain-driver','coo:connection-facilitator','coo:job-scraper','coo:job-matcher'] },
   { team: 'CDO',          emoji: '📊', keys: ['cdo:anomaly-detector'] },
   { team: 'SEED',         emoji: '🌱', keys: ['seed:scheduler','seed:micro'] },

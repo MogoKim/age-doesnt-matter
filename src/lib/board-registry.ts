@@ -11,7 +11,7 @@
  * ※ 표시명(displayName)·카테고리는 여기 두지 않는다 — DB BoardConfig(seed.ts)와
  *   src/lib/board-constants.ts(BOARD_DISPLAY_NAMES)가 담당(기존 구조 유지).
  * ※ agents/ 쪽은 src/ 런타임 import 금지 규칙 때문에 이 파일을 import할 수 없다
- *   (예: agents/cmo/social-poster.ts는 로컬 맵 유지 — 값 변경 시 수동 동기화 필요).
+ *   (agents 쪽 로컬 맵이 있으면 값 변경 시 수동 동기화가 필요하다).
  */
 
 export type BoardTypeId = 'JOB' | 'STORY' | 'HUMOR' | 'MAGAZINE' | 'WEEKLY' | 'LIFE2' | 'MENOPAUSE'

@@ -116,11 +116,11 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | A03 | 일자리봇 | `agents/coo/job-scraper.ts` | GHA 12:00·16:00·20:00 KST | GHA | MONEY | P4 | [A03](A03-job-scraper.md) | ACTIVE | 2026-04-27 |
 | A04 | 외부 콘텐츠 스크래퍼 | `agents/community/sheet-scraper.ts` + `agents/community/fmkorea-scraper.ts` | agents-scraper.yml 07:30·09:00·12:00·15:00·21:00 KST (오유·네이트판) / launchd 11:30·21:30 KST (펨코) | GHA+LOCAL | RELATION | P1·P3 | [A04](A04-external-content.md) | ACTIVE | 2026-06-07 |
 | A05 | 시드봇 35명 | `agents/seed/` | GHA 하루 16회 (08~23시) — 댓글/좋아요/대댓글만 (글쓰기 제거) | GHA | RELATION+HEALTH | ALL | [A05](A05-seed-bot.md) | ACTIVE | 2026-06-03 |
-| A06 | SNS 자동 포스팅 | `agents/cmo/social-poster.ts` + `social-poster-visual.ts` | GHA 07:00·12:00·15:00 KST | GHA | RELATION | — | [A06](A06-sns-posting.md) | ACTIVE | 2026-04-27 |
+| A06 | SNS 자동 포스팅 | ~~`agents/cmo/social-poster.ts`~~ 삭제됨 | — | — | RELATION | — | [A06](A06-sns-posting.md) | **ARCHIVED** | 2026-09-08 |
 | A07 | 카드뉴스 생성 | `agents/cmo/card-news-generator.ts` | GHA 13:00 KST | GHA | RELATION | — | [A07](A07-card-news.md) | ARCHIVED | 2026-05-15 |
 | A08 | 지식인 답변 | `agents/cmo/knowledge-responder.ts` | launchd 14:30 KST (화/목/토) | LOCAL_ONLY | HEALTH+MONEY | P2·P4 | - | ARCHIVED | 2026-05-15 |
-| A09 | SEO 최적화 | `agents/cmo/seo-optimizer.ts` | GHA 월 08:00 KST (매주 일요일 23:00 UTC) | GHA | INFRA | — | [A09](A09-seo-optimizer.md) | ACTIVE | 2026-05-12 |
-| A10 | 채널 시딩 | `agents/cmo/channel-seeder.ts` | GHA 11:30 KST | GHA | RELATION | — | [A10](A10-channel-seeder.md) | ACTIVE | 2026-04-27 |
+| A09 | SEO 최적화 | ~~`agents/cmo/seo-optimizer.ts`~~ 삭제됨 | — | — | INFRA | — | [A09](A09-seo-optimizer.md) | **ARCHIVED** | 2026-09-08 |
+| A10 | 채널 시딩 | ~~`agents/cmo/channel-seeder.ts`~~ 삭제됨 | — | — | RELATION | — | [A10](A10-channel-seeder.md) | **ARCHIVED** | 2026-09-08 |
 | A11 | CEO SNS 브리핑 | ~~`agents/ceo/morning-sns-briefing.ts`~~ 삭제됨 | — | — | INFRA | — | — | **ARCHIVED** | 2026-09-08 |
 | A12 | CEO 승인 리마인더 | `agents/cron/approval-reminder.ts` | GHA 09:00 KST | GHA | INFRA | — | — | ACTIVE | 2026-05-12 |
 | A13 | CTO 아키텍처 리뷰 | ~~`agents/cto/arch-review.ts`~~ 삭제됨 | — | — | INFRA | — | — | **ARCHIVED** | 2026-09-08 |
@@ -151,7 +151,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | M01 | CTO 헬스체크 + 에러모니터 | `agents/cto/health-check.ts` + `error-monitor.ts` + `crawler-health.ts` | GHA 4시간마다 | INFRA | — | [M01](M01-cto-monitoring.md) | ACTIVE | 2026-04-27 |
 | M02 | QA 콘텐츠 감사 | `agents/qa/content-audit.ts` | GHA 매일 08:20 KST | INFRA | — | [M02](M02-qa-content-audit.md) | ACTIVE | 2026-04-27 |
 | M03 | 브리프 모니터 | `agents/cafe/brief-monitor.ts` | GHA 09:30 KST | INFRA | — | [M03](M03-brief-monitor.md) | ACTIVE | 2026-04-27 |
-| M04 | Threads 토큰 갱신 알림 | `agents/cmo/threads-token-check.ts` | GHA 수 10:00 KST | INFRA | — | [M04](M04-threads-token.md) | ACTIVE | 2026-04-27 |
+| M04 | Threads 토큰 갱신 알림 | ~~`agents/cmo/platforms/threads-token-refresh.ts`~~ 삭제됨 | — | INFRA | — | [M04](M04-threads-token.md) | **ARCHIVED** | 2026-09-08 |
 | M05 | 거울 보드 (운영 현황 실측 대시보드) | `scripts/ops-board/` + `.claude/commands/board.md` | 로컬 수동 (`npm run board` / `/board`) | INFRA | — | [M05](M05-ops-board.md) | ACTIVE | 2026-06-04 |
 
 ---

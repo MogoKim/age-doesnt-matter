@@ -38,14 +38,8 @@ on:
     # ─── Phase 4 신규 에이전트 ───
     # 09:15 KST = 00:15 UTC — COO 느슨한 연결 촉진 (1차)
     - cron: "15 0 * * *"
-    # 10:15 KST = 01:15 UTC — CMO 간병 큐레이션 (중단 2026-05-15)
-    # - cron: "15 1 * * *"
     # 10:30 KST = 01:30 UTC — COO 댓글 활성화 (1차)
     - cron: "30 1 * * *"
-    # 10:45 KST = 01:45 UTC — CMO 건강불안 해소
-    - cron: "45 1 * * *"
-    # 11:15 KST = 02:15 UTC — CMO 유머 큐레이션 (중단 2026-05-15)
-    # - cron: "15 2 * * *"
     # 11:45 KST = 02:45 UTC — COO 일자리 매칭
     - cron: "45 2 * * *"
     # 12:15 KST = 03:15 UTC — COO 대댓글 체인 (1차)
@@ -161,12 +155,8 @@ jobs:
                 echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=security-audit" >> $GITHUB_OUTPUT ;;
               "15 0 * * *")
                 echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=connection-facilitator" >> $GITHUB_OUTPUT ;;
-              # "15 1 * * *") cmo:caregiving-curator — 중단 2026-05-15
               "30 1 * * *")
                 echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=comment-activator" >> $GITHUB_OUTPUT ;;
-              "45 1 * * *")
-                echo "agent=cmo" >> $GITHUB_OUTPUT; echo "task=health-anxiety-responder" >> $GITHUB_OUTPUT ;;
-              # "15 2 * * *") cmo:humor-curator — 중단 2026-05-15
               "45 2 * * *")
                 echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=job-matcher" >> $GITHUB_OUTPUT ;;
               "15 3 * * *")

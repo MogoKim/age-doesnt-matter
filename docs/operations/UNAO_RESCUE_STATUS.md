@@ -192,8 +192,8 @@ T+0은 2026-09-05 KST다. 날짜가 지나도 증거가 없으면 PASS로 넘기
 
 | 단계 | 대상 | 현재 파악된 것 |
 |---|---|---|
-| **R4** | C-level 및 역할극 에이전트 | **ORG_THEATER 10개 + SUPERSEDED 4개 + `cto:qa-verify` 제거 완료(2026-09-08).** 삭제 후보 잔여 **13개**(GROWTH_LEGACY) |
-| **R4** | 사용하지 않는 workflow · runner · registry | 크론 키 **63개** 중 linked **42** · orphaned **21**(dispatchOnly **13** · localOnly **8**). GHA 25개 중 21개 `disabled_manually`, 활성 4개 |
+| **R4** | C-level 및 역할극 에이전트 | **ORG_THEATER 10 + SUPERSEDED 4 + `cto:qa-verify` + GROWTH_LEGACY 13 제거(2026-09-08).** 삭제 후보 잔여 **0** |
+| **R4** | 사용하지 않는 workflow · runner · registry | 크론 키 **50개** 중 linked **35** · orphaned **15**(dispatchOnly **7** · localOnly **8**). GHA **24개** 중 20개 `disabled_manually`, 활성 4개(`agents-social.yml` 제거) |
 | **R4** | 보지 않는 Slack · 리포트 · AdminQueue 자동화 | Slack "NSM" 2벌(`ceo/weekly-report.ts` · `cdo/kpi-collector.ts`)이 **모두 삭제됨(2026-09-08)**. 남은 Slack 리포트는 개별 KEEP 근거로 재판정한다 |
 | **R5** | 오도·중복·정지된 문서 | `NORTH_STAR.md`·`constitution*.yaml` 재감사 대상. 정본이 아닌 것을 정본처럼 쓰지 않게 한다 |
 | **R6** | 오래된 KPI · 지표 · 스냅샷 · 대시보드 | `northStar`가 실제로는 WAU · `DailyKpiSnapshot` 2026-08-23 정지 · KPI 스냅샷 workflow `disabled_manually` |
@@ -230,6 +230,8 @@ T+0은 2026-09-05 KST다. 날짜가 지나도 증거가 없으면 PASS로 넘기
 - 이미 만든 read-only dependency closure는 **증거로 보존**하되 그 자체가 삭제 승인은 아니다.
 - ~~Gate 2와 PR #427 판정~~ → **2026-09-08 종결. Gate 2 = REMOVE, PR #427 = CLOSED.**
 - **타입 복구는 REMOVE 이후다.** 삭제 예정 코드의 타입 오류는 고치지 않는다. KEEP 범위 확정 후 최종 KEEP 코드만 ops tsc 0으로 만들며, 복원 방법은 그때 결정한다.
+- **SocialPost DB 모델**: 생산자(SNS 게시·메트릭 에이전트)는 2026-09-08 제거됐다. **DB 모델과 기존 데이터는 유지**하며
+  후속 **R6 데이터 모델 감사** 대상으로 넘긴다. 이번 PR 에서 migration 은 하지 않았다.
 - **후속 R6 재감사 항목 (Gate 2 제거 시 이관, 2026-09-08)**: `scripts/smoke-test.ts` 는 이번에 유지했으나
   두 결함이 남아 있다 — ① AdSense 슬롯 검사가 **구조적 false-red**(광고는 `'use client'` 지연 로드라
   초기 HTML에 `adsbygoogle` 이 없는 것이 정상) ② `/api/events` POST 에 `x-bot-type` 헤더 미부착.

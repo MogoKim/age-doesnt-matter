@@ -230,7 +230,6 @@ export const GHA_RUNNERS: Readonly<Record<string, RunnerSpec>> = {
   'agents-jobs.yml': { grade: 'db-write', what: '일자리 스크랩' },
   'agents-moderation.yml': { grade: 'db-write', what: '모더레이션' },
   'admin-kpi-snapshot.yml': { grade: 'db-write', what: 'KPI 스냅샷 저장' },
-  'agents-social.yml': { grade: 'external-api', what: 'SNS 발행 (X·Threads·IG·FB·Ads)' },
   'agents-cafe.yml': { grade: 'notification', what: '브리핑 알림' },
   'agents-hourly.yml': { grade: 'notification', what: '헬스체크 알림' },
   'push-scheduled.yml': { grade: 'notification', what: '예약 푸시 발송' },
