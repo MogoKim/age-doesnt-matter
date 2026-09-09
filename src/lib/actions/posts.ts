@@ -12,7 +12,6 @@ import { buildSummary } from '@/lib/summary'
 import { deleteFromR2, extractR2KeyFromUrl } from '@/lib/r2'
 import { checkAndPromote } from '@/lib/grade'
 import { generateCommunitySlug } from '@/lib/seo/slug'
-import { enqueueUserPostWave } from '@/lib/actions/wave-queue'
 import { getWriteBlockReason } from '@/lib/sanctions'
 
 interface CreatePostResult {
@@ -139,7 +138,6 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
     return newPost
   })
   void checkAndPromote(session.user.id).catch(() => {})
-  void enqueueUserPostWave(post.id, session.user.id).catch(() => {})
 
   const boardSlugPath = BOARD_TYPE_TO_SLUG[boardType]
   revalidatePath(`/community/${boardSlugPath}`)

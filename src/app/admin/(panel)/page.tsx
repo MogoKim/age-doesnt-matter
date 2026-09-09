@@ -82,7 +82,7 @@ export default async function AdminDashboardPage() {
       <div className="rounded-2xl border border-dashed border-amber-300 bg-amber-50/40 p-4">
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <span className="inline-flex items-center rounded-full bg-amber-500 px-3 py-1 text-xs font-bold text-white">⏳ 오늘 실시간</span>
-        <span className="text-xs text-amber-700">당일 미완결(partial) — 자정 기준으로 확정된다</span>
+        <span className="text-xs text-amber-700">당일 실시간 집계 — 시간에 따라 변동된다</span>
       </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <KpiCard label="오늘 방문 (UV)" value={stats.todayUniqueVisitors} icon="👁️" sub={`회원 ${stats.memberUv} · 비회원 ${stats.guestUv}`} tip="오늘 방문한 고유 사용자(세션) 수. 봇 제외. 회원=오늘 로그인한 세션, 비회원=비로그인 세션, 합=전체. 비회원→회원 전환 유저는 회원으로 1회만(중복 없음)." />

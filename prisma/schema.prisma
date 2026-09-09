@@ -950,7 +950,7 @@ model CafePost {
   @@index([usedAt])
 }
 
-/// 댓글 파동 큐 (발행 후 1분/5분/30분/60분 순차 댓글 작성)
+/// 댓글 파동 큐. **consumer·producer 는 R4 에서 제거됐다(2026-09-09) — 모델과 기존 데이터만 보존한다.**
 model CommentWaveQueue {
   id              String    @id @default(cuid())
   postId          String    // 우나어 게시글 ID
@@ -1285,8 +1285,8 @@ model NaverBlogQueue {
   @@index([magazinePostId])
 }
 
-// 실제 회원 글 발행 후 자동 댓글 파동 (user-post-wave-processor.ts)
-// wave1: +1분 1건 / wave2: +10분 2건 / wave3: +30분 3건 / wave4: +60분 3건
+// 실회원 글 발행 후 자동 댓글 파동. **consumer·producer 는 R4 에서 제거됐다(2026-09-09) —
+// 모델과 기존 데이터만 보존한다.**
 model UserPostWaveQueue {
   id        String   @id @default(cuid())
   postId    String

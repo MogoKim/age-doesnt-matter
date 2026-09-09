@@ -196,8 +196,8 @@ T+0은 2026-09-05 KST다. 날짜가 지나도 증거가 없으면 PASS로 넘기
 | **R4** | 사용하지 않는 workflow · runner · registry | 크론 키 **37개** 중 linked **23** · orphaned **14**(dispatchOnly **6** · localOnly **8**). GHA **19개** 중 15개 `disabled_manually`, 활성 4개 |
 | **R4** | 보지 않는 Slack · 리포트 · AdminQueue 자동화 | Slack "NSM" 2벌(`ceo/weekly-report.ts` · `cdo/kpi-collector.ts`)이 **모두 삭제됨(2026-09-08)**. 남은 Slack 리포트는 개별 KEEP 근거로 재판정한다 |
 | **R5** | 오도·중복·정지된 문서 | `NORTH_STAR.md`·`constitution*.yaml` 재감사 대상. 정본이 아닌 것을 정본처럼 쓰지 않게 한다 |
-| **R6** | 오래된 KPI · 지표 · 스냅샷 · 대시보드 | `northStar`가 실제로는 WAU · `DailyKpiSnapshot` 2026-08-23 정지 · KPI 스냅샷 workflow `disabled_manually` |
-| **R6-F** | UI · 디자인 도구 재감사 | figma MCP 연결 실패 상태로 방치. **사용 중인 UI 규칙만 보존**하고 Figma MCP·figma-first·관련 문서·설정을 판정. **신규 디자인 체계 구축은 완료 조건이 아니다** |
+| **R6** | 오래된 KPI · 지표 · 스냅샷 · 대시보드 | **REMOVE 완료(2026-09-09)** — KPI 스냅샷 workflow·수집기·KpiHistoryPanel·전용 조회, ops 일일 리포트, design 광고 루프 제거. `DailyKpiSnapshot` **DB 모델과 기존 데이터는 보존**(migration 없음). `northStar`가 WAU인 표기 정정은 미결 |
+| **R6-F** | UI · 디자인 도구 재감사 | **완료(2026-09-09).** figma-first·FIGMA_STRUCTURE·DESIGN_WORKFLOW·Product Designer 템플릿 제거, `ops-runner-manifest` 의 실재하지 않는 Figma launchd 2개 정리. CLAUDE.md 는 "Figma 를 기본 절차로 강제하지 않고 명시 요청 시에만 사용"으로 확정. **UI 규칙·디자인 토큰·BRAND_VISUAL_GUIDE 는 보존** |
 | **R6** | 일회성 scripts · backfill | `scripts/`·`agents/scripts/` 잔여 |
 | **R6** | 미사용 API · 패키지 · 환경변수 · 테스트 | `COOK82_*` 등 비활성 env |
 

@@ -6,7 +6,7 @@
 // 숫자/영문 토큰은 원문 포함 여부를 명시 검증한다(withinSource). 실패·정책위반 시 원문 title + 기존 summary로 fallback.
 //
 // 호출부(popular-curator.ts)는 반환된 meta의 title/seoTitle/seoDescription/summary만 Post.create에 사용한다.
-// topComments · commentWaveQueue · cafePost 업데이트와는 무관하다.
+// topComments · cafePost 업데이트와는 무관하다.
 
 const SEO_TITLE_MAX = 55
 const SEO_DESC_MAX = 120

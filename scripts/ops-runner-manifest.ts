@@ -142,8 +142,6 @@ export const LAUNCHD_RUNNERS: Readonly<Record<string, RunnerSpec>> = {
 
   // ── 진단·개발 ──
   'com.unaeo.opsboard': { grade: 'read-only', what: '운영 보드 (조회 전용)' },
-  'com.unaoeo.figma-use-mcp': { grade: 'dev-tool', what: 'Figma MCP (개발 도구)' },
-  'com.unaoeo.figma-ws': { grade: 'dev-tool', what: 'Figma WS (개발 도구)' },
 }
 
 /**
@@ -496,7 +494,7 @@ export function judgeRunnerFreshness(i: RunnerCheckInput): RunnerVerdict {
 
   // ── (1) 개발 작업트리 ──
   //     미커밋 코드가 그대로 돈다. ProgramArguments의 스크립트 경로까지 본다.
-  //     ⚠️ dev-tool만 면제한다. Figma MCP 같은 개발 도구가 개발 워크트리를 실행하는 건
+  //     ⚠️ dev-tool만 면제한다. 개발 도구가 개발 워크트리를 실행하는 건
   //        정상이다. 여기서 FATAL을 내면 상시 오탐이 되고, 매일 울리는 FATAL은
   //        아무도 보지 않게 되어 결국 진짜 O1을 놓친다(이 파일 §7 주석과 같은 이유).
   //        면제는 이 FATAL 한 줄뿐 — 뒤처짐 WARN은 dev-tool도 그대로 받는다.

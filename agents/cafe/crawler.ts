@@ -1535,21 +1535,6 @@ export async function refreshRecentPosts(): Promise<number> {
             killerScore: newKillerScore,
           },
         })
-        // killerScore ≥ 75 → 이미 발행된 연결 Post의 isFeatured=true (CommentWaveQueue 역추적)
-        if (newKillerScore >= 75) {
-          const linked = await prisma.commentWaveQueue.findMany({
-            where: { cafePostId: post.id },
-            select: { postId: true },
-            distinct: ['postId'],
-          })
-          if (linked.length > 0) {
-            await prisma.post.updateMany({
-              where: { id: { in: linked.map(q => q.postId) }, isFeatured: false },
-              data: { isFeatured: true, featuredAt: new Date() },
-            })
-            console.log(`[CafeCrawler] killerScore≥75 → isFeatured=true 적용 (${linked.length}건)`)
-          }
-        }
         updated++
         console.log(`[CafeCrawler] 갱신: 댓글 ${post.commentCount}→${newCommentCount} 좋아요 ${post.likeCount}→${newLikeCount}`)
       }

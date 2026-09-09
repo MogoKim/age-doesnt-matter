@@ -234,7 +234,7 @@ Claude가 손과 발이면, Codex 마스터는 목적, 순서, 금지선, 검증
 | R6-C | 주석 정리 | 실제 동작과 맞지 않는 주석을 제거하거나 고친다 | 오도 주석 0개를 목표로 파일 단위 처리 |
 | R6-D | 인프라 경계 정리 | Vercel, Supabase, workflow, launchd 책임을 분리한다 | 문서와 실제 상태 일치 |
 | R6-E | 에러/관측 정리 | 운영자가 원인을 볼 수 있고 사용자는 내부 에러를 보지 않게 한다 | user-facing error와 server log 분리 |
-| R6-F | **UI·디자인 도구 재감사** | 실제 쓰고 있는 UI 규칙만 남기고, 쓰지 않는 디자인 도구·연동·문서를 걷어낸다 | **사용 중인 UI 규칙 보존 확인** + Figma MCP·figma-first·관련 문서·설정의 KEEP/REMOVE 판정 완료. **신규 디자인 체계 구축은 완료 조건이 아니다** |
+| R6-F | **UI·디자인 도구 재감사** | 실제 쓰고 있는 UI 규칙만 남기고, 쓰지 않는 디자인 도구·연동·문서를 걷어낸다 | **재감사 완료(2026-09-09).** figma-first·FIGMA_STRUCTURE·DESIGN_WORKFLOW·Product Designer 템플릿·허구 launchd 2개 제거. Figma 는 창업자가 명시 요청할 때만 사용한다. **UI 규칙과 디자인 토큰은 보존** |
 
 ---
 
