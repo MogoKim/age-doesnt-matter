@@ -11,6 +11,19 @@
 console.log('[WATCH] diagnose-ga4.ts 실행됨 —', new Date().toISOString(), '| 2주 모니터링 대상')
 import { chromium } from '@playwright/test'
 
+/**
+ * `page.evaluate` 는 **브라우저 컨텍스트**에서 도는 코드라 Node 쪽 lib.dom 기본 Window 에는
+ * GTM 이 심는 `gtag`·`dataLayer` 가 없다. 실제로 존재하는 전역이므로 여기서 선언해 준다.
+ * (any 로 덮지 않는다 — dataLayer 항목은 unknown 으로 두고 사용처에서 좁힌다.)
+ */
+declare global {
+  interface Window {
+    gtag?: (...args: unknown[]) => void
+    dataLayer?: unknown[]
+  }
+}
+
+
 const BASE_URL = process.argv.find((a) => a.startsWith('http')) ?? 'https://age-doesnt-matter.com'
 
 interface DiagResult {
@@ -65,8 +78,8 @@ async function run() {
   console.log('\n── 2. dataLayer 이벤트 목록 ──')
   const dlEvents = await page.evaluate(() =>
     (window.dataLayer ?? [])
-      .filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null)
-      .map((item) => item['event'] as string)
+      .filter((item: unknown): item is Record<string, unknown> => typeof item === 'object' && item !== null)
+      .map((item: Record<string, unknown>) => item['event'] as string)
       .filter(Boolean)
   )
   console.log(`  📋 dataLayer 이벤트: ${dlEvents.join(', ') || '(없음)'}`)

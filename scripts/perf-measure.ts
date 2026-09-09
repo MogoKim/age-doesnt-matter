@@ -71,8 +71,10 @@ function getLcpElement(audit: AuditRef | undefined): string {
 }
 
 function getUnusedJs(audit: AuditRef | undefined): UnusedJsItem[] {
-  return getDetailsItems(audit?.details)
-    .map((item) => {
+  // null 을 먼저 걸러낸 뒤 정렬한다. 예전에는 `(UnusedJsItem | null)[]` 상태로 정렬해
+  // 술어 타입이 파라미터와 맞지 않았고 b/a 가 null 일 수 있었다.
+  const rows: (UnusedJsItem | null)[] = getDetailsItems(audit?.details)
+    .map((item): UnusedJsItem | null => {
       if (!item || typeof item !== 'object') return null
       const row = item as { url?: unknown; wastedBytes?: unknown; wastedPercent?: unknown }
       const url = textOrFallback(row.url, '')
@@ -84,6 +86,7 @@ function getUnusedJs(audit: AuditRef | undefined): UnusedJsItem[] {
         wastedPercent: numberOrNull(row.wastedPercent) ?? undefined,
       }
     })
+  return rows
     .filter((item): item is UnusedJsItem => item !== null)
     .sort((a, b) => b.wastedBytes - a.wastedBytes)
     .slice(0, 5)

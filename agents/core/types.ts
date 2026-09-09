@@ -1,3 +1,4 @@
+import type { BotType } from '../../src/generated/prisma/client'
 /** 에이전트 실행 결과 */
 export interface AgentResult {
   agent: string
@@ -56,7 +57,11 @@ export interface MeetingAction {
 }
 
 /** BotType enum (Prisma와 일치) */
-export type AgentBotType = 'CEO' | 'CTO' | 'CMO' | 'CPO' | 'CDO' | 'CFO' | 'COO' | 'SEED' | 'QA' | 'CAFE_CRAWLER' | 'JOB' | 'HUMOR' | 'STORY' | 'THREAD'
+/**
+ * BotLog.botType 과 **같은 값**이어야 한다. 손으로 적은 유니온을 따로 두면 스키마가 바뀔 때
+ * 조용히 어긋나 `string is not assignable to BotType` 로 터진다. 스키마에서 파생한다.
+ */
+export type AgentBotType = BotType
 
 /**
  * constitution 모듈 식별자

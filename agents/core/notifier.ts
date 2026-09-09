@@ -13,6 +13,7 @@ import { WebClient } from '@slack/web-api'
 import type { ChatPostMessageResponse } from '@slack/web-api'
 import type { NotifyPayload } from './types.js'
 import { prisma } from './db.js'
+import type { AgentBotType } from './types.js'
 
 // ── Slack 클라이언트 ──
 const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN ?? ''
@@ -232,7 +233,7 @@ interface ApprovalItem {
   title: string
   description?: string | null
   requestedBy: string
-  botType?: string
+  botType?: AgentBotType
 }
 
 /**

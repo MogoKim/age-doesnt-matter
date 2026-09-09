@@ -1,5 +1,9 @@
 import { Pool } from 'pg'
 import { PrismaPg } from '@prisma/adapter-pg'
+// 타입만 가져온다 — 런타임 로딩은 아래 동적 import 그대로다(Node 20/24 확장자 차이 대응).
+// 이게 없으면 prisma 가 `unknown` 이라 모든 모델 접근이 TS18046 이 되고,
+// 그 결과 콜백 파라미터까지 implicit any 로 번진다(ops tsc 오류 대부분의 뿌리였다).
+import type { PrismaClient } from '../../src/generated/prisma/client'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 
@@ -9,16 +13,16 @@ const clientBase = path.resolve(__dirname, '../../src/generated/prisma/client')
 
 // Node 20 (GitHub Actions) → .js import works via tsx
 // Node 24 (로컬) → .ts dynamic import needed
-let PrismaClient: new (opts: Record<string, unknown>) => Record<string, unknown>
+let PrismaClientCtor: new (opts: Record<string, unknown>) => PrismaClient
 try {
   const mod = await import(`${clientBase}.js`)
-  PrismaClient = mod.PrismaClient
+  PrismaClientCtor = mod.PrismaClient
 } catch {
   const mod = await import(`${clientBase}.ts`)
-  PrismaClient = mod.PrismaClient
+  PrismaClientCtor = mod.PrismaClient
 }
 
-function createPrismaClient() {
+function createPrismaClient(): PrismaClient {
   const url = process.env.DATABASE_URL ?? process.env.DIRECT_URL ?? ''
   const u = new URL(url)
   const configuredPoolMax = Number.parseInt(process.env.AGENT_DB_POOL_MAX ?? '1', 10)
@@ -40,14 +44,14 @@ function createPrismaClient() {
     connectionTimeoutMillis: 10000, // 연결 실패 10초 후 에러 발생
   })
 
-  return new PrismaClient({ adapter: new PrismaPg(pool) })
+  return new PrismaClientCtor({ adapter: new PrismaPg(pool) })
 }
 
-export const prisma = createPrismaClient()
+export const prisma: PrismaClient = createPrismaClient()
 
 let _disconnected = false
 export async function disconnect() {
   if (_disconnected) return
   _disconnected = true
-  await (prisma as { $disconnect: () => Promise<void> }).$disconnect()
+  await prisma.$disconnect()
 }

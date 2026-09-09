@@ -35,8 +35,8 @@ const ESSENTIAL_TASKS = new Set([
 
 const HANDLERS: Record<string, () => Promise<void>> = {
   'cto:security-audit': () => import('../cto/security-audit.js').then((m) => m.main()),
-  'cto:count-reconcile': () => import('../scripts/reconcile-counts.js').then((m) => m.reconcileCounts(false)), // 비정규화 카운트 정합성 재계산 (agents-daily 04:00 KST). 멱등 — 실제값으로 set, 좋아요는 측정만
-  'cto:anonymize-withdrawn-apply': () => import('../scripts/anonymize-withdrawn-users.js').then((m) => m.anonymizeWithdrawn(false)), // F-12: 매주 월 10:00 KST 자동. 30일 경과 탈퇴자만, 멱등(이미 익명화된 건 제외)
+  'cto:count-reconcile': () => import('../scripts/reconcile-counts.js').then(async (m) => { await m.reconcileCounts(false) }), // 비정규화 카운트 정합성 재계산 (agents-daily 04:00 KST). 멱등 — 실제값으로 set, 좋아요는 측정만
+  'cto:anonymize-withdrawn-apply': () => import('../scripts/anonymize-withdrawn-users.js').then(async (m) => { await m.anonymizeWithdrawn(false) }), // F-12: 매주 월 10:00 KST 자동. 30일 경과 탈퇴자만, 멱등(이미 익명화된 건 제외)
   // main() 을 반환해야 runner 가 모더레이션 **완료까지** 기다린다.
   // `.then(() => {})` 이면 import 만 끝나고 곧바로 disconnect + exit 해서 판정이 잘린다.
   'coo:moderator': () => import('../coo/moderator.js').then((m) => m.main()),
