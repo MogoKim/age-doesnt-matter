@@ -33,7 +33,6 @@ cto_governance:
     - "health-check: 매시간, DB/Site/API 응답 확인 + 추세 저장"
     - "error-monitor: 2시간마다, 반복 패턴 비교 포함"
     - "security-audit: 매일 06:00 KST, 보안 이상 징후"
-    - "crawler-health: 매일 07:00 KST, 7일 품질 추세 포함"
 
 # ──────────────────────────────────────────
 # 8-6. QA 에이전트 (신설)

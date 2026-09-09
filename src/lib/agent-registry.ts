@@ -29,11 +29,9 @@ export const HANDLER_REGISTRY: HandlerMeta[] = [
   { key: 'cto:health-check',         label: 'CTO 헬스체크',       botType: 'CTO',          action: 'HEALTH_CHECK',           schedule: '매 4시간',             type: 'GHA',      workflow: 'agents-hourly' },
   { key: 'cto:error-monitor',        label: 'CTO 에러 모니터',    botType: 'CTO',          action: 'ERROR_MONITOR',          schedule: '매 4시간',             type: 'GHA',      workflow: 'agents-hourly' },
   { key: 'cto:security-audit',       label: 'CTO 보안 감사',      botType: 'CTO',          action: 'SECURITY_AUDIT',         schedule: '매일 06:00',           type: 'GHA',      workflow: 'agents-daily' },
-  { key: 'cto:crawler-health',       label: 'CTO 크롤러 헬스',    botType: 'CTO',          action: 'CRAWLER_HEALTH',         schedule: '매일 07:00',           type: 'GHA',      workflow: 'agents-daily' },
 
   // ─── COO ───────────────────────────────────────────────────────────
   { key: 'coo:moderator',             label: 'COO 모더레이션',    botType: 'COO', action: 'MODERATION',           schedule: '09:00, 15:00, 21:00',  type: 'GHA', workflow: 'agents-moderation' },
-  { key: 'coo:content-scheduler',     label: 'COO 콘텐츠 스케줄', botType: 'COO', action: 'CONTENT_SCHEDULE',     schedule: '매일 14:00',           type: 'GHA', workflow: 'agents-daily' },
   { key: 'coo:trending-scorer',       label: 'COO 트렌딩 점수',   botType: 'COO', action: 'TRENDING_SCORE',       schedule: '12:00, 18:00',         type: 'GHA', workflow: 'agents-daily' },
   { key: 'coo:job-scraper',           label: 'COO 일자리 수집',   botType: 'COO', action: 'JOB_SCRAPE',           schedule: '12:00, 16:00, 20:00',  type: 'GHA', workflow: 'agents-jobs' },
 
@@ -54,8 +52,8 @@ export const HANDLER_REGISTRY: HandlerMeta[] = [
 /** 팀별 그룹핑 (어드민 UI용) */
 export const HANDLER_GROUPS = [
   { team: 'CEO',          emoji: '👑', keys: ['ceo:approval-reminder'] },
-  { team: 'CTO',          emoji: '🔧', keys: ['cto:health-check','cto:error-monitor','cto:security-audit','cto:crawler-health'] },
-  { team: 'COO',          emoji: '⚙️', keys: ['coo:moderator','coo:content-scheduler','coo:trending-scorer','coo:job-scraper'] },
+  { team: 'CTO',          emoji: '🔧', keys: ['cto:health-check','cto:error-monitor','cto:security-audit'] },
+  { team: 'COO',          emoji: '⚙️', keys: ['coo:moderator','coo:trending-scorer','coo:job-scraper'] },
   { team: 'CDO',          emoji: '📊', keys: ['cdo:anomaly-detector'] },
   { team: 'QA',           emoji: '✅', keys: ['qa:content-audit','qa:code-gate'] },
 ]

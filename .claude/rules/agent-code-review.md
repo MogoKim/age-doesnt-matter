@@ -21,13 +21,13 @@ paths:
 
 ```bash
 # 구현하려는 함수명 또는 기능 키워드로 검색
-grep -rn "함수명\|기능키워드" agents/cafe/ --include="*.ts"
+grep -rn "함수명\|기능키워드" agents/ --include="*.ts"
 
-# 예: 계절 필터를 추가하려고 할 때
-grep -rn "SEASONAL\|season\|계절" agents/cafe/ --include="*.ts"
+# 예: 금지어 판정을 추가하려고 할 때
+grep -rn "blocklist\|금지어\|hidden" agents/coo/ --include="*.ts"
 
-# 예: 키워드 quota를 추가하려고 할 때
-grep -rn "quota\|overlap\|keyword" agents/cafe/ --include="*.ts"
+# 예: 알림 채널을 추가하려고 할 때
+grep -rn "notifySlack\|notifyAdmin" agents/core/ --include="*.ts"
 ```
 
 grep 결과에 구현체가 나오면 → **코드 직접 읽기** (Read 도구), 없으면 신규 구현.

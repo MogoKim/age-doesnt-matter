@@ -19,7 +19,7 @@ globs: ["docs/features/**", "agents/**/*.ts", ".github/workflows/agents-*.yml"]
 
 ```
 변경 파일 → PATH MAP 조회 → 영향받는 Feature ID 식별
-예: agents/cafe/magazine-generator.ts 변경 → F05, A02 영향
+예: agents/coo/moderator.ts 변경 → 해당 기능 ID 영향
 ```
 
 매칭되는 Feature ID가 없으면: **새 기능으로 간주** → 신규 등록 절차 실행

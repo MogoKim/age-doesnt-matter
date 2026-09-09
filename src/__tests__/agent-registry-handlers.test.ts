@@ -78,6 +78,8 @@ describe('삭제된 핸들러의 잔재', () => {
     'cafe_crawler:brief-monitor', 'cafe_crawler:daily-brief-fallback', 'cafe_crawler:evening-brief-safety',
     'cafe_crawler:cafe-pipeline', 'cafe_crawler:trend-analysis', 'cafe_crawler:magazine-generate',
     'cafe_crawler:popular-sync', 'cafe_crawler:external-crawl', 'cafe:session-refresh',
+    // B-3 종속 자동화 (2026-09-09) — 삭제된 공급망에만 의존해 함께 제거됨
+    'cto:crawler-health', 'coo:content-scheduler',
   ] as const
 
   it('runner 에 없다', () => {

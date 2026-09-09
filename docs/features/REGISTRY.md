@@ -163,7 +163,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | I01 | launchd 로컬 스케줄러 | `~/Library/LaunchAgents/com.unaeo.*.plist` | INFRA | — | [I01](I01-launchd-scheduler.md) | ACTIVE | 2026-05-13 |
 | I02 | Upstash Redis 레이트리밋 | `src/lib/rate-limit.ts` | INFRA | — | [I02](I02-redis-ratelimit.md) | ACTIVE | 2026-04-27 |
 | I03 | Cloudflare R2 이미지 저장소 | `src/lib/r2.ts` + `agents/core/r2.ts` | INFRA | — | [I03](I03-r2-storage.md) | ACTIVE | 2026-04-27 |
-| I04 | Google Indexing API | 발행 시 자동 호출 | INFRA | — | [I04](I04-google-indexing.md) | ACTIVE | 2026-04-27 |
+| I04 | Google Indexing API | ~~`agents/cafe/indexing-api.ts`~~ 삭제됨 (호출하던 발행 경로가 사라짐) | — | — | [I04](I04-google-indexing.md) | **ARCHIVED** | 2026-09-09 |
 | I05 | 아동 안전 표준 페이지 | `src/app/child-safety/page.tsx` | INFRA | — | — | ACTIVE | 2026-05-23 |
 | I06 | 커뮤니티 slug 백필 스크립트 | `agents/scripts/backfill-community-slug.ts` | INFRA | — | [I06](I06-community-slug-backfill.md) | ACTIVE | 2026-05-23 |
 

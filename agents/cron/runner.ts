@@ -38,23 +38,18 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   // main() 을 반환해야 runner 가 모더레이션 **완료까지** 기다린다.
   // `.then(() => {})` 이면 import 만 끝나고 곧바로 disconnect + exit 해서 판정이 잘린다.
   'coo:moderator': () => import('../coo/moderator.js').then((m) => m.main()),
-  'coo:content-scheduler': () => import('../coo/content-scheduler.js').then(m => m.main()),
   'coo:job-scraper': () => import('../coo/job-scraper.js').then(m => m.main()),
   'coo:trending-scorer': () => import('../coo/trending-scorer.js').then(m => m.main()),
   'cdo:anomaly-detector': () => import('../cdo/anomaly-detector.js').then(() => {}),
   'cmo:upload-creatives': () => import('../marketing/google-ads/scripts/upload-creatives.js').then(() => {}), // DISPATCH ONLY — 최초 1회 수동 실행
   'cmo:create-campaigns': () => import('../marketing/google-ads/scripts/create-campaigns.js').then(() => {}), // DISPATCH ONLY — 최초 1회 수동 실행
   'ceo:approval-reminder': () => import('./approval-reminder.js').then(() => {}),
-  'cto:crawler-health': () => import('../cto/crawler-health.js').then(() => {}),
   // CTO 주간 아키텍처 리뷰 (DISPATCH ONLY — 수동 트리거 전용)
   // QA 에이전트 — 콘텐츠 품질 감사 (매일 08:20 KST)
   'qa:content-audit': () => import('../qa/content-audit.js').then(() => {}),
-  // community:sheet-scrape · dawn-sheet-scrape · dawn-sheet-cleanup · fmkorea-scrape · navercafe-scrape ·
-  // cafe_crawler:image-route — 삭제됨 2026-09-09 (R4 B-3a: 외부 카페·Google Sheet 공급망 REMOVE)
-  // cafe_crawler:content-curate · popular-curate · brief-monitor · daily-brief-fallback ·
-  // evening-brief-safety — 삭제됨 2026-09-09 (R4 B-3b: 봇 큐레이션·브리프 REMOVE)
-  // cafe_crawler:cafe-pipeline · trend-analysis · magazine-generate · popular-sync ·
-  // external-crawl, cafe:session-refresh — 삭제됨 2026-09-09 (R4 B-3c: 로컬 카페 파이프라인 REMOVE)
+  // community:* · cafe_crawler:* · cafe:session-refresh · coo:content-scheduler ·
+  // cto:crawler-health — 삭제됨 2026-09-09
+  // (R4 B-3: 외부 카페·Google Sheet 공급망 REMOVE). 재등록 방지선은 agent-registry-handlers.test.ts
   // cmo:knowledge-responder — 삭제됨 2026-05-15 (지식인 운영 중단, 코드 삭제)
   // cmo:jisik-answerer — 삭제됨 2026-05-15 (지식인 운영 중단, 코드 삭제)
   // cmo:card-news-generator — 삭제됨 2026-05-15 (카드뉴스 중단, 코드 삭제)
@@ -133,23 +128,6 @@ async function main() {
     console.log(`[Runner] ${key}: 선행 작업 미완료 — 스킵`)
     await disconnect()
     process.exit(0)
-  }
-
-  // 10분 이내 중복 방지 (GHA 지연 대응): 이중발화 차단, GHA 30분 지연 후 다음 슬롯 정상 실행 허용
-  if (key === 'cafe_crawler:content-curate') {
-    const dedupCutoff = new Date(Date.now() - 10 * 60 * 1000)
-    const recentLog = await prisma.botLog.findFirst({
-      where: {
-        botType: 'CAFE_CRAWLER',
-        action: 'CONTENT_CURATE',
-        createdAt: { gte: dedupCutoff },
-      },
-    })
-    if (recentLog) {
-      console.log(`[Runner] cafe_crawler:content-curate 스킵 — 10분 이내 이미 실행됨 (${recentLog.createdAt.toISOString()})`)
-      await disconnect()
-      process.exit(0)
-    }
   }
 
   console.log(`[Runner] ${agent}:${task} 시작 (automation_status=${status})`)

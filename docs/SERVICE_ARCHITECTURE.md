@@ -483,17 +483,11 @@ GitHub Actions Cron (12:00, 16:00, 20:00 KST)
 |---|---|---|
 | `com.unao.unao-prod-sync` | **로드됨** | production 동기화 — KEEP_CORE |
 | `com.unaeo.opsboard` | **로드됨** | 운영 보드 |
-| `com.unaeo.session-refresh` | **로드됨(미실행)** — 2026-09-09 재실측 | 네이버 NID_SES 세션 갱신. **실행 대상 코드는 R4 B-3 에서 삭제됐다.** 재실행하지 않는다 |
-| `com.unao.naver-cafe-sheet-scraper` | **로드됨(미실행)** — 2026-09-09 재실측 | 카페·시트 스크래퍼. **실행 대상 코드는 R4 B-3 에서 삭제됐다.** 재실행하지 않는다 |
+| `com.unaeo.session-refresh` | **unloaded + disabled** (2026-09-09 실측) | 네이버 세션 갱신 — 실행 대상 코드는 R4 B-3 에서 삭제됐다 |
+| `com.unao.naver-cafe-sheet-scraper` | **unloaded + disabled** (2026-09-09 실측) | 카페·시트 스크래퍼 — 실행 대상 코드는 R4 B-3 에서 삭제됐다 |
 
-> ⚠️ **이전 기록 정정**: 위 두 label 은 이 문서에 `unloaded` 로 적혀 있었으나, 2026-09-09 `launchctl list`
-> 재실측에서 **둘 다 목록에 있다**(PID `-`, exit 0 — 등록돼 있고 지금 실행 중이 아님).
-> `com.unao.unao-prod-sync` 도 같은 형태로 나오며 이 표는 그것을 "로드됨"으로 적고 있었다. 같은 기준을 적용해 정정한다.
-> **두 job 의 unload 는 창업자 액션으로 남긴다** — 이 저장소 작업에서는 `launchctl` 을 실행하지 않는다.
-
-> 매거진 발행 launchd(`com.unaeo.magazine-*`)는 2026-09-06 04:09 KST `launchctl unload -w` 로 차단됐고,
-> `launchctl list` 에도 나오지 않는다. 저장소의 plist 원본은 R4 B-3 에서 삭제했다(`launchd/` 에는
-> `com.unao.unao-prod-sync` · `com.unaeo.opsboard` 둘만 남는다). plist 삭제는 머신의 등록 상태를 바꾸지 않는다.
+> 저장소에 남는 plist 는 `com.unao.unao-prod-sync` · `com.unaeo.opsboard` 둘뿐이다.
+> 매거진·카페 크롤 계열 plist 는 R4 B-3 에서 저장소와 설치 위치 양쪽에서 정리했다.
 
 ### 6.4 전체 타임라인 (KST)
 

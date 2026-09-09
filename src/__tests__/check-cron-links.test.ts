@@ -86,9 +86,9 @@ describe('extractWorkflowKeys — 워크플로우에서 키를 뽑는 규칙', (
 
   it('활성 echo agent/task 쌍을 인식한다', () => {
     const dir = workflowDir({
-      'a.yml': `            echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=content-scheduler" >> $GITHUB_OUTPUT ;;\n`,
+      'a.yml': `            echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=trending-scorer" >> $GITHUB_OUTPUT ;;\n`,
     })
-    expect(extractWorkflowKeys(dir).has('coo:content-scheduler')).toBe(true)
+    expect(extractWorkflowKeys(dir).has('coo:trending-scorer')).toBe(true)
   })
 
   it('주석 처리된 echo 는 연결로 세지 않는다 — magazine-generate 사고의 원인', () => {
@@ -97,13 +97,13 @@ describe('extractWorkflowKeys — 워크플로우에서 키를 뽑는 규칙', (
         '              # "0 7 * * *") — 중단됨, GHA 비활성화',
         '              # echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=security-audit" >> $GITHUB_OUTPUT ;;',
         '              "11 5 * * *")',
-        '                echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=content-scheduler" >> $GITHUB_OUTPUT ;;',
+        '                echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=trending-scorer" >> $GITHUB_OUTPUT ;;',
       ].join('\n'),
     })
     const keys = extractWorkflowKeys(dir)
     expect(keys.has('cto:security-audit')).toBe(false)
     // 주석을 걷어내도 살아 있는 쌍은 그대로 잡혀야 한다(과잉 삭제 방지)
-    expect(keys.has('coo:content-scheduler')).toBe(true)
+    expect(keys.has('coo:trending-scorer')).toBe(true)
   })
 
   it('줄 끝에 붙은 주석은 앞부분을 살린다', () => {
@@ -237,8 +237,8 @@ describe('buildReport — 실제 저장소 기준 분류', () => {
       workflowWithoutHandler: report.workflowWithoutHandler.length,
       launchdOrphans: report.launchdOrphans.length,
     }).toEqual({
-      total: 19,
-      linked: 14,
+      total: 17,
+      linked: 12,
       orphaned: 5,
       dispatchOnly: 5,
       localOnly: 0,
@@ -375,9 +375,9 @@ const HANDLERS: Record<string, () => Promise<void>> = {
     expect(() => extractHandlers(runnerFile('export const NOTHING = {}\n'))).toThrow(/HANDLERS/)
   })
 
-  it('실제 runner.ts 를 읽으면 19개이고 coo:moderator 가 들어 있다', () => {
+  it('실제 runner.ts 를 읽으면 17개이고 coo:moderator 가 들어 있다', () => {
     const handlers = extractHandlers()
-    expect(handlers).toHaveLength(19)
+    expect(handlers).toHaveLength(17)
     expect(handlers.map((h) => h.key)).toContain('coo:moderator')
   })
 })
