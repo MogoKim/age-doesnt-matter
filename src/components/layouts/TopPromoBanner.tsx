@@ -1,6 +1,6 @@
 import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import TopPromoBannerClient from './TopPromoBannerClient'
+import TopPromoBannerClientLazy from './TopPromoBannerClientLazy'
 
 const getGuestPromoSettings = unstable_cache(
   async () => {
@@ -73,7 +73,7 @@ export default async function TopPromoBanner() {
   if (!guestSettings && !memberSettings) return null
 
   return (
-    <TopPromoBannerClient
+    <TopPromoBannerClientLazy
       guestSettings={guestSettings}
       memberSettings={memberSettings}
     />
