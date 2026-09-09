@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars -- [DIAG-15] 임시 진단. 최종 diff 에서 제거한다. */
+/* eslint-disable @typescript-eslint/no-unused-vars -- [DIAG-16] 임시 진단. 최종 diff 에서 제거한다. */
 import { Suspense } from 'react'
 import IconMenu from './IconMenu'
 import Footer from './Footer'
@@ -49,10 +49,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
       <main id="main-content" className="pb-[72px] lg:pb-0">{children}</main>
 
-      {/* FAB — 클라이언트 세션 기반, auth() 없음 */}
-      <FAB />
+      {/* [DIAG-16] FAB 제거 — 마지막 남은 후보. resolveWriteHref('/') 가 홈에서만 특별 분기한다 */}
 
-      {/* [DIAG-15] Footer 제거 — FooterFontSizeToggle 이 head script 가 미리 바꾼 DOM 상태를 그리는지 검증 */}
+      <Footer />
     </>
   )
 }
