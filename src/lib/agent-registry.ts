@@ -35,18 +35,10 @@ export const HANDLER_REGISTRY: HandlerMeta[] = [
   { key: 'coo:moderator',             label: 'COO 모더레이션',    botType: 'COO', action: 'MODERATION',           schedule: '09:00, 15:00, 21:00',  type: 'GHA', workflow: 'agents-moderation' },
   { key: 'coo:content-scheduler',     label: 'COO 콘텐츠 스케줄', botType: 'COO', action: 'CONTENT_SCHEDULE',     schedule: '매일 14:00',           type: 'GHA', workflow: 'agents-daily' },
   { key: 'coo:trending-scorer',       label: 'COO 트렌딩 점수',   botType: 'COO', action: 'TRENDING_SCORE',       schedule: '12:00, 18:00',         type: 'GHA', workflow: 'agents-daily' },
-  { key: 'coo:comment-activator',     label: 'COO 댓글 활성화',   botType: 'COO', action: 'COMMENT_ACTIVATE',     schedule: '10:30, 14:30, 20:00',  type: 'GHA', workflow: 'agents-daily' },
-  { key: 'coo:reply-chain-driver',    label: 'COO 대댓글 체인',   botType: 'COO', action: 'REPLY_CHAIN_DRIVE',    schedule: '12:15, 18:30',         type: 'GHA', workflow: 'agents-daily' },
-  { key: 'coo:connection-facilitator',label: 'COO 유저 연결',     botType: 'COO', action: 'CONNECTION_FACILITATE',schedule: '09:15, 15:00',         type: 'GHA', workflow: 'agents-daily' },
   { key: 'coo:job-scraper',           label: 'COO 일자리 수집',   botType: 'COO', action: 'JOB_SCRAPE',           schedule: '12:00, 16:00, 20:00',  type: 'GHA', workflow: 'agents-jobs' },
-  { key: 'coo:job-matcher',           label: 'COO 일자리 매칭',   botType: 'COO', action: 'JOB_MATCH',            schedule: '매일 11:45',           type: 'GHA', workflow: 'agents-daily', note: '매칭 효과 미확인' },
 
   // ─── CDO ───────────────────────────────────────────────────────────
   { key: 'cdo:anomaly-detector',    label: 'CDO 이상 탐지',   botType: 'CDO', action: null,                 schedule: '매 4시간',    type: 'GHA', workflow: 'agents-hourly' },
-
-  // ─── SEED ──────────────────────────────────────────────────────────
-  { key: 'seed:scheduler', label: 'SEED 글쓰기',      botType: 'SEED', action: 'SCHEDULE', schedule: '09:00~22:00 (12슬롯)', type: 'GHA', workflow: 'agents-seed' },
-  { key: 'seed:micro',     label: 'SEED 댓글/좋아요', botType: 'SEED', action: null,       schedule: '08:00, 12:00, 18:00, 23:00', type: 'GHA', workflow: 'agents-seed-micro' },
 
   // ─── QA ────────────────────────────────────────────────────────────
   { key: 'qa:content-audit', label: 'QA 콘텐츠 감사', botType: 'QA', action: 'CONTENT_AUDIT', schedule: '매일 08:20', type: 'GHA',      workflow: 'agents-daily' },
@@ -69,9 +61,8 @@ export const HANDLER_REGISTRY: HandlerMeta[] = [
 export const HANDLER_GROUPS = [
   { team: 'CEO',          emoji: '👑', keys: ['ceo:approval-reminder'] },
   { team: 'CTO',          emoji: '🔧', keys: ['cto:health-check','cto:error-monitor','cto:security-audit','cto:crawler-health'] },
-  { team: 'COO',          emoji: '⚙️', keys: ['coo:moderator','coo:content-scheduler','coo:trending-scorer','coo:comment-activator','coo:reply-chain-driver','coo:connection-facilitator','coo:job-scraper','coo:job-matcher'] },
+  { team: 'COO',          emoji: '⚙️', keys: ['coo:moderator','coo:content-scheduler','coo:trending-scorer','coo:job-scraper'] },
   { team: 'CDO',          emoji: '📊', keys: ['cdo:anomaly-detector'] },
-  { team: 'SEED',         emoji: '🌱', keys: ['seed:scheduler','seed:micro'] },
   { team: 'QA',           emoji: '✅', keys: ['qa:content-audit','qa:code-gate'] },
   { team: '커뮤니티',      emoji: '🎯', keys: ['community:sheet-scrape'] },
   { team: '카페 크롤러',  emoji: '☕', keys: ['cafe_crawler:trend-analysis','cafe_crawler:content-curate','cafe_crawler:cafe-pipeline','cafe_crawler:external-crawl'] },

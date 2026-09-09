@@ -62,6 +62,13 @@ describe('삭제된 핸들러의 잔재', () => {
     'cmo:caregiving-curator', 'cmo:channel-seeder', 'cmo:google-ads-report', 'cmo:social-poster',
     'cmo:social-metrics', 'cmo:threads-token-refresh', 'cmo:seo-optimizer', 'cmo:band-manager',
     'cmo:health-anxiety-responder',
+    // R4 SEED 봇 + COO 참여 유도 11개 (2026-09-09) — 재등록 방지선
+    'seed:scheduler', 'seed:micro', 'seed:killer-post', 'seed:viral-waves',
+    'coo:comment-activator', 'coo:reply-chain-driver', 'coo:connection-facilitator',
+    'coo:author-reply-dryrun', 'coo:job-matcher', 'coo:persona-matcher-dryrun',
+    'controversy-chain:execute',
+    // 합성 댓글 경로 (2026-09-09) — 봇 댓글 생성 재등록 방지선
+    'cafe_crawler:wave-process', 'cafe_crawler:user-post-wave-process',
   ] as const
 
   it('runner 에 없다', () => {

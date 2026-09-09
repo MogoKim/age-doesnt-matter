@@ -18,7 +18,6 @@ on:
   # 매일 18:00 KST — evening-brief-safety (11:30 full 크롤 실패 시 공백 방지)
   # 시트 스크래퍼 → agents-scraper.yml (별도 워크플로우, 5회/일)
   # 큐레이션(5건/시간) → agents-cafe-hourly-curation.yml (09~23시 KST, 별도 워크플로우)
-  # 댓글 파동(wave1~4) → agents-cafe-wave.yml (별도 concurrency group)
   schedule:
     - cron: "3 0 * * *"    # 09:03 KST — brief-fallback
     - cron: "30 0 * * *"   # 09:30 KST — brief-monitor

@@ -9,7 +9,6 @@
     "cto:error": "tsx cto/error-monitor.ts",
     "coo:moderate": "tsx coo/moderator.ts",
     "coo:content": "tsx coo/content-scheduler.ts",
-    "coo:seed": "tsx seed/scheduler.ts",
     "cdo:anomaly": "tsx cdo/anomaly-detector.ts",
     "cron": "tsx cron/runner.ts"
   },

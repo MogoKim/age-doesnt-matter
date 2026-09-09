@@ -1,5 +1,10 @@
 # 시드봇 운영 기획서 (A05)
 
+> ⚠️ **ARCHIVED (2026-09-09)** — 시드봇 스케줄러·마이크로 스케줄러와 GHA workflow 는 R4 에서 제거됐다.
+> 봇 페르소나 데이터(`seed/persona-data.ts`)와 생성기(`seed/generator.ts`)는 카페 파이프라인이 아직 사용해 보존한다.
+> 아래 내용은 삭제 시점의 설계 기록이며 현재 운영 계약이 아니다. 현재 판정: `docs/operations/UNAO_RESCUE_STATUS.md`
+
+
 > 최초 작성: 2026-04-27 | 최근 수정: 2026-04-27
 
 ---
@@ -181,13 +186,16 @@
 
 ### 스케줄 / 실행 환경
 
-| 스케줄러 | GHA 워크플로우 | UTC 크론 | KST 시간대 |
-|---------|-------------|---------|-----------|
-| 메인 | `agents-seed.yml` | `0 0,1,2,4,5,6,7,8,10,11,12,13 * * *` | 09~22시 (12회) |
-| 마이크로 | `agents-seed-micro.yml` | `0 23,3,9,14 * * *` | 08·12·18·23시 (4회) |
+> **아래 스케줄·핸들러·워크플로우는 모두 삭제됐다(2026-09-09).** 당시 설정 기록으로만 읽는다.
 
-**Runner Handlers**: `seed:scheduler`, `seed:micro`  
-**실행 환경**: GHA ubuntu-latest, Node 20, Claude Haiku 4.5
+| 스케줄러 | GHA 워크플로우 | UTC 크론 | KST 시간대 | 현재 |
+|---------|-------------|---------|-----------|---|
+| 메인 | ~~`agents-seed.yml`~~ | `0 0,1,2,4,5,6,7,8,10,11,12,13 * * *` | 09~22시 (12회) | **삭제됨** |
+| 마이크로 | ~~`agents-seed-micro.yml`~~ | `0 23,3,9,14 * * *` | 08·12·18·23시 (4회) | **삭제됨** |
+
+**Runner Handlers**: ~~`seed:scheduler`, `seed:micro`~~ — **삭제됨(runner 에 없음)**
+
+**실행 환경**: (구) GHA ubuntu-latest, Node 20, Claude Haiku 4.5 — **현재 실행 경로 없음**
 
 ---
 
@@ -205,13 +213,13 @@ Constitution 상한 $50/월 대비 여유 있음.
 
 ## 관련 링크
 
-- 메인 스케줄러: `agents/seed/scheduler.ts`
-- 마이크로 스케줄러: `agents/seed/micro-scheduler.ts`
-- 콘텐츠 생성: `agents/seed/generator.ts`
-- 페르소나 정의: `agents/seed/personas.ts` (또는 scheduler.ts 상단)
-- Runner 핸들러: `agents/cron/runner.ts` — `seed:scheduler`, `seed:micro`
-- GHA 워크플로우: `.github/workflows/agents-seed.yml`, `agents-seed-micro.yml`
-- DB 모델: `prisma/schema.prisma` — Post, Comment, Like, BotLog, User
+- ~~메인 스케줄러 `agents/seed/scheduler.ts`~~ — **삭제됨(2026-09-09)**
+- ~~마이크로 스케줄러 `agents/seed/micro-scheduler.ts`~~ — **삭제됨**
+- ~~Runner 핸들러 `seed:scheduler` · `seed:micro`~~ — **삭제됨**
+- ~~GHA 워크플로우 `agents-seed.yml` · `agents-seed-micro.yml`~~ — **삭제됨**
+- **보존**: 콘텐츠 생성 `agents/seed/generator.ts` · 페르소나 정의 `agents/seed/persona-data.ts`
+  — 카페 공급망(B-3)과 `core/persona-registry.ts` 가 아직 사용한다
+- DB 모델: `prisma/schema.prisma` — Post, Comment, Like, BotLog, User (**모델·기존 데이터 미변경**)
 
 ---
 

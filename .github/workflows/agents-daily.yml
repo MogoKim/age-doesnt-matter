@@ -17,41 +17,11 @@ on:
     - cron: "11 3 * * *"
     # 18:00 KST = 09:00 UTC — COO 트렌딩 스코어 (2차)
     - cron: "11 9 * * *"
-    # 작성자 대댓글 하루 11회 — 실회원 댓글에 빠르게 응답(재방문 유도). 기본 dry-run, AUTHOR_REPLY_MODE=write일 때만 실제 작성
-    # 05:50/06:40/07:20/08:45/09:45/12:45/14:45/16:45/18:45/20:45/22:15 KST
-    # = 20:50/21:40/22:20/23:45(전일 UTC) + 00:45/03:45/05:45/07:45/09:45/11:45/13:15 UTC
-    - cron: "50 20 * * *"
-    - cron: "40 21 * * *"
-    - cron: "20 22 * * *"
-    - cron: "45 23 * * *"
-    - cron: "45 0 * * *"
-    - cron: "45 3 * * *"
-    - cron: "45 5 * * *"
-    - cron: "45 7 * * *"
-    - cron: "45 9 * * *"
-    - cron: "45 11 * * *"
-    - cron: "15 13 * * *"
     # 06:00 KST = 21:00 UTC (전날) — CTO 보안 감사
     - cron: "11 21 * * *"
     # 23:00 KST = 14:00 UTC — CFO 비용 (중단 2026-05-16 — DISPATCH ONLY)
     # - cron: "11 14 * * *"
     # ─── Phase 4 신규 에이전트 ───
-    # 09:15 KST = 00:15 UTC — COO 느슨한 연결 촉진 (1차)
-    - cron: "15 0 * * *"
-    # 10:30 KST = 01:30 UTC — COO 댓글 활성화 (1차)
-    - cron: "30 1 * * *"
-    # 11:45 KST = 02:45 UTC — COO 일자리 매칭
-    - cron: "45 2 * * *"
-    # 12:15 KST = 03:15 UTC — COO 대댓글 체인 (1차)
-    - cron: "15 3 * * *"
-    # 14:30 KST = 05:30 UTC — COO 댓글 활성화 (2차)
-    - cron: "30 5 * * *"
-    # 15:00 KST = 06:00 UTC — COO 느슨한 연결 촉진 (2차)
-    - cron: "11 6 * * *"
-    # 18:30 KST = 09:30 UTC — COO 대댓글 체인 (2차)
-    - cron: "30 9 * * *"
-    # 20:00 KST = 11:00 UTC — COO 댓글 활성화 (3차)
-    - cron: "11 11 * * *"
     # 07:00 KST = 22:00 UTC (전날) — CTO 크롤링 헬스
     - cron: "11 22 * * *"
     # 04:00 KST = 19:00 UTC — 비정규화 카운트 정합성 재계산 (reconcile, 멱등)
@@ -79,9 +49,6 @@ env:
   CLAUDE_MODEL_STRATEGIC: ${{ secrets.CLAUDE_MODEL_STRATEGIC }}
   CLAUDE_MODEL_HEAVY: claude-sonnet-4-6
   CLAUDE_MODEL_LIGHT: claude-haiku-4-5
-  # 작성자 대댓글 모드 — 기본 dry-run(초안만). 실제 작성은 repo/environment variable로만 전환: AUTHOR_REPLY_MODE=write
-  AUTHOR_REPLY_MODE: ${{ vars.AUTHOR_REPLY_MODE || 'dry-run' }}
-  ENABLE_JOB_MATCHER: 'false'  # [2026-06-15] job-matcher OFF — 정책상 사는이야기 글에 일자리 광고 댓글 안 단다
   SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
   SLACK_SIGNING_SECRET: ${{ secrets.SLACK_SIGNING_SECRET }}
   SLACK_CHANNEL_DASHBOARD: ${{ secrets.SLACK_CHANNEL_DASHBOARD }}
@@ -153,24 +120,6 @@ jobs:
                 echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=trending-scorer" >> $GITHUB_OUTPUT ;;
               "11 21 * * *")
                 echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=security-audit" >> $GITHUB_OUTPUT ;;
-              "15 0 * * *")
-                echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=connection-facilitator" >> $GITHUB_OUTPUT ;;
-              "30 1 * * *")
-                echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=comment-activator" >> $GITHUB_OUTPUT ;;
-              "45 2 * * *")
-                echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=job-matcher" >> $GITHUB_OUTPUT ;;
-              "15 3 * * *")
-                echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=reply-chain-driver" >> $GITHUB_OUTPUT ;;
-              "50 20 * * *"|"40 21 * * *"|"20 22 * * *"|"45 23 * * *"|"45 0 * * *"|"45 3 * * *"|"45 5 * * *"|"45 7 * * *"|"45 9 * * *"|"45 11 * * *"|"15 13 * * *")
-                echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=author-reply-dryrun" >> $GITHUB_OUTPUT ;;
-              "30 5 * * *")
-                echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=comment-activator" >> $GITHUB_OUTPUT ;;
-              "11 6 * * *")
-                echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=connection-facilitator" >> $GITHUB_OUTPUT ;;
-              "30 9 * * *")
-                echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=reply-chain-driver" >> $GITHUB_OUTPUT ;;
-              "11 11 * * *")
-                echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=comment-activator" >> $GITHUB_OUTPUT ;;
               "11 22 * * *")
                 echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=crawler-health" >> $GITHUB_OUTPUT ;;
               "0 19 * * *")

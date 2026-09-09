@@ -5,7 +5,7 @@
 > **변경 시**: 이 문서 하단 [문서 업데이트 가이드](#문서-업데이트-가이드) 참고
 
 > ## ⚠️ 2026-09-05 실측 배너 — 이 문서의 "가동 중" 서술은 현재 상태가 아니다
-> - 2026-05-11(v11) 시점 문서다. "93핸들러·17GHA" 등 수치는 당시 값이며, 현재 실측은 runner HANDLERS **50개** · GitHub Actions **24개 중 20개 `disabled_manually`, 활성 4개**(ci · lighthouse · quarantine-check · agents-moderation). 2026-09-08~09 Gate 2 제거와 R4 에이전트 정리(ORG_THEATER 10 · SUPERSEDED 4 · qa-verify · GROWTH_LEGACY 13)를 반영한 값이다. **SNS 자동 게시·메트릭·토큰 갱신과 `agents-social.yml` 은 제거됐다.** launchd 콘텐츠 발행 12개는 2026-09-06 04:09 KST unload 완료(4개 유지/관찰). production `/api/health`는 2026-09-05 감사 당시 503(DB 28P01)이었으나 R1-A로 복구돼 현재 healthy.
+> - 2026-05-11(v11) 시점 문서다. "93핸들러·17GHA" 등 수치는 당시 값이며, 현재 실측은 runner HANDLERS **37개** · GitHub Actions **19개 중 15개 `disabled_manually`, 활성 4개**(ci · lighthouse · quarantine-check · agents-moderation). 2026-09-08~09 Gate 2 제거와 R4 에이전트 정리(ORG_THEATER 10 · SUPERSEDED 4 · qa-verify · GROWTH_LEGACY 13)를 반영한 값이다. **SNS 자동 게시·메트릭·토큰 갱신과 `agents-social.yml` 은 제거됐다.** launchd 콘텐츠 발행 12개는 2026-09-06 04:09 KST unload 완료(4개 유지/관찰). production `/api/health`는 2026-09-05 감사 당시 503(DB 28P01)이었으나 R1-A로 복구돼 현재 healthy.
 > - §1 "제2의 인생 플랫폼 — 일자리 + 커뮤니티 + 매거진" 정의는 헌법 v5.0(`docs/constitution/NORTH_STAR.md` §2·§14 "일자리 플랫폼이 아니라 커뮤니티")과 충돌한다. Rescue R5에서 REWRITE 대상.
 > - 시드봇 글쓰기는 2026-06-03 retired, `CoupangSearchWidget`은 2026-06-12 제거됐으나 본문에 미반영.
 > - 근거: `docs/operations/2026-09-05-claude-foundation-reset-audit-report.md` §3 A-06·C-07·D-05.
@@ -283,7 +283,7 @@
 └───────┘└───────┘└────┬─────┘└───────┘└───────┘
                        │
               ┌────────┴─────────┐
-              │   SEED (시드봇)    │ 하루 12회+마이크로4회
+              │   SEED (시드봇)    │ **R4 제거됨 (2026-09-09)**
               │  50명 페르소나     │ 커뮤니티 활성화
               └──────────────────┘
 ```
@@ -305,27 +305,19 @@
 | **COO** | `coo/moderator.ts` | 09/15/21시 | Haiku | 신고 처리, 콘텐츠 모더레이션 |
 | **COO** | `coo/content-scheduler.ts` | 매일 14:00 | Haiku | 에디터스 픽 + 시드 콘텐츠 편성 |
 | **COO** | `coo/trending-scorer.ts` | 12/18시 | Haiku | 트렌딩 점수 계산 + HOT 강등 |
-| **SEED** | `seed/scheduler.ts` | 하루 12회 (08~22시) | Haiku | 50명 페르소나 활동 (게시글, 댓글, 좋아요, 대댓글) + promotionLevel 자동 승격 |
-| **SEED** | `seed/micro-scheduler.ts` | 하루 4회 (08/12/18/23시) | Haiku | 마이크로 활동 (댓글/대댓글/좋아요 전용, 글쓰기 없음) |
 
 #### 신규 에이전트 (v10 — 2026-03-30 추가)
 
 | 에이전트 | 파일 | 스케줄 | AI 모델 | 역할 |
 |---------|------|--------|---------|------|
-| **COO** | `coo/connection-facilitator.ts` | 매일 09:15, 15:00 | Sonnet | P1(느슨한 연결) 사용자 간 연결 촉진 |
-| **COO** | `coo/job-matcher.ts` | 매일 11:45 | Haiku | P4(생계) 사용자 프로필 기반 일자리 매칭 |
-| **COO** | `coo/comment-activator.ts` | 매일 10:30, 14:30, 20:00 | Haiku | 댓글 없는 글에 시드봇 댓글 유도 |
-| **COO** | `coo/reply-chain-driver.ts` | 매일 12:15, 18:30 | Haiku | 대댓글 체인 형성 촉진 |
 | **CTO** | `cto/crawler-health.ts` | 매일 07:00 | Haiku | 크롤러(카페/일자리) 정상 가동 모니터링 |
 
 #### 신규 에이전트 (v11 — 2026-04~05 추가)
 
 | 에이전트 | 파일 | 스케줄 | AI 모델 | 역할 |
 |---------|------|--------|---------|------|
-| **SEED** | `seed/killer-post-generator.ts` | 00:10, 13:10 KST (2회/일) | Sonnet | 화제성 킬러포스트 생성 (isFeatured=true, agents-killer-post.yml) |
-| **SEED** | `seed/viral-wave-detector.ts` | 30분마다 | Haiku | 바이럴 파동 감지 + 파동 확산 콘텐츠 생성 (agents-sheet-viral.yml) |
 | **COMMUNITY** | `community/sheet-scraper.ts` | 30분마다 | Haiku | 구글 시트 4탭 화제성 파이프라인 스크래핑 → PostSource.SHEET |
-| **COMMUNITY** | `community/fmkorea-scraper.ts` | 30분마다 | Haiku | FM코리아 게시판 스크래핑 (agents-sheet-viral.yml) |
+| **COMMUNITY** | `community/fmkorea-scraper.ts` | — | Haiku | FM코리아 스크래핑 (LOCAL ONLY — `agents-sheet-viral.yml` 은 2026-09-09 제거) |
 | **COO** | `coo/controversy-chain.ts` | 매일 22:00 | Sonnet | 논쟁 체인 자동화 (댓글 논쟁 구조 생성) |
 | **CMO** | `cmo/jisik-answerer.ts` | 14:30 KST (로컬 launchd) | Sonnet | 지식iN 자동 답변 (로컬 전용, Playwright) |
 | **DESIGN** | `design/ads-loop.ts` | DISPATCH ONLY | Sonnet | 광고 소재 생성 루프 (agents-design.yml) |
@@ -431,7 +423,7 @@ GitHub Actions Cron (12:00, 16:00, 20:00 KST)
 > **성별 비율**: 여 33명 / 남 17명 (타겟 유저 비율 반영)
 > **일일 목표**: 게시글 25~30개 / 댓글 150~200개 / 좋아요 100~130개 / 대댓글 60~80개
 
-### 5.6.1 시드봇 활동 메커니즘
+### 5.6.1 시드봇 활동 메커니즘 (2026-09-09 R4 제거 — 아래는 당시 기록)
 
 | 기능 | 설명 |
 |------|------|
@@ -479,23 +471,25 @@ GitHub Actions Cron (12:00, 16:00, 20:00 KST)
 | `agents-hourly.yml` | 2시간마다 | CTO(헬스체크, 에러감시), CDO(이상감지) |
 | `agents-jobs.yml` | 12, 16, 20시 | COO(일자리 수집) |
 | `agents-moderation.yml` | 09, 15, 21시 | COO(모더레이션) |
-| `agents-seed.yml` | 09~22시 (12회) | SEED(시드 콘텐츠 + 댓글 + 좋아요) |
-| `agents-seed-micro.yml` | **23,3,9,14,15,16시 (6회)** | SEED(마이크로 — 댓글/대댓글/좋아요 전용) |
 | `agents-cafe.yml` | 09, 13, 19시 | CAFE(네이버 카페 3곳 + 82cook 크롤링) |
-| **`agents-sheet-viral.yml`** | **매 30분** | SEED(viral-waves), COMMUNITY(sheet-scrape, fmkorea-scrape) |
-| **`agents-killer-post.yml`** | **00:10, 13:10 KST (2회)** | SEED(killer-post-generator) — 화제성 킬러포스트 |
+| **`agents-sheet-viral.yml`** | — | **R4 에서 제거됨(2026-09-09).** sheet-scrape 등 COMMUNITY 경로는 `agents-cafe.yml` 참조 |
 | **`agents-design.yml`** | workflow_dispatch | DESIGN(ads-loop) — 광고 소재 생성 (수동 실행) |
 | **`quarantine-check.yml`** | 매주 월요일 00:00 UTC | 격리 항목 기한 초과 점검 |
 
-### 6.3 로컬 launchd 프로세스 (5개 — 창업자 맥북 상시 가동)
+### 6.3 로컬 launchd 프로세스 — 2026-09-09 실측
 
-| plist 파일 | KST 실행 시각 | 환경변수 | 역할 |
-|-----------|-------------|---------|------|
-| `com.unaeo.magazine-morning.plist` | 01:00 | `IMAGE_GENERATOR=gemini`, `SESSION_TIME=morning` | 매거진 모닝 발행 (Gemini 커버 이미지) |
-| `com.unaeo.magazine-afternoon.plist` | 06:00 | `IMAGE_GENERATOR=gemini`, `SESSION_TIME=afternoon` | 매거진 오후 발행 |
-| `com.unaeo.magazine-late.plist` | 08:00 | `IMAGE_GENERATOR=gemini`, `SESSION_TIME=late` | 매거진 레이트 발행 |
-| `com.unaeo.session-refresh.plist` | 02:00 | — | 카카오 NID_SES 세션 갱신 |
-| `com.unaeo.jisik-answerer.plist` | 14:30 | — | 지식iN 자동 답변 (Playwright, 로컬 전용) |
+> 고정 개수로 세지 않는다. **label 과 로드 상태**가 기준이며, plist 파일 존재는 로드 상태가 아니다.
+> 현재 상태는 `launchctl list | grep -E 'com\.unao\.|com\.unaeo\.'` 로 확인한다.
+
+| label | 상태 (2026-09-09) | 역할 |
+|---|---|---|
+| `com.unao.unao-prod-sync` | **로드됨** | production 동기화 — KEEP_CORE |
+| `com.unaeo.opsboard` | **로드됨** | 운영 보드 |
+| `com.unaeo.session-refresh` | **unloaded** | 네이버 NID_SES 세션 갱신. Codex 가 unload 했다 — **재로드·실행하지 않는다** |
+| `com.unao.naver-cafe-sheet-scraper` | **unloaded** | 카페·시트 스크래퍼 |
+
+> 매거진 발행 launchd(`com.unaeo.magazine-*`) 12개는 2026-09-06 04:09 KST `launchctl unload -w` 로 차단됐다.
+> `com.unaeo.jisik-answerer` 를 포함한 나머지 plist 도 현재 로드돼 있지 않다.
 
 ### 6.4 전체 타임라인 (KST)
 
@@ -504,11 +498,11 @@ GitHub Actions Cron (12:00, 16:00, 20:00 KST)
 07:00      CTO 크롤링헬스
 08:00 (월) CMO SEO옵티마이저
 08:30      CAFE 크롤링(로컬)
-09:00      SEED 활동 | COO 모더레이션 | CMO 텍스트포스팅
+09:00      COO 모더레이션 | CMO 텍스트포스팅
  (월)      CMO 소스확장(weekly)
 09:15      COO 연결촉진(1차)
 09:30      승인 리마인더
-10:00      CMO 트렌드분석 | SEED 활동
+10:00      CMO 트렌드분석
  (월)      CMO 리뷰(10:00) → 전략(10:15)
 10:15      CMO 간병큐레이션
 10:30      COO 댓글활성화(1차)
@@ -520,18 +514,18 @@ GitHub Actions Cron (12:00, 16:00, 20:00 KST)
 12:00      COO 일자리수집 | COO 트렌딩스코어 | CMO 지식iN(화/목/토)
 12:15      COO 대댓글체인(1차)
 12:30      CAFE 크롤링(로컬)
-13:00      CAFE 크롤링(Actions) | SEED 활동
-14:00      COO 콘텐츠편성 | SEED 활동
+13:00      CAFE 크롤링(Actions)
+14:00      COO 콘텐츠편성
 14:30      COO 댓글활성화(2차)
-15:00      COO 모더레이션 | COO 연결촉진(2차) | SEED 활동
-16:00      매거진자동발행 | COO 일자리수집 | SEED 활동
+15:00      COO 모더레이션 | COO 연결촉진(2차)
+16:00      매거진자동발행 | COO 일자리수집
 18:00      COO 트렌딩스코어(2차)
 18:30      COO 대댓글체인(2차) | CAFE 크롤링(로컬)
-19:00      SEED 활동 | CAFE 크롤링(Actions)
+19:00      CAFE 크롤링(Actions)
 19:30      매거진이브닝발행
 20:00      COO 일자리수집 | COO 댓글활성화(3차)
-21:00      COO 모더레이션 | SEED 활동
-22:00      CDO KPI수집 | SEED 활동
+21:00      COO 모더레이션
+22:00      CDO KPI수집
 22:30      CDO 참여최적화
 23:00      CFO 비용추적
 23:30      CFO 수익추적
@@ -774,7 +768,7 @@ Slack Workspace: 우나어-ops (14개 채널)
 │   ├── 📁 core/                    # 기반 인프라 (agent, constitution, notifier, db, slack-commander, approval-helper, meeting, google-api)
 │   ├── 📁 cron/                    # 크론 스케줄러 (runner, schedules.yaml, dependencies)
 │   ├── 📁 cto/ cmo/ cdo/ cfo/ coo/  # C-level 에이전트 (ceo·cpo·strategist 는 R4 에서 제거 — 2026-09-08)
-│   ├── 📁 seed/                    # 시드봇 (50명 페르소나 + 마이크로 스케줄러)
+│   ├── 📁 seed/                    # generator·persona-data 만 잔존 (스케줄러는 2026-09-09 R4 제거)
 │   ├── 📁 cafe/                    # 카페 크롤러 + 매거진 생성기
 │   └── 📁 skills/                  # SNS 전략 스킬 레지스트리
 │
@@ -840,8 +834,6 @@ Slack Workspace: 우나어-ops (14개 채널)
 - 헌법 v5.0 (6개 파일 분리 + Opus 4.7 전략 모델)
 - BaseAgent Prompt Caching 구현 (constitution 토큰 90% 절감)
 - LIFE2 게시판 (인생 2막) + PostSource.SHEET 추가
-- 킬러포스트 시스템 (seed:killer-post, 2회/일, Post.isFeatured)
-- 바이럴 파동 감지/생성 (seed:viral-waves, 30분 주기)
 - 구글 시트 4탭 화제성 파이프라인 (community:sheet-scrape)
 - GHA 17개 체계 (agents-sheet-viral, agents-killer-post, agents-weekly 확장 등)
 - launchd 5개 plist (magazine×3, session-refresh, jisik-answerer)
@@ -1033,8 +1025,8 @@ Layer 3: 배포 후 → Smoke+Lighthouse → Slack #qa
 
 | 기능 | 핵심 구성 | 배포 시점 |
 |------|---------|---------|
-| **킬러포스트 시스템** | `seed:killer-post`, Post.isFeatured/featuredAt, agents-killer-post.yml (2회/일) | 2026-04 |
-| **바이럴 파동 감지** | `seed:viral-waves`, 30분 주기, agents-sheet-viral.yml | 2026-04 |
+| **킬러포스트 시스템** | `seed:killer-post`, Post.isFeatured/featuredAt, agents-killer-post.yml (2회/일). **R4 에서 제거됨(2026-09-09)** | 2026-04 |
+| **바이럴 파동 감지** | `seed:viral-waves`, 30분 주기, agents-sheet-viral.yml. **R4 에서 제거됨(2026-09-09)** | 2026-04 |
 | **구글 시트 파이프라인** | `community:sheet-scrape`, PostSource.SHEET, 4탭 화제성 수집 | 2026-05 |
 | **LIFE2 게시판** | BoardType.LIFE2 (인생 2막), 커뮤니티 신규 탭 | 2026-04 |
 | **비회원 좋아요/댓글** | GuestLike 모델 (fingerprint 기반), 비회원 참여 허용 | 2026-05-01 |

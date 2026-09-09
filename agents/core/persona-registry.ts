@@ -224,7 +224,7 @@ function ageBandOf(age: number): string {
 
 // ═══════════════════════════════════════════════════════════════
 // 기능 봇 — 인격체가 아니다. 원본 어느 곳에도 정의가 없어 지금까지 registry 밖에 있었다.
-//   bot-job:  JOB 보드 294건 전량. author-reply-driver 후보 조회가
+//   bot-job:  JOB 보드 294건 전량. (구) author-reply-driver 후보 조회가
 //             boardType in [STORY,LIFE2,HUMOR,MENOPAUSE]로 제한돼 구조적으로 제외된다.
 //   나머지 3: 2026-05-15~16 이후 신규 글 0(dormant) + 전 기간 실회원 댓글 0.
 //             L-PERSONA-BOT-GAP known_issue. 이 PR에서 활성화하지 않는다.
