@@ -23,11 +23,8 @@ export interface HandlerMeta {
 
 export const HANDLER_REGISTRY: HandlerMeta[] = [
   // ─── CEO ───────────────────────────────────────────────────────────
-  { key: 'ceo:approval-reminder',    label: 'CEO 승인 리마인더',  botType: 'CEO',          action: 'APPROVAL_REMIND',        schedule: '매일 09:30',           type: 'GHA',      workflow: 'agents-daily' },
 
   // ─── CTO ───────────────────────────────────────────────────────────
-  { key: 'cto:health-check',         label: 'CTO 헬스체크',       botType: 'CTO',          action: 'HEALTH_CHECK',           schedule: '매 4시간',             type: 'GHA',      workflow: 'agents-hourly' },
-  { key: 'cto:error-monitor',        label: 'CTO 에러 모니터',    botType: 'CTO',          action: 'ERROR_MONITOR',          schedule: '매 4시간',             type: 'GHA',      workflow: 'agents-hourly' },
   { key: 'cto:security-audit',       label: 'CTO 보안 감사',      botType: 'CTO',          action: 'SECURITY_AUDIT',         schedule: '매일 06:00',           type: 'GHA',      workflow: 'agents-daily' },
 
   // ─── COO ───────────────────────────────────────────────────────────
@@ -36,11 +33,8 @@ export const HANDLER_REGISTRY: HandlerMeta[] = [
   { key: 'coo:job-scraper',           label: 'COO 일자리 수집',   botType: 'COO', action: 'JOB_SCRAPE',           schedule: '12:00, 16:00, 20:00',  type: 'GHA', workflow: 'agents-jobs' },
 
   // ─── CDO ───────────────────────────────────────────────────────────
-  { key: 'cdo:anomaly-detector',    label: 'CDO 이상 탐지',   botType: 'CDO', action: null,                 schedule: '매 4시간',    type: 'GHA', workflow: 'agents-hourly' },
 
   // ─── QA ────────────────────────────────────────────────────────────
-  { key: 'qa:content-audit', label: 'QA 콘텐츠 감사', botType: 'QA', action: 'CONTENT_AUDIT', schedule: '매일 08:20', type: 'GHA',      workflow: 'agents-daily' },
-  { key: 'qa:code-gate',     label: 'QA 코드 게이트', botType: 'QA', action: 'CODE_GATE',     schedule: '—',         type: 'DISPATCH',                   note: '/done 스킬 자동 실행' },
 
   // ─── COMMUNITY ─────────────────────────────────────────────────────
 
@@ -51,9 +45,6 @@ export const HANDLER_REGISTRY: HandlerMeta[] = [
 
 /** 팀별 그룹핑 (어드민 UI용) */
 export const HANDLER_GROUPS = [
-  { team: 'CEO',          emoji: '👑', keys: ['ceo:approval-reminder'] },
-  { team: 'CTO',          emoji: '🔧', keys: ['cto:health-check','cto:error-monitor','cto:security-audit'] },
+  { team: 'CTO',          emoji: '🔧', keys: ['cto:security-audit'] },
   { team: 'COO',          emoji: '⚙️', keys: ['coo:moderator','coo:trending-scorer','coo:job-scraper'] },
-  { team: 'CDO',          emoji: '📊', keys: ['cdo:anomaly-detector'] },
-  { team: 'QA',           emoji: '✅', keys: ['qa:content-audit','qa:code-gate'] },
 ]
