@@ -1,5 +1,6 @@
 import { prisma } from './db.js'
 import { notifyAdmin } from './notifier.js'
+import type { AgentBotType } from './types.js'
 
 /**
  * safeBotLog — prisma.botLog.create() 안전 wrapper
@@ -9,7 +10,7 @@ import { notifyAdmin } from './notifier.js'
  * DB write 실패 시 Slack #시스템 알림으로 fallback — silent fail 방지.
  */
 export async function safeBotLog(params: {
-  botType: string
+  botType: AgentBotType
   action: string
   status: 'SUCCESS' | 'FAILED' | 'PARTIAL'
   details?: string

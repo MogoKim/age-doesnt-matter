@@ -1,9 +1,10 @@
 import { prisma } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
+import type { AgentBotType } from '../core/types.js'
 
 export interface DependencyRule {
   /** 선행 작업의 botType */
-  requiredBotType: string
+  requiredBotType: AgentBotType
   /** 선행 작업의 action (optional) */
   requiredAction?: string
   /** 날짜 오프셋: 0=오늘, -1=어제 */

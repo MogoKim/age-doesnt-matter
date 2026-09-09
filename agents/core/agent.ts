@@ -49,11 +49,7 @@ export abstract class BaseAgent {
    */
   private async learnFromHistory(): Promise<void> {
     try {
-      type LogRow = { action: string; status: string; details: string | null; createdAt: Date }
-      type BotLogFindMany = (args: unknown) => Promise<LogRow[]>
-      const findMany = ((prisma as Record<string, Record<string, unknown>>).botLog.findMany as BotLogFindMany)
-
-      const logs = await findMany({
+      const logs = await prisma.botLog.findMany({
         where: { botType: this.config.botType },
         orderBy: { createdAt: 'desc' },
         take: 20,
@@ -139,9 +135,7 @@ ${this.constitutionText}
 
   protected async log(action: string, status: AgentLog['status'], details?: string, _costUsd?: number, durationMs = 0): Promise<void> {
     try {
-      type BotLogCreate = (args: unknown) => Promise<unknown>
-      const create = ((prisma as Record<string, Record<string, unknown>>).botLog.create as BotLogCreate)
-      await create({
+      await prisma.botLog.create({
         data: {
           botType: this.config.botType,
           action,
@@ -169,10 +163,7 @@ ${this.constitutionText}
 
     // Pattern C: 마지막 실행이 실패였으면 이력 학습 후 시스템 프롬프트에 반영
     try {
-      type LastRunRow = { status: string } | null
-      type BotLogFindFirst = (args: unknown) => Promise<LastRunRow>
-      const findFirst = ((prisma as Record<string, Record<string, unknown>>).botLog.findFirst as BotLogFindFirst)
-      const lastRun = await findFirst({
+      const lastRun = await prisma.botLog.findFirst({
         where: { botType: this.config.botType },
         orderBy: { createdAt: 'desc' },
         select: { status: true },

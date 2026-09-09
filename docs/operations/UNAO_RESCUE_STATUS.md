@@ -242,6 +242,31 @@ T+0은 2026-09-05 KST다. 날짜가 지나도 증거가 없으면 PASS로 넘기
   sitemap read-only 점검과 CI E2E 로 한다. `npm run smoke-test` 스크립트도 함께 제거했다.
 - 기타 후보: 도메인·env fallback·모델 ID·localStorage key 단일화.
 
+### 소비처 0 DB 모델 — read-only 측정 판정표 (2026-09-09)
+
+Prisma **SELECT(count/findFirst)만** 사용해 측정했다. raw SQL·export·delete·migration 없음.
+**이번 배치에서 아무것도 삭제하지 않았다.**
+
+| 모델 | 건수 | 최초 | 최종 | 상태별 | 분류 |
+|---|---|---|---|---|---|
+| `ChannelDraft` | 653 | 2026-04-02 | 2026-05-15 | PENDING=653 | 역사 보존 |
+| `CommentWaveQueue` | 276 | 2026-08-21 | 2026-08-24 | — | 역사 보존 |
+| `SocialPost` | 119 | 2026-03-26 | 2026-05-16 | FAILED=8 · DRAFT=2 | 역사 보존 |
+| `DailyKpiSnapshot` | 61 | 2026-06-29 | 2026-08-23 | — | 역사 보존 (지표 시계열) |
+| `NaverBlogQueue` | 16 | 2026-05-15 | 2026-05-30 | — | 역사 보존 |
+| `UserPostWaveQueue` | 11 | 2026-09-05 | **2026-09-09** | — | **개인정보 인접** — `authorId`(실회원 userId) 보유 |
+
+**빈 모델은 하나도 없다.** 따라서 "비어 있으니 지운다"는 경로는 없다.
+
+- `UserPostWaveQueue` 의 최종 생성일이 **2026-09-09** 인 것은 producer 를 그날(PR #439) 제거했기 때문이다.
+  실회원 `authorId` 를 담고 있어 다른 다섯과 성격이 다르다 — 삭제하려면 개인정보 처리 기준으로 판단한다.
+- `DailyKpiSnapshot` 은 2026-06-29~08-23 의 UV·PV·가입·WAU 시계열이다. 지우면 그 기간 지표를 복원할 수 없다.
+- 나머지 넷은 종료된 봇 자동화의 산출 기록이다.
+
+삭제·migration 은 데이터 보존·복구 계획을 먼저 정하고 **별도 배치**로 한다.
+
+- 기타 후보: 도메인·env fallback·모델 ID·localStorage key 단일화.
+
 ### 소비처 0 DB 모델 — 후속 판정 대기 (2026-09-09 실측, **이번 배치에서 삭제·migration 하지 않음**)
 
 `prisma.<model>` 접근이 `src/`·`agents/`·`scripts/` 어디에도 없는 모델이다.

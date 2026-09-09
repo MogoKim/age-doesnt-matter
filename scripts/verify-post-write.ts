@@ -164,7 +164,7 @@ async function runChecks(browser: Browser) {
   check(
     '@tiptap/extension-text-style 패키지 설치',
     hasTipTapTextStyle,
-    hasTipTapTextStyle ? pkgJson.dependencies['@tiptap/extension-text-style'] : '미설치',
+    hasTipTapTextStyle ? (pkgJson.dependencies?.['@tiptap/extension-text-style'] ?? '?') : '미설치',
   )
 
   // ── 8. Health API — 최신 버전 반영 ──
