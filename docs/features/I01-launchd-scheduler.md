@@ -1,5 +1,10 @@
 # launchd 로컬 스케줄러 운영 기획서 (I01)
 
+> ⚠️ **정정 (2026-09-09)** — 여기 예시로 든 카페 크롤러·매거진 러너 launchd 는 **전부 제거됐다**(R4 B-3).
+> 저장소에 남는 plist 는 `com.unao.unao-prod-sync` · `com.unaeo.opsboard` 둘뿐이고, 설치본 15개는
+> `~/backups/unao-launchd-archive-2026-09-09/` 로 옮겼다. 아래 예시는 launchd 사용법 참고로만 읽는다.
+
+
 > 최초 작성: 2026-04-27 | 최근 수정: 2026-04-27
 
 ---

@@ -85,8 +85,9 @@
 - 선행 조건: 20:30 KST 저녁 피크 검증, 2026-05-31 08:30~12:00 KST 24h 검증.
 - 다음 액션: 20:30 KST read-only 검증. waveNum별, skippedReasons별, persona 사용량별로 본다.
 - 검증 기준: WAVE_PROCESS_V2 status, target/actual, skippedReasons, BOT+cafePostId commentCount, due queue delay, persona usage.
-- 관련: `agents/cafe/wave-processor.ts`, `CommentWaveQueue`, `BotLog.action=WAVE_PROCESS_V2`
-- 마지막 업데이트: 2026-05-30
+- 관련: ~~`agents/cafe/wave-processor.ts`~~, `CommentWaveQueue`(모델만 보존), `BotLog.action=WAVE_PROCESS_V2`
+- **CLOSED (2026-09-09)** — 검증 대상인 봇 댓글 파동 자동화가 R4 에서 제거됐다. 검증할 것이 없다.
+- 마지막 업데이트: 2026-09-09
 
 ## B-20260530-002 - SHEET 댓글 AI티 개선
 

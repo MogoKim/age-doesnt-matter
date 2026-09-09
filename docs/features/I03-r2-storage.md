@@ -68,9 +68,7 @@ CDN 비용 없이 빠른 이미지 서빙을 제공하고, CSP 정책을 통일�
 |------|------|------------|
 | 카드뉴스 렌더링 | `agents/cmo/card-news/renderer.ts` | Playwright → Sharp JPEG → R2 |
 | 카드뉴스 이미지 | `agents/cmo/card-news/image-gen.ts` | DALL-E/Unsplash → R2 |
-| 매거진 이미지 | `agents/cafe/image-generator.ts` | Unsplash/Gemini/DALL-E → R2 |
-| 로컬 이미지 생성 | `agents/cafe/local-image-generator.ts` | Gemini/ChatGPT Playwright → R2 |
-| 외부 미디어 파이프라인 | `agents/community/image-pipeline.ts` | 외부 URL → WebP → R2 |
+| ~~매거진·로컬 이미지 생성, 외부 미디어 파이프라인~~ | 삭제됨 (R4, 2026-09-09) | 봇 이미지 업로드 경로는 모두 사라졌다 |
 | 사용자 이미지 업로드 | `src/app/api/uploads/route.ts` | FormData → Sharp → R2 |
 | 에디터 인라인 이미지 | `src/components/features/community/TipTapEditor.tsx` | Presigned PUT → R2 |
 
