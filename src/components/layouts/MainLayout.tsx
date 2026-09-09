@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars -- [DIAG-13] 임시 진단. 최종 diff 에서 제거한다. */
 import { Suspense } from 'react'
 import IconMenu from './IconMenu'
 import Footer from './Footer'
@@ -35,16 +36,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
       {/* 모바일 전용 아이콘 메뉴 */}
       <IconMenu />
 
-      {/* 목록 페이지(6개) GNB 아래 광고 띠배너 — 경로 게이트는 클라에서 처리 */}
-      <Suspense fallback={null}>
-        <ListBanner />
-      </Suspense>
-
-      {/* 글 상세 상단 띠배너(5:1) — 목록 띠(3:1)와 다른 구좌. 경로 게이트는 클라에서 처리.
-          기존 게시판 소개 배너(IdentityBanner)를 대체한다 — 둘은 같이 뜨지 않는다. */}
-      <Suspense fallback={null}>
-        <DetailHeaderBanner />
-      </Suspense>
+      {/* [DIAG-13] 광고 띠배너 2종(ListBanner·DetailHeaderBanner) 제거 — 홈/목록 경로 게이트 차이 검증 */}
 
       <main id="main-content" className="pb-[72px] lg:pb-0">{children}</main>
 
