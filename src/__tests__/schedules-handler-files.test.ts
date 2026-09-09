@@ -74,3 +74,37 @@ describe('schedules.yaml — handler 경로가 실재한다', () => {
     expect([...new Set(orphans)], 'runner 에 없는 키를 예약하고 있다 — 실행되면 즉시 죽는다').toEqual([])
   })
 })
+
+/**
+ * PAUSED 에서도 실행할 **필수 태스크** 계약 — R4 최종(2026-09-09).
+ *
+ * 전역 `automation_status` 를 ACTIVE 로 되돌리는 대신, 지키지 않으면 사용자나 데이터가
+ * 다치는 것만 runner 의 `ESSENTIAL_TASKS` 에 올려 PAUSED 에서도 돌린다.
+ * 이 목록이 조용히 늘어나면 "PAUSED 인데 사실상 ACTIVE" 가 되므로 여기서 고정한다.
+ */
+describe('ESSENTIAL_TASKS — PAUSED 에서도 실행하는 필수 태스크', () => {
+  const runnerSrc = readFileSync(join(AGENTS, 'cron/runner.ts'), 'utf-8')
+  const block = runnerSrc.slice(runnerSrc.indexOf('const ESSENTIAL_TASKS'), runnerSrc.indexOf('const HANDLERS'))
+  const listed = [...block.matchAll(/'([a-z_]+:[a-z-]+)'/g)].map((m) => m[1])
+
+  it('목록이 정확히 5개다 — 늘리려면 이 테스트를 함께 고쳐야 한다', () => {
+    expect(listed.sort()).toEqual([
+      'cmo:seo-snapshot',
+      'coo:moderator',
+      'cto:anonymize-withdrawn-apply',
+      'cto:count-reconcile',
+      'cto:security-audit',
+    ])
+  })
+
+  it('필수 태스크는 전부 실제 핸들러다', () => {
+    const keys = runnerKeys()
+    const missing = listed.filter((k) => !keys.has(k))
+    expect(missing, '핸들러가 없는 키를 PAUSED 예외로 올리면 실행 시 즉시 죽는다').toEqual([])
+  })
+
+  it('job-scraper 는 필수 태스크가 아니다 (R7 HOLD)', () => {
+    expect(listed, '일자리 공급 기준은 R7 에서 정한다 — 그 전까지 PAUSED 예외로 올리지 않는다')
+      .not.toContain('coo:job-scraper')
+  })
+})

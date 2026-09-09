@@ -1,4 +1,7 @@
-// DISPATCH ONLY — 탈퇴 회원 익명화 (P2-①). 크론은 dry만, 실제는 --apply 수동.
+// 탈퇴 회원 익명화 (P2-①).
+// 예약 실행은 `agents-weekly.yml` 의 `cto:anonymize-withdrawn-apply` **하나뿐이고, 그것은 실제 적용(apply)** 이다.
+// dry 를 돌리던 크론 키(`cto:anonymize-withdrawn`)는 연결이 없어 R4 에서 제거했다 — "크론은 dry만"은 더 이상 사실이 아니다.
+// 수동 미리보기는 아래 dry 실행으로 한다.
 // ⚠️ 불가역. 기본 dry. 30일 경과 WITHDRAWN 회원의 PII를 비우고 닉네임/providerId를 익명화한다.
 // 글·댓글은 authorId 보존(스레드 안 깨짐), 표시는 toUserSummary가 status=WITHDRAWN이면 '탈퇴한 회원' 마스킹.
 //
