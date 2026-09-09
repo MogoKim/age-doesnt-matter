@@ -17,7 +17,15 @@ export interface InsightsData {
   realUserCount: number
   botUserCount: number
   new7d: number
-  northStar: {
+  /**
+   * 주간 활성 실고객(WAU) — 활동 정의는 `page_view` 또는 `login` 이다.
+   *
+   * ⚠️ 이 값은 **North Star 가 아니다.** 헌법의 North Star 는
+   * "최근 7일 재방문 + 글/댓글 1회 이상"(NORTH_STAR.md §12)이라 작성 행동을 포함한다.
+   * 예전에는 이 필드 이름이 `northStar` 라 어드민 숫자가 곧 North Star 인 것처럼 읽혔다.
+   * 새 지표를 만들지 않고 **이름과 표시만** 실제 산식에 맞춘다(2026-09-09, R6).
+   */
+  weeklyActiveUsers: {
     current: number
     previous: number
     weekly: { weekLabel: string; active: number }[]
@@ -214,7 +222,7 @@ export const getInsights = unstable_cache(
       realUserCount: real.length,
       botUserCount: allUsers.length - real.length,
       new7d: real.filter((u) => u.createdAt >= sevenAgo).length,
-      northStar: { current, previous, weekly },
+      weeklyActiveUsers: { current, previous, weekly },
       channels,
       activation,
     }

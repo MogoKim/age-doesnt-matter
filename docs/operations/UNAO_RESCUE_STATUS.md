@@ -235,10 +235,27 @@ T+0은 2026-09-05 KST다. 날짜가 지나도 증거가 없으면 PASS로 넘기
 - **타입 복구는 REMOVE 이후다.** 삭제 예정 코드의 타입 오류는 고치지 않는다. KEEP 범위 확정 후 최종 KEEP 코드만 ops tsc 0으로 만들며, 복원 방법은 그때 결정한다.
 - **SocialPost DB 모델**: 생산자(SNS 게시·메트릭 에이전트)는 2026-09-08 제거됐다. **DB 모델과 기존 데이터는 유지**하며
   후속 **R6 데이터 모델 감사** 대상으로 넘긴다. 이번 PR 에서 migration 은 하지 않았다.
-- **후속 R6 재감사 항목 (Gate 2 제거 시 이관, 2026-09-08)**: `scripts/smoke-test.ts` 는 이번에 유지했으나
-  두 결함이 남아 있다 — ① AdSense 슬롯 검사가 **구조적 false-red**(광고는 `'use client'` 지연 로드라
-  초기 HTML에 `adsbygoogle` 이 없는 것이 정상) ② `/api/events` POST 에 `x-bot-type` 헤더 미부착.
+- **`scripts/smoke-test.ts` → REMOVE 종결 (2026-09-09)**: 두 결함이 고쳐지지 않은 채 남아 있었다 —
+  ① AdSense 슬롯 검사가 구조적 false-red(광고는 `'use client'` 지연 로드라 초기 HTML 에 없는 것이 정상)
+  ② `/api/events` POST 에 `x-bot-type` 미부착. Gate 2 제거 때 "공식 절차로 안내하지 마라"로 판정했고,
+  그 뒤로도 호출부가 생기지 않았다. 고쳐서 쓰는 대신 제거한다 — 배포 확인은 `/api/health`·`/api/health/auth`·
+  sitemap read-only 점검과 CI E2E 로 한다. `npm run smoke-test` 스크립트도 함께 제거했다.
 - 기타 후보: 도메인·env fallback·모델 ID·localStorage key 단일화.
+
+### 소비처 0 DB 모델 — 후속 판정 대기 (2026-09-09 실측, **이번 배치에서 삭제·migration 하지 않음**)
+
+`prisma.<model>` 접근이 `src/`·`agents/`·`scripts/` 어디에도 없는 모델이다.
+**모델과 기존 데이터는 그대로 둔다.** 삭제하려면 데이터 보존·복구 계획을 먼저 정하고 별도 migration 배치로 한다.
+
+| 모델 | 생산자였던 것 | 제거 시점 |
+|---|---|---|
+| `CommentWaveQueue` | 봇 댓글 파동 producer/consumer | R4 (2026-09-09, PR #439) |
+| `UserPostWaveQueue` | 실회원 글 발행 후 자동 댓글 파동 | R4 (2026-09-09, PR #439) |
+| `DailyKpiSnapshot` | KPI 스냅샷 수집기 | R4 B-5 (2026-09-09) |
+| `SocialPost` | SNS 게시·메트릭 에이전트 | R4 GROWTH_LEGACY (2026-09-08) |
+| `ChannelDraft` | 채널 시딩 에이전트 | R4 GROWTH_LEGACY (2026-09-08) |
+| `NaverBlogQueue` | 네이버 블로그 발행 | ARCHIVED 2026-06-04 |
+
 - **B-3 이후 고아가 된 `agents/core/` 모듈 9개는 2026-09-09 제거 완료**: `age-fit-blocklist` · `celebrity-race-blocklist` ·
   `content-quality-rules` · `coupang` · `google-api` · `intelligence` · `medical-advice-blocklist` · `political-blocklist` · `slug`.
   전부 runtime importer 0 이었다(테스트만 참조). **호출 경로가 없으면 안전 기능이 아니다** — 이름만 보고 남기지 않는다.
