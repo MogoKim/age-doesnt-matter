@@ -47,9 +47,6 @@ export const HANDLER_REGISTRY: HandlerMeta[] = [
   // ─── COMMUNITY ─────────────────────────────────────────────────────
 
   // ─── CAFE CRAWLER ──────────────────────────────────────────────────
-  { key: 'cafe_crawler:trend-analysis', label: '카페 트렌드 분석', botType: 'CAFE_CRAWLER', action: 'TREND_ANALYSIS',  schedule: '09:00, 13:30, 20:30',  type: 'GHA',      workflow: 'agents-cafe' },
-  { key: 'cafe_crawler:cafe-pipeline',  label: '카페 크롤링 (네이버)', botType: 'CAFE_CRAWLER', action: 'CAFE_CRAWL',  schedule: '08:30, 12:55, 20:00',  type: 'LOCAL',                          note: '네이버 IP 차단' },
-  { key: 'cafe_crawler:external-crawl', label: '외부 크롤링',      botType: 'CAFE_CRAWLER', action: 'EXTERNAL_CRAWL', schedule: '—',                    type: 'DISPATCH',                       note: '2026-04-13 제거' },
 
   // ─── DESIGN ────────────────────────────────────────────────────────
 ]
@@ -61,5 +58,4 @@ export const HANDLER_GROUPS = [
   { team: 'COO',          emoji: '⚙️', keys: ['coo:moderator','coo:content-scheduler','coo:trending-scorer','coo:job-scraper'] },
   { team: 'CDO',          emoji: '📊', keys: ['cdo:anomaly-detector'] },
   { team: 'QA',           emoji: '✅', keys: ['qa:content-audit','qa:code-gate'] },
-  { team: '카페 크롤러',  emoji: '☕', keys: ['cafe_crawler:trend-analysis','cafe_crawler:cafe-pipeline','cafe_crawler:external-crawl'] },
 ]

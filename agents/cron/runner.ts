@@ -23,7 +23,6 @@ const MONITORING_TASKS = new Set([
   'cto:error-monitor',
   'cto:security-audit',
   'cdo:anomaly-detector',
-  'cafe:session-refresh',  // LOCKED 상태에서도 세션 유지 필수 (크롤러 재가동 보장)
   'cmo:seo-snapshot',      // read-only 관측 — 자동화 중단 중에도 SEO 추이는 계속 봐야 한다
   'coo:moderator',         // 안전 기능(금지어 감지·숨김, 헌법 auto_allowed) — automation_status=PAUSED/LOCKED 에서도 유지 (Rescue R4, 2026-09-05)
 ])
@@ -43,14 +42,6 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'coo:job-scraper': () => import('../coo/job-scraper.js').then(m => m.main()),
   'coo:trending-scorer': () => import('../coo/trending-scorer.js').then(m => m.main()),
   'cdo:anomaly-detector': () => import('../cdo/anomaly-detector.js').then(() => {}),
-  // LOCAL ONLY — run-pipeline.ts는 네이버 크롤링 통합 파이프라인, launchd로 로컬 실행
-  // GitHub Actions 실행 불가 (네이버 IP 차단 + headless 탐지). 수동 실행만.
-  'cafe_crawler:cafe-pipeline': () => import('../cafe/run-pipeline.js').then(async m => { await m.main('all') }),
-  'cafe_crawler:trend-analysis': () => import('../cafe/trend-analyzer.js').then(() => {}),
-  // 매거진: 로컬 launchd(12:30/21:00 KST) + GitHub Actions(16:00 KST) 이중 발행
-  'cafe_crawler:magazine-generate': () => import('../cafe/magazine-generator.js').then(async m => { await m.main() }),
-  'cafe_crawler:popular-sync': () => import('../cafe/popular-sync.js').then(() => {}), // DISPATCH ONLY — Mac launchd 전용. GHA 실행 불가 (네이버 Playwright).
-  'cafe_crawler:external-crawl': () => import('../cafe/external-crawler.js').then(() => {}), // DISPATCH ONLY — 82cook 외부 크롤, GHA 스케줄 제거됨 (2026-04-13)
   'cmo:upload-creatives': () => import('../marketing/google-ads/scripts/upload-creatives.js').then(() => {}), // DISPATCH ONLY — 최초 1회 수동 실행
   'cmo:create-campaigns': () => import('../marketing/google-ads/scripts/create-campaigns.js').then(() => {}), // DISPATCH ONLY — 최초 1회 수동 실행
   'ceo:approval-reminder': () => import('./approval-reminder.js').then(() => {}),
@@ -62,6 +53,8 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   // cafe_crawler:image-route — 삭제됨 2026-09-09 (R4 B-3a: 외부 카페·Google Sheet 공급망 REMOVE)
   // cafe_crawler:content-curate · popular-curate · brief-monitor · daily-brief-fallback ·
   // evening-brief-safety — 삭제됨 2026-09-09 (R4 B-3b: 봇 큐레이션·브리프 REMOVE)
+  // cafe_crawler:cafe-pipeline · trend-analysis · magazine-generate · popular-sync ·
+  // external-crawl, cafe:session-refresh — 삭제됨 2026-09-09 (R4 B-3c: 로컬 카페 파이프라인 REMOVE)
   // cmo:knowledge-responder — 삭제됨 2026-05-15 (지식인 운영 중단, 코드 삭제)
   // cmo:jisik-answerer — 삭제됨 2026-05-15 (지식인 운영 중단, 코드 삭제)
   // cmo:card-news-generator — 삭제됨 2026-05-15 (카드뉴스 중단, 코드 삭제)
@@ -72,10 +65,6 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   // QA 2-Gate 시스템
   // DISPATCH ONLY — Gate 1은 /done 스킬에서 자동 실행, 독립 실행 시에만 이 핸들러 사용
   'qa:code-gate': () => import('../qa/pre-deploy-gate.js').then(() => {}),
-  // LOCAL ONLY — 매일 02:00 KST launchd, NID_SES 5일 이내 만료 시 자동 갱신
-  // NID_AUT(~1년)로 headless Playwright naver.com 접속 → 새 NID_SES 획득
-  // 실패 시: SESSION_HALTED 플래그 + #대시보드/#시스템/#qa 3채널 긴급 알림
-  'cafe:session-refresh': () => import('../cafe/session-manager.js').then(async m => { await m.ensureSession() }),
   // naver-blog:post — ARCHIVED 2026-06-04 (Gemini 구독 종료로 폐기). 어드민/테이블/R2 이미지는 보존.
 }
 

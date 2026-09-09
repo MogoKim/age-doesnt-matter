@@ -31,14 +31,6 @@ export const DEPENDENCY_MAP: Record<string, DependencyRule[]> = {
     maxWaitMinutes: 90,
     pollIntervalMinutes: 10,
   }],
-  // 매거진 생성 ← 콘텐츠 큐레이션 완료 필요
-  'cafe_crawler:magazine-generate': [{
-    requiredBotType: 'CAFE_CRAWLER',
-    requiredAction: 'CONTENT_CURATE',
-    dateOffset: 0,
-    maxWaitMinutes: 60,
-    pollIntervalMinutes: 10,
-  }],
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
