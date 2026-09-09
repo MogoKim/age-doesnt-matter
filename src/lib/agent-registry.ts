@@ -1,5 +1,6 @@
 /**
- * 에이전트 핸들러 레지스트리 — 어드민 현황 탭 + 모닝 리포트 공통 사용
+ * 에이전트 핸들러 레지스트리 — 어드민 현황 탭에서 쓴다.
+ * (모닝 리포트 에이전트는 R4 에서 제거됐다 — 2026-09-08)
  *
  * 계약은 한 방향뿐이다: **여기 있는 키는 전부 runner.ts HANDLERS 에 있어야 한다.**
  * runner 에 없는 키를 두면 어드민이 없는 작업을 돌아가는 것처럼 보여준다.
@@ -29,7 +30,6 @@ export const HANDLER_REGISTRY: HandlerMeta[] = [
 
   // ─── COO ───────────────────────────────────────────────────────────
   { key: 'coo:moderator',             label: 'COO 모더레이션',    botType: 'COO', action: 'MODERATION',           schedule: '09:00, 15:00, 21:00',  type: 'GHA', workflow: 'agents-moderation' },
-  { key: 'coo:trending-scorer',       label: 'COO 트렌딩 점수',   botType: 'COO', action: 'TRENDING_SCORE',       schedule: '12:00, 18:00',         type: 'GHA', workflow: 'agents-daily' },
   { key: 'coo:job-scraper',           label: 'COO 일자리 수집',   botType: 'COO', action: 'JOB_SCRAPE',           schedule: '12:00, 16:00, 20:00',  type: 'GHA', workflow: 'agents-jobs' },
 
   // ─── CDO ───────────────────────────────────────────────────────────
@@ -46,5 +46,5 @@ export const HANDLER_REGISTRY: HandlerMeta[] = [
 /** 팀별 그룹핑 (어드민 UI용) */
 export const HANDLER_GROUPS = [
   { team: 'CTO',          emoji: '🔧', keys: ['cto:security-audit'] },
-  { team: 'COO',          emoji: '⚙️', keys: ['coo:moderator','coo:trending-scorer','coo:job-scraper'] },
+  { team: 'COO',          emoji: '⚙️', keys: ['coo:moderator','coo:job-scraper'] },
 ]

@@ -2,13 +2,6 @@
 # automation_status: LOCKED 상태에서는 실행하지 않음
 
 schedules:
-  # 트렌딩 스코어 갱신 (30분마다)
-  - cron: "*/30 * * * *"
-    agent: COO
-    task: trending-scorer
-    handler: "coo/trending-scorer.ts"
-    note: "트렌딩 점수 계산 + HOT 강등 (30분 주기)"
-
   # 매일 모더레이션 (하루 3회: 09, 15, 21 KST)
   - cron: "0 0,6,12 * * *"
     agent: COO

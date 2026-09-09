@@ -238,8 +238,8 @@ describe('buildReport — 실제 저장소 기준 분류', () => {
       workflowWithoutHandler: report.workflowWithoutHandler.length,
       launchdOrphans: report.launchdOrphans.length,
     }).toEqual({
-      total: 7,
-      linked: 7,
+      total: 6,
+      linked: 6,
       orphaned: 0,
       dispatchOnly: 0,
       localOnly: 0,
@@ -376,9 +376,9 @@ const HANDLERS: Record<string, () => Promise<void>> = {
     expect(() => extractHandlers(runnerFile('export const NOTHING = {}\n'))).toThrow(/HANDLERS/)
   })
 
-  it('실제 runner.ts 를 읽으면 7개이고 coo:moderator 가 들어 있다', () => {
+  it('실제 runner.ts 를 읽으면 6개이고 coo:moderator 가 들어 있다', () => {
     const handlers = extractHandlers()
-    expect(handlers).toHaveLength(7)
+    expect(handlers).toHaveLength(6)
     expect(handlers.map((h) => h.key)).toContain('coo:moderator')
   })
 })

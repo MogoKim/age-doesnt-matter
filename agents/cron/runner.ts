@@ -12,16 +12,25 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
  * 사용법: tsx cron/runner.ts <agent> <task>
  * 예시: tsx cron/runner.ts CTO health-check
  *
- * automation_status 체크:
- * - ACTIVE: 모든 핸들러 실행
- * - LOCKED: CTO health-check/error-monitor, CDO anomaly-detector만 실행 (모니터링 유지)
+ * automation_status 체크 (2026-09-09 기준 값은 PAUSED):
+ * - ACTIVE:        모든 핸들러 실행
+ * - PAUSED/LOCKED: 아래 ESSENTIAL_TASKS 만 실행
+ *
+ * ⚠️ 전역 ACTIVE 로 되돌리지 않는다. 계속 돌려야 하는 것은 개별로 이 목록에 올린다.
  */
 
-/** 모니터링 전용 태스크 — LOCKED 상태에서도 실행 */
-const MONITORING_TASKS = new Set([
-  'cto:security-audit',
-  'cmo:seo-snapshot',      // read-only 관측 — 자동화 중단 중에도 SEO 추이는 계속 봐야 한다
-  'coo:moderator',         // 안전 기능(금지어 감지·숨김, 헌법 auto_allowed) — automation_status=PAUSED/LOCKED 에서도 유지 (Rescue R4, 2026-09-05)
+/**
+ * PAUSED/LOCKED 에서도 실행하는 **필수 태스크**.
+ *
+ * 판정 분류는 정본 하나(KEEP_SAFETY)로 통일한다 — 안전·개인정보·데이터 정합성은
+ * 별도 등급이 아니라 "지키지 않으면 사용자나 데이터가 다치는 것" 하나의 이유다.
+ */
+const ESSENTIAL_TASKS = new Set([
+  'coo:moderator',                  // 금지어 감지·자동 숨김 — 멈추면 사용자가 유해 콘텐츠를 본다
+  'cto:security-audit',             // 로그인 실패·어드민 민감 액션 감사
+  'cto:count-reconcile',            // 비정규화 카운트 정합성(멱등) — 멈추면 화면 숫자가 실제와 어긋난다
+  'cto:anonymize-withdrawn-apply',  // 30일 경과 탈퇴자 PII 익명화 — 멈추면 개인정보가 남는다
+  'cmo:seo-snapshot',               // GSC read-only 관측 — 네이버 색인 추이는 계속 본다
 ])
 
 const HANDLERS: Record<string, () => Promise<void>> = {
@@ -32,8 +41,8 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   // `.then(() => {})` 이면 import 만 끝나고 곧바로 disconnect + exit 해서 판정이 잘린다.
   'coo:moderator': () => import('../coo/moderator.js').then((m) => m.main()),
   'coo:job-scraper': () => import('../coo/job-scraper.js').then(m => m.main()),
-  'coo:trending-scorer': () => import('../coo/trending-scorer.js').then(m => m.main()),
   // community:* · cafe_crawler:* · cafe:session-refresh · coo:content-scheduler ·
+  // coo:trending-scorer — 삭제됨 2026-09-09 (점수 계산이 실시간 액션과 중복)
   // cto:crawler-health · cto:health-check · cto:error-monitor · cto:purge-old-logs ·
   // cto:anonymize-withdrawn(dry) · cdo:anomaly-detector · ceo:approval-reminder ·
   // qa:content-audit · qa:code-gate · cmo:upload-creatives · cmo:create-campaigns — 삭제됨 2026-09-09
@@ -102,9 +111,9 @@ async function main() {
   // automation_status 체크 (constitution.yaml + DB EMERGENCY_STOP 병행)
   const status = getAutomationStatus()
   const dbStopped = await isDbEmergencyStop()
-  if ((status !== 'ACTIVE' || dbStopped) && !MONITORING_TASKS.has(key)) {
+  if ((status !== 'ACTIVE' || dbStopped) && !ESSENTIAL_TASKS.has(key)) {
     const reason = dbStopped ? 'DB_EMERGENCY_STOP' : `automation_status=${status}`
-    console.log(`[Runner] ${reason} — ${key} 실행 스킵 (모니터링 태스크만 허용)`)
+    console.log(`[Runner] ${reason} — ${key} 실행 스킵 (필수 태스크만 허용)`)
     await disconnect()
     process.exit(0)
   }

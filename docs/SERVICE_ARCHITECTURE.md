@@ -284,15 +284,16 @@
 | 키 | 파일 | 트리거 | 모델 | 역할 | 판정 근거 |
 |---|---|---|---|---|---|
 | `coo:moderator` | `coo/moderator.ts` | `agents-moderation.yml` **활성** 09/15/21시 | Haiku | 금지어 감지·자동 숨김, 신고 처리 | 안전 기능 |
-| `coo:job-scraper` | `coo/job-scraper.ts` | `agents-jobs.yml` (disabled) | Haiku | 50plus.or.kr 일자리 → Post 발행 | `/jobs` 사용자 경로 |
-| `coo:trending-scorer` | `coo/trending-scorer.ts` | `agents-daily.yml` (disabled) | Haiku | 트렌딩 점수·HOT 강등 | PostCard 배지(사용자 경로) |
-| `cto:security-audit` | `cto/security-audit.ts` | `agents-daily.yml` (disabled) | Haiku | 로그인 실패·어드민 민감 액션 감사 | 보안 |
-| `cto:count-reconcile` | `agents/scripts/reconcile-counts.ts` | `agents-daily.yml` (disabled) | — | 비정규화 카운트 재계산(멱등) | 데이터 정합성 |
-| `cto:anonymize-withdrawn-apply` | `agents/scripts/anonymize-withdrawn-users.ts` | `agents-weekly.yml` (disabled) | — | 30일 경과 탈퇴자 PII 익명화 | 개인정보(F-12) |
-| `cmo:seo-snapshot` | `cmo/seo-snapshot.ts` | `agents-weekly.yml` (disabled) | — | 주간 GSC 스냅샷(read-only) | 네이버 색인 추이 관측 |
+| `coo:job-scraper` | `coo/job-scraper.ts` | `agents-jobs.yml` **HOLD** (disabled 유지) | Haiku | 50plus.or.kr 일자리 → Post 발행 | `/jobs` 사용자 경로. 공급 기준은 R7 에서 정한다 |
+| `cto:security-audit` | `cto/security-audit.ts` | `agents-daily.yml` **활성** 06:00 KST | Haiku | 로그인 실패·어드민 민감 액션 감사 | 보안 |
+| `cto:count-reconcile` | `agents/scripts/reconcile-counts.ts` | `agents-daily.yml` **활성** 04:00 KST | — | 비정규화 카운트 재계산(멱등) | 데이터 정합성 |
+| `cto:anonymize-withdrawn-apply` | `agents/scripts/anonymize-withdrawn-users.ts` | `agents-weekly.yml` **활성** 월 10:00 KST | — | 30일 경과 탈퇴자 PII 익명화 | 개인정보(F-12) |
+| `cmo:seo-snapshot` | `cmo/seo-snapshot.ts` | `agents-weekly.yml` **활성** 월 10:30 KST | — | 주간 GSC 스냅샷(read-only) | 네이버 색인 추이 관측 |
 
-> **총 핸들러 수: 7개.** 그중 실제 실행 경로가 있는 것은 `coo:moderator` 하나다 —
-> `automation_status: PAUSED` 이고 나머지 workflow 가 `disabled_manually` 이기 때문이다.
+> **총 핸들러 수: 6개.** `automation_status` 는 **PAUSED 를 유지**하되, 지키지 않으면 사용자나
+> 데이터가 다치는 것만 runner 의 `ESSENTIAL_TASKS` 에 올려 PAUSED 에서도 실행한다 —
+> moderator · security-audit · count-reconcile · anonymize-withdrawn-apply · seo-snapshot.
+> `coo:job-scraper` 는 여기 없다(R7 HOLD). 판정 분류는 **KEEP_SAFETY 하나로 통일**한다.
 >
 > **수동 운영 스크립트(핸들러 아님)**: `agents/scripts/purge-old-logs.ts`(보존정책, `--apply` 수동),
 > `agents/scripts/anonymize-withdrawn-users.ts`(dry 미리보기), `backfill-*`, `insights.ts`.

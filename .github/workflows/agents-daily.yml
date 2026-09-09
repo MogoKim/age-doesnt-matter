@@ -1,22 +1,12 @@
 name: Agents — Daily
 on:
+  # 필수 태스크 둘만 남긴다 (R4 최종, 2026-09-09).
+  # runner 의 ESSENTIAL_TASKS 에 있어 automation_status=PAUSED 에서도 실행된다.
   schedule:
-    # 22:00 KST = 13:00 UTC — CDO KPI (중단 2026-05-16 — DISPATCH ONLY)
-    # - cron: "11 13 * * *"
-    # 12:00 KST = 03:00 UTC — COO 트렌딩 스코어
-    - cron: "11 3 * * *"
-    # 18:00 KST = 09:00 UTC — COO 트렌딩 스코어 (2차)
-    - cron: "11 9 * * *"
     # 06:00 KST = 21:00 UTC (전날) — CTO 보안 감사
     - cron: "11 21 * * *"
-    # 23:00 KST = 14:00 UTC — CFO 비용 (중단 2026-05-16 — DISPATCH ONLY)
-    # - cron: "11 14 * * *"
-    # 04:00 KST = 19:00 UTC — 비정규화 카운트 정합성 재계산 (reconcile, 멱등)
+    # 04:00 KST = 19:00 UTC — 비정규화 카운트 정합성 재계산 (멱등)
     - cron: "0 19 * * *"
-    # job-scraper 크론 제거: agents-jobs.yml에서 전담 (12:00/16:00/20:00 KST 3회)
-    # 이전: "0 4 * * *" (13:00 KST), "0 10 * * *" (19:00 KST) — 중복 실행 제거
-    # 13:00 KST = 04:00 UTC — CMO 카드뉴스 생성 (A07) (중단 2026-05-15)
-    # - cron: "11 4 * * *"
   workflow_dispatch:
     inputs:
       agent:
@@ -84,19 +74,10 @@ jobs:
             # github.event.schedule로 매칭 — cron 딜레이와 무관하게 정확히 동작
             CRON="${{ github.event.schedule }}"
             case "$CRON" in
-              "11 13 * * *")
-                echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;; # 중단 2026-05-16
-              "11 14 * * *")
-                echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;; # 중단 2026-05-16
-              "11 3 * * *")
-                echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=trending-scorer" >> $GITHUB_OUTPUT ;;
-              "11 9 * * *")
-                echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=trending-scorer" >> $GITHUB_OUTPUT ;;
               "11 21 * * *")
                 echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=security-audit" >> $GITHUB_OUTPUT ;;
               "0 19 * * *")
                 echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=count-reconcile" >> $GITHUB_OUTPUT ;;
-              # "11 4 * * *") cmo:card-news-generator — 중단 2026-05-15
               *)
                 echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;;
             esac

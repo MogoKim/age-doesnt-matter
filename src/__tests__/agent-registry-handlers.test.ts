@@ -84,6 +84,8 @@ describe('삭제된 핸들러의 잔재', () => {
     'cto:health-check', 'cto:error-monitor', 'cdo:anomaly-detector', 'ceo:approval-reminder',
     'qa:content-audit', 'qa:code-gate', 'cto:purge-old-logs', 'cto:anonymize-withdrawn',
     'cmo:upload-creatives', 'cmo:create-campaigns',
+    // 실시간 액션과 중복 (2026-09-09) — 좋아요·댓글 시 같은 공식으로 trendingScore 를 이미 쓴다
+    'coo:trending-scorer',
   ] as const
 
   it('runner 에 없다', () => {

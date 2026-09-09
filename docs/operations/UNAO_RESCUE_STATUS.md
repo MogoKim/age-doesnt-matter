@@ -194,7 +194,7 @@ T+0은 2026-09-05 KST다. 날짜가 지나도 증거가 없으면 PASS로 넘기
 | 단계 | 대상 | 현재 파악된 것 |
 |---|---|---|
 | **R4** | C-level 및 역할극 에이전트 | **ORG_THEATER 10 + SUPERSEDED 4 + `cto:qa-verify` + GROWTH_LEGACY 13 제거(09-08), SEED 봇 4 + COO 참여 유도 7 제거(09-09).** C-level 삭제 후보 잔여 **0** |
-| **R4** | 사용하지 않는 workflow · runner · registry | **종결(2026-09-09).** runner HANDLERS **7개** · cron linked **7** · orphaned **0**. GHA **10개** 중 활성 4(ci · lighthouse · quarantine-check · agents-moderation). `automation_status: PAUSED` 라 실제 실행 경로가 있는 것은 `coo:moderator` 하나다. 저장소 launchd plist 2개 |
+| **R4** | 사용하지 않는 workflow · runner · registry | **종결(2026-09-09).** runner HANDLERS **6개** · cron linked **7** · orphaned **0**. GHA **10개** 중 활성 4(ci · lighthouse · quarantine-check · agents-moderation). `automation_status: PAUSED` 라 실제 실행 경로가 있는 것은 `coo:moderator` 하나다. 저장소 launchd plist 2개 |
 | **R4** | 보지 않는 Slack · 리포트 · AdminQueue 자동화 | Slack "NSM" 2벌(`ceo/weekly-report.ts` · `cdo/kpi-collector.ts`)이 **모두 삭제됨(2026-09-08)**. 남은 Slack 리포트는 개별 KEEP 근거로 재판정한다 |
 | **R5** | 오도·중복·정지된 문서 | **종결(2026-09-09, PR #443).** 런타임이 읽는 것은 `automation_status` 필드 하나와 프롬프트로 주입되는 `constitution.yaml` 본문뿐임을 확인하고, 소비처 0 인 분할 constitution 5개를 제거했다. 죽은 계약(qa_agent · 봇 댓글 수치 · 헬스체크 도메인)과 SERVICE_ARCHITECTURE 의 "핸들러 93개" 표를 실측으로 교체. **NORTH_STAR.md 는 무변경 — 복합 North Star 계산은 HOLD 유지** |
 | **R6** | 오래된 KPI · 지표 · 스냅샷 · 대시보드 | **REMOVE 완료(2026-09-09)** — KPI 스냅샷 workflow·수집기·KpiHistoryPanel·전용 조회, ops 일일 리포트, design 광고 루프 제거. `DailyKpiSnapshot` **DB 모델과 기존 데이터는 보존**(migration 없음). `northStar`가 WAU인 표기 정정은 미결 |
