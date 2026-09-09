@@ -65,8 +65,6 @@ export type AgentBotType = 'CEO' | 'CTO' | 'CMO' | 'CPO' | 'CDO' | 'CFO' | 'COO'
  * - ops: trending_policy + ad_policy + intelligence_policy
  * - infra: security + cto_governance + qa_agent
  * undefined = 원본 constitution.yaml 전체 로드 (안전 fallback)
- */
-export type ConstitutionModule = 'audience' | 'strategy' | 'ops' | 'infra'
 
 /** 에이전트 설정 */
 export interface AgentConfig {
@@ -76,7 +74,6 @@ export interface AgentConfig {
   model: 'strategic' | 'heavy' | 'light'
   tasks: string
   canWrite: boolean
-  constitutionModules?: ConstitutionModule[]
 }
 
 /** Cron 스케줄 엔트리 */

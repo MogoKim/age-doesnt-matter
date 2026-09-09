@@ -55,9 +55,10 @@ CEO 에이전트              ← 다른 에이전트의 헌법 위반을 탐지
 ### 3-2. 에이전트 System Prompt 주입 (실행 시 로딩)
 
 ```typescript
-// agents/core/agent.ts
-// 에이전트가 실행될 때마다 constitution.yaml을 새로 읽음
-const constitution = readFileSync('./core/constitution.yaml', 'utf-8');
+// agents/core/agent.ts — loadConstitution()
+// 에이전트가 실행될 때마다 constitution.yaml 을 새로 읽는다.
+// 정본은 이 파일 하나다(분할 constitution-*.yaml 은 읽히지 않아 2026-09-09 제거).
+const constitution = readFileSync(resolve(__dirname, 'constitution.yaml'), 'utf-8');
 
 // 모든 에이전트 System Prompt 첫 줄에 헌법 주입
 const systemPrompt = `
@@ -65,27 +66,22 @@ const systemPrompt = `
 ${constitution}
 
 당신은 위 헌법을 절대 기준으로 모든 판단을 내립니다.
-헌법에 위배되는 요청은 거부하고 창업자에게 텔레그램 알림을 보냅니다.
+헌법에 위배되는 요청은 거부합니다.
 `;
 ```
 
 - constitution.yaml이 바뀌면 **다음 실행(Cron/수동)부터 자동 반영**
 - 에이전트 재시작 불필요 — 매 실행마다 최신 파일을 읽음
 
-### 3-3. CEO 에이전트 감시 (실시간 교정)
+### 3-3. ~~CEO 에이전트 감시 (실시간 교정)~~ — 폐지 (2026-09-09, R4)
 
-```
-CEO 모닝 사이클:
-  1. 전날 모든 에이전트 액션 로그 읽기
-  2. 각 액션을 constitution.yaml 기준으로 위반 여부 체크
-  3. 위반 발견 시:
-     → 해당 에이전트 일시 정지
-     → 텔레그램 봇으로 창업자에게 즉시 알림
-     → 창업자 승인 전까지 해당 에이전트 비활성화
-  4. 정상인 경우:
-     → 일일 리포트 생성 → 텔레그램 모닝 브리핑 채널
-```
+CEO 모닝 사이클이 전날 액션 로그를 헌법 기준으로 검토하던 메커니즘이었다.
+**그 에이전트는 R4 에서 제거됐다.** 지금 헌법 준수를 강제하는 것은 아래 둘뿐이다.
 
+- **실행 차단**: `automation_status` 가 `ACTIVE` 가 아니면 runner 가 MONITORING_TASKS 외 실행을 스킵한다
+- **사람 검토**: PR 리뷰와 `.claude/commands/done.md` Gate 1
+
+"감시 에이전트가 잡아준다"는 전제로 규칙을 늘리지 마라 — 잡아줄 주체가 없다.
 ---
 
 ## 4. 헌법 수정 프로세스 (창업자 전용)
