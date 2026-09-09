@@ -44,6 +44,7 @@ export default function MagazineSection({ posts }: Props) {
                     className="object-cover"
                     sizes="(max-width: 1024px) 200px, 25vw"
                     priority={index === 0}
+                    fetchPriority={index === 0 ? 'high' : undefined}
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center text-3xl">

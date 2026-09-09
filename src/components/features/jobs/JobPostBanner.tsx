@@ -38,6 +38,7 @@ export default function JobPostBanner({ seed }: { seed: string }) {
         sizes="(max-width: 720px) 100vw, 720px"
         className="object-cover"
         priority
+        fetchPriority="high"
       />
     </Link>
   )

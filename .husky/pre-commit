@@ -37,9 +37,15 @@ if [ -n "$STAGED_TS" ]; then
   fi
   echo "[pre-commit] TypeScript ✅"
 
-  # ESLint — 스테이징된 .ts/.tsx 파일만
+  # ESLint — 스테이징된 .ts/.tsx 파일만 (error 0 강제)
+  #
+  # ⚠️ `--max-warnings 0` 은 쓰지 않는다. Next 16 전환에서 eslint-config-next 16 이
+  #    react-hooks 계열 규칙을 새로 켜면서 **기존 코드**에 경고 84건이 생겼고,
+  #    그 파일을 한 줄이라도 건드리는 정상 커밋까지 전부 막히기 때문이다.
+  #    경고 총량은 바로 아래 baseline 가드가 저장소 전체 기준(총량 + 규칙별 상한)으로 막는다.
+  #    검사가 사라진 게 아니라 파일 단위에서 저장소 단위로 넓어졌다.
   echo "[pre-commit] ESLint 체크 중..."
-  ESLINT_OUTPUT=$(echo "$STAGED_TS" | tr '\n' ' ' | xargs npx eslint --max-warnings 0 2>&1)
+  ESLINT_OUTPUT=$(echo "$STAGED_TS" | tr '\n' ' ' | xargs npx eslint 2>&1)
   ESLINT_EXIT=$?
   if [ $ESLINT_EXIT -ne 0 ]; then
     echo "$ESLINT_OUTPUT" | head -30
@@ -48,4 +54,12 @@ if [ -n "$STAGED_TS" ]; then
     exit 1
   fi
   echo "[pre-commit] ESLint ✅"
+
+  # ── lint 경고 baseline — 새 경고가 조용히 늘어나는 것을 막는다 ──
+  echo "[pre-commit] lint 경고 baseline 체크 중..."
+  if ! npm run --silent lint:baseline; then
+    echo ""
+    echo "🚨 [lint baseline] 커밋 차단 — 경고가 baseline 을 넘었습니다."
+    exit 1
+  fi
 fi

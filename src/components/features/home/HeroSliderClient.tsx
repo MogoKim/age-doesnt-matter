@@ -212,12 +212,14 @@ export default function HeroSliderClient({ slides, allowSurveyIsland = false }: 
             <>
           {/* 이미지 배경 */}
           {slide.imageUrl && (
+            /* Next 16 은 priority 로 fetchPriority 를 자동 설정하지 않는다 — Next 14 동작 유지 */
             <Image
               src={slide.imageUrl}
               alt={slide.title}
               fill
               className="object-cover object-center"
               priority={index === 0}
+              fetchPriority={index === 0 ? 'high' : undefined}
               sizes="(min-width: 1200px) 1200px, 100vw"
             />
           )}

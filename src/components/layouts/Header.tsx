@@ -21,6 +21,7 @@ export default function Header() {
           height={60}
           className="h-[60px] w-[60px] rounded-lg object-contain"
           priority
+          fetchPriority="high"
         />
       </Link>
 

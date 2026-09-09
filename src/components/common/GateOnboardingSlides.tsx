@@ -104,7 +104,7 @@ export default function GateOnboardingSlides({ onSignup, onEscape, starting, onB
         <div className="shrink-0 pt-[max(52px,calc(env(safe-area-inset-top)+44px))]" aria-hidden="true" />
       ) : (
         <div className="flex shrink-0 justify-center px-6 pt-[max(18px,env(safe-area-inset-top))] pb-1">
-          <Image src="/logo.png" width={76} height={76} alt="우리나이가어때서" className="object-contain" priority />
+          <Image src="/logo.png" width={76} height={76} alt="우리나이가어때서" className="object-contain" priority fetchPriority="high" />
         </div>
       )}
 
@@ -135,6 +135,7 @@ export default function GateOnboardingSlides({ onSignup, onEscape, starting, onB
                     sizes="(max-width:420px) 100vw, 420px"
                     className="object-cover"
                     priority={i === 0}
+                    fetchPriority={i === 0 ? 'high' : undefined}
                   />
                 </div>
               </div>

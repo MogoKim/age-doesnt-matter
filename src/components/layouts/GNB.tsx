@@ -51,6 +51,7 @@ export default function GNB() {
             height={48}
             className="h-12 w-auto object-contain"
             priority
+            fetchPriority="high"
           />
         </Link>
 
