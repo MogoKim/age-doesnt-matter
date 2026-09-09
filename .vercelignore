@@ -5,5 +5,10 @@ docs/
 /memory/
 /scripts/
 /agents/
+# 위 둘을 빌드 입력에서 빼면 src/__tests__ 가 그것들을 import 한 채로 남는다.
+# Next 16 production build 는 tsconfig 의 `**/*.ts` 때문에 테스트도 타입 검사하므로
+# TS2307(module_not_found) 로 빌드가 죽는다. 실측: 15건 (2026-09-09).
+# 테스트는 Vercel 런타임에 필요하지 않다 — GitHub CI 가 전 범위로 돌린다.
+/src/__tests__/
 .github/
 *.log
