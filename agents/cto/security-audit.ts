@@ -1,4 +1,6 @@
 import { BaseAgent } from '../core/agent.js'
+import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { prisma } from '../core/db.js'
 import { notifyAdmin, notifySlack } from '../core/notifier.js'
 import type { AgentResult } from '../core/types.js'
@@ -128,8 +130,27 @@ class CTOSecurityAudit extends BaseAgent {
   }
 }
 
-// 실행
-const agent = new CTOSecurityAudit()
-agent.execute()
-  .then(r => { console.log(r.summary); process.exit(0) })
-  .catch(e => { console.error(e); process.exit(1) })
+/**
+ * runner 가 **완료까지 기다릴 수 있도록** Promise 를 반환한다.
+ *
+ * 예전에는 top-level 에서 `agent.execute().then(...)` 을 시작만 했다. 그러면 runner 의
+ * `import(...)` 은 모듈 로드 시점에 resolve 되고, runner 는 곧바로 `disconnect()` +
+ * `process.exit()` 를 해서 감사가 첫 `await` 에서 잘렸다 — 초록불인데 아무것도 안 한 상태.
+ * moderator 와 같은 계약으로 맞춘다.
+ */
+export async function main(): Promise<void> {
+  const agent = new CTOSecurityAudit()
+  const r = await agent.execute()
+  console.log(r.summary)
+}
+
+// `tsx cto/security-audit.ts` 로 직접 돌릴 때만 실행한다.
+// import 만으로 시작하면 runner 가 기다릴 Promise 가 다시 사라진다.
+// 경로를 정확히 대조한다 — 부분일치로 판정하면 다른 진입점에서도 참이 되어 이중 실행이 된다.
+const entry = process.argv[1]
+const isDirect = entry !== undefined && resolve(entry) === fileURLToPath(import.meta.url)
+if (isDirect) {
+  main()
+    .then(() => process.exit(0))
+    .catch((e) => { console.error(e); process.exit(1) })
+}

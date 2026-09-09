@@ -465,9 +465,9 @@ GitHub Actions Cron (12:00, 16:00, 20:00 KST)
 
 | 파일 | 스케줄 (KST) | 에이전트 |
 |------|-------------|---------|
-| `agents-daily.yml` | 06~23시 (다수 크론) | COO, CMO, CTO, QA + `ceo:approval-reminder` — **현재 `disabled_manually`** |
+| `agents-daily.yml` | 06~23시 (다수 크론) | COO(트렌딩), CTO(보안감사·카운트재계산) — **현재 `disabled_manually`** |
 | `agents-weekly.yml` | 월 10:00 / 10:30 KST | CTO(anonymize-withdrawn-apply), CMO(seo-snapshot) — **현재 `disabled_manually`** |
-| `agents-hourly.yml` | 2시간마다 | CTO(헬스체크, 에러감시), CDO(이상감지) |
+| **`agents-hourly.yml`** | — | **R4 에서 제거됨(2026-09-09).** 헬스체크·에러감시·이상감지는 `/api/health` 로 대체 |
 | `agents-jobs.yml` | 12, 16, 20시 | COO(일자리 수집) |
 | `agents-moderation.yml` | 09, 15, 21시 | COO(모더레이션) |
 | **`agents-cafe.yml` · `agents-cafe-hourly-curation.yml` · `agents-cafe-popular-curation.yml`** | — | **R4 B-3 에서 제거됨(2026-09-09).** 카페 크롤·큐레이션·브리프 자동화 종료 |

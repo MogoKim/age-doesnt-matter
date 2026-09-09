@@ -3,8 +3,6 @@ on:
   schedule:
     # 22:00 KST = 13:00 UTC — CDO KPI (중단 2026-05-16 — DISPATCH ONLY)
     # - cron: "11 13 * * *"
-    # 09:30 KST = 00:30 UTC — 승인 대기 리마인더 + 만료 처리
-    - cron: "30 0 * * *"
     # 12:00 KST = 03:00 UTC — COO 트렌딩 스코어
     - cron: "11 3 * * *"
     # 18:00 KST = 09:00 UTC — COO 트렌딩 스코어 (2차)
@@ -15,9 +13,6 @@ on:
     # - cron: "11 14 * * *"
     # 04:00 KST = 19:00 UTC — 비정규화 카운트 정합성 재계산 (reconcile, 멱등)
     - cron: "0 19 * * *"
-    # ─── Phase 5: CTO 거버넌스 + QA 에이전트 ───
-    # 08:20 KST = 23:20 UTC (전날) — QA 콘텐츠 감사
-    - cron: "20 23 * * *"
     # job-scraper 크론 제거: agents-jobs.yml에서 전담 (12:00/16:00/20:00 KST 3회)
     # 이전: "0 4 * * *" (13:00 KST), "0 10 * * *" (19:00 KST) — 중복 실행 제거
     # 13:00 KST = 04:00 UTC — CMO 카드뉴스 생성 (A07) (중단 2026-05-15)
@@ -93,8 +88,6 @@ jobs:
                 echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;; # 중단 2026-05-16
               "11 14 * * *")
                 echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;; # 중단 2026-05-16
-              "30 0 * * *")
-                echo "agent=ceo" >> $GITHUB_OUTPUT; echo "task=approval-reminder" >> $GITHUB_OUTPUT ;;
               "11 3 * * *")
                 echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=trending-scorer" >> $GITHUB_OUTPUT ;;
               "11 9 * * *")
@@ -103,8 +96,6 @@ jobs:
                 echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=security-audit" >> $GITHUB_OUTPUT ;;
               "0 19 * * *")
                 echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=count-reconcile" >> $GITHUB_OUTPUT ;;
-              "20 23 * * *")
-                echo "agent=qa" >> $GITHUB_OUTPUT; echo "task=content-audit" >> $GITHUB_OUTPUT ;;
               # "11 4 * * *") cmo:card-news-generator — 중단 2026-05-15
               *)
                 echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;;

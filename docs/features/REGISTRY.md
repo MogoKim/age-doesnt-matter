@@ -122,7 +122,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | A09 | SEO 최적화 | ~~`agents/cmo/seo-optimizer.ts`~~ 삭제됨 | — | — | INFRA | — | [A09](A09-seo-optimizer.md) | **ARCHIVED** | 2026-09-08 |
 | A10 | 채널 시딩 | ~~`agents/cmo/channel-seeder.ts`~~ 삭제됨 | — | — | RELATION | — | [A10](A10-channel-seeder.md) | **ARCHIVED** | 2026-09-08 |
 | A11 | CEO SNS 브리핑 | ~~`agents/ceo/morning-sns-briefing.ts`~~ 삭제됨 | — | — | INFRA | — | — | **ARCHIVED** | 2026-09-08 |
-| A12 | CEO 승인 리마인더 | `agents/cron/approval-reminder.ts` | GHA 09:00 KST | GHA | INFRA | — | — | ACTIVE | 2026-05-12 |
+| A12 | CEO 승인 리마인더 | ~~`agents/cron/approval-reminder.ts`~~ 삭제됨 (AdminQueue 생산자가 0 이 되어 리마인드할 대기 항목이 새로 생기지 않는다) | — | — | — | — | — | **ARCHIVED** | 2026-09-09 |
 | A13 | CTO 아키텍처 리뷰 | ~~`agents/cto/arch-review.ts`~~ 삭제됨 | — | — | INFRA | — | — | **ARCHIVED** | 2026-09-08 |
 | A14 | CTO 가비지 컬렉션 | ~~`agents/cto/garbage-collect.ts`~~ 삭제됨 | — | — | INFRA | — | — | **ARCHIVED** | 2026-09-08 |
 | A15 | CTO QA 검증 | ~~`agents/cto/qa-verifier.ts`~~ 삭제됨 | — | — | INFRA | — | — | **ARCHIVED** | 2026-09-08 |
@@ -137,7 +137,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | A24 | Seed 바이럴 웨이브 | ~~`agents/seed/scheduler.ts`~~ · ~~`agents-sheet-viral.yml`~~ 삭제됨 | — | — | RELATION | ALL | — | **ARCHIVED** | 2026-09-09 |
 | A25 | 논란 체인 | ~~`agents/seed/controversy-chain.ts`~~ 삭제됨 | — | — | RELATION | ALL | — | **ARCHIVED** | 2026-09-09 |
 | A26 | Design 광고 루프 | ~~`agents/marketing-loop/creative-optimizer.ts`~~ 삭제됨 | — | — | INFRA | — | — | **ARCHIVED** | 2026-09-09 |
-| A27 | QA 코드 게이트 | `agents/qa/pre-deploy-gate.ts` | DISPATCH ONLY | DISPATCH | INFRA | — | — | ACTIVE | 2026-05-12 |
+| A27 | QA 코드 게이트 | ~~`agents/qa/pre-deploy-gate.ts`~~ 삭제됨 (`/done` 도 workflow 도 호출한 적이 없다 — 검증은 CI `quality` job) | — | — | — | — | — | **ARCHIVED** | 2026-09-09 |
 | A28 | 네이버 블로그 수동 발행 큐 | ~~`agents/naver-blog/*`, `src/app/admin/(panel)/naver-blog/*`, `src/app/api/admin/naver-queue/*`~~ 전부 삭제 | — | LOCAL_ONLY | GROWTH | — | Gemini 구독 종료로 폐기(2026-06-04), 어드민 페이지·API 삭제(2026-06-07). NaverBlogQueue 테이블/R2 이미지만 보존 | ARCHIVED | 2026-06-07 |
 | A29 | 댓글 파동 프로세서 | ~~`agents/cafe/wave-processor.ts`~~ · ~~`src/app/api/internal/comment-wave/route.ts`~~ · ~~`agents-cafe-wave.yml`~~ 삭제됨 (DB 모델·기존 데이터만 보존) | — | — | RELATION | ALL | [A29](A29-comment-wave.md) | **ARCHIVED** | 2026-09-09 |
 | A30 | 카페 인기글 sync+큐레이션 | ~~`agents/cafe/popular-sync.ts`~~ · ~~`popular-curator.ts`~~ 삭제됨 (`curator-shared.ts` 는 persona SSoT 로 보존) | — | — | — | — | [A30](A30-popular-sync.md) | **ARCHIVED** | 2026-09-09 |  <!-- R4 B-3 -->
@@ -148,8 +148,8 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 
 | ID | 기능명 | 코드 위치 | 스케줄 | 충족욕망 | 타겟페르소나 | 문서 | 상태 | 최근변경 |
 |----|--------|----------|--------|---------|------------|------|------|---------|
-| M01 | CTO 헬스체크 + 에러모니터 | `agents/cto/health-check.ts` + `error-monitor.ts` + `crawler-health.ts` | GHA 4시간마다 | INFRA | — | [M01](M01-cto-monitoring.md) | ACTIVE | 2026-04-27 |
-| M02 | QA 콘텐츠 감사 | `agents/qa/content-audit.ts` | GHA 매일 08:20 KST | INFRA | — | [M02](M02-qa-content-audit.md) | ACTIVE | 2026-04-27 |
+| M01 | CTO 헬스체크 + 에러모니터 | ~~`agents/cto/health-check.ts`~~ · ~~`error-monitor.ts`~~ · ~~`crawler-health.ts`~~ 삭제됨 (`/api/health` · `/api/health/auth` 가 실제 감시 경로다) | — | — | [M01](M01-cto-monitoring.md) | **ARCHIVED** | 2026-09-09 |
+| M02 | QA 콘텐츠 감사 | ~~`agents/qa/content-audit.ts`~~ 삭제됨 (검사 대상인 MAGAZINE 발행이 R4 B-3 에서 종료돼 대상이 영구 0) | — | — | [M02](M02-qa-content-audit.md) | **ARCHIVED** | 2026-09-09 |
 | M03 | 브리프 모니터 | ~~`agents/cafe/brief-monitor.ts`~~ · ~~`agents-cafe.yml`~~ 삭제됨 | — | — | — | [M03](M03-brief-monitor.md) | **ARCHIVED** | 2026-09-09 |
 | M04 | Threads 토큰 갱신 알림 | ~~`agents/cmo/platforms/threads-token-refresh.ts`~~ 삭제됨 | — | INFRA | — | [M04](M04-threads-token.md) | **ARCHIVED** | 2026-09-08 |
 | M05 | 거울 보드 (운영 현황 실측 대시보드) | `scripts/ops-board/` + `.claude/commands/board.md` | 로컬 수동 (`npm run board` / `/board`) | INFRA | — | [M05](M05-ops-board.md) | ACTIVE | 2026-06-04 |
@@ -162,7 +162,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 |----|--------|--------------|---------|------------|------|------|---------|
 | I01 | launchd 로컬 스케줄러 | `~/Library/LaunchAgents/com.unaeo.*.plist` | INFRA | — | [I01](I01-launchd-scheduler.md) | ACTIVE | 2026-05-13 |
 | I02 | Upstash Redis 레이트리밋 | `src/lib/rate-limit.ts` | INFRA | — | [I02](I02-redis-ratelimit.md) | ACTIVE | 2026-04-27 |
-| I03 | Cloudflare R2 이미지 저장소 | `src/lib/r2.ts` + `agents/core/r2.ts` | INFRA | — | [I03](I03-r2-storage.md) | ACTIVE | 2026-04-27 |
+| I03 | Cloudflare R2 이미지 저장소 | `src/lib/r2.ts` (~~`agents/core/r2.ts`~~ 는 이전 배치에서 이미 제거됨) | INFRA | — | [I03](I03-r2-storage.md) | ACTIVE | 2026-09-09 |
 | I04 | Google Indexing API | ~~`agents/cafe/indexing-api.ts`~~ 삭제됨 (호출하던 발행 경로가 사라짐) | — | — | [I04](I04-google-indexing.md) | **ARCHIVED** | 2026-09-09 |
 | I05 | 아동 안전 표준 페이지 | `src/app/child-safety/page.tsx` | INFRA | — | — | ACTIVE | 2026-05-23 |
 | I06 | 커뮤니티 slug 백필 스크립트 | `agents/scripts/backfill-community-slug.ts` | INFRA | — | [I06](I06-community-slug-backfill.md) | ACTIVE | 2026-05-23 |

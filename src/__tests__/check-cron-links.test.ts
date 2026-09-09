@@ -221,9 +221,10 @@ describe('buildReport — 실제 저장소 기준 분류', () => {
     expect(report.localOnly).toEqual([])
   })
 
-  it('qa:code-gate 는 dispatchOnly 다 (수동 트리거 전용)', () => {
-    expect(report.orphaned).toContain('qa:code-gate')
-    expect(report.dispatchOnly).toContain('qa:code-gate')
+  it('orphan 이 0 이다 — 모든 핸들러가 실제 workflow 에 연결돼 있다 (R4 최종 정리)', () => {
+    // 연결 없이 등록만 돼 있던 dispatch·local 전용 키를 전부 걷어낸 결과다.
+    // 여기가 다시 0 이 아니게 되면, 새로 넣은 핸들러가 어디서도 안 불리고 있다는 뜻이다.
+    expect(report.orphaned).toEqual([])
   })
 
   it('분류 총계를 고정한다', () => {
@@ -237,10 +238,10 @@ describe('buildReport — 실제 저장소 기준 분류', () => {
       workflowWithoutHandler: report.workflowWithoutHandler.length,
       launchdOrphans: report.launchdOrphans.length,
     }).toEqual({
-      total: 17,
-      linked: 12,
-      orphaned: 5,
-      dispatchOnly: 5,
+      total: 7,
+      linked: 7,
+      orphaned: 0,
+      dispatchOnly: 0,
       localOnly: 0,
       unlinkedWithoutReason: 0,
       workflowWithoutHandler: 0,
@@ -375,9 +376,9 @@ const HANDLERS: Record<string, () => Promise<void>> = {
     expect(() => extractHandlers(runnerFile('export const NOTHING = {}\n'))).toThrow(/HANDLERS/)
   })
 
-  it('실제 runner.ts 를 읽으면 17개이고 coo:moderator 가 들어 있다', () => {
+  it('실제 runner.ts 를 읽으면 7개이고 coo:moderator 가 들어 있다', () => {
     const handlers = extractHandlers()
-    expect(handlers).toHaveLength(17)
+    expect(handlers).toHaveLength(7)
     expect(handlers.map((h) => h.key)).toContain('coo:moderator')
   })
 })
@@ -399,9 +400,9 @@ describe('workflowWithoutHandler — 역방향 가드', () => {
     expect(isFailingReport(report)).toBe(true)
   })
 
-  it('사유 붙은 orphan 만으로는 실패하지 않는다', () => {
+  it('현재 저장소는 통과 상태다 (orphan 0 · 실패 배열 3종 0)', () => {
     const report = buildReport()
-    expect(report.orphaned.length).toBeGreaterThan(0)
+    expect(report.orphaned).toEqual([])
     expect(isFailingReport(report), '현재 저장소는 통과 상태여야 한다').toBe(false)
   })
 })

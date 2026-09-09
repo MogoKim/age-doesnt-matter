@@ -19,47 +19,34 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 
 /** 모니터링 전용 태스크 — LOCKED 상태에서도 실행 */
 const MONITORING_TASKS = new Set([
-  'cto:health-check',
-  'cto:error-monitor',
   'cto:security-audit',
-  'cdo:anomaly-detector',
   'cmo:seo-snapshot',      // read-only 관측 — 자동화 중단 중에도 SEO 추이는 계속 봐야 한다
   'coo:moderator',         // 안전 기능(금지어 감지·숨김, 헌법 auto_allowed) — automation_status=PAUSED/LOCKED 에서도 유지 (Rescue R4, 2026-09-05)
 ])
 
 const HANDLERS: Record<string, () => Promise<void>> = {
-  'cto:health-check': () => import('../cto/health-check.js').then(() => {}),
-  'cto:error-monitor': () => import('../cto/error-monitor.js').then(() => {}),
-  'cto:security-audit': () => import('../cto/security-audit.js').then(() => {}),
+  'cto:security-audit': () => import('../cto/security-audit.js').then((m) => m.main()),
   'cto:count-reconcile': () => import('../scripts/reconcile-counts.js').then((m) => m.reconcileCounts(false)), // 비정규화 카운트 정합성 재계산 (agents-daily 04:00 KST). 멱등 — 실제값으로 set, 좋아요는 측정만
-  'cto:purge-old-logs': () => import('../scripts/purge-old-logs.js').then((m) => m.purgeOldLogs(true)), // DISPATCH ONLY — dry(미삭제)만. ⚠️ 불가역 삭제라 dispatch로는 삭제 안 됨. 실제 삭제는 --apply 수동만
-  'cto:anonymize-withdrawn': () => import('../scripts/anonymize-withdrawn-users.js').then((m) => m.anonymizeWithdrawn(true)), // dry(미리보기) — 대상 수만 확인. 실제 익명화는 anonymize-withdrawn-apply
   'cto:anonymize-withdrawn-apply': () => import('../scripts/anonymize-withdrawn-users.js').then((m) => m.anonymizeWithdrawn(false)), // F-12: 매주 월 10:00 KST 자동. 30일 경과 탈퇴자만, 멱등(이미 익명화된 건 제외)
   // main() 을 반환해야 runner 가 모더레이션 **완료까지** 기다린다.
   // `.then(() => {})` 이면 import 만 끝나고 곧바로 disconnect + exit 해서 판정이 잘린다.
   'coo:moderator': () => import('../coo/moderator.js').then((m) => m.main()),
   'coo:job-scraper': () => import('../coo/job-scraper.js').then(m => m.main()),
   'coo:trending-scorer': () => import('../coo/trending-scorer.js').then(m => m.main()),
-  'cdo:anomaly-detector': () => import('../cdo/anomaly-detector.js').then(() => {}),
-  'cmo:upload-creatives': () => import('../marketing/google-ads/scripts/upload-creatives.js').then(() => {}), // DISPATCH ONLY — 최초 1회 수동 실행
-  'cmo:create-campaigns': () => import('../marketing/google-ads/scripts/create-campaigns.js').then(() => {}), // DISPATCH ONLY — 최초 1회 수동 실행
-  'ceo:approval-reminder': () => import('./approval-reminder.js').then(() => {}),
-  // CTO 주간 아키텍처 리뷰 (DISPATCH ONLY — 수동 트리거 전용)
-  // QA 에이전트 — 콘텐츠 품질 감사 (매일 08:20 KST)
-  'qa:content-audit': () => import('../qa/content-audit.js').then(() => {}),
   // community:* · cafe_crawler:* · cafe:session-refresh · coo:content-scheduler ·
-  // cto:crawler-health — 삭제됨 2026-09-09
+  // cto:crawler-health · cto:health-check · cto:error-monitor · cto:purge-old-logs ·
+  // cto:anonymize-withdrawn(dry) · cdo:anomaly-detector · ceo:approval-reminder ·
+  // qa:content-audit · qa:code-gate · cmo:upload-creatives · cmo:create-campaigns — 삭제됨 2026-09-09
   // (R4 B-3: 외부 카페·Google Sheet 공급망 REMOVE). 재등록 방지선은 agent-registry-handlers.test.ts
   // cmo:knowledge-responder — 삭제됨 2026-05-15 (지식인 운영 중단, 코드 삭제)
   // cmo:jisik-answerer — 삭제됨 2026-05-15 (지식인 운영 중단, 코드 삭제)
   // cmo:card-news-generator — 삭제됨 2026-05-15 (카드뉴스 중단, 코드 삭제)
+  // seo-snapshot 은 모듈이 top-level `await main()` 이라 import() 가 완료까지 기다린다.
+  // 이 파일에서 `.then(() => {})` 이 안전한 유일한 경우다 — 다른 핸들러는 반드시 Promise 를 반환하라.
   'cmo:seo-snapshot': () => import('../cmo/seo-snapshot.js').then(() => {}), // 주간 GSC 관측 (read-only)
 
   // Design 에이전트 (LOCAL ONLY — Gemini API + Playwright)
   // LOCAL ONLY — 이미지 생성 비용 발생, 인터랙티브 세션 전용
-  // QA 2-Gate 시스템
-  // DISPATCH ONLY — Gate 1은 /done 스킬에서 자동 실행, 독립 실행 시에만 이 핸들러 사용
-  'qa:code-gate': () => import('../qa/pre-deploy-gate.js').then(() => {}),
   // naver-blog:post — ARCHIVED 2026-06-04 (Gemini 구독 종료로 폐기). 어드민/테이블/R2 이미지는 보존.
 }
 

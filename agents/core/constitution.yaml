@@ -425,8 +425,6 @@ cto_governance:
     - "신뢰성: 헬스체크·에러·보안·크롤러 모니터링 (기존)"
     - "QA 오케스트레이션: QA 에이전트를 지휘해서 배포 품질 보장"
   tasks:
-    - "health-check: 매시간, DB/Site/API 응답 확인 + 추세 저장"
-    - "error-monitor: 2시간마다, 반복 패턴 비교 포함"
     - "security-audit: 매일 06:00 KST, 보안 이상 징후"
 
 # ──────────────────────────────────────────
@@ -438,8 +436,6 @@ qa_agent:
   model: "light"  # Haiku — 데이터 검증 위주
   canWrite: true  # 자동 수정 필요 (JSON unwrap, 이미지 삽입)
   tasks:
-    - "content-audit: 매일 08:20 KST, 최근 24시간 콘텐츠 품질 검증 + 자동 수정"
-    - "code-gate (Gate 1): /done 스킬 실행 시 자동 호출 — 배포 전 코드 품질 검증"
   gate_system:  # Gate 2(배포 후 감사)는 R4 에서 제거됐다 (2026-09-08). Gate 1 만 남는다.
     gate1:
       trigger: "/done 스킬 (Claude Code 대화창에서 작업 완료 선언 시)"

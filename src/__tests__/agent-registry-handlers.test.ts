@@ -80,6 +80,10 @@ describe('삭제된 핸들러의 잔재', () => {
     'cafe_crawler:popular-sync', 'cafe_crawler:external-crawl', 'cafe:session-refresh',
     // B-3 종속 자동화 (2026-09-09) — 삭제된 공급망에만 의존해 함께 제거됨
     'cto:crawler-health', 'coo:content-scheduler',
+    // R4 잔여 자동화 최종 정리 (2026-09-09) — 실행 경로 0 · 대체 경로 존재 · 대상 소멸
+    'cto:health-check', 'cto:error-monitor', 'cdo:anomaly-detector', 'ceo:approval-reminder',
+    'qa:content-audit', 'qa:code-gate', 'cto:purge-old-logs', 'cto:anonymize-withdrawn',
+    'cmo:upload-creatives', 'cmo:create-campaigns',
   ] as const
 
   it('runner 에 없다', () => {
