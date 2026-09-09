@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars -- [DIAG-3] 임시 진단 커밋. 홈 본문을 정적 마커로 교체해 hydration 원인을 이분 탐색한다. 최종 diff 에서 전부 제거한다. */
 import type { Metadata } from 'next'
 import HomePopupsClientOnly from '@/components/features/event/HomePopupsClientOnly'
 import { Suspense } from 'react'
@@ -190,73 +191,12 @@ export default function HomePage() {
   return (
     <>
       <div>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteJsonLd) }}
-        />
+        {/* [DIAG-3] organizationJsonLd script 도 제거 — 홈을 완전 정적으로 */}
+        {/* [DIAG-2] webSiteJsonLd script 제거 — potentialAction.target 의 {search_term_string} 중괄호 검증 */}
         <h1 className="sr-only">우리 나이가 어때서 — 40대 50대 여성 커뮤니티</h1>
+        {/* [DIAG-1] 홈 본문 전체를 정적 마커로 교체 — hydration 원인 이분 탐색. 최종 diff 에서 제거한다. */}
         <div className="max-w-[1200px] mx-auto">
-          <HeroSlider />
-
-          {/* 팝업 3종(VOTE·FEEDBACK·SURVEY) — client 경계에서 지연 로딩. 배타·하루 1회 규칙은 각 컴포넌트 안에 있다 */}
-          <HomePopupsClientOnly />
-
-          <div className="lg:px-8">
-            {/* 첫 인사 위젯 (client island — 가입 72h 이내·미작성 회원만, useAppSession 판별) */}
-            <FirstGreetingWidget />
-            {/* 회원 인사 카드 — 2026-06-17 창업자 요청으로 당분간 비활성화
-                (가입=이미 둘러볼 의지 있음 + 첫인사 위젯과 환영 톤 중복). 재개 시 위 import와 함께 주석 해제 */}
-            {/* <PersonalGreeting /> */}
-
-            {/* 지금뜨는이야기 + 사는이야기 + 웃음방 (trendingIds 중복 제거로 단일 Suspense) */}
-            <Suspense fallback={<SectionSkeleton h="min-h-[1400px]" />}>
-              <HotContentSections />
-            </Suspense>
-
-            <Suspense fallback={<SectionSkeleton />}>
-              <MagazineWrapper />
-            </Suspense>
-
-            {/* 쿠팡 2번 — 모바일 390×150 / 데스크탑 728×90 */}
-            <ResponsiveAd
-              mobilePlaceholderHeight={207}
-              desktopPlaceholderHeight={122}
-              mobile={
-                <LazyAd minHeight={175} className="my-4 mx-4">
-                  <CoupangHome2 className="rounded-2xl overflow-hidden" />
-                </LazyAd>
-              }
-              desktop={<CoupangDesktopBanner className="my-4 rounded-2xl overflow-hidden" />}
-            />
-
-            <Suspense fallback={<SectionSkeleton h="h-[280px]" />}>
-              <JobWrapper />
-            </Suspense>
-
-            {/* 비회원 전용 FAQ (클라이언트, useSession) */}
-            <HomeFaqSection />
-
-            {/* 비회원 전용 가입 유도 카드 (클라이언트, useSession) */}
-            <SignupCard />
-
-            {/* 데스크탑 전용 하단 AdSense 728×250 (회원/비회원 공통) */}
-            <ResponsiveAd
-              mobile={null}
-              desktopPlaceholderHeight={298}
-              desktop={
-                <AdSenseUnit
-                  slotId={ADSENSE.DESKTOP_BOTTOM}
-                  fixedWidth={728}
-                  fixedHeight={250}
-                  className="my-6 rounded-2xl overflow-hidden mx-auto"
-                />
-              }
-            />
-          </div>
+          <p data-diag="home-body-replaced">DIAG-1</p>
         </div>
       </div>
     </>

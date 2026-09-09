@@ -23,8 +23,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
         본문으로 건너뛰기
       </a>
 
-      {/* 전 페이지 최상단 홍보 띠 배너 */}
-      <Suspense fallback={<div className="h-[56px]" />}>
+      {/* [DIAG-7] TopPromoBanner 를 되살리되 fallback 을 null 로 — 같은 파일의 다른 두 경계와 동일하게 */}
+      <Suspense fallback={null}>
         <TopPromoBanner />
       </Suspense>
 
