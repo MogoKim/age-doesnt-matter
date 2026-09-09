@@ -1,14 +1,6 @@
 name: Agents — Daily
 on:
   schedule:
-    # 14:00 KST = 05:00 UTC — COO 콘텐츠
-    - cron: "11 5 * * *"
-    # 09:45 KST = 00:45 UTC — 매거진 모닝 발행 (로컬 launchd로 전환 — 비활성화)
-    # - cron: "45 0 * * *"
-    # 16:00 KST = 07:00 UTC — launchd 10:00/15:00/17:00 KST로 이관 완료, GHA 비활성화
-    # - cron: "0 7 * * *"
-    # 19:30 KST = 10:30 UTC — 매거진 이브닝 발행 (로컬 launchd로 전환 — 비활성화)
-    # - cron: "30 10 * * *"
     # 22:00 KST = 13:00 UTC — CDO KPI (중단 2026-05-16 — DISPATCH ONLY)
     # - cron: "11 13 * * *"
     # 09:30 KST = 00:30 UTC — 승인 대기 리마인더 + 만료 처리
@@ -21,9 +13,6 @@ on:
     - cron: "11 21 * * *"
     # 23:00 KST = 14:00 UTC — CFO 비용 (중단 2026-05-16 — DISPATCH ONLY)
     # - cron: "11 14 * * *"
-    # ─── Phase 4 신규 에이전트 ───
-    # 07:00 KST = 22:00 UTC (전날) — CTO 크롤링 헬스
-    - cron: "11 22 * * *"
     # 04:00 KST = 19:00 UTC — 비정규화 카운트 정합성 재계산 (reconcile, 멱등)
     - cron: "0 19 * * *"
     # ─── Phase 5: CTO 거버넌스 + QA 에이전트 ───
@@ -67,8 +56,6 @@ env:
   UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
   UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
   UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
-  GOOGLE_INDEXING_CLIENT_EMAIL: ${{ secrets.GOOGLE_INDEXING_CLIENT_EMAIL }}
-  GOOGLE_INDEXING_PRIVATE_KEY: ${{ secrets.GOOGLE_INDEXING_PRIVATE_KEY }}
 
 concurrency:
   group: ${{ github.workflow }}
@@ -102,12 +89,6 @@ jobs:
             # github.event.schedule로 매칭 — cron 딜레이와 무관하게 정확히 동작
             CRON="${{ github.event.schedule }}"
             case "$CRON" in
-              "11 5 * * *")
-                echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=content-scheduler" >> $GITHUB_OUTPUT ;;
-              # "45 0 * * *") magazine-morning — 로컬 launchd로 전환
-              # "0 7 * * *") — launchd 이관 완료, GHA 비활성화
-              # echo "agent=cafe_crawler" >> $GITHUB_OUTPUT; echo "task=magazine-generate" >> $GITHUB_OUTPUT ;;
-              # "30 10 * * *") magazine-evening — 로컬 launchd로 전환
               "11 13 * * *")
                 echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;; # 중단 2026-05-16
               "11 14 * * *")
@@ -120,8 +101,6 @@ jobs:
                 echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=trending-scorer" >> $GITHUB_OUTPUT ;;
               "11 21 * * *")
                 echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=security-audit" >> $GITHUB_OUTPUT ;;
-              "11 22 * * *")
-                echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=crawler-health" >> $GITHUB_OUTPUT ;;
               "0 19 * * *")
                 echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=count-reconcile" >> $GITHUB_OUTPUT ;;
               "20 23 * * *")

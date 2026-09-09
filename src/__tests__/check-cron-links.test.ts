@@ -86,24 +86,24 @@ describe('extractWorkflowKeys — 워크플로우에서 키를 뽑는 규칙', (
 
   it('활성 echo agent/task 쌍을 인식한다', () => {
     const dir = workflowDir({
-      'a.yml': `            echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=content-scheduler" >> $GITHUB_OUTPUT ;;\n`,
+      'a.yml': `            echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=trending-scorer" >> $GITHUB_OUTPUT ;;\n`,
     })
-    expect(extractWorkflowKeys(dir).has('coo:content-scheduler')).toBe(true)
+    expect(extractWorkflowKeys(dir).has('coo:trending-scorer')).toBe(true)
   })
 
   it('주석 처리된 echo 는 연결로 세지 않는다 — magazine-generate 사고의 원인', () => {
     const dir = workflowDir({
       'a.yml': [
-        '              # "0 7 * * *") — launchd 이관 완료, GHA 비활성화',
-        '              # echo "agent=cafe_crawler" >> $GITHUB_OUTPUT; echo "task=magazine-generate" >> $GITHUB_OUTPUT ;;',
+        '              # "0 7 * * *") — 중단됨, GHA 비활성화',
+        '              # echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=security-audit" >> $GITHUB_OUTPUT ;;',
         '              "11 5 * * *")',
-        '                echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=content-scheduler" >> $GITHUB_OUTPUT ;;',
+        '                echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=trending-scorer" >> $GITHUB_OUTPUT ;;',
       ].join('\n'),
     })
     const keys = extractWorkflowKeys(dir)
-    expect(keys.has('cafe_crawler:magazine-generate')).toBe(false)
+    expect(keys.has('cto:security-audit')).toBe(false)
     // 주석을 걷어내도 살아 있는 쌍은 그대로 잡혀야 한다(과잉 삭제 방지)
-    expect(keys.has('coo:content-scheduler')).toBe(true)
+    expect(keys.has('coo:trending-scorer')).toBe(true)
   })
 
   it('줄 끝에 붙은 주석은 앞부분을 살린다', () => {
@@ -117,18 +117,19 @@ describe('extractWorkflowKeys — 워크플로우에서 키를 뽑는 규칙', (
     // task 를 런타임에 정하는 워크플로우는 정적 스캔으로 키를 알 수 없어 이 규약을 쓴다.
     const dir = workflowDir({
       'a.yml': [
-        '        # cron-link-check: runner.ts community dawn-sheet-scrape',
-        '        # cron-link-check: runner.ts community dawn-sheet-cleanup',
-        '        run: cd agents && npx tsx cron/runner.ts community ${{ steps.determine.outputs.task }}',
+        '        # cron-link-check: runner.ts coo job-scraper',
+        '        # cron-link-check: runner.ts coo trending-scorer',
+        '        run: cd agents && npx tsx cron/runner.ts coo ${{ steps.determine.outputs.task }}',
       ].join('\n'),
     })
     const keys = extractWorkflowKeys(dir)
-    expect(keys.has('community:dawn-sheet-scrape')).toBe(true)
-    expect(keys.has('community:dawn-sheet-cleanup')).toBe(true)
+    expect(keys.has('coo:job-scraper')).toBe(true)
+    expect(keys.has('coo:trending-scorer')).toBe(true)
   })
 
   it('YAML name: 의 설명문 속 runner.ts 는 키로 뽑지 않는다', () => {
-    // 실제 저장소 줄(agents-cafe-hourly-curation.yml:119). `runner.ts` 라는 글자만 찾으면
+    // 과거 실제 저장소 줄에서 나온 사례(해당 워크플로우는 R4 B-3 에서 제거됐다).
+    // `runner.ts` 라는 글자만 찾으면
     // 이 한국어 산문에서 `25분:중복` 이라는 키가 나온다.
     const dir = workflowDir({
       'a.yml': '      - name: Run Content Curator (45분 간격 5건 — runner.ts 25분 중복 방지 내장)\n',
@@ -216,9 +217,13 @@ describe('hasExemptComment — 크론 미연결이 의도적임을 알리는 표
 describe('buildReport — 실제 저장소 기준 분류', () => {
   const report = buildReport()
 
-  it('cafe_crawler:magazine-generate 는 localOnly 다 (GHA 비활성 · launchd 이관)', () => {
-    expect(report.orphaned).toContain('cafe_crawler:magazine-generate')
-    expect(report.localOnly).toContain('cafe_crawler:magazine-generate')
+  it('localOnly 는 0 이다 — 로컬 전용 카페·시트 자동화가 전부 제거됐다 (R4 B-3)', () => {
+    expect(report.localOnly).toEqual([])
+  })
+
+  it('qa:code-gate 는 dispatchOnly 다 (수동 트리거 전용)', () => {
+    expect(report.orphaned).toContain('qa:code-gate')
+    expect(report.dispatchOnly).toContain('qa:code-gate')
   })
 
   it('분류 총계를 고정한다', () => {
@@ -232,11 +237,11 @@ describe('buildReport — 실제 저장소 기준 분류', () => {
       workflowWithoutHandler: report.workflowWithoutHandler.length,
       launchdOrphans: report.launchdOrphans.length,
     }).toEqual({
-      total: 36,
-      linked: 23,
-      orphaned: 13,
-      dispatchOnly: 6,
-      localOnly: 7,
+      total: 17,
+      linked: 12,
+      orphaned: 5,
+      dispatchOnly: 5,
+      localOnly: 0,
       unlinkedWithoutReason: 0,
       workflowWithoutHandler: 0,
       launchdOrphans: 0,
@@ -370,10 +375,10 @@ const HANDLERS: Record<string, () => Promise<void>> = {
     expect(() => extractHandlers(runnerFile('export const NOTHING = {}\n'))).toThrow(/HANDLERS/)
   })
 
-  it('실제 runner.ts 를 읽으면 36개이고 dawn-sheet-scrape 가 들어 있다', () => {
+  it('실제 runner.ts 를 읽으면 17개이고 coo:moderator 가 들어 있다', () => {
     const handlers = extractHandlers()
-    expect(handlers).toHaveLength(36)
-    expect(handlers.map((h) => h.key)).toContain('community:dawn-sheet-scrape')
+    expect(handlers).toHaveLength(17)
+    expect(handlers.map((h) => h.key)).toContain('coo:moderator')
   })
 })
 

@@ -15,7 +15,6 @@ import * as registry from '../../agents/core/persona-registry'
 import * as personaData from '../../agents/seed/persona-data'
 
 const ROOT = join(__dirname, '../..')
-const generatorSrc = readFileSync(join(ROOT, 'agents/seed/generator.ts'), 'utf8')
 const registrySrc = readFileSync(join(ROOT, 'agents/core/persona-registry.ts'), 'utf8')
 
 describe('registry seed bridge — 원본과 동일', () => {
@@ -51,28 +50,6 @@ describe('registry seed bridge — 원본과 동일', () => {
   })
 })
 
-describe('generator 전환 — 직접 의존 제거', () => {
-  it("generator.ts에 './persona-data.js' 직접 import 0", () => {
-    expect(generatorSrc).not.toContain("from './persona-data.js'")
-    expect(generatorSrc).not.toContain('from "./persona-data.js"')
-  })
-
-  it('generator.ts가 registry를 통해 가져온다', () => {
-    expect(generatorSrc).toContain("from '../core/persona-registry.js'")
-    expect(generatorSrc).toMatch(/import \{[^}]*getPersona[^}]*\} from '\.\.\/core\/persona-registry\.js'/)
-  })
-
-  it('죽은 re-export 제거됨 (repo 소비자 0이었음)', () => {
-    expect(generatorSrc).not.toContain('export { getAllPersonaIds, getPersona }')
-    expect(generatorSrc).not.toContain('re-export for scheduler.ts')
-  })
-
-  it('생성 로직은 그대로 export된다 (PR-4 범위 밖)', () => {
-    for (const sym of ['generatePost', 'generateComment', 'generateReply', 'getBotUser', 'DESIRE_PERSONA_MAP']) {
-      expect(generatorSrc, sym).toContain(sym)
-    }
-  })
-})
 
 describe('임시 bridge임을 코드가 밝힌다', () => {
   it('registry에 PR-7 제거 예정이 명시돼 있다', () => {

@@ -29,11 +29,9 @@ export const HANDLER_REGISTRY: HandlerMeta[] = [
   { key: 'cto:health-check',         label: 'CTO 헬스체크',       botType: 'CTO',          action: 'HEALTH_CHECK',           schedule: '매 4시간',             type: 'GHA',      workflow: 'agents-hourly' },
   { key: 'cto:error-monitor',        label: 'CTO 에러 모니터',    botType: 'CTO',          action: 'ERROR_MONITOR',          schedule: '매 4시간',             type: 'GHA',      workflow: 'agents-hourly' },
   { key: 'cto:security-audit',       label: 'CTO 보안 감사',      botType: 'CTO',          action: 'SECURITY_AUDIT',         schedule: '매일 06:00',           type: 'GHA',      workflow: 'agents-daily' },
-  { key: 'cto:crawler-health',       label: 'CTO 크롤러 헬스',    botType: 'CTO',          action: 'CRAWLER_HEALTH',         schedule: '매일 07:00',           type: 'GHA',      workflow: 'agents-daily' },
 
   // ─── COO ───────────────────────────────────────────────────────────
   { key: 'coo:moderator',             label: 'COO 모더레이션',    botType: 'COO', action: 'MODERATION',           schedule: '09:00, 15:00, 21:00',  type: 'GHA', workflow: 'agents-moderation' },
-  { key: 'coo:content-scheduler',     label: 'COO 콘텐츠 스케줄', botType: 'COO', action: 'CONTENT_SCHEDULE',     schedule: '매일 14:00',           type: 'GHA', workflow: 'agents-daily' },
   { key: 'coo:trending-scorer',       label: 'COO 트렌딩 점수',   botType: 'COO', action: 'TRENDING_SCORE',       schedule: '12:00, 18:00',         type: 'GHA', workflow: 'agents-daily' },
   { key: 'coo:job-scraper',           label: 'COO 일자리 수집',   botType: 'COO', action: 'JOB_SCRAPE',           schedule: '12:00, 16:00, 20:00',  type: 'GHA', workflow: 'agents-jobs' },
 
@@ -45,13 +43,8 @@ export const HANDLER_REGISTRY: HandlerMeta[] = [
   { key: 'qa:code-gate',     label: 'QA 코드 게이트', botType: 'QA', action: 'CODE_GATE',     schedule: '—',         type: 'DISPATCH',                   note: '/done 스킬 자동 실행' },
 
   // ─── COMMUNITY ─────────────────────────────────────────────────────
-  { key: 'community:sheet-scrape', label: '커뮤니티 시트 스크랩', botType: 'COMMUNITY', action: 'SHEET_SCRAPE', schedule: '11:00, 21:00', type: 'GHA', workflow: 'agents-cafe' },
 
   // ─── CAFE CRAWLER ──────────────────────────────────────────────────
-  { key: 'cafe_crawler:trend-analysis', label: '카페 트렌드 분석', botType: 'CAFE_CRAWLER', action: 'TREND_ANALYSIS',  schedule: '09:00, 13:30, 20:30',  type: 'GHA',      workflow: 'agents-cafe' },
-  { key: 'cafe_crawler:content-curate', label: '카페 큐레이션',    botType: 'CAFE_CRAWLER', action: 'CONTENT_CURATE',  schedule: '09:00, 13:30, 20:30',  type: 'GHA',      workflow: 'agents-cafe' },
-  { key: 'cafe_crawler:cafe-pipeline',  label: '카페 크롤링 (네이버)', botType: 'CAFE_CRAWLER', action: 'CAFE_CRAWL',  schedule: '08:30, 12:55, 20:00',  type: 'LOCAL',                          note: '네이버 IP 차단' },
-  { key: 'cafe_crawler:external-crawl', label: '외부 크롤링',      botType: 'CAFE_CRAWLER', action: 'EXTERNAL_CRAWL', schedule: '—',                    type: 'DISPATCH',                       note: '2026-04-13 제거' },
 
   // ─── DESIGN ────────────────────────────────────────────────────────
 ]
@@ -59,10 +52,8 @@ export const HANDLER_REGISTRY: HandlerMeta[] = [
 /** 팀별 그룹핑 (어드민 UI용) */
 export const HANDLER_GROUPS = [
   { team: 'CEO',          emoji: '👑', keys: ['ceo:approval-reminder'] },
-  { team: 'CTO',          emoji: '🔧', keys: ['cto:health-check','cto:error-monitor','cto:security-audit','cto:crawler-health'] },
-  { team: 'COO',          emoji: '⚙️', keys: ['coo:moderator','coo:content-scheduler','coo:trending-scorer','coo:job-scraper'] },
+  { team: 'CTO',          emoji: '🔧', keys: ['cto:health-check','cto:error-monitor','cto:security-audit'] },
+  { team: 'COO',          emoji: '⚙️', keys: ['coo:moderator','coo:trending-scorer','coo:job-scraper'] },
   { team: 'CDO',          emoji: '📊', keys: ['cdo:anomaly-detector'] },
   { team: 'QA',           emoji: '✅', keys: ['qa:content-audit','qa:code-gate'] },
-  { team: '커뮤니티',      emoji: '🎯', keys: ['community:sheet-scrape'] },
-  { team: '카페 크롤러',  emoji: '☕', keys: ['cafe_crawler:trend-analysis','cafe_crawler:content-curate','cafe_crawler:cafe-pipeline','cafe_crawler:external-crawl'] },
 ]

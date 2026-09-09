@@ -32,7 +32,8 @@ const KEY_TOKEN = '[a-z0-9:_-]+'
  * `runner.ts community ${{ steps.determine.outputs.task }}` 처럼 task 를 런타임에
  * 정하면 정적 스캔으로는 키를 알 수 없어서, 저장소가 쓰는 기존 규약이다.
  * 그 외 주석 줄은 전부 버린다 — 예전에는 주석 처리된 `echo "agent=..."` 를 세는 바람에
- * launchd 로 이관해 GHA 를 껐는데도 "연결됨"으로 나왔다(cafe_crawler:magazine-generate).
+ * launchd 로 이관해 GHA 를 껐는데도 "연결됨"으로 나온 사례가 있었다
+ * (해당 핸들러는 R4 B-3 에서 제거됐다).
  *
  * `RUNNER_CALL` 은 **실제 셸 실행 형식만** 인정한다 — `tsx <경로>runner.ts a b`.
  * `runner.ts` 라는 글자만 찾으면 그 이름을 언급하는 YAML `name:` 설명문까지 걸린다.
@@ -113,7 +114,8 @@ function describePosition(sourceFile: ts.SourceFile, node: ts.Node): string {
  * 정규식이 아니라 **AST** 로 읽는다. 예전에는 `'키': () => import(` 라는 글자 모양을
  * 찾았는데, 블록 바디로 등록된 핸들러(`() => { ...; return import(x) }`)가 통째로
  * 안 보였다 — linked 도 orphaned 도 아닌 채 집계에서 빠졌다.
- * `community:dawn-sheet-scrape` 가 그랬고, 그래서 total 이 79 가 아니라 78 이었다.
+ * 런타임 task 를 쓰는 워크플로우가 그랬고, 그래서 total 이 79 가 아니라 78 이었다
+ * (해당 워크플로우는 R4 B-3 에서 제거됐다).
  * 이 형태로 새 핸들러를 등록하면 크론이 끊겨도 가드가 침묵한다.
  *
  * AST 로 읽으면 주석 속 가짜 핸들러(삭제 기록 등)와 HANDLERS 밖의 객체 키는

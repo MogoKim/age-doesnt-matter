@@ -283,8 +283,10 @@ kpi:
 # ⚠️ Rescue Mode R4 — 자동화는 의도적으로 정지 상태다 (2026-09-05 실측, 2026-09-06 04:20 KST 갱신).
 #   - GitHub Actions 25개 중 21개 disabled_manually (2026-08-24 ~06:15 UTC 이후 schedule 실행 없음). 활성 4개: ci · lighthouse · quarantine-check · agents-moderation
 #     (post-deploy-qa 는 R4 에서 제거 — 2026-09-08. 제거 전에는 26개 중 활성 5개였다)
-#   - launchd: 콘텐츠 자동 발행 12개(cafe-crawler 7 · popular 3 · magazine 2)는 2026-09-06 04:09 KST `launchctl unload -w`로 차단 완료(plist 보존, Disabled 플래그).
-#     유지/관찰 4개: unao-prod-sync · opsboard · session-refresh · naver-cafe-sheet-scraper
+#   - launchd: 콘텐츠 자동 발행 12개(cafe-crawler 7 · popular 3 · magazine 2)는 2026-09-06 04:09 KST `launchctl unload -w`로 차단됐고,
+#     R4 B-3(2026-09-09)에서 실행 대상 코드와 저장소 plist 를 제거했다.
+#     session-refresh · naver-cafe-sheet-scraper 도 같은 이유로 제거 대상이며 현재 unloaded + disabled 다 — 관찰 대상이 아니다.
+#     남는 launchd 는 unao-prod-sync · opsboard 둘뿐이다.
 #   - production DB: 2026-09-05 감사 시 /api/health 503(28P01)이었으나 R1-A(Vercel env 정정)로 복구됨 — 현재 healthy
 #   - /api/bot/posts·jobs 외부 write 입구는 #412로 기본 차단(BOT_WRITE_ENABLED='true' 일 때만 허용)
 #   근거: docs/operations/2026-09-05-claude-foundation-reset-audit-report.md (§0 후속 조치 + §3 당시 실측)
@@ -426,7 +428,6 @@ cto_governance:
     - "health-check: 매시간, DB/Site/API 응답 확인 + 추세 저장"
     - "error-monitor: 2시간마다, 반복 패턴 비교 포함"
     - "security-audit: 매일 06:00 KST, 보안 이상 징후"
-    - "crawler-health: 매일 07:00 KST, 7일 품질 추세 포함"
 
 # ──────────────────────────────────────────
 # 8-6. QA 에이전트 (신설)
@@ -480,56 +481,15 @@ notification:
 # 10. 인텔리전스 정책 (Intelligence Harness)
 # ──────────────────────────────────────────
 intelligence_policy:
-  # 모든 에이전트는 오늘의 욕망 지도를 읽어야 함
-  daily_brief_mandatory: true
-  brief_source: "agents/core/today-brief.json"
-  db_model: "DailyBrief"
-
-  # 오늘 브리프 없으면 어제 브리프로 폴백
-  fallback_to_previous: true
-  fallback_alert_channel: "#알림-시스템"
-
-  # 브리프 직접 인용 금지 — 자연스러운 분위기 반영만
-  content_override_prohibited: true
-  reason: "브리프를 직접 인용하면 부자연스러움. 분위기로 흡수해서 행동."
-
-  # 지배적 욕망 판정 임계값
-  dominant_desire_threshold_pct: 25
-  flat_distribution_behavior: "quotaMultiplier 조정 없이 기본 스케줄 유지"
-
-  # 엔터 페르소나 활성화 규칙
-  entertain_activation:
-    active_threshold_pct: 10    # ENTERTAIN >= 10% → EN1-EN5 글쓰기 + 댓글
-    passive_threshold_pct: 5    # ENTERTAIN >= 5% → 댓글만
-    dormant_below_pct: 5        # ENTERTAIN < 5% → 완전 비활성
-
-  # midDayPatch 제한
-  mid_day_patch:
-    schedule: "12:30 KST (quick crawl 완료 후)"
-    quota_delta_cap: 0.2         # quotaMultiplier 최대 ±0.2 조정
-    min_change_trigger_pct: 5    # 5% 이상 변화 시에만 패치 생성
-    dominant_desire_immutable: true  # 아침에 결정된 dominantDesire 변경 불가
-
-  # 크롤링 소스 정책 (2026-04-07 개편)
-  data_sources:
-    cafe_crawling:
-      active: [wgang, dlxogns01]
-      removed: [welovesilver, 5060years, 82cook]  # 2026-04-07 데이터 품질 미달로 제거
-      strategy: "2개 카페 딥다이브 — 게시판 ~55개, maxPostsPerCafe:80, 댓글 15개+대댓글"
-    comment_learning:
-      enabled: true
-      max_comments_per_post: 15   # 5 → 15
-      include_replies: true        # 대댓글 수집 신규
-      speech_tone_aggregation: true  # trend-analyzer cafeSummary에 저장
-
-  # 파이프라인 순서
-  pipeline_order:
-    - "crawler.ts (08:30 DEEP) — 2개 카페, 댓글+대댓글 수집"
-    - "external-crawler.ts (비활성 — EXTERNAL_CONFIGS 빈 배열)"
-    - "psych-analyzer.ts (Haiku 배치, speechTone 분석 포함)"
-    - "trend-analyzer.ts (집계 + 말투학습 cafeSummary 저장)"
-    - "daily-brief.ts (욕망지도 → today-brief.json, dataSourceBias 포함)"
-    - "모든 에이전트 09:00 이후 loadTodayBrief() 호출"
+  # ⚠️ 이 정책의 생산자(카페 크롤·심리분석·트렌드 집계·daily-brief)는 R4 B-3 에서 제거됐다(2026-09-09).
+  #    today-brief.json 을 만드는 경로도, loadTodayBrief() 를 부르는 소비자도 없다.
+  #    남은 에이전트는 브리프를 읽지 않는다. 아래 값은 계약이 아니라 **폐지 기록**이다.
+  status: "RETIRED (2026-09-09, R4 B-3)"
+  daily_brief_mandatory: false
+  retired_pipeline:
+    - "crawler.ts · psych-analyzer.ts · trend-analyzer.ts · daily-brief.ts — 삭제됨"
+    - "agents/core/intelligence.ts(loadTodayBrief) — 삭제됨"
+  note: "재도입하려면 새 판정을 받는다. DailyBrief DB 모델과 기존 데이터는 보존한다."
 
 # ──────────────────────────────────────────
 # 11. 포지셔닝 & 경쟁 전략 (2026-04-04 확정)

@@ -23,7 +23,6 @@ const MONITORING_TASKS = new Set([
   'cto:error-monitor',
   'cto:security-audit',
   'cdo:anomaly-detector',
-  'cafe:session-refresh',  // LOCKED 상태에서도 세션 유지 필수 (크롤러 재가동 보장)
   'cmo:seo-snapshot',      // read-only 관측 — 자동화 중단 중에도 SEO 추이는 계속 봐야 한다
   'coo:moderator',         // 안전 기능(금지어 감지·숨김, 헌법 auto_allowed) — automation_status=PAUSED/LOCKED 에서도 유지 (Rescue R4, 2026-09-05)
 ])
@@ -39,45 +38,18 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   // main() 을 반환해야 runner 가 모더레이션 **완료까지** 기다린다.
   // `.then(() => {})` 이면 import 만 끝나고 곧바로 disconnect + exit 해서 판정이 잘린다.
   'coo:moderator': () => import('../coo/moderator.js').then((m) => m.main()),
-  'coo:content-scheduler': () => import('../coo/content-scheduler.js').then(m => m.main()),
   'coo:job-scraper': () => import('../coo/job-scraper.js').then(m => m.main()),
   'coo:trending-scorer': () => import('../coo/trending-scorer.js').then(m => m.main()),
   'cdo:anomaly-detector': () => import('../cdo/anomaly-detector.js').then(() => {}),
-  // LOCAL ONLY — run-pipeline.ts는 네이버 크롤링 통합 파이프라인, launchd로 로컬 실행
-  // GitHub Actions 실행 불가 (네이버 IP 차단 + headless 탐지). 수동 실행만.
-  'cafe_crawler:cafe-pipeline': () => import('../cafe/run-pipeline.js').then(async m => { await m.main('all') }),
-  'cafe_crawler:trend-analysis': () => import('../cafe/trend-analyzer.js').then(() => {}),
-  // 매거진: 로컬 launchd(12:30/21:00 KST) + GitHub Actions(16:00 KST) 이중 발행
-  'cafe_crawler:magazine-generate': () => import('../cafe/magazine-generator.js').then(async m => { await m.main() }),
-  'cafe_crawler:content-curate': () => import('../cafe/content-curator.js').then(m => m.main()),
-  'cafe_crawler:popular-curate': () => import('../cafe/popular-curator.js').then(m => m.main()),
-  // launchd: com.unao.naver-cafe-sheet-scraper.plist (10:40, 13:00, 15:30, 23:00 KST)
-  'cafe_crawler:image-route': () => import('../cafe/image-router.js').then(m => m.main()),
-  'cafe_crawler:popular-sync': () => import('../cafe/popular-sync.js').then(() => {}), // DISPATCH ONLY — Mac launchd 전용. GHA 실행 불가 (네이버 Playwright).
-  'cafe_crawler:brief-monitor': () => import('../cafe/brief-monitor.js').then(() => {}),
-  // GHA 안전망 — Mac launchd 미실행 시 fallback_yesterday 자동 생성 (09:03 KST, 3 0 * * * UTC)
-  'cafe_crawler:daily-brief-fallback': () => import('../cafe/daily-brief.js').then(async m => { await m.runFallbackBrief() }),
-  // 저녁 안전망 — 11:30 KST full 크롤 실패 시 최대 21시간 공백 방지 (18:00 KST, 0 9 * * * UTC)
-  'cafe_crawler:evening-brief-safety': () => import('../cafe/daily-brief.js').then(async m => { await m.runFallbackBrief() }),
-  'cafe_crawler:external-crawl': () => import('../cafe/external-crawler.js').then(() => {}), // DISPATCH ONLY — 82cook 외부 크롤, GHA 스케줄 제거됨 (2026-04-13)
   'cmo:upload-creatives': () => import('../marketing/google-ads/scripts/upload-creatives.js').then(() => {}), // DISPATCH ONLY — 최초 1회 수동 실행
   'cmo:create-campaigns': () => import('../marketing/google-ads/scripts/create-campaigns.js').then(() => {}), // DISPATCH ONLY — 최초 1회 수동 실행
   'ceo:approval-reminder': () => import('./approval-reminder.js').then(() => {}),
-  'cto:crawler-health': () => import('../cto/crawler-health.js').then(() => {}),
   // CTO 주간 아키텍처 리뷰 (DISPATCH ONLY — 수동 트리거 전용)
   // QA 에이전트 — 콘텐츠 품질 감사 (매일 08:20 KST)
   'qa:content-audit': () => import('../qa/content-audit.js').then(() => {}),
-  'community:sheet-scrape': () => import('../community/sheet-scraper.js').then(m => m.main()),
-  // 새벽 전용 시트 스크랩 (GHA dawn, 01:00~07:00 KST). SHEET_SCRAPER_MODE=dawn + SHEET_SCRAPER_ONLY_SITE=cook82는 workflow env로 주입.
-  'community:dawn-sheet-scrape': () => { if (!process.env.SHEET_SCRAPER_MODE) process.env.SHEET_SCRAPER_MODE = 'dawn'; return import('../community/sheet-scraper.js').then(m => m.main()) },
-  // 새벽 시트 미처리 정리 (GHA 07:10 KST) — PENDING 남은 새벽 행 FAILED 처리
-  'community:dawn-sheet-cleanup': () => import('../community/dawn-cleanup.js').then(m => m.main()),
-  // LOCAL ONLY — 펨코 Cloudflare 차단으로 로컬 Mac launchd에서만 실행 (GitHub Actions 불가)
-  // launchd: com.unao.fmkorea-scraper.plist (11:30, 21:30 KST)
-  'community:fmkorea-scrape': () => import('../community/run-local-fmkorea.js').then(() => {}),
-  // LOCAL ONLY — 네이버 카페는 로그인 세션(storage-state.json) 필요, GHA 미지원
-  // launchd: com.unao.naver-cafe-sheet-scraper.plist (10:40, 13:00, 15:30, 23:00 KST)
-  'community:navercafe-scrape': () => import('../community/run-local-naver-cafe.js').then(() => {}),
+  // community:* · cafe_crawler:* · cafe:session-refresh · coo:content-scheduler ·
+  // cto:crawler-health — 삭제됨 2026-09-09
+  // (R4 B-3: 외부 카페·Google Sheet 공급망 REMOVE). 재등록 방지선은 agent-registry-handlers.test.ts
   // cmo:knowledge-responder — 삭제됨 2026-05-15 (지식인 운영 중단, 코드 삭제)
   // cmo:jisik-answerer — 삭제됨 2026-05-15 (지식인 운영 중단, 코드 삭제)
   // cmo:card-news-generator — 삭제됨 2026-05-15 (카드뉴스 중단, 코드 삭제)
@@ -88,10 +60,6 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   // QA 2-Gate 시스템
   // DISPATCH ONLY — Gate 1은 /done 스킬에서 자동 실행, 독립 실행 시에만 이 핸들러 사용
   'qa:code-gate': () => import('../qa/pre-deploy-gate.js').then(() => {}),
-  // LOCAL ONLY — 매일 02:00 KST launchd, NID_SES 5일 이내 만료 시 자동 갱신
-  // NID_AUT(~1년)로 headless Playwright naver.com 접속 → 새 NID_SES 획득
-  // 실패 시: SESSION_HALTED 플래그 + #대시보드/#시스템/#qa 3채널 긴급 알림
-  'cafe:session-refresh': () => import('../cafe/session-manager.js').then(async m => { await m.ensureSession() }),
   // naver-blog:post — ARCHIVED 2026-06-04 (Gemini 구독 종료로 폐기). 어드민/테이블/R2 이미지는 보존.
 }
 
@@ -160,23 +128,6 @@ async function main() {
     console.log(`[Runner] ${key}: 선행 작업 미완료 — 스킵`)
     await disconnect()
     process.exit(0)
-  }
-
-  // 10분 이내 중복 방지 (GHA 지연 대응): 이중발화 차단, GHA 30분 지연 후 다음 슬롯 정상 실행 허용
-  if (key === 'cafe_crawler:content-curate') {
-    const dedupCutoff = new Date(Date.now() - 10 * 60 * 1000)
-    const recentLog = await prisma.botLog.findFirst({
-      where: {
-        botType: 'CAFE_CRAWLER',
-        action: 'CONTENT_CURATE',
-        createdAt: { gte: dedupCutoff },
-      },
-    })
-    if (recentLog) {
-      console.log(`[Runner] cafe_crawler:content-curate 스킵 — 10분 이내 이미 실행됨 (${recentLog.createdAt.toISOString()})`)
-      await disconnect()
-      process.exit(0)
-    }
   }
 
   console.log(`[Runner] ${agent}:${task} 시작 (automation_status=${status})`)

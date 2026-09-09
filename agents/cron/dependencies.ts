@@ -15,30 +15,9 @@ export interface DependencyRule {
 }
 
 export const DEPENDENCY_MAP: Record<string, DependencyRule[]> = {
-  // 트렌드 분석 ← 카페 크롤러 완료 필요
-  'cmo:trend-analyzer': [{
-    requiredBotType: 'CAFE_CRAWLER',
-    requiredAction: 'CAFE_CRAWL',
-    dateOffset: 0,
-    maxWaitMinutes: 60,
-    pollIntervalMinutes: 5,
-  }],
-  // 콘텐츠 스케줄러 ← 트렌드 분석 완료 필요
-  'coo:content-scheduler': [{
-    requiredBotType: 'CAFE_CRAWLER',
-    requiredAction: 'TREND_ANALYSIS',
-    dateOffset: 0,
-    maxWaitMinutes: 90,
-    pollIntervalMinutes: 10,
-  }],
-  // 매거진 생성 ← 콘텐츠 큐레이션 완료 필요
-  'cafe_crawler:magazine-generate': [{
-    requiredBotType: 'CAFE_CRAWLER',
-    requiredAction: 'CONTENT_CURATE',
-    dateOffset: 0,
-    maxWaitMinutes: 60,
-    pollIntervalMinutes: 10,
-  }],
+  // 비어 있는 게 정상이다. 규칙은 전부 CAFE_CRAWLER 산출(CAFE_CRAWL·TREND_ANALYSIS)을
+  // 기다리던 것이었고, 그 생산자는 R4 B-3 에서 제거됐다(2026-09-09).
+  // 규칙이 없으면 waitForDependencies 는 true 를 돌려주므로 실행을 막지 않는다.
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))

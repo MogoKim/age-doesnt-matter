@@ -1,9 +1,9 @@
 /**
  * Slack 슬래시 커맨드 핸들러 (Next.js 빌드용)
  *
- * agents/core/slack-commander.ts와 동일한 로직.
- * Next.js에서 agents/ 폴더는 tsconfig exclude 대상이라
- * src/lib/ 안에 별도로 둡니다.
+ * Next.js에서 agents/ 폴더는 tsconfig exclude 대상이라 src/lib/ 안에 둔다.
+ * (에이전트 쪽 사본 agents/core/slack-commander.ts 는 호출부가 0 이라
+ *  R4 B-3 에서 제거했다 — 2026-09-09.)
  */
 import { prisma } from '@/lib/prisma'
 import { WebClient } from '@slack/web-api'
@@ -255,52 +255,6 @@ async function handleTrend(): Promise<SlackCommandResult> {
   }
 }
 
-async function handleCafe(): Promise<SlackCommandResult> {
-  const todayStart = new Date()
-  todayStart.setHours(0, 0, 0, 0)
-
-  const [totalToday, byCafe] = await Promise.all([
-    prisma.cafePost.count({ where: { crawledAt: { gte: todayStart } } }),
-    prisma.cafePost.groupBy({
-      by: ['cafeId'],
-      where: { crawledAt: { gte: todayStart } },
-      _count: { id: true },
-    }),
-  ])
-
-  const cafeList = byCafe.map(c => `  ${c.cafeId}: ${c._count.id}개`).join('\n')
-
-  const latestCrawl = await prisma.botLog.findFirst({
-    where: { botType: 'CAFE_CRAWLER' },
-    orderBy: { executedAt: 'desc' },
-    select: { executedAt: true, status: true },
-  })
-  const lastTime = latestCrawl
-    ? latestCrawl.executedAt.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })
-    : '없음'
-
-  return {
-    response_type: 'in_channel',
-    text: `☕ 카페 크롤링: 오늘 ${totalToday}개 수집`,
-    blocks: [
-      {
-        type: 'header',
-        text: { type: 'plain_text', text: '☕ 카페 크롤링 현황', emoji: true },
-      },
-      {
-        type: 'section',
-        text: { type: 'mrkdwn', text: `*오늘 수집:* ${totalToday}개\n${cafeList}` },
-      },
-      {
-        type: 'context',
-        elements: [
-          { type: 'mrkdwn', text: `마지막 실행: ${lastTime} (${latestCrawl?.status ?? '-'})` },
-        ],
-      },
-    ],
-  }
-}
-
 async function handleStop(): Promise<SlackCommandResult> {
   // DB에 EMERGENCY_STOP 기록 — runner.ts가 다음 실행 시 감지하여 에이전트 실행 스킵
   await prisma.botLog.create({
@@ -502,7 +456,6 @@ function handleHelp(): SlackCommandResult {
             '`/una-cost` — 이번 달 비용',
             '`/una-jobs` — 오늘 일자리 현황',
             '`/una-trend` — 오늘의 5060 트렌드',
-            '`/una-cafe` — 카페 크롤링 현황',
             '`/una-kpi` — KPI 대시보드',
             '`/una-approve [ID]` — 어드민 큐 승인',
             '`/una-reject [ID]` — 어드민 큐 거절',
@@ -530,7 +483,6 @@ export async function handleSlashCommand(payload: SlackSlashCommand): Promise<Sl
     case 'cost':     return handleCost()
     case 'jobs':     return handleJobs()
     case 'trend':    return handleTrend()
-    case 'cafe':     return handleCafe()
     case 'kpi':      return handleKpi()
     case 'approve':  return handleApprove(text)
     case 'reject':   return handleReject(text)
