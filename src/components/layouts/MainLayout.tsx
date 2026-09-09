@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars -- [DIAG-14] 임시 진단. 최종 diff 에서 제거한다. */
+/* eslint-disable @typescript-eslint/no-unused-vars -- [DIAG-15] 임시 진단. 최종 diff 에서 제거한다. */
 import { Suspense } from 'react'
 import IconMenu from './IconMenu'
 import Footer from './Footer'
@@ -29,7 +29,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
         <TopPromoBanner />
       </Suspense>
 
-      {/* [DIAG-14] Header·GNB·IconMenu 제거 — 세션 기반 상단 네비 그룹 검증 */}
+      {/* 모바일: Header / 데스크탑: GNB — 클라이언트 세션 기반, auth() 없음 */}
+      <Header />
+      <GNB />
+
+      {/* 모바일 전용 아이콘 메뉴 */}
+      <IconMenu />
 
       {/* 목록 페이지(6개) GNB 아래 광고 띠배너 — 경로 게이트는 클라에서 처리 */}
       <Suspense fallback={null}>
@@ -47,7 +52,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
       {/* FAB — 클라이언트 세션 기반, auth() 없음 */}
       <FAB />
 
-      <Footer />
+      {/* [DIAG-15] Footer 제거 — FooterFontSizeToggle 이 head script 가 미리 바꾼 DOM 상태를 그리는지 검증 */}
     </>
   )
 }
