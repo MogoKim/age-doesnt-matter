@@ -136,7 +136,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | A23 | Seed 킬러 포스트 | `agents/seed/scheduler.ts` (killer-post) | GHA 09:10·22:10 KST | GHA | RELATION | ALL | — | ARCHIVED | 2026-06-03 |
 | A24 | Seed 바이럴 웨이브 | `agents/seed/scheduler.ts` (viral-waves) | GHA 5분마다 (agents-sheet-viral.yml) | GHA | RELATION | ALL | — | ACTIVE | 2026-06-01 |
 | A25 | 논란 체인 | `agents/seed/controversy-chain.ts` | GHA 하루 16회 (seed 동일) | GHA | RELATION | ALL | — | ACTIVE | 2026-05-12 |
-| A26 | Design 광고 루프 | `agents/marketing-loop/creative-optimizer.ts` | DISPATCH ONLY | DISPATCH | INFRA | — | — | ACTIVE | 2026-05-12 |
+| A26 | Design 광고 루프 | ~~`agents/marketing-loop/creative-optimizer.ts`~~ 삭제됨 | — | — | INFRA | — | — | **ARCHIVED** | 2026-09-09 |
 | A27 | QA 코드 게이트 | `agents/qa/pre-deploy-gate.ts` | DISPATCH ONLY | DISPATCH | INFRA | — | — | ACTIVE | 2026-05-12 |
 | A28 | 네이버 블로그 수동 발행 큐 | ~~`agents/naver-blog/*`, `src/app/admin/(panel)/naver-blog/*`, `src/app/api/admin/naver-queue/*`~~ 전부 삭제 | — | LOCAL_ONLY | GROWTH | — | Gemini 구독 종료로 폐기(2026-06-04), 어드민 페이지·API 삭제(2026-06-07). NaverBlogQueue 테이블/R2 이미지만 보존 | ARCHIVED | 2026-06-07 |
 | A29 | 댓글 파동 프로세서 | `agents/cafe/wave-processor.ts` + `src/app/api/internal/comment-wave/route.ts` | GHA `*/5 * * * *` (wave1~4 순차) / content-curator 발행 즉시 API 호출 | GHA+API | RELATION | ALL | [A29](A29-comment-wave.md) | ACTIVE | 2026-05-30 |

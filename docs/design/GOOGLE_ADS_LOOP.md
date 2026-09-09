@@ -1,5 +1,10 @@
 # Google Ads 성과 기반 소재 개선 루프
 
+> ⚠️ **ARCHIVED (2026-09-09)** — `design:ads-loop` 핸들러와 `agents/marketing-loop/**`,
+> `agents-design.yml` 은 R4 에서 제거됐다. 아래는 삭제 시점의 설계 기록이며 현재 운영 계약이 아니다.
+> **Google Ads 설정·복구 도구(`agents/marketing/google-ads/**`)는 별개이며 그대로 보존한다.**
+
+
 ---
 
 ## 성과 판단 기준 (임계값)

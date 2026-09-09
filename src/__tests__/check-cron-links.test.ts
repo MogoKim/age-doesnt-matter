@@ -232,11 +232,11 @@ describe('buildReport — 실제 저장소 기준 분류', () => {
       workflowWithoutHandler: report.workflowWithoutHandler.length,
       launchdOrphans: report.launchdOrphans.length,
     }).toEqual({
-      total: 37,
+      total: 36,
       linked: 23,
-      orphaned: 14,
+      orphaned: 13,
       dispatchOnly: 6,
-      localOnly: 8,
+      localOnly: 7,
       unlinkedWithoutReason: 0,
       workflowWithoutHandler: 0,
       launchdOrphans: 0,
@@ -370,9 +370,9 @@ const HANDLERS: Record<string, () => Promise<void>> = {
     expect(() => extractHandlers(runnerFile('export const NOTHING = {}\n'))).toThrow(/HANDLERS/)
   })
 
-  it('실제 runner.ts 를 읽으면 37개이고 dawn-sheet-scrape 가 들어 있다', () => {
+  it('실제 runner.ts 를 읽으면 36개이고 dawn-sheet-scrape 가 들어 있다', () => {
     const handlers = extractHandlers()
-    expect(handlers).toHaveLength(37)
+    expect(handlers).toHaveLength(36)
     expect(handlers.map((h) => h.key)).toContain('community:dawn-sheet-scrape')
   })
 })
