@@ -60,7 +60,7 @@ const STATIC_BOARD_CONFIGS: Record<string, {
   },
 }
 
-// ISR Writes 절감(30→300s): 글 작성 시 revalidateTag('community-board-page')가 즉시 무효화
+// ISR Writes 절감(30→300s): 글 작성 시 revalidateTag('community-board-page', 'max')가 즉시 무효화
 export const revalidate = 300
 const SHOW_COMMUNITY_CATEGORY_FILTER = false
 const SHOW_COMMUNITY_SORT_TOGGLE = true

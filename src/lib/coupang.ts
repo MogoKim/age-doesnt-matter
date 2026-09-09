@@ -49,7 +49,9 @@ export async function createDeepLink(
     return urls.map((url) => ({ originalUrl: url, trackingUrl: url }))
   }
 
-  const datetime = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14)
+  // 문자 클래스 안 하이픈은 **맨 뒤**에 둔다. 앞에 두면 Tailwind 스캐너가 이 정규식을
+  // 임의 프로퍼티 클래스로 오인해 파싱 불가능한 CSS 를 생성하고, Turbopack 이 빌드를 막는다.
+  const datetime = new Date().toISOString().replace(/[:T-]/g, '').slice(0, 14)
   const hmac = generateHmac('POST', DEEP_LINK_PATH, datetime)
 
   const body: DeepLinkRequest = { coupangUrls: urls }

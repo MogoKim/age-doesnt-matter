@@ -78,7 +78,7 @@ export async function toggleGuestPostLike(postId: string): Promise<GuestLikeResu
   })().catch(() => {})
 
   revalidatePath('/community')
-  revalidateTag('home-trending')
+  revalidateTag('home-trending', 'max')
   return { toggled: true }
 }
 

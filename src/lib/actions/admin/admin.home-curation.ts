@@ -43,19 +43,19 @@ function calcExpiresAt(duration: DurationPreset): Date | null {
 
 function revalidateCuration(section: SectionType) {
   // 오버라이드 변경은 어느 섹션이든 공유 태그 home-curation 으로 묶임
-  revalidateTag('home-curation')
+  revalidateTag('home-curation', 'max')
 
   if (BEST_SECTIONS.includes(section)) {
-    revalidateTag('best-hot')
-    revalidateTag('best-fame')
+    revalidateTag('best-hot', 'max')
+    revalidateTag('best-fame', 'max')
     revalidatePath('/best')
     revalidatePath('/admin/content/best')
     return
   }
 
-  revalidateTag('home-trending')
-  revalidateTag('home-stories')
-  revalidateTag('home-humor')
+  revalidateTag('home-trending', 'max')
+  revalidateTag('home-stories', 'max')
+  revalidateTag('home-humor', 'max')
   revalidatePath('/')
   revalidatePath('/admin/content/home')
 }

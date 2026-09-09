@@ -176,17 +176,20 @@ describe('정적 스캔 — raw @playwright/test import 우회 차단', () => {
   })
 
   it('ESLint 가드가 설정에 존재한다', () => {
-    const rc = JSON.parse(readFileSync('.eslintrc.json', 'utf8'))
-    const override = (rc.overrides ?? []).find((o: { files?: string[] }) =>
-      o.files?.includes('e2e/**/*.ts'),
-    )
-    expect(override, 'e2e override 가 있어야 한다').toBeDefined()
-    expect(override.rules['@typescript-eslint/no-restricted-imports']).toBeDefined()
-    // e2e/fixtures/** 전체 예외는 금지 — auth.setup.ts 가 그 안에 있다
-    expect(override.excludedFiles).toEqual([
-      'e2e/fixtures/first-party-header.ts',
-      'e2e/export-kakao-cookies.ts',
-    ])
+    // Next 16 전환(2026-09-09)에서 `.eslintrc.json` → `eslint.config.mjs`(flat config) 로 옮겼다.
+    // 형식만 바뀌고 **가드는 그대로**여야 한다 — 여기서 그것을 확인한다.
+    const cfg = readFileSync('eslint.config.mjs', 'utf8')
+
+    const block = cfg.slice(cfg.indexOf("files: ['e2e/**/*.ts']"))
+    expect(block, 'e2e 전용 블록이 있어야 한다').not.toBe('')
+    expect(block).toContain('@typescript-eslint/no-restricted-imports')
+    expect(block).toContain("name: '@playwright/test'")
+
+    // e2e/fixtures/** 전체 예외는 금지 — auth.setup.ts 가 그 안에 있다.
+    const ignores = /ignores:\s*\[([^\]]*)\]/.exec(block)?.[1] ?? ''
+    expect(ignores).toContain('e2e/fixtures/first-party-header.ts')
+    expect(ignores).toContain('e2e/export-kakao-cookies.ts')
+    expect(ignores, 'fixtures 디렉터리 통째 예외는 가드를 무력화한다').not.toContain('e2e/fixtures/**')
   })
 
   it('lint:e2e 스크립트가 존재하고 lint 가 이를 호출한다', () => {

@@ -65,7 +65,7 @@ export async function POST() {
     // 일자리 상세 — SQL 로 숨긴 공고가 최대 5분 stale 200 으로 남던 누락분(2026-09-07)
     JOB_DETAIL_TAG,
   ]
-  for (const tag of tags) revalidateTag(tag)
+  for (const tag of tags) revalidateTag(tag, 'max')
 
   return NextResponse.json({
     total: posts.length,

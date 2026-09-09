@@ -47,9 +47,9 @@ export function jobDetailCacheTag(postId: string): string {
  * **반드시 DB write 성공 후에만 호출한다.**
  */
 export function revalidateJobCreated(): void {
-  revalidateTag(JOBS_LIST_TAG)
-  revalidateTag(HOME_JOBS_TAG)
-  revalidateTag(SITEMAP_POSTS_TAG)
+  revalidateTag(JOBS_LIST_TAG, 'max')
+  revalidateTag(HOME_JOBS_TAG, 'max')
+  revalidateTag(SITEMAP_POSTS_TAG, 'max')
 }
 
 /**
@@ -60,10 +60,10 @@ export function revalidateJobCreated(): void {
  * **반드시 DB write 성공 후에만 호출한다.**
  */
 export function revalidateJobPost(postId: string, options?: { includeSitemap?: boolean }): void {
-  revalidateTag(JOBS_LIST_TAG)
-  revalidateTag(HOME_JOBS_TAG)
-  revalidateTag(jobDetailCacheTag(postId))
-  if (options?.includeSitemap !== false) revalidateTag(SITEMAP_POSTS_TAG)
+  revalidateTag(JOBS_LIST_TAG, 'max')
+  revalidateTag(HOME_JOBS_TAG, 'max')
+  revalidateTag(jobDetailCacheTag(postId), 'max')
+  if (options?.includeSitemap !== false) revalidateTag(SITEMAP_POSTS_TAG, 'max')
 }
 
 /**
@@ -73,8 +73,8 @@ export function revalidateJobPost(postId: string, options?: { includeSitemap?: b
  * **반드시 DB write/transaction 성공 후에만 호출한다.**
  */
 export function revalidateJobPostsBulk(): void {
-  revalidateTag(JOBS_LIST_TAG)
-  revalidateTag(HOME_JOBS_TAG)
-  revalidateTag(JOB_DETAIL_TAG)
-  revalidateTag(SITEMAP_POSTS_TAG)
+  revalidateTag(JOBS_LIST_TAG, 'max')
+  revalidateTag(HOME_JOBS_TAG, 'max')
+  revalidateTag(JOB_DETAIL_TAG, 'max')
+  revalidateTag(SITEMAP_POSTS_TAG, 'max')
 }

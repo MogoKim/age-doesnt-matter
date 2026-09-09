@@ -142,12 +142,12 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
   const boardSlugPath = BOARD_TYPE_TO_SLUG[boardType]
   revalidatePath(`/community/${boardSlugPath}`)
   revalidatePath('/')
-  revalidateTag('home-trending')
-  revalidateTag('home-stories')
-  revalidateTag('home-humor')
-  revalidateTag('home-magazine')
-  revalidateTag('home-jobs')
-  revalidateTag('community-board-page')
+  revalidateTag('home-trending', 'max')
+  revalidateTag('home-stories', 'max')
+  revalidateTag('home-humor', 'max')
+  revalidateTag('home-magazine', 'max')
+  revalidateTag('home-jobs', 'max')
+  revalidateTag('community-board-page', 'max')
   return { postUrl: `/community/${boardSlugPath}/${communitySlug ?? post.id}` }
 }
 
@@ -250,11 +250,11 @@ export async function updatePost(postId: string, formData: FormData): Promise<Cr
   const slug = BOARD_TYPE_TO_SLUG[existing.boardType]
   revalidatePath(`/community/${slug}/${postId}`)
   revalidatePath(`/community/${slug}`)
-  revalidateTag('post-detail')
-  revalidateTag('post-meta')
-  revalidateTag('home-trending')
-  revalidateTag('home-stories')
-  revalidateTag('home-humor')
+  revalidateTag('post-detail', 'max')
+  revalidateTag('post-meta', 'max')
+  revalidateTag('home-trending', 'max')
+  revalidateTag('home-stories', 'max')
+  revalidateTag('home-humor', 'max')
   return { postUrl: `/community/${slug}/${postId}` }
 }
 
@@ -297,13 +297,13 @@ export async function deletePost(postId: string): Promise<{ error?: string }> {
   revalidatePath('/')
   revalidatePath('/best')
   revalidatePath('/search')
-  revalidateTag('post-detail')
-  revalidateTag('post-meta')
-  revalidateTag('home-trending')
-  revalidateTag('home-stories')
-  revalidateTag('home-humor')
-  revalidateTag('home-magazine')
-  revalidateTag('home-jobs')
-  revalidateTag('community-board-page')
+  revalidateTag('post-detail', 'max')
+  revalidateTag('post-meta', 'max')
+  revalidateTag('home-trending', 'max')
+  revalidateTag('home-stories', 'max')
+  revalidateTag('home-humor', 'max')
+  revalidateTag('home-magazine', 'max')
+  revalidateTag('home-jobs', 'max')
+  revalidateTag('community-board-page', 'max')
   redirect(`/community/${slug}`)
 }

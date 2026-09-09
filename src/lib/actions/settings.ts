@@ -20,7 +20,7 @@ export async function updateFontSize(fontSize: string): Promise<{ error?: string
     data: { fontSize: fontSize as FontSize },
   })
 
-  revalidateTag(`user-${session.user.id}-font`)
+  revalidateTag(`user-${session.user.id}-font`, 'max')
   revalidatePath('/my/settings')
   return {}
 }

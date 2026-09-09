@@ -154,7 +154,7 @@ export async function createGuestComment({
   revalidatePath('/community')
   revalidatePostComments(postId, post)
   // 홈 노출 갱신 — 이번 변경 범위 밖(홈 무효화 축소는 별도 PR)이라 그대로 둔다.
-  revalidateTag('home-trending')
+  revalidateTag('home-trending', 'max')
   return { id: comment.id }
 }
 

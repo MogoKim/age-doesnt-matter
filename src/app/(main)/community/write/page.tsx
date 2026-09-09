@@ -14,7 +14,8 @@ interface PageProps {
 // 글쓰기 가능한 보드 타입 (MENOPAUSE: PR-1 — BoardConfig row 생성 후 보드 선택기에 노출됨)
 const WRITABLE_BOARD_TYPES = ['STORY', 'HUMOR', 'LIFE2', 'MENOPAUSE']
 
-export default async function WritePage({ searchParams }: PageProps) {
+export default async function WritePage(props: PageProps) {
+  const searchParams = await props.searchParams;
   // 로그인 확인을 여기서 하지 않는다 — 비회원도 폼을 열고 글을 쓸 수 있어야 한다.
   // 실제 차단은 저장할 때 createPost가 한다(첫 줄에서 세션 확인). 폼이 열리는 것과
   // 글이 저장되는 것은 다른 문제이고, 막아야 하는 쪽은 저장이다.

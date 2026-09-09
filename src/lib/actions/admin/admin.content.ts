@@ -420,14 +420,14 @@ export async function adminMovePost(
   revalidatePath('/')
   revalidatePath('/best')
   revalidatePath('/search')
-  revalidateTag('post-detail')
-  revalidateTag('post-meta')
+  revalidateTag('post-detail', 'max')
+  revalidateTag('post-meta', 'max')
   // sitemap-posts는 revalidate 3600 — 누락 시 숨긴 글이 최대 1시간 sitemap에 남는다.
-  revalidateTag('sitemap-posts')
-  revalidateTag('home-trending')
-  revalidateTag('home-stories')
-  revalidateTag('home-humor')
-  revalidateTag('community-board-page')
+  revalidateTag('sitemap-posts', 'max')
+  revalidateTag('home-trending', 'max')
+  revalidateTag('home-stories', 'max')
+  revalidateTag('home-humor', 'max')
+  revalidateTag('community-board-page', 'max')
   // 이동 전·후 어느 쪽이든 JOB 이면 일자리 면도 갱신해야 한다
   if (existing.boardType === 'JOB' || boardType === 'JOB') revalidateJobPost(postId)
 }

@@ -53,7 +53,7 @@ function resolveShowOverlay(showOverlay: boolean | undefined, imageUrl: string):
 }
 
 function revalidateHeroBanners() {
-  revalidateTag('hero-banners')
+  revalidateTag('hero-banners', 'max')
   revalidatePath('/admin/banners')
   revalidatePath('/')
 }

@@ -107,8 +107,8 @@ export async function submitGreeting(message: string): Promise<SubmitGreetingRes
     })
 
     void checkAndPromote(userId).catch(() => {})
-    revalidateTag('community-board-page')
-    revalidateTag('home-newcomers') // 홈 신입환영 섹션(Phase 3) 즉시 반영
+    revalidateTag('community-board-page', 'max')
+    revalidateTag('home-newcomers', 'max') // 홈 신입환영 섹션(Phase 3) 즉시 반영
     revalidatePath('/community/stories')
     revalidatePath('/')
     return { postUrl: `/community/stories/${post.slug ?? post.id}` }

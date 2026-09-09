@@ -106,7 +106,7 @@ export async function adminUpdateBoardConfig(
   })
 
   // board-config 캐시 즉시 무효화
-  revalidateTag('board-config')
+  revalidateTag('board-config', 'max')
   revalidatePath('/admin/settings')
 
   // 임계값 변경 시 기존 게시글 즉시 소급 재평가 (비동기, 비블로킹)
@@ -153,7 +153,7 @@ export async function adminUpdateTopPromoBanner(data: {
   ])
 
   const cacheTag = data.type === 'guest' ? 'top-promo-guest' : 'top-promo-member'
-  revalidateTag(cacheTag)
+  revalidateTag(cacheTag, 'max')
   revalidatePath('/', 'layout')
   revalidatePath('/admin/banners')
 }

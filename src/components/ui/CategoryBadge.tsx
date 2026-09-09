@@ -13,7 +13,9 @@ import { getCategoryChipClass } from '@/lib/category-chip'
  * ⚠️ cn()(=clsx + tailwind-merge)을 쓰지 않고 템플릿 문자열로 조립한다.
  * 교체 전 8개 호출부가 모두 템플릿 문자열이었고, 여기에 cn()을 도입하면 두 가지가 깨진다.
  *   1) text-caption: twMerge가 커스텀 폰트 유틸을 "글자색" 그룹으로 오인해,
- *      뒤에 오는 text-[var(--cat-*-text)]가 폰트 크기 클래스를 지운다(실제 회귀 이력).
+ *      뒤에 오는 글자색 유틸(카테고리별 --cat-<키>-text 변수)이 폰트 크기 클래스를 지운다(실제 회귀 이력).
+ *      ⚠️ 이 주석에 임의값 클래스 문법을 그대로 쓰지 마라 — Tailwind 스캐너가 주석도 읽어
+ *         `--cat-*-text` 같은 잘못된 CSS 를 생성하고, Turbopack 은 그걸 파싱 오류로 막는다.
  *   2) leading: twMerge는 font-size와 line-height를 충돌 그룹으로 보고 leading-*를 지운다.
  *      (text-xs로 우회해도 tailwind.config의 text-xs가 line-height 1.4를 함께 지정해
  *       default 배지가 5px 낮아진다 — 실측으로 확인)

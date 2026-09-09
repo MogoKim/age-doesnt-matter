@@ -202,12 +202,12 @@ export interface PostCacheRef {
  * 한쪽만 지우면 댓글 수가 옛 값으로 남는다.
  */
 export function revalidatePostComments(postId: string, post: PostCacheRef | null): void {
-  revalidateTag(commentsCacheTag(postId))
-  revalidateTag(postDetailCacheTag(postId))
+  revalidateTag(commentsCacheTag(postId), 'max')
+  revalidateTag(postDetailCacheTag(postId), 'max')
 
   if (post?.slug) {
-    revalidateTag(commentsCacheTag(post.slug))
-    revalidateTag(postDetailCacheTag(post.slug))
+    revalidateTag(commentsCacheTag(post.slug), 'max')
+    revalidateTag(postDetailCacheTag(post.slug), 'max')
   }
 
   const boardSlug = post ? BOARD_TYPE_TO_SLUG[post.boardType] : undefined

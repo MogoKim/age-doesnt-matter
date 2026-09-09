@@ -4,10 +4,11 @@ import { logAuthFailure } from '@/lib/auth-monitor'
 import AppAuthErrorRedirect from './AppAuthErrorRedirect'
 
 interface Props {
-  searchParams: { error?: string }
+  searchParams: Promise<{ error?: string }>
 }
 
-export default async function AuthErrorPage({ searchParams }: Props) {
+export default async function AuthErrorPage(props: Props) {
+  const searchParams = await props.searchParams;
   const error = searchParams.error ?? 'unknown'
 
   // FemaleOnly는 여성 전용 정책 안내(시스템 오류 아님) → oauth_callback_error로 기록하지 않음.
