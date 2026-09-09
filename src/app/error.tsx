@@ -25,6 +25,10 @@ export default function GlobalError({
       >
         다시 시도하기
       </button>
+      {/* eslint-disable-next-line @next/next/no-html-link-for-pages --
+          `/api/auth/signout` 은 페이지가 아니라 NextAuth 의 **API 라우트**다.
+          `<Link>` 로 바꾸면 클라이언트 내비게이션이 되어 로그아웃이 수행되지 않는다.
+          전체 문서 요청이어야 하므로 `<a>` 가 맞다. */}
       <a
         href="/api/auth/signout"
         className="mt-4 text-body text-muted-foreground underline hover:text-foreground"

@@ -1,51 +1,10 @@
 import type { Metadata, Viewport } from 'next'
-import dynamic from 'next/dynamic'
 import { GTMScript, GTMNoScript } from '@/components/common/GoogleTagManager'
 import { ToastProvider } from '@/components/common/Toast'
 import AuthProvider from '@/components/common/AuthProvider'
 import AdSenseScriptLoader from '@/components/ad/AdSenseScriptLoader'
+import { RootClientInsideToast, RootClientOutsideToast } from '@/components/common/RootClientOnly'
 import './globals.css'
-
-// PWA/트래킹 컴포넌트 — 초기 번들 제외, 인터랙션 후 로드
-const AddToHomeScreen = dynamic(
-  () => import('@/components/common/AddToHomeScreen'),
-  { loading: () => null, ssr: false },
-)
-const PullToRefresh = dynamic(
-  () => import('@/components/common/PullToRefresh'),
-  { loading: () => null, ssr: false },
-)
-const ServiceWorkerRegister = dynamic(
-  () => import('@/components/common/ServiceWorkerRegister'),
-  { loading: () => null, ssr: false },
-)
-const PageViewTracker = dynamic(
-  () => import('@/components/common/PageViewTracker'),
-  { loading: () => null, ssr: false },
-)
-const GtagLoader = dynamic(
-  () => import('@/components/common/GtagLoader'),
-  { loading: () => null, ssr: false },
-)
-const WebVitalsReporter = dynamic(
-  () => import('@/components/common/WebVitalsReporter'),
-  { loading: () => null, ssr: false },
-)
-// 앱(Capacitor) 딥링크 핸들러 — 네이티브에서만 동작(웹/TWA no-op), client 전용
-const AppDeepLinkHandler = dynamic(
-  () => import('@/components/features/auth/AppDeepLinkHandler'),
-  { loading: () => null, ssr: false },
-)
-// 앱(Capacitor) FCM 등록 — 네이티브 + 로그인 회원만 동작(웹/TWA no-op), client 전용
-const AppFcmRegister = dynamic(
-  () => import('@/components/features/push/AppFcmRegister'),
-  { loading: () => null, ssr: false },
-)
-// AdMob 하단 배너 — 네이티브 앱에서만 동작(웹/TWA no-op), client 전용
-const AdMobBanner = dynamic(
-  () => import('@/components/ad/AdMobBanner'),
-  { loading: () => null, ssr: false },
-)
 
 export const metadata: Metadata = {
   title: {
@@ -124,17 +83,10 @@ document.documentElement.setAttribute('data-font-size',s)
         <AuthProvider>
           <ToastProvider>
             {children}
-            <PullToRefresh />
-            <AddToHomeScreen />
+            <RootClientInsideToast />
           </ToastProvider>
-          <ServiceWorkerRegister />
-          <PageViewTracker />
-          <GtagLoader />
-          <WebVitalsReporter />
           <AdSenseScriptLoader />
-          <AppDeepLinkHandler />
-          <AppFcmRegister />
-          <AdMobBanner />
+          <RootClientOutsideToast />
         </AuthProvider>
       </body>
     </html>

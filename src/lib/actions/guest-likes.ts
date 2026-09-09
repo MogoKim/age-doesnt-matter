@@ -3,7 +3,7 @@
 import { cookies, headers } from 'next/headers'
 import { createHash, randomUUID } from 'crypto'
 import { prisma } from '@/lib/prisma'
-import { revalidatePath, revalidateTag } from 'next/cache'
+import { revalidatePath, updateTag } from 'next/cache'
 import { checkAndPromotePost } from '@/lib/actions/promotion'
 import { calculateTrendingScore } from '@/lib/utils/trending'
 
@@ -78,7 +78,7 @@ export async function toggleGuestPostLike(postId: string): Promise<GuestLikeResu
   })().catch(() => {})
 
   revalidatePath('/community')
-  revalidateTag('home-trending')
+  updateTag('home-trending')
   return { toggled: true }
 }
 

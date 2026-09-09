@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
+import HomePopupsClientOnly from '@/components/features/event/HomePopupsClientOnly'
 import { Suspense } from 'react'
 import { unstable_cache } from 'next/cache'
-import dynamic from 'next/dynamic'
 import HeroSlider from '@/components/features/home/HeroSlider'
 import JobSection from '@/components/features/home/JobSection'
 import TrendingSection from '@/components/features/home/TrendingSection'
@@ -27,13 +27,6 @@ import {
   getLatestMagazinePosts,
   getCachedHomeSections,
 } from '@/lib/queries/posts'
-
-// 첫 진입 성능(P1): 조건부 모달 팝업 3종은 above-the-fold가 아니므로 클라이언트 지연 로딩(ssr:false)으로
-// 초기 번들/hydration에서 제외 → 홈 핵심 콘텐츠 우선 인터랙티브. 팝업 기능·트리거는 그대로(마운트 후 로드).
-// (layout.tsx의 PopupRenderer/PushPermissionToast 등과 동일 패턴. 모달이라 CLS 0.)
-const VotePopup = dynamic(() => import('@/components/features/vote/VotePopup'), { ssr: false, loading: () => null })
-const FeedbackPopup = dynamic(() => import('@/components/features/event/FeedbackPopup'), { ssr: false, loading: () => null })
-const SurveyPopup = dynamic(() => import('@/components/features/event/SurveyPopup'), { ssr: false, loading: () => null })
 
 export const metadata: Metadata = {
   // title은 layout.tsx 전역 기본값 사용
@@ -209,12 +202,8 @@ export default function HomePage() {
         <div className="max-w-[1200px] mx-auto">
           <HeroSlider />
 
-          {/* 오늘의 투표 입구 바텀시트 — 미투표자 하루 1회, 선택 즉시 게시글 이동(결과 미표시), 어드민 팝업 양보 */}
-          <VotePopup />
-          {/* 의견수렴형 이벤트 입구 바텀시트 (Phase 3b) — VOTE와 배타(서버 getExposedEvent 1개), 하루 1회, 어드민 팝업 양보 */}
-          <FeedbackPopup />
-          {/* 1분 의견함(SURVEY) 입구 바텀시트 (Phase 5) — VOTE/FEEDBACK과 배타, 하루 1회, 입구만(설문 폼 없음) */}
-          <SurveyPopup />
+          {/* 팝업 3종(VOTE·FEEDBACK·SURVEY) — client 경계에서 지연 로딩. 배타·하루 1회 규칙은 각 컴포넌트 안에 있다 */}
+          <HomePopupsClientOnly />
 
           <div className="lg:px-8">
             {/* 첫 인사 위젯 (client island — 가입 72h 이내·미작성 회원만, useAppSession 판별) */}

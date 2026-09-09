@@ -9,7 +9,7 @@
  *  5. 성공 이벤트를 **새로 만들지 않았다** (기존 comment_create 유지)
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { COMMENT_FUNNEL_EVENTS, boardSlugFromPath, commentFunnelProperties } from '@/lib/comment-funnel'
 
 const mock = vi.hoisted(() => ({
@@ -136,14 +136,34 @@ describe('회원 입력창 (CommentInput)', () => {
     expect(p.parent_comment_id).toBe('cmt-7')
   })
 
-  it('제출 시도는 매번 보낸다 — 재시도 횟수가 신호다', async () => {
+  it('제출 중 중복 클릭은 시도로 세지 않는다 — 성공률 분모 보호', async () => {
+    // CommentInput 은 `if (!value.trim() || isPending) return` 으로 막고 나서 발화한다
+    // ("비활성 버튼 클릭이 시도로 잡히면 성공률 분모가 부풀려진다").
+    // React 18 에서는 두 번째 클릭이 isPending 반영 전에 처리돼 2회 발화했지만,
+    // 실제 브라우저에서는 버튼이 disabled 라 사용자가 두 번 누를 수 없다.
+    // React 19 는 그 가드를 제때 반영한다 — 계측이 실제 사용자 행동과 일치한다.
     render(<CommentInput postId="post-abc" />)
     const ta = screen.getByPlaceholderText('댓글을 남겨주세요...')
     fireEvent.change(ta, { target: { value: SECRET_CONTENT } })
     const btn = screen.getByRole('button', { name: '등록' })
     fireEvent.click(btn)
     fireEvent.click(btn)
-    expect(eventsNamed('comment_submit_attempted').length).toBeGreaterThanOrEqual(2)
+    expect(eventsNamed('comment_submit_attempted')).toHaveLength(1)
+  })
+
+  it('제출이 끝난 뒤 다시 시도하면 또 기록된다 — 재시도 횟수가 신호다', async () => {
+    render(<CommentInput postId="post-abc" />)
+    const ta = screen.getByPlaceholderText('댓글을 남겨주세요...')
+    const btn = screen.getByRole('button', { name: '등록' })
+
+    fireEvent.change(ta, { target: { value: SECRET_CONTENT } })
+    fireEvent.click(btn)
+    await waitFor(() => expect(eventsNamed('comment_create')).toHaveLength(1))
+
+    // 제출이 끝나 가드가 풀린 뒤의 재시도는 별도 시도로 잡혀야 한다.
+    fireEvent.change(ta, { target: { value: SECRET_CONTENT } })
+    fireEvent.click(btn)
+    await waitFor(() => expect(eventsNamed('comment_submit_attempted')).toHaveLength(2))
   })
 
   it('빈 입력으로는 제출 시도가 발화하지 않는다 (성공률 분모 오염 방지)', () => {

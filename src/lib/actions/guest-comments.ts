@@ -2,7 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { verifyTurnstile } from '@/lib/turnstile'
-import { revalidatePath, revalidateTag } from 'next/cache'
+import { revalidatePath, updateTag } from 'next/cache'
 import bcrypt from 'bcryptjs'
 import { calculateTrendingScore } from '@/lib/utils/trending'
 import { notifyUser } from '@/lib/notify'
@@ -154,7 +154,7 @@ export async function createGuestComment({
   revalidatePath('/community')
   revalidatePostComments(postId, post)
   // 홈 노출 갱신 — 이번 변경 범위 밖(홈 무효화 축소는 별도 PR)이라 그대로 둔다.
-  revalidateTag('home-trending')
+  updateTag('home-trending')
   return { id: comment.id }
 }
 

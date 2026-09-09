@@ -4,7 +4,7 @@ import Footer from './Footer'
 import TopPromoBanner from './TopPromoBanner'
 import Header from './Header'
 import GNB from './GNB'
-import FAB from './FAB'
+import FAB from './FABLazy'
 import ListBanner from '@/components/ad/ListBanner'
 import DetailHeaderBanner from '@/components/ad/DetailHeaderBanner'
 

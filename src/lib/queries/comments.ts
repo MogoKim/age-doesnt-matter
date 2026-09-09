@@ -1,4 +1,4 @@
-import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache'
+import { revalidatePath, updateTag, unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { GRADE_INFO } from '@/lib/grade'
 import { postDetailCacheTag } from '@/lib/queries/posts/posts.base'
@@ -201,13 +201,19 @@ export interface PostCacheRef {
  * opengraph-image·/api/posts/[postId]는 CUID로 호출해 캐시 엔트리가 둘로 나뉠 수 있다.
  * 한쪽만 지우면 댓글 수가 옛 값으로 남는다.
  */
+/**
+ * ⚠️ **Server Action 안에서만 호출한다.** `updateTag` 는 read-your-own-writes 를 보장하는 대신
+ * Server Action 밖에서 부르면 던진다. 현재 호출부는 `actions/comments.ts` ·
+ * `actions/guest-comments.ts` 뿐이고 둘 다 `'use server'` 다.
+ * Route Handler 에서 댓글 캐시를 지워야 할 일이 생기면 `revalidateTag(tag, 'max')` 로 **따로** 만든다.
+ */
 export function revalidatePostComments(postId: string, post: PostCacheRef | null): void {
-  revalidateTag(commentsCacheTag(postId))
-  revalidateTag(postDetailCacheTag(postId))
+  updateTag(commentsCacheTag(postId))
+  updateTag(postDetailCacheTag(postId))
 
   if (post?.slug) {
-    revalidateTag(commentsCacheTag(post.slug))
-    revalidateTag(postDetailCacheTag(post.slug))
+    updateTag(commentsCacheTag(post.slug))
+    updateTag(postDetailCacheTag(post.slug))
   }
 
   const boardSlug = post ? BOARD_TYPE_TO_SLUG[post.boardType] : undefined

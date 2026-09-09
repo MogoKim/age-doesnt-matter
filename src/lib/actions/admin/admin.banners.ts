@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidatePath, revalidateTag } from 'next/cache'
+import { revalidatePath, updateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/admin-auth'
 import { validateCtaUrlForSave } from '@/lib/hero-link'
@@ -53,7 +53,7 @@ function resolveShowOverlay(showOverlay: boolean | undefined, imageUrl: string):
 }
 
 function revalidateHeroBanners() {
-  revalidateTag('hero-banners')
+  updateTag('hero-banners')
   revalidatePath('/admin/banners')
   revalidatePath('/')
 }

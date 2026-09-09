@@ -7,7 +7,8 @@ import { prisma } from '@/lib/prisma'
  * 클릭 경로에서 server action을 제거하고 이 API로 대체(revalidatePath 호출 안 함 → 이동 체감 보존).
  * 본인(userId) 알림만 갱신.
  */
-export async function POST(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const session = await auth()
   if (!session?.user?.id) {
     return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })

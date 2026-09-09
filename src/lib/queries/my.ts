@@ -246,7 +246,7 @@ export async function getMyNotifications(
   return { notifications, hasMore }
 }
 
-/** 사용자 글꼴 크기 (1시간 캐시 — 글꼴 변경 시 revalidateTag(`user-${userId}-font`) 필요) */
+/** 사용자 글꼴 크기 (1시간 캐시 — 글꼴 변경 시 Server Action 에서 updateTag(`user-${userId}-font`) 필요) */
 export function getUserFontSize(userId: string): Promise<string> {
   return unstable_cache(
     async () => {

@@ -5,7 +5,7 @@ import { handleApiError, parsePaginationParams } from '@/lib/api-utils'
 import { checkApiRateLimit } from '@/lib/api-rate-limit'
 
 // cold MISS 완화: 검색(q) 없는 기본 목록·더보기 응답을 origin 반복 호출 없이 캐시.
-// admin 큐레이션 변경 시 revalidateTag('best-hot'|'best-fame')로 무효화(admin.home-curation.ts).
+// admin 큐레이션 변경 시 updateTag('best-hot'|'best-fame')로 즉시 무효화(admin.home-curation.ts — Server Action).
 // 응답 shape은 composeBest* 반환 그대로 — 변경 없음.
 const cachedBestHot = unstable_cache(
   async (skip: number, limit: number) => composeBestHot({ skip, limit }),

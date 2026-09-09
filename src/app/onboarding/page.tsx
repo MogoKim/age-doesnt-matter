@@ -1,10 +1,5 @@
 import type { Metadata } from 'next'
-import dynamic from 'next/dynamic'
-
-const OnboardingForm = dynamic(
-  () => import('@/components/features/onboarding/OnboardingForm'),
-  { loading: () => <div className="h-64 animate-pulse rounded bg-muted" />, ssr: false },
-)
+import OnboardingForm from '@/components/features/onboarding/OnboardingFormLazy'
 
 export const metadata: Metadata = {
   title: '프로필 설정',

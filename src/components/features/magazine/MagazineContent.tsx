@@ -155,6 +155,7 @@ function MagazineCard({ post, priority }: { post: PostSummary; priority?: boolea
             className="object-cover"
             sizes="112px"
             priority={priority}
+            fetchPriority={priority ? 'high' : undefined}
           />
         </div>
       ) : (

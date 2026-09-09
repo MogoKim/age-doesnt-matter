@@ -1,0 +1,14 @@
+{
+  "_comment": "Next 16 전환 시점의 lint 경고 baseline (2026-09-09). 늘리지 마라 — 줄이면 이 파일도 함께 낮춘다.",
+  "total": 84,
+  "rules": {
+    "(unknown)": 5,
+    "@next/next/no-location-assign-relative-destination": 3,
+    "import/no-anonymous-default-export": 1,
+    "react-hooks/immutability": 1,
+    "react-hooks/preserve-manual-memoization": 3,
+    "react-hooks/purity": 6,
+    "react-hooks/refs": 21,
+    "react-hooks/set-state-in-effect": 44
+  }
+}
