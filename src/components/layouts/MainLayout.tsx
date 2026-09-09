@@ -23,8 +23,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
         본문으로 건너뛰기
       </a>
 
-      {/* [DIAG-8] 명시적 Suspense 경계만 제거 — TopPromoBanner·unstable_cache·revalidate·Client 는 무변경 */}
-      <TopPromoBanner />
+      {/* 전 페이지 최상단 홍보 띠 배너 */}
+      <Suspense fallback={<div className="h-[56px]" />}>
+        <TopPromoBanner />
+      </Suspense>
 
       {/* 모바일: Header / 데스크탑: GNB — 클라이언트 세션 기반, auth() 없음 */}
       <Header />
