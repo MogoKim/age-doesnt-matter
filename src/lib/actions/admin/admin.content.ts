@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidatePath, revalidateTag } from 'next/cache'
+import { revalidatePath, updateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/admin-auth'
 import { deleteFromR2, extractR2KeyFromUrl } from '@/lib/r2'
@@ -420,14 +420,14 @@ export async function adminMovePost(
   revalidatePath('/')
   revalidatePath('/best')
   revalidatePath('/search')
-  revalidateTag('post-detail', 'max')
-  revalidateTag('post-meta', 'max')
+  updateTag('post-detail')
+  updateTag('post-meta')
   // sitemap-posts는 revalidate 3600 — 누락 시 숨긴 글이 최대 1시간 sitemap에 남는다.
-  revalidateTag('sitemap-posts', 'max')
-  revalidateTag('home-trending', 'max')
-  revalidateTag('home-stories', 'max')
-  revalidateTag('home-humor', 'max')
-  revalidateTag('community-board-page', 'max')
+  updateTag('sitemap-posts')
+  updateTag('home-trending')
+  updateTag('home-stories')
+  updateTag('home-humor')
+  updateTag('community-board-page')
   // 이동 전·후 어느 쪽이든 JOB 이면 일자리 면도 갱신해야 한다
   if (existing.boardType === 'JOB' || boardType === 'JOB') revalidateJobPost(postId)
 }

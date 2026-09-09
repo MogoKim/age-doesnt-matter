@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidatePath, revalidateTag } from 'next/cache'
+import { revalidatePath, updateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
@@ -142,12 +142,12 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
   const boardSlugPath = BOARD_TYPE_TO_SLUG[boardType]
   revalidatePath(`/community/${boardSlugPath}`)
   revalidatePath('/')
-  revalidateTag('home-trending', 'max')
-  revalidateTag('home-stories', 'max')
-  revalidateTag('home-humor', 'max')
-  revalidateTag('home-magazine', 'max')
-  revalidateTag('home-jobs', 'max')
-  revalidateTag('community-board-page', 'max')
+  updateTag('home-trending')
+  updateTag('home-stories')
+  updateTag('home-humor')
+  updateTag('home-magazine')
+  updateTag('home-jobs')
+  updateTag('community-board-page')
   return { postUrl: `/community/${boardSlugPath}/${communitySlug ?? post.id}` }
 }
 
@@ -250,11 +250,11 @@ export async function updatePost(postId: string, formData: FormData): Promise<Cr
   const slug = BOARD_TYPE_TO_SLUG[existing.boardType]
   revalidatePath(`/community/${slug}/${postId}`)
   revalidatePath(`/community/${slug}`)
-  revalidateTag('post-detail', 'max')
-  revalidateTag('post-meta', 'max')
-  revalidateTag('home-trending', 'max')
-  revalidateTag('home-stories', 'max')
-  revalidateTag('home-humor', 'max')
+  updateTag('post-detail')
+  updateTag('post-meta')
+  updateTag('home-trending')
+  updateTag('home-stories')
+  updateTag('home-humor')
   return { postUrl: `/community/${slug}/${postId}` }
 }
 
@@ -297,13 +297,13 @@ export async function deletePost(postId: string): Promise<{ error?: string }> {
   revalidatePath('/')
   revalidatePath('/best')
   revalidatePath('/search')
-  revalidateTag('post-detail', 'max')
-  revalidateTag('post-meta', 'max')
-  revalidateTag('home-trending', 'max')
-  revalidateTag('home-stories', 'max')
-  revalidateTag('home-humor', 'max')
-  revalidateTag('home-magazine', 'max')
-  revalidateTag('home-jobs', 'max')
-  revalidateTag('community-board-page', 'max')
+  updateTag('post-detail')
+  updateTag('post-meta')
+  updateTag('home-trending')
+  updateTag('home-stories')
+  updateTag('home-humor')
+  updateTag('home-magazine')
+  updateTag('home-jobs')
+  updateTag('community-board-page')
   redirect(`/community/${slug}`)
 }

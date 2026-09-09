@@ -12,6 +12,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
  */
 
 const revalidateTagMock = vi.fn()
+/**
+ * Next 16 전환(2026-09-09): job-cache 는 **실행 문맥에 따라 API 가 다르다.**
+ *   · revalidateJobCreated  → Route Handler(/api/bot/jobs) 전용 → revalidateTag(tag,'max')
+ *   · revalidateJobPost·Bulk → Server Action(어드민) 전용        → updateTag(tag)
+ * 그래서 둘 다 mock 하고, "어떤 태그를 지웠는가" 는 두 mock 을 합쳐서 본다.
+ */
+const updateTagMock = vi.fn()
+/** 문맥과 무관하게 무효화된 태그 전체. 어느 API 를 썼는지는 별도 테스트가 고정한다. */
+const invalidatedTags = () =>
+  [...revalidateTagMock.mock.calls, ...updateTagMock.mock.calls].map(([t]) => String(t))
 
 /**
  * unstable_cache 등록 기록.
@@ -23,6 +33,7 @@ const cacheRegistrations: CacheRegistration[] = []
 
 vi.mock('next/cache', () => ({
   revalidateTag: (tag: string) => revalidateTagMock(tag),
+  updateTag: (tag: string) => updateTagMock(tag),
   revalidatePath: vi.fn(),
   unstable_cache: (fn: unknown, keyParts: unknown[], opts: CacheRegistration['opts']) => {
     cacheRegistrations.push({ keyParts, opts })
@@ -40,6 +51,7 @@ vi.mock('@/lib/prisma', () => ({ prisma: { post: { findMany: vi.fn(), findUnique
 beforeEach(() => {
   // cacheRegistrations 는 지우지 않는다(모듈 import 시점 등록이 사라진다)
   revalidateTagMock.mockClear()
+  updateTagMock.mockClear()
 })
 
 describe('1·2. 조회 캐시에 태그가 붙는다', () => {
@@ -110,7 +122,7 @@ describe('5·6. 단건 vs 일괄 무효화', () => {
     const { revalidateJobPost, JOB_DETAIL_TAG, jobDetailCacheTag } =
       await import('@/lib/cache/job-cache')
     revalidateJobPost('cjobABC')
-    const tags = revalidateTagMock.mock.calls.map(([t]) => String(t))
+    const tags = invalidatedTags()
     expect(tags).toContain(jobDetailCacheTag('cjobABC'))
     expect(tags).not.toContain(JOB_DETAIL_TAG)
   })
@@ -118,7 +130,7 @@ describe('5·6. 단건 vs 일괄 무효화', () => {
   it('단건 변경에서 includeSitemap:false 면 sitemap-posts 는 지우지 않는다', async () => {
     const { revalidateJobPost, SITEMAP_POSTS_TAG } = await import('@/lib/cache/job-cache')
     revalidateJobPost('cjobABC', { includeSitemap: false })
-    const tags = revalidateTagMock.mock.calls.map(([t]) => String(t))
+    const tags = invalidatedTags()
     expect(tags).not.toContain(SITEMAP_POSTS_TAG)
   })
 
@@ -126,8 +138,24 @@ describe('5·6. 단건 vs 일괄 무효화', () => {
     const { revalidateJobPostsBulk, JOBS_LIST_TAG, HOME_JOBS_TAG, JOB_DETAIL_TAG, SITEMAP_POSTS_TAG } =
       await import('@/lib/cache/job-cache')
     revalidateJobPostsBulk()
-    const tags = revalidateTagMock.mock.calls.map(([t]) => t)
+    const tags = invalidatedTags()
     expect(tags).toEqual([JOBS_LIST_TAG, HOME_JOBS_TAG, JOB_DETAIL_TAG, SITEMAP_POSTS_TAG])
+  })
+})
+
+describe('5-1. 실행 문맥별 캐시 API (Next 16)', () => {
+  it('revalidateJobCreated 는 revalidateTag 를 쓴다 — Route Handler 에서 updateTag 는 던진다', async () => {
+    const { revalidateJobCreated } = await import('@/lib/cache/job-cache')
+    revalidateJobCreated()
+    expect(revalidateTagMock, '/api/bot/jobs 는 Server Action 이 아니다').toHaveBeenCalled()
+    expect(updateTagMock).not.toHaveBeenCalled()
+  })
+
+  it('revalidateJobPost 는 updateTag 를 쓴다 — 어드민이 바꾸고 바로 확인한다', async () => {
+    const { revalidateJobPost } = await import('@/lib/cache/job-cache')
+    revalidateJobPost('cjobABC')
+    expect(updateTagMock, "'max' 는 즉시가 아니다 — 어드민 화면이 옛 값을 보여준다").toHaveBeenCalled()
+    expect(revalidateTagMock).not.toHaveBeenCalled()
   })
 })
 

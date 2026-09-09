@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidateTag, revalidatePath } from 'next/cache'
+import { updateTag, revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/admin-auth'
 import type { BoardType } from '@/generated/prisma/client'
@@ -43,19 +43,19 @@ function calcExpiresAt(duration: DurationPreset): Date | null {
 
 function revalidateCuration(section: SectionType) {
   // 오버라이드 변경은 어느 섹션이든 공유 태그 home-curation 으로 묶임
-  revalidateTag('home-curation', 'max')
+  updateTag('home-curation')
 
   if (BEST_SECTIONS.includes(section)) {
-    revalidateTag('best-hot', 'max')
-    revalidateTag('best-fame', 'max')
+    updateTag('best-hot')
+    updateTag('best-fame')
     revalidatePath('/best')
     revalidatePath('/admin/content/best')
     return
   }
 
-  revalidateTag('home-trending', 'max')
-  revalidateTag('home-stories', 'max')
-  revalidateTag('home-humor', 'max')
+  updateTag('home-trending')
+  updateTag('home-stories')
+  updateTag('home-humor')
   revalidatePath('/')
   revalidatePath('/admin/content/home')
 }

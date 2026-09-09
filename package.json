@@ -1,6 +1,9 @@
 {
   "name": "age-doesnt-matter",
   "version": "0.1.0",
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "private": true,
   "description": "우리 나이가 어때서 — 50·60대 커뮤니티 플랫폼",
   "scripts": {
@@ -30,7 +33,8 @@
     "perf:measure": "tsx scripts/perf-measure.ts",
     "board": "tsx scripts/ops-board/server.ts",
     "board:check": "tsc --noEmit -p scripts/ops-board/tsconfig.json",
-    "insights": "tsx --env-file=.env.local agents/scripts/insights.ts"
+    "insights": "tsx --env-file=.env.local agents/scripts/insights.ts",
+    "lint:baseline": "node scripts/lint-warning-baseline.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.89.0",

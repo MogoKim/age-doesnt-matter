@@ -15,9 +15,20 @@
  * 무효화하지 않는다. 조회할 때마다 캐시를 날리면 캐시 자체가 무의미해진다.
  * 허용 지연: 목록·홈 표시 최대 120초 / 상세 카운터 최대 300초.
  */
-import { revalidateTag } from 'next/cache'
+import { revalidateTag, updateTag } from 'next/cache'
 
 /** `/jobs` 목록 1페이지 캐시(`jobs-list-page1`) + 홈·목록하단 최신 공고(`latest-jobs`) 공용 */
+/**
+ * ⚠️ **실행 문맥에 따라 API 가 다르다** (Next 16).
+ *
+ * - `revalidateJobCreated` — **Route Handler 전용**(`/api/bot/jobs`). `updateTag` 는 Server Action
+ *   밖에서 던지므로 `revalidateTag(tag, 'max')` 를 쓴다. 봇 수집은 즉시 반영이 필요 없다.
+ * - `revalidateJobPost` · `revalidateJobPostsBulk` — **Server Action 전용**
+ *   (`actions/reports` · `admin.content` · `admin.reports` · `admin.members`).
+ *   어드민이 바꾸고 바로 확인하는 경로라 read-your-own-writes 가 필요하다 → `updateTag`.
+ *
+ * 새 호출부를 추가할 때 문맥이 다르면 **함수를 나눠라.** 하나로 합치면 둘 중 하나가 조용히 깨진다.
+ */
 export const JOBS_LIST_TAG = 'jobs-list'
 
 /** 홈 일자리 섹션(`page.tsx`의 `getCachedJobs`) */
@@ -60,10 +71,10 @@ export function revalidateJobCreated(): void {
  * **반드시 DB write 성공 후에만 호출한다.**
  */
 export function revalidateJobPost(postId: string, options?: { includeSitemap?: boolean }): void {
-  revalidateTag(JOBS_LIST_TAG, 'max')
-  revalidateTag(HOME_JOBS_TAG, 'max')
-  revalidateTag(jobDetailCacheTag(postId), 'max')
-  if (options?.includeSitemap !== false) revalidateTag(SITEMAP_POSTS_TAG, 'max')
+  updateTag(JOBS_LIST_TAG)
+  updateTag(HOME_JOBS_TAG)
+  updateTag(jobDetailCacheTag(postId))
+  if (options?.includeSitemap !== false) updateTag(SITEMAP_POSTS_TAG)
 }
 
 /**
@@ -73,8 +84,8 @@ export function revalidateJobPost(postId: string, options?: { includeSitemap?: b
  * **반드시 DB write/transaction 성공 후에만 호출한다.**
  */
 export function revalidateJobPostsBulk(): void {
-  revalidateTag(JOBS_LIST_TAG, 'max')
-  revalidateTag(HOME_JOBS_TAG, 'max')
-  revalidateTag(JOB_DETAIL_TAG, 'max')
-  revalidateTag(SITEMAP_POSTS_TAG, 'max')
+  updateTag(JOBS_LIST_TAG)
+  updateTag(HOME_JOBS_TAG)
+  updateTag(JOB_DETAIL_TAG)
+  updateTag(SITEMAP_POSTS_TAG)
 }

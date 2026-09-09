@@ -7,7 +7,7 @@ import { resolveGuestKey } from '@/lib/anon-cid'
 // 실험 리텐션 집계 — exp1_related_flow 주지표(3화면 도달률·D1~D7·세션 page_view·inline 클릭).
 // 노출(exposureEvent)의 sessionId 를 분모로, EventLog page_view 로 3화면/Dn, related_post_click(inline) 로 보조.
 // 시작 시점 컷: start = max(period start, ExperimentState.startedAt ?? registry startsAt) → 과거 데이터 배제.
-// 캐시: tags:['experiment-state'] → 상태 저장 시 revalidateTag 로 즉시 무효화.
+// 캐시: tags:['experiment-state'] → 상태 저장 Server Action 이 updateTag 로 즉시 무효화한다.
 
 const DAY = 86400000
 const KST = 9 * 3600000

@@ -87,6 +87,9 @@ jobs:
       - run: npm ci
       - run: npx prisma generate
       - run: npm run lint
+      # 신규 lint 경고 유입 차단 — Next 16 이 새로 켠 규칙 84건을 baseline 으로 고정했다.
+      # 줄이는 건 통과, 늘리는 건 실패. 상세: scripts/lint-warning-baseline.mjs
+      - run: npm run lint:baseline
       - run: npm run typecheck
       - name: 어드민 인증 가드 검사 (F-1 재발 방지)
         run: npx tsx scripts/check-admin-auth-guards.ts
