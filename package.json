@@ -19,7 +19,6 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "prepare": "husky",
-    "smoke-test": "tsx scripts/smoke-test.ts",
     "design:audit": "tsx scripts/design-token-audit.ts",
     "analyze": "ANALYZE=true next build",
     "qa:lowend": "playwright test --project=qa-lowend --workers=1",

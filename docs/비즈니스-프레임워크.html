@@ -2341,7 +2341,7 @@ N=1000 → 499,500가지
     <div class="formula">npx tsc --noEmit                                    # 타입 오류 없음 확인
 npx eslint src --ext .ts,.tsx                        # 린트 통과
 npm run build                                         # 빌드 성공
-npm run smoke-test -- --url https://age-doesnt-matter.com  # 프로덕션 확인
+curl -s https://age-doesnt-matter.com/api/health  # 프로덕션 확인 (smoke-test 는 2026-09-09 제거)
 npx tsx scripts/check-cron-links.ts                  # 에이전트 크론 연결
 gh run list --workflow=agents-daily.yml --limit=5    # 에이전트 실행 확인</div>
   </div>

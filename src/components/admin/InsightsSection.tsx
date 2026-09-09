@@ -5,8 +5,8 @@ type InsightsData = Awaited<ReturnType<typeof getInsights>>
 
 // 대시보드에 통합된 인사이트 섹션 (구 /admin/insights 본문). data·retention은 대시보드에서 병렬 페칭해 전달.
 export default function InsightsSection({ data, retention }: { data: InsightsData; retention: RetentionData }) {
-  const delta = data.northStar.current - data.northStar.previous
-  const weeklyMax = Math.max(...data.northStar.weekly.map((w) => w.active), 1)
+  const delta = data.weeklyActiveUsers.current - data.weeklyActiveUsers.previous
+  const weeklyMax = Math.max(...data.weeklyActiveUsers.weekly.map((w) => w.active), 1)
   const collectedLabel = new Date(data.generatedAt).toLocaleString('ko-KR', {
     month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
   })
@@ -25,24 +25,24 @@ export default function InsightsSection({ data, retention }: { data: InsightsDat
         <div className="flex items-start justify-between">
           <div>
             <p className="text-xs font-bold text-[#FF6F61]">
-              🎯 북극성 — 주간 활성 실고객 (WAU)
-              <InfoTip text="최근 7일간 방문 또는 로그인한 실고객(봇 제외) 수. 매주 꾸준히 우나어를 쓰는 회원 규모를 나타냅니다. 이 숫자가 늘면 서비스가 건강하게 성장 중입니다." />
+              📈 주간 활성 실고객 (WAU)
+              <InfoTip text="최근 7일간 방문 또는 로그인한 실고객(봇 제외) 수입니다. 북극성 지표(재방문 + 글·댓글 작성)와는 다릅니다 — 여기에는 읽기만 한 회원도 들어갑니다." />
             </p>
-            <p className="mt-0.5 text-xs text-zinc-500">이번 주에 활동한 진짜 회원 수</p>
+            <p className="mt-0.5 text-xs text-zinc-500">이번 주에 방문·로그인한 진짜 회원 수 (북극성 아님)</p>
           </div>
           <div className="text-right">
-            <span className="text-3xl font-bold text-zinc-900">{data.northStar.current}</span>
+            <span className="text-3xl font-bold text-zinc-900">{data.weeklyActiveUsers.current}</span>
             <span className="ml-1 text-sm text-zinc-500">명</span>
             <p className={`mt-0.5 text-xs font-bold ${delta > 0 ? 'text-green-600' : delta < 0 ? 'text-red-600' : 'text-zinc-400'}`}>
-              {delta > 0 ? `▲ +${delta}` : delta < 0 ? `▼ ${delta}` : '— 변화 없음'} (지난주 {data.northStar.previous})
+              {delta > 0 ? `▲ +${delta}` : delta < 0 ? `▼ ${delta}` : '— 변화 없음'} (지난주 {data.weeklyActiveUsers.previous})
             </p>
           </div>
         </div>
         {/* 8주 추이 막대 */}
         <div className="mt-4 flex h-20 items-end gap-2">
-          {data.northStar.weekly.map((w, i) => {
+          {data.weeklyActiveUsers.weekly.map((w, i) => {
             const h = Math.max(4, Math.round((w.active / weeklyMax) * 72))
-            const isCurrent = i === data.northStar.weekly.length - 1
+            const isCurrent = i === data.weeklyActiveUsers.weekly.length - 1
             return (
               <div key={w.weekLabel} className="flex flex-1 flex-col items-center gap-1">
                 <span className="text-xs font-medium text-zinc-600">{w.active}</span>
