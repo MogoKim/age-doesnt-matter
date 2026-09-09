@@ -18,6 +18,7 @@ import { spawnSync } from 'child_process';
 import { readFileSync, existsSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
+import { reconcile } from './lock-sync.mjs';
 
 const [, , label, cmd, ...args] = process.argv;
 
@@ -77,7 +78,34 @@ const result = spawnSync('/usr/bin/caffeinate', ['-i', cmd, ...args], {
   cwd,
 });
 
-const exitCode = result.status ?? 1;
+let exitCode = result.status ?? 1;
+
+/**
+ * `git pull` 로 코드를 당겨왔으면 **의존성도 같이 맞춘다.**
+ *
+ * 예전에는 이 래퍼가 `git pull --ff-only` 만 돌리고 끝냈다. 그래서 main 에서
+ * package-lock.json 이 바뀌어도 운영 clone 의 node_modules 는 옛 상태로 남았고,
+ * **새 코드 + 옛 의존성** 조합이 조용히 돌았다(2026-09-09 재현: lock 은 최신인데 `yaml` 미설치).
+ *
+ * 트리거를 좁게 둔다 — 실행한 명령이 git pull 이고, 그게 성공했을 때만.
+ * 조용히 넘어가지 않는 것이 핵심이라 `npm ci` 실패는 래퍼 전체를 실패시킨다.
+ */
+const isGitPull = /(^|\/)git$/.test(cmd) && args.includes('pull');
+if (exitCode === 0 && isGitPull) {
+  const report = reconcile(cwd, (dir) => {
+    console.log(`[launchd-wrapper] ${label} · lock 변경 감지 → npm ci (${dir})`);
+    return spawnSync('npm', ['ci'], { stdio: 'inherit', cwd: dir }).status ?? 1;
+  });
+  if (report.installed.length > 0) {
+    console.log(`[launchd-wrapper] ${label} · 의존성 재설치 완료: ${report.installed.join(', ')}`);
+  }
+  if (report.failed.length > 0) {
+    const detail = report.failed.map((f) => `${f.name}(exit ${f.code})`).join(', ');
+    console.error(`[launchd-wrapper] ${label} · FATAL: npm ci 실패 — ${detail}`);
+    notifySlack(cwd, `🚨 *운영 clone 의존성 동기화 실패* — \`${label}\`\n${detail}\n시각: ${timestamp()} KST\n작업경로: ${cwd}\n→ 코드는 최신인데 node_modules 가 옛 상태다. 수동으로 npm ci 를 돌려라.`);
+    exitCode = 1;
+  }
+}
 
 if (exitCode !== 0) {
   notifySlack(cwd, `🚨 *로컬 에이전트 실패* — \`${label}\`\n종료코드: ${exitCode}\n시각: ${timestamp()} KST\n작업경로: ${cwd}\n→ 터미널에서 로그 확인: ${cwd}/logs/${label}.log`);
