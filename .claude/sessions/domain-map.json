@@ -1,29 +1,23 @@
 {
-  "_comment": "참고용 문서 — 강제 규칙 아님. '이 파일 건드려도 되나?' 모를 때 확인하는 지도. 새 담당 파일 생기면 업데이트.",
+  "_comment": "참고용 문서 — 강제 규칙 아님. '이 파일 건드려도 되나?' 모를 때 확인하는 지도. 새 담당 파일 생기면 업데이트. (2026-09-09: 카페·시트 공급망 제거로 claude 도메인 재정의)",
   "_shared": [
     "agents/core/",
     "prisma/",
     "src/",
     "CLAUDE.md"
   ],
-
   "claude": {
-    "description": "커뮤니티 스크래퍼 + 문서화 + 하네스",
+    "description": "문서화 + 하네스",
     "domains": [
-      "agents/community/",
-      "agents/cafe/session-manager.ts",
-      "agents/seed/generator.ts",
-      "docs/handover-scraper-*",
+      "docs/",
       ".claude/"
     ]
   },
-
   "codex": {
     "description": "COO 에이전트 + 크론 러너",
     "domains": [
       "agents/coo/",
-      "agents/cron/runner.ts",
-      "docs/handover-cafe-pipeline.html"
+      "agents/cron/runner.ts"
     ]
   }
 }

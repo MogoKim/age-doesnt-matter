@@ -1,6 +1,4 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'fs'
-import { resolve } from 'path'
 import {
   findCelebrityScandalSignal,
   findRacialDegradeSignal,
@@ -208,37 +206,5 @@ describe('★ 근접성 규칙 — 멀리 떨어진 단어끼리 우연히 결�
     // 근접성을 넓히면 "미국 살면서 느낀점"이 다시 걸리는 트레이드오프라 1차에서는 감수한다.
     const body = `연예인이면 방송에 나오는 게 일이지요 ${'그리고 이런저런 이야기가 이어집니다. '.repeat(5)}소식을 듣기도 역겹습니다`
     expect(findCelebrityScandalSignal('어디감히 친일파 자손주제에 티비에 나와 활개를 치죠?', body)).toBeNull()
-  })
-})
-
-describe('구조 계약 — 원문(CafePost) 후보 필터에서만 호출된다', () => {
-  const CURATOR = readFileSync(resolve(__dirname, '../../agents/cafe/content-curator.ts'), 'utf8')
-
-  it('content-curator가 findCelebrityOrRaceViolation을 import한다', () => {
-    expect(CURATOR).toMatch(/import \{[^}]*findCelebrityOrRaceViolation[^}]*\} from '\.\.\/core\/celebrity-race-blocklist\.js'/)
-  })
-
-  it('★ getReferencePosts 후보 필터(원문 기준) 안에서 호출된다', () => {
-    const start = CURATOR.indexOf('async function getReferencePosts')
-    const end = CURATOR.indexOf('\nfunction applySensitiveBoardOverride')
-    expect(start).toBeGreaterThan(-1)
-    const block = CURATOR.slice(start, end > start ? end : undefined)
-    expect(block).toContain('findCelebrityOrRaceViolation(p.title, p.content)')
-  })
-
-  it('★ 발행 생성물(curated) 기준이 아니라 원문(p.title/p.content) 기준이다', () => {
-    // 생성물 기준으로 검사하면 리라이팅·정화로 인물 단서가 지워져 놓친다.
-    expect(CURATOR).not.toContain('findCelebrityOrRaceViolation(curated.title')
-    expect(CURATOR).toContain('findCelebrityOrRaceViolation(p.title, p.content)')
-  })
-
-  it('호출부는 한 곳뿐이다', () => {
-    expect((CURATOR.match(/findCelebrityOrRaceViolation\(/g) ?? []).length).toBe(1)
-  })
-
-  it('★ title-rewrite-gate에서는 호출하지 않는다', () => {
-    const GATE = readFileSync(resolve(__dirname, '../../agents/cafe/title-rewrite-gate.ts'), 'utf8')
-    expect(GATE).not.toContain('celebrity-race-blocklist')
-    expect(GATE).not.toContain('findCelebrityOrRaceViolation')
   })
 })

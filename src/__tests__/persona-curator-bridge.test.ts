@@ -17,7 +17,6 @@ import * as registry from '../../agents/core/persona-registry'
 import * as curatorPersonas from '../../agents/cafe/curator-personas'
 
 const ROOT = join(__dirname, '../..')
-const curatorUsersSrc = readFileSync(join(ROOT, 'agents/cafe/curator-users.ts'), 'utf8')
 const registrySrc = readFileSync(join(ROOT, 'agents/core/persona-registry.ts'), 'utf8')
 
 describe('registry curator bridge — 원본과 동일', () => {
@@ -74,27 +73,6 @@ describe('id → nickname fallback (getCuratorBotUser 로직 보존)', () => {
   })
 })
 
-describe('curator-users 전환 — 직접 의존 제거', () => {
-  it("curator-users.ts에 './curator-shared' 직접 import 0", () => {
-    expect(curatorUsersSrc).not.toContain("from './curator-shared.js'")
-    expect(curatorUsersSrc).not.toContain('from "./curator-shared.js"')
-  })
-
-  it('registry를 통해 가져온다', () => {
-    expect(curatorUsersSrc).toMatch(
-      /import \{ PERSONAS, type PersonaMatch \} from '\.\.\/core\/persona-registry\.js'/,
-    )
-  })
-
-  it('DB 로직은 그대로다 (PR-5a 범위 밖)', () => {
-    for (const sym of [
-      'getCuratorBotUser', 'countTodayPostsByPersona', 'AUTHOR_DAILY_POST_CAP',
-      'prisma.user.upsert', 'P2002', 'nickname conflict',
-    ]) {
-      expect(curatorUsersSrc, sym).toContain(sym)
-    }
-  })
-})
 
 describe('임시 bridge임을 코드가 밝힌다', () => {
   it('registry에 임시 bridge / 제거 예정이 명시돼 있다', () => {
@@ -139,24 +117,6 @@ describe('임시 bridge임을 코드가 밝힌다', () => {
       'personaBoardForRouting', 'matchPersona',
     ]) {
       expect(names).toContain(sym)
-    }
-  })
-
-  it('발행 경로(content/popular-curator)는 persona를 registry에서만 가져온다', () => {
-    // PR-7c 회귀 가드: curator-shared로 되돌아가면 여기서 잡힌다
-    const PERSONA_SYMS = [
-      'PERSONAS', 'PersonaMatch', 'DESIRE_PERSONA_MAP', 'matchPersona',
-      'personaBoardForRouting', 'personaIdsForRoutingBoard', 'personasForRoutingBoard',
-    ]
-    for (const f of ['agents/cafe/content-curator.ts', 'agents/cafe/popular-curator.ts']) {
-      const src = readFileSync(join(process.cwd(), f), 'utf8')
-      for (const m of src.matchAll(/import\s*\{([^}]*)\}\s*from\s*'([^']+)'/g)) {
-        const names = m[1].split(',').map(x => x.trim().replace(/^type /, '')).filter(Boolean)
-        const hit = names.filter(n => PERSONA_SYMS.includes(n))
-        if (m[2].includes('curator-shared')) expect(hit).toEqual([])
-        // 정의 원본 직접 import도 금지 — registry가 유일한 진입점이다
-        if (m[2].includes('curator-personas')) expect(hit).toEqual([])
-      }
     }
   })
 })

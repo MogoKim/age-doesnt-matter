@@ -119,25 +119,11 @@ export interface RunnerSpec {
  *    새 잡을 추가하면 이 표에도 넣어야 한다. 넣지 않으면 freshness 검사에서 빠진다.
  */
 export const LAUNCHD_RUNNERS: Readonly<Record<string, RunnerSpec>> = {
-  // ── 카페 크롤러 10종 — CafePost DB write ──
-  'com.unao.cafe-crawler-dawn': { grade: 'db-write', what: '카페 크롤 → DB 저장' },
-  'com.unao.cafe-crawler-morning': { grade: 'db-write', what: '카페 크롤 → DB 저장' },
-  'com.unao.cafe-crawler-lunch': { grade: 'db-write', what: '카페 크롤 → DB 저장' },
-  'com.unao.cafe-crawler-afternoon': { grade: 'db-write', what: '카페 크롤 → DB 저장' },
-  'com.unao.cafe-crawler-evening': { grade: 'db-write', what: '카페 크롤 → DB 저장' },
-  'com.unao.cafe-crawler-09h30': { grade: 'db-write', what: '카페 크롤 → DB 저장' },
-  'com.unao.cafe-crawler-17h30': { grade: 'db-write', what: '카페 크롤 → DB 저장' },
-  'com.unao.cafe-crawler-popular-morning': { grade: 'db-write', what: '인기글 크롤 → DB 저장' },
-  'com.unao.cafe-crawler-popular-afternoon': { grade: 'db-write', what: '인기글 크롤 → DB 저장' },
-  'com.unao.cafe-crawler-popular-evening': { grade: 'db-write', what: '인기글 크롤 → DB 저장' },
-
-  // ── 고객 발행 ── O1 사고 당사자가 여기 있다
-  'com.unao.naver-cafe-sheet-scraper': { grade: 'publish', what: '시트 → 고객 글 발행 (+Sheet write)' },
-  'com.unaeo.magazine-morning': { grade: 'publish', what: '매거진 생성 → 고객 발행' },
-  'com.unaeo.magazine-late': { grade: 'publish', what: '매거진 생성 → 고객 발행' },
+  // ⚠️ 카페 크롤러 10종·시트 발행·매거진·세션 갱신은 R4 B-3 에서 제거됐다(2026-09-09).
+  //    등급표가 비면 guard 가 느슨해지는 게 아니라 반대다 — 모르는 label 은
+  //    DEFAULT_UNKNOWN_GRADE 로 "쓰기를 한다"고 가정해 더 엄격하게 걸린다.
 
   // ── 운영 데이터 ──
-  'com.unaeo.session-refresh': { grade: 'ops-data', what: '네이버 세션 쿠키 갱신' },
   'com.unao.unao-prod-sync': { grade: 'ops-data', what: '운영 clone 자동 동기화 (03:00)' },
 
   // ── 진단·개발 ──

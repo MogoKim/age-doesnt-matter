@@ -341,9 +341,11 @@ describe('PASS — 정상 상태', () => {
     expect(v.code).toBe('ok')
   })
 
-  it('현재 운영 launchd 16개 전부 PASS여야 한다 (2026-08-20 실측 상태 재현)', () => {
+  it('등급표에 남은 운영 launchd 는 전부 PASS여야 한다 (건강한 prod 상태 재현)', () => {
+    // 2026-08-20 에는 16종이었다. 카페·시트·매거진·세션 계열은 R4 B-3 에서 제거돼
+    // 지금은 운영 clone 동기화와 운영 보드만 남는다. 수를 고정하지 않고 남은 전부를 검사한다.
     const operational = Object.entries(LAUNCHD_RUNNERS).filter(([, s]) => s.grade !== 'dev-tool')
-    expect(operational.length).toBeGreaterThanOrEqual(16)
+    expect(operational.length).toBeGreaterThan(0)
 
     for (const [label, spec] of operational) {
       const v = judgeRunnerFreshness({
@@ -696,14 +698,13 @@ describe('write 등급 분류', () => {
     }
   })
 
-  it('사고 당사자 sheet-scraper는 publish 등급이다', () => {
-    expect(launchdGrade('com.unao.naver-cafe-sheet-scraper')?.grade).toBe('publish')
-  })
-
-  it('cafe-crawler 10종이 전부 등급표에 있다', () => {
-    const crawlers = Object.keys(LAUNCHD_RUNNERS).filter((k) => k.includes('cafe-crawler'))
-    expect(crawlers).toHaveLength(10)
-    for (const c of crawlers) expect(launchdGrade(c)?.grade).toBe('db-write')
+  it('제거된 카페·시트 계열은 등급표에 없다 (R4 B-3, 2026-09-09)', () => {
+    // 등급표에서 빠지면 guard 가 느슨해지는 게 아니다 — 모르는 label 은
+    // DEFAULT_UNKNOWN_GRADE 로 "쓰기를 한다"고 가정해 오히려 엄격하게 걸린다.
+    for (const label of ['com.unao.naver-cafe-sheet-scraper', 'com.unaeo.session-refresh']) {
+      expect(launchdGrade(label), label).toBeNull()
+    }
+    expect(Object.keys(LAUNCHD_RUNNERS).filter((k) => k.includes('cafe-crawler'))).toEqual([])
   })
 
   it('등급표에 없는 label은 null을 돌려준다 (호출부가 WARN 처리한다)', () => {

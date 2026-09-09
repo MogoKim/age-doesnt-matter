@@ -71,6 +71,13 @@ describe('삭제된 핸들러의 잔재', () => {
     'cafe_crawler:wave-process', 'cafe_crawler:user-post-wave-process',
     // B-5 관측·리포트 (2026-09-09)
     'design:ads-loop',
+    // R4 B-3 외부 카페·Google Sheet 공급망 17개 (2026-09-09) — 재등록 방지선
+    'community:sheet-scrape', 'community:dawn-sheet-scrape', 'community:dawn-sheet-cleanup',
+    'community:fmkorea-scrape', 'community:navercafe-scrape',
+    'cafe_crawler:image-route', 'cafe_crawler:content-curate', 'cafe_crawler:popular-curate',
+    'cafe_crawler:brief-monitor', 'cafe_crawler:daily-brief-fallback', 'cafe_crawler:evening-brief-safety',
+    'cafe_crawler:cafe-pipeline', 'cafe_crawler:trend-analysis', 'cafe_crawler:magazine-generate',
+    'cafe_crawler:popular-sync', 'cafe_crawler:external-crawl', 'cafe:session-refresh',
   ] as const
 
   it('runner 에 없다', () => {

@@ -445,7 +445,7 @@ GitHub Actions Cron (12:00, 16:00, 20:00 KST)
 | **콘텐츠 금지** | 정치, 혐오, 도박, 성인콘텐츠 (ABSOLUTE_ZERO) |
 | **모델 정책** | strategic=**Opus 4.7**(주간 전략 1-2회) / heavy=Sonnet 4.6(고객 대면) / light=Haiku 4.5(데이터·모니터링) |
 | **자동화 상태** | ACTIVE (2026-03-24 승인), EMERGENCY_STOP DB 플래그 + 1클릭 긴급 중지 가능 |
-| **MONITORING_TASKS** | 일부 태스크는 EMERGENCY_STOP 상태에서도 계속 실행 (coo:moderator, cafe:session-refresh 등 — 현재 목록은 `agents/cron/runner.ts` 참조) |
+| **MONITORING_TASKS** | 일부 태스크는 EMERGENCY_STOP 상태에서도 계속 실행 (coo:moderator 등 — 현재 목록은 `agents/cron/runner.ts` 참조). `cafe:session-refresh` 는 R4 B-3 에서 제거됐다(2026-09-09) |
 
 ---
 
@@ -470,8 +470,8 @@ GitHub Actions Cron (12:00, 16:00, 20:00 KST)
 | `agents-hourly.yml` | 2시간마다 | CTO(헬스체크, 에러감시), CDO(이상감지) |
 | `agents-jobs.yml` | 12, 16, 20시 | COO(일자리 수집) |
 | `agents-moderation.yml` | 09, 15, 21시 | COO(모더레이션) |
-| `agents-cafe.yml` | 09, 13, 19시 | CAFE(네이버 카페 3곳 + 82cook 크롤링) |
-| **`agents-sheet-viral.yml`** | — | **R4 에서 제거됨(2026-09-09).** sheet-scrape 등 COMMUNITY 경로는 `agents-cafe.yml` 참조 |
+| **`agents-cafe.yml` · `agents-cafe-hourly-curation.yml` · `agents-cafe-popular-curation.yml`** | — | **R4 B-3 에서 제거됨(2026-09-09).** 카페 크롤·큐레이션·브리프 자동화 종료 |
+| **`agents-scraper.yml` · `agents-scraper-dawn.yml` · `agents-sheet-viral.yml`** | — | **R4 에서 제거됨(2026-09-09).** 외부 카페·Google Sheet 공급망 종료 |
 | **`quarantine-check.yml`** | 매주 월요일 00:00 UTC | 격리 항목 기한 초과 점검 |
 
 ### 6.3 로컬 launchd 프로세스 — 2026-09-09 실측
@@ -483,53 +483,30 @@ GitHub Actions Cron (12:00, 16:00, 20:00 KST)
 |---|---|---|
 | `com.unao.unao-prod-sync` | **로드됨** | production 동기화 — KEEP_CORE |
 | `com.unaeo.opsboard` | **로드됨** | 운영 보드 |
-| `com.unaeo.session-refresh` | **unloaded** | 네이버 NID_SES 세션 갱신. Codex 가 unload 했다 — **재로드·실행하지 않는다** |
-| `com.unao.naver-cafe-sheet-scraper` | **unloaded** | 카페·시트 스크래퍼 |
+| `com.unaeo.session-refresh` | **로드됨(미실행)** — 2026-09-09 재실측 | 네이버 NID_SES 세션 갱신. **실행 대상 코드는 R4 B-3 에서 삭제됐다.** 재실행하지 않는다 |
+| `com.unao.naver-cafe-sheet-scraper` | **로드됨(미실행)** — 2026-09-09 재실측 | 카페·시트 스크래퍼. **실행 대상 코드는 R4 B-3 에서 삭제됐다.** 재실행하지 않는다 |
 
-> 매거진 발행 launchd(`com.unaeo.magazine-*`) 12개는 2026-09-06 04:09 KST `launchctl unload -w` 로 차단됐다.
-> `com.unaeo.jisik-answerer` 를 포함한 나머지 plist 도 현재 로드돼 있지 않다.
+> ⚠️ **이전 기록 정정**: 위 두 label 은 이 문서에 `unloaded` 로 적혀 있었으나, 2026-09-09 `launchctl list`
+> 재실측에서 **둘 다 목록에 있다**(PID `-`, exit 0 — 등록돼 있고 지금 실행 중이 아님).
+> `com.unao.unao-prod-sync` 도 같은 형태로 나오며 이 표는 그것을 "로드됨"으로 적고 있었다. 같은 기준을 적용해 정정한다.
+> **두 job 의 unload 는 창업자 액션으로 남긴다** — 이 저장소 작업에서는 `launchctl` 을 실행하지 않는다.
+
+> 매거진 발행 launchd(`com.unaeo.magazine-*`)는 2026-09-06 04:09 KST `launchctl unload -w` 로 차단됐고,
+> `launchctl list` 에도 나오지 않는다. 저장소의 plist 원본은 R4 B-3 에서 삭제했다(`launchd/` 에는
+> `com.unao.unao-prod-sync` · `com.unaeo.opsboard` 둘만 남는다). plist 삭제는 머신의 등록 상태를 바꾸지 않는다.
 
 ### 6.4 전체 타임라인 (KST)
 
-```
-06:00      CTO 보안감사
-07:00      CTO 크롤링헬스
-08:00 (월) CMO SEO옵티마이저
-08:30      CAFE 크롤링(로컬)
-09:00      COO 모더레이션 | CMO 텍스트포스팅
- (월)      CMO 소스확장(weekly)
-09:15      COO 연결촉진(1차)
-09:30      승인 리마인더
-10:00      CMO 트렌드분석
- (월)      CMO 리뷰(10:00) → 전략(10:15)
-10:15      CMO 간병큐레이션
-10:30      COO 댓글활성화(1차)
-10:45      CMO 건강불안해소
-11:00      CMO 카드뉴스→멀티플랫폼
-11:15      CMO 유머큐레이션
-11:30      CMO 채널시딩
-11:45      COO 일자리매칭
-12:00      COO 일자리수집 | COO 트렌딩스코어 | CMO 지식iN(화/목/토)
-12:15      COO 대댓글체인(1차)
-12:30      CAFE 크롤링(로컬)
-13:00      CAFE 크롤링(Actions)
-14:00      COO 콘텐츠편성
-14:30      COO 댓글활성화(2차)
-15:00      COO 모더레이션 | COO 연결촉진(2차)
-16:00      매거진자동발행 | COO 일자리수집
-18:00      COO 트렌딩스코어(2차)
-18:30      COO 대댓글체인(2차) | CAFE 크롤링(로컬)
-19:00      CAFE 크롤링(Actions)
-19:30      매거진이브닝발행
-20:00      COO 일자리수집 | COO 댓글활성화(3차)
-21:00      COO 모더레이션
-22:00      CDO KPI수집
-22:30      CDO 참여최적화
-23:00      CFO 비용추적
-23:30      CFO 수익추적
-(2h)       CTO 헬스체크 + 에러감시 + CDO 이상감지
-(micro)    SEED 마이크로 08/12/18/23시
-```
+> ⚠️ 예전 이 자리에 있던 24시간 타임라인은 **더 이상 사실이 아니다.** 거기 적힌 일정 대부분(CMO·CDO·CFO·SEED·
+> COO 참여 유도·CAFE 크롤·매거진)은 R4 에서 제거됐다. 고정 타임라인을 문서에 박아 두면 실제와 어긋난 채로
+> 남아 운영 판단을 오도한다. **현재 일정은 아래 두 곳에서만 확인한다.**
+>
+> - GHA: `gh workflow list --all` (state 가 `active` 인 것만 실제로 돈다)
+> - launchd: `launchctl list | grep -E 'com\.unao\.|com\.unaeo\.'`
+>
+> 2026-09-09 실측 기준 **예약 실행되는 에이전트 자동화는 `agents-moderation.yml`(COO 모더레이션) 하나**이며,
+> 나머지 agents-* workflow 는 전부 `disabled_manually` 다. runner 핸들러는 19개이고 그중 5개는
+> dispatch 전용이라 예약 실행이 없다.
 
 ---
 
@@ -810,7 +787,7 @@ Slack Workspace: 우나어-ops (14개 채널)
 - 전체 코드 구현 (46페이지, 35+ API, 77+ 컴포넌트)
 - 에이전트 시스템 ACTIVE (헌법 v5.0, 93핸들러)
 - 일자리 자동 수집 파이프라인 (Waterfall 4단계)
-- 카페 크롤링 파이프라인 (네이버 3곳 + 82cook)
+- ~~카페 크롤링 파이프라인 (네이버 3곳 + 82cook)~~ — R4 B-3 에서 제거됨(2026-09-09)
 - 수익 컴포넌트 (AdSense pub: ca-pub-4117999106913048 + Coupang Partners)
 - SEO JSON-LD + sitemap + Breadcrumbs + 동적 OG 이미지
 - GTM + GA4 애널리틱스 기반 (15개 커스텀 이벤트)
@@ -832,9 +809,9 @@ Slack Workspace: 우나어-ops (14개 채널)
 - 헌법 v5.0 (6개 파일 분리 + Opus 4.7 전략 모델)
 - BaseAgent Prompt Caching 구현 (constitution 토큰 90% 절감)
 - LIFE2 게시판 (인생 2막) + PostSource.SHEET 추가
-- 구글 시트 4탭 화제성 파이프라인 (community:sheet-scrape)
+- ~~구글 시트 4탭 화제성 파이프라인 (community:sheet-scrape)~~ — R4 B-3 에서 제거됨(2026-09-09)
 - GHA 17개 체계 (agents-sheet-viral, agents-killer-post, agents-weekly 확장 등)
-- launchd 5개 plist (magazine×3, session-refresh, jisik-answerer)
+- ~~launchd 5개 plist (magazine×3, session-refresh, jisik-answerer)~~ — R4 B-3 에서 제거됨(2026-09-09)
 - 매거진 이미지 생성기 DALL-E → Gemini 교체 (launchd 환경변수)
 - AdminQueue + Popup + PushSubscription + PostView 모델 추가
 - 봇 게시글 Slug 자동생성 (Google 12,533개 URL 색인 복구)
@@ -1025,7 +1002,7 @@ Layer 3: 배포 후 → Smoke+Lighthouse → Slack #qa
 |------|---------|---------|
 | **킬러포스트 시스템** | `seed:killer-post`, Post.isFeatured/featuredAt, agents-killer-post.yml (2회/일). **R4 에서 제거됨(2026-09-09)** | 2026-04 |
 | **바이럴 파동 감지** | `seed:viral-waves`, 30분 주기, agents-sheet-viral.yml. **R4 에서 제거됨(2026-09-09)** | 2026-04 |
-| **구글 시트 파이프라인** | `community:sheet-scrape`, PostSource.SHEET, 4탭 화제성 수집 | 2026-05 |
+| **구글 시트 파이프라인** | `community:sheet-scrape`, PostSource.SHEET, 4탭 화제성 수집. **R4 B-3 에서 제거됨(2026-09-09)** — `PostSource.SHEET` 로 발행된 기존 글은 그대로 둔다 | 2026-05 |
 | **LIFE2 게시판** | BoardType.LIFE2 (인생 2막), 커뮤니티 신규 탭 | 2026-04 |
 | **비회원 좋아요/댓글** | GuestLike 모델 (fingerprint 기반), 비회원 참여 허용 | 2026-05-01 |
 | **상단 팝업/띠배너** | Popup 모델 (3타입 × 7타겟), `/admin/popups` 관리 | 2026-04 |

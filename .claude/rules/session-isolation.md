@@ -14,7 +14,7 @@ Antigravity는 git worktree로 파일 동시 쓰기 충돌을 방지하지만,
 
 ```json
 {
-  "claude":  { "domains": ["agents/community/", "docs/handover-scraper-*"] },
+  "claude":  { "domains": ["<담당 디렉터리>", "docs/<담당 문서>-*"] },
   "codex":   { "domains": ["agents/coo/", "agents/cron/runner.ts"] },
   "_shared": ["agents/core/", "prisma/", "src/"]
 }
@@ -28,7 +28,7 @@ Antigravity는 git worktree로 파일 동시 쓰기 충돌을 방지하지만,
 
 ### 1. 다른 AI 도메인 파일 수정 시
 - domain-map.json에 본인 도메인에 없는 파일을 수정하기 전에 이유를 주석 또는 커밋 메시지에 명시
-- 예: "agents/cron/runner.ts 수정 — community:sheet-scrape 핸들러 추가 (codex 도메인이지만 scraper 연동 필요)"
+- 예: "agents/cron/runner.ts 수정 — `<agent>:<task>` 핸들러 추가 (codex 도메인이지만 연동 필요)"
 
 ### 2. 공용 파일(core/, prisma/) 수정 시
 - 반드시 **먼저** 다른 AI 담당 세션에 변경 내용 공지 (Slack 또는 커밋 메시지)

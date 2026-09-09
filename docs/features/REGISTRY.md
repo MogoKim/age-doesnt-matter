@@ -111,10 +111,10 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 
 | ID | 기능명 | 코드 위치 | 스케줄/트리거 | 실행환경 | 충족욕망 | 타겟페르소나 | 문서 | 상태 | 최근변경 |
 |----|--------|----------|-------------|---------|---------|------------|------|------|---------|
-| A01 | 카페 크롤러 파이프라인 | `agents/cafe/crawler.ts` + `psych-analyzer.ts` + `trend-analyzer.ts` + `daily-brief.ts` + `content-curator.ts` + `run-pipeline.ts` | 크롤·분석: launchd 07:40·09:30·11:30·14:30·17:30·21:30·00:30 KST / 큐레이션(content-curator): GHA `agents-cafe-hourly-curation.yml` 45분 간격 일 21슬롯 (2026-07-09~10 PR #106~#113 반영: 정치 blocklist 경계매칭·refs 기록+당일격리·source 3축 분리·remon/goondae publishable→core 승격·shadow fallback 제거·trend lane 제거 — 상세 [A01](A01-cafe-crawler.md) 현행 정정) | LOCAL(크롤·분석)+GHA(큐레이션) | INFRA | — | [A01](A01-cafe-crawler.md) | ACTIVE | 2026-07-10 |
-| A02 | 매거진 자동생성 | `agents/cafe/magazine-generator.ts` + `local-magazine-runner.ts` | launchd 12:00, 14:00 KST (plist 실측 2026-07-10) — PR #113 geo_seed lazy self-refill + topicSource 관측 반영 | LOCAL_ONLY | HEALTH+MONEY+RETIRE | P2·P4 | [F05](F05-magazine.md) | ACTIVE | 2026-07-10 |
+| A01 | 카페 크롤러 파이프라인 | ~~`agents/cafe/crawler.ts`~~ · ~~`psych-analyzer.ts`~~ · ~~`trend-analyzer.ts`~~ · ~~`daily-brief.ts`~~ · ~~`content-curator.ts`~~ · ~~`run-pipeline.ts`~~ · ~~`agents-cafe*.yml`~~ 삭제됨 | — | — | — | — | [A01](A01-cafe-crawler.md) | **ARCHIVED** | 2026-09-09 |  <!-- R4 B-3 -->
+| A02 | 매거진 자동생성 | ~~`agents/cafe/magazine-generator.ts`~~ · ~~`local-magazine-runner.ts`~~ 삭제됨 | — | — | — | — | [F05](F05-magazine.md) | **ARCHIVED** | 2026-09-09 |  <!-- R4 B-3 -->
 | A03 | 일자리봇 | `agents/coo/job-scraper.ts` | GHA 12:00·16:00·20:00 KST | GHA | MONEY | P4 | [A03](A03-job-scraper.md) | ACTIVE | 2026-04-27 |
-| A04 | 외부 콘텐츠 스크래퍼 | `agents/community/sheet-scraper.ts` + `agents/community/fmkorea-scraper.ts` | agents-scraper.yml 07:30·09:00·12:00·15:00·21:00 KST (오유·네이트판) / launchd 11:30·21:30 KST (펨코) | GHA+LOCAL | RELATION | P1·P3 | [A04](A04-external-content.md) | ACTIVE | 2026-06-07 |
+| A04 | 외부 콘텐츠 스크래퍼 | ~~`agents/community/**`~~ · ~~`agents-scraper.yml`~~ · ~~`agents-scraper-dawn.yml`~~ 삭제됨 | — | — | — | — | [A04](A04-external-content.md) | **ARCHIVED** | 2026-09-09 |  <!-- R4 B-3 -->
 | A05 | 시드봇 35명 | ~~`agents/seed/scheduler.ts`·`micro-scheduler.ts`~~ 삭제됨 (generator·persona-data 는 보존) | — | — | RELATION+HEALTH | ALL | [A05](A05-seed-bot.md) | **ARCHIVED** | 2026-09-09 |
 | A06 | SNS 자동 포스팅 | ~~`agents/cmo/social-poster.ts`~~ 삭제됨 | — | — | RELATION | — | [A06](A06-sns-posting.md) | **ARCHIVED** | 2026-09-08 |
 | A07 | 카드뉴스 생성 | `agents/cmo/card-news-generator.ts` | GHA 13:00 KST | GHA | RELATION | — | [A07](A07-card-news.md) | ARCHIVED | 2026-05-15 |
@@ -126,10 +126,10 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | A13 | CTO 아키텍처 리뷰 | ~~`agents/cto/arch-review.ts`~~ 삭제됨 | — | — | INFRA | — | — | **ARCHIVED** | 2026-09-08 |
 | A14 | CTO 가비지 컬렉션 | ~~`agents/cto/garbage-collect.ts`~~ 삭제됨 | — | — | INFRA | — | — | **ARCHIVED** | 2026-09-08 |
 | A15 | CTO QA 검증 | ~~`agents/cto/qa-verifier.ts`~~ 삭제됨 | — | — | INFRA | — | — | **ARCHIVED** | 2026-09-08 |
-| A16 | COO 커넥션 퍼실리테이터 | `agents/coo/connection-facilitator.ts` | GHA 일간 | GHA | RELATION | ALL | — | ACTIVE | 2026-05-12 |
-| A17 | COO 일자리 매처 | `agents/coo/job-matcher.ts` | GHA 일간 | GHA | MONEY | P4 | — | ACTIVE | 2026-05-12 |
-| A18 | COO 댓글 활성화 | `agents/coo/comment-activator.ts` | GHA 일간 | GHA | RELATION | ALL | — | ACTIVE | 2026-05-23 |
-| A19 | COO 답글 체인 드라이버 | `agents/coo/reply-chain-driver.ts` | GHA 일간 | GHA | RELATION | ALL | — | ACTIVE | 2026-05-12 |
+| A16 | COO 커넥션 퍼실리테이터 | ~~`agents/coo/connection-facilitator.ts`~~ 삭제됨 | — | — | — | — | — | **ARCHIVED** | 2026-09-09 |  <!-- R4 SEED·COO 배치 — PR #438 -->
+| A17 | COO 일자리 매처 | ~~`agents/coo/job-matcher.ts`~~ 삭제됨 | — | — | — | — | — | **ARCHIVED** | 2026-09-09 |  <!-- R4 SEED·COO 배치 — PR #438 -->
+| A18 | COO 댓글 활성화 | ~~`agents/coo/comment-activator.ts`~~ 삭제됨 | — | — | — | — | — | **ARCHIVED** | 2026-09-09 |  <!-- R4 SEED·COO 배치 — PR #438 -->
+| A19 | COO 답글 체인 드라이버 | ~~`agents/coo/reply-chain-driver.ts`~~ 삭제됨 | — | — | — | — | — | **ARCHIVED** | 2026-09-09 |  <!-- R4 SEED·COO 배치 — PR #438 -->
 | A20 | CPO 페르소나 다양성 체커 | ~~`agents/cpo/persona-diversity-checker.ts`~~ 삭제됨 | — | — | INFRA | — | — | **ARCHIVED** | 2026-09-08 |
 | A21 | CDO 참여 최적화 | ~~`agents/cdo/engagement-optimizer.ts`~~ 삭제됨 | — | — | INFRA | — | — | **ARCHIVED** | 2026-09-08 |
 | A22 | Strategist 사용자 딥 분석 | ~~`agents/strategist/user-deep-analysis.ts`~~ 삭제됨 | — | — | INFRA | — | — | **ARCHIVED** | 2026-09-08 |
@@ -140,7 +140,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | A27 | QA 코드 게이트 | `agents/qa/pre-deploy-gate.ts` | DISPATCH ONLY | DISPATCH | INFRA | — | — | ACTIVE | 2026-05-12 |
 | A28 | 네이버 블로그 수동 발행 큐 | ~~`agents/naver-blog/*`, `src/app/admin/(panel)/naver-blog/*`, `src/app/api/admin/naver-queue/*`~~ 전부 삭제 | — | LOCAL_ONLY | GROWTH | — | Gemini 구독 종료로 폐기(2026-06-04), 어드민 페이지·API 삭제(2026-06-07). NaverBlogQueue 테이블/R2 이미지만 보존 | ARCHIVED | 2026-06-07 |
 | A29 | 댓글 파동 프로세서 | ~~`agents/cafe/wave-processor.ts`~~ · ~~`src/app/api/internal/comment-wave/route.ts`~~ · ~~`agents-cafe-wave.yml`~~ 삭제됨 (DB 모델·기존 데이터만 보존) | — | — | RELATION | ALL | [A29](A29-comment-wave.md) | **ARCHIVED** | 2026-09-09 |
-| A30 | 카페 인기글 sync+큐레이션 | `agents/cafe/popular-sync.ts` + `agents/cafe/popular-curator.ts` + `agents/cafe/curator-shared.ts` | launchd 10:30/16:00/21:15 KST (sync) + GHA 10:50/16:15/21:30 KST (curate) | LOCAL+GHA | HEALTH+RELATION | ALL | [A30](A30-popular-sync.md) | ACTIVE | 2026-06-07 |
+| A30 | 카페 인기글 sync+큐레이션 | ~~`agents/cafe/popular-sync.ts`~~ · ~~`popular-curator.ts`~~ 삭제됨 (`curator-shared.ts` 는 persona SSoT 로 보존) | — | — | — | — | [A30](A30-popular-sync.md) | **ARCHIVED** | 2026-09-09 |  <!-- R4 B-3 -->
 
 ---
 
@@ -150,7 +150,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 |----|--------|----------|--------|---------|------------|------|------|---------|
 | M01 | CTO 헬스체크 + 에러모니터 | `agents/cto/health-check.ts` + `error-monitor.ts` + `crawler-health.ts` | GHA 4시간마다 | INFRA | — | [M01](M01-cto-monitoring.md) | ACTIVE | 2026-04-27 |
 | M02 | QA 콘텐츠 감사 | `agents/qa/content-audit.ts` | GHA 매일 08:20 KST | INFRA | — | [M02](M02-qa-content-audit.md) | ACTIVE | 2026-04-27 |
-| M03 | 브리프 모니터 | `agents/cafe/brief-monitor.ts` | GHA 09:30 KST | INFRA | — | [M03](M03-brief-monitor.md) | ACTIVE | 2026-04-27 |
+| M03 | 브리프 모니터 | ~~`agents/cafe/brief-monitor.ts`~~ · ~~`agents-cafe.yml`~~ 삭제됨 | — | — | — | [M03](M03-brief-monitor.md) | **ARCHIVED** | 2026-09-09 |
 | M04 | Threads 토큰 갱신 알림 | ~~`agents/cmo/platforms/threads-token-refresh.ts`~~ 삭제됨 | — | INFRA | — | [M04](M04-threads-token.md) | **ARCHIVED** | 2026-09-08 |
 | M05 | 거울 보드 (운영 현황 실측 대시보드) | `scripts/ops-board/` + `.claude/commands/board.md` | 로컬 수동 (`npm run board` / `/board`) | INFRA | — | [M05](M05-ops-board.md) | ACTIVE | 2026-06-04 |
 
@@ -174,7 +174,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | ID | 기능명 | 코드 위치 | 배치 위치 | 충족욕망 | 타겟페르소나 | 문서 | 상태 | 최근변경 |
 |----|--------|----------|---------|---------|------------|------|------|---------|
 | R01 | AdSense 광고 | `src/components/ad/AdSenseUnit.tsx` | 홈·매거진·커뮤니티·일자리·검색·베스트 | INFRA | — | [R01](R01-adsense.md) | ACTIVE | 2026-05-17 |
-| R02 | 쿠팡 파트너스 CPS | `src/components/ad/CoupangBanner.tsx` + `agents/cafe/cps-matcher.ts` | 매거진 상세·목록·전 페이지 배너 | MONEY | P2·P4 | [R02](R02-coupang-cps.md) | ACTIVE | 2026-05-14 |
+| R02 | 쿠팡 파트너스 CPS | `src/components/ad/CoupangBanner.tsx` (~~`agents/cafe/cps-matcher.ts`~~ 는 매거진 전용이라 R4 B-3 에서 제거) | 매거진 상세·목록·전 페이지 배너 | MONEY | P2·P4 | [R02](R02-coupang-cps.md) | ACTIVE | 2026-05-14 |
 
 ---
 
