@@ -194,15 +194,15 @@ T+0은 2026-09-05 KST다. 날짜가 지나도 증거가 없으면 PASS로 넘기
 | 단계 | 대상 | 현재 파악된 것 |
 |---|---|---|
 | **R4** | C-level 및 역할극 에이전트 | **ORG_THEATER 10 + SUPERSEDED 4 + `cto:qa-verify` + GROWTH_LEGACY 13 제거(09-08), SEED 봇 4 + COO 참여 유도 7 제거(09-09).** C-level 삭제 후보 잔여 **0** |
-| **R4** | 사용하지 않는 workflow · runner · registry | **B-3 종결(2026-09-09, merge `ed99af66`).** 크론 키 **17개** 중 linked **12** · orphaned **5**(전부 dispatchOnly, **localOnly 0**). GHA **11개** 중 활성 **4개**(ci · lighthouse · quarantine-check · agents-moderation), 나머지 7개 `disabled_manually`. 저장소 launchd plist 는 `unao-prod-sync` · `opsboard` 둘뿐이고, 설치본 15개는 `~/backups/unao-launchd-archive-2026-09-09/` 로 옮겼다 |
+| **R4** | 사용하지 않는 workflow · runner · registry | **종결(2026-09-09).** runner HANDLERS **7개** · cron linked **7** · orphaned **0**. GHA **10개** 중 활성 4(ci · lighthouse · quarantine-check · agents-moderation). `automation_status: PAUSED` 라 실제 실행 경로가 있는 것은 `coo:moderator` 하나다. 저장소 launchd plist 2개 |
 | **R4** | 보지 않는 Slack · 리포트 · AdminQueue 자동화 | Slack "NSM" 2벌(`ceo/weekly-report.ts` · `cdo/kpi-collector.ts`)이 **모두 삭제됨(2026-09-08)**. 남은 Slack 리포트는 개별 KEEP 근거로 재판정한다 |
-| **R5** | 오도·중복·정지된 문서 | `NORTH_STAR.md`·`constitution*.yaml` 재감사 대상. 정본이 아닌 것을 정본처럼 쓰지 않게 한다 |
+| **R5** | 오도·중복·정지된 문서 | **종결(2026-09-09, PR #443).** 런타임이 읽는 것은 `automation_status` 필드 하나와 프롬프트로 주입되는 `constitution.yaml` 본문뿐임을 확인하고, 소비처 0 인 분할 constitution 5개를 제거했다. 죽은 계약(qa_agent · 봇 댓글 수치 · 헬스체크 도메인)과 SERVICE_ARCHITECTURE 의 "핸들러 93개" 표를 실측으로 교체. **NORTH_STAR.md 는 무변경 — 복합 North Star 계산은 HOLD 유지** |
 | **R6** | 오래된 KPI · 지표 · 스냅샷 · 대시보드 | **REMOVE 완료(2026-09-09)** — KPI 스냅샷 workflow·수집기·KpiHistoryPanel·전용 조회, ops 일일 리포트, design 광고 루프 제거. `DailyKpiSnapshot` **DB 모델과 기존 데이터는 보존**(migration 없음). `northStar`가 WAU인 표기 정정은 미결 |
 | **R6-F** | UI · 디자인 도구 재감사 | **완료(2026-09-09).** figma-first·FIGMA_STRUCTURE·DESIGN_WORKFLOW·Product Designer 템플릿 제거, `ops-runner-manifest` 의 실재하지 않는 Figma launchd 2개 정리. CLAUDE.md 는 "Figma 를 기본 절차로 강제하지 않고 명시 요청 시에만 사용"으로 확정. **UI 규칙·디자인 토큰·BRAND_VISUAL_GUIDE 는 보존** |
 | **R6** | 어드민 E2E CI 게이트 | **완료(2026-09-09).** 기존 `E2E Admin` job 은 자격증명이 없으면 `exit 0` 이라 **한 번도 실행되지 않은 채 success** 였다(false-green). `vars.E2E_ADMIN_ENABLED` 가 있을 때만 도는 job-level 스위치로 바꿔 기본을 **명시적 skipped** 로 두고, 활성화 후 대상 URL·자격이 비면 **실패**시킨다. 대상은 `vars.E2E_ADMIN_BASE_URL` 이며 실서비스 도메인이면 테스트 전에 즉시 실패한다. 운영 게시글을 숨기고 지우던 `e2e/08-admin-service-sync.spec.ts` 는 제거했다 |
 | **R4 B-3** | 외부 카페 · Google Sheet 공급망 | **REMOVE 종결(2026-09-09, merge `ed99af66`).** 핸들러 **19키**(B-3 17 + 종속 `cto:crawler-health` · `coo:content-scheduler`) · workflow 5개 · `agents/community/**` · `agents/magazine/**` · `agents/core` 고아 9개 · 카페 크롤·큐레이션·브리프·매거진·세션 모듈 제거. 코드 **−28,436줄**. **persona SSoT 와 `qa:content-audit` 가 쓰는 이미지 생성기는 보존.** DB 모델·기존 데이터 무변경(migration 0) |
-| **R6** | 일회성 scripts · backfill | `scripts/`·`agents/scripts/` 잔여 |
-| **R6** | 미사용 API · 패키지 · 환경변수 · 테스트 | `COOK82_*` 등 비활성 env |
+| **R6** | 일회성 scripts · backfill · persona SSoT | **종결(2026-09-09, PR #444).** persona SSoT 사슬 전체가 runtime importer 0(닫힌 순환 + 테스트·일회성 스크립트만 진입)임을 그래프로 확인하고 제거. 일회성 scripts 16건과 `scripts/smoke-test.ts` REMOVE. 어드민 `northStar` 는 새 지표 없이 실제 산식(7일 WAU)에 맞춰 이름·표시만 정합화 |
+| **R6** | 미사용 API · 패키지 · 환경변수 · 테스트 | **PARTIAL.** `GOOGLE_INDEXING_*` 제거(소비처 0), `GOOGLE_SERVICE_ACCOUNT_JSON`·`IMAGE_GENERATOR` 는 소비처가 있어 보존. 삭제 대상 전용 테스트는 함께 제거했다. 패키지 의존성 감사는 미착수 |
 
 ### 유지 분류 (5종)
 
