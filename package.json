@@ -2,7 +2,7 @@
   "name": "age-doesnt-matter",
   "version": "0.1.0",
   "engines": {
-    "node": ">=20.9.0"
+    "node": "22.x"
   },
   "private": true,
   "description": "우리 나이가 어때서 — 50·60대 커뮤니티 플랫폼",
