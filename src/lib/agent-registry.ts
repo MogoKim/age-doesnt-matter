@@ -45,7 +45,6 @@ export const HANDLER_REGISTRY: HandlerMeta[] = [
   { key: 'qa:code-gate',     label: 'QA 코드 게이트', botType: 'QA', action: 'CODE_GATE',     schedule: '—',         type: 'DISPATCH',                   note: '/done 스킬 자동 실행' },
 
   // ─── COMMUNITY ─────────────────────────────────────────────────────
-  { key: 'community:sheet-scrape', label: '커뮤니티 시트 스크랩', botType: 'COMMUNITY', action: 'SHEET_SCRAPE', schedule: '11:00, 21:00', type: 'GHA', workflow: 'agents-cafe' },
 
   // ─── CAFE CRAWLER ──────────────────────────────────────────────────
   { key: 'cafe_crawler:trend-analysis', label: '카페 트렌드 분석', botType: 'CAFE_CRAWLER', action: 'TREND_ANALYSIS',  schedule: '09:00, 13:30, 20:30',  type: 'GHA',      workflow: 'agents-cafe' },
@@ -63,6 +62,5 @@ export const HANDLER_GROUPS = [
   { team: 'COO',          emoji: '⚙️', keys: ['coo:moderator','coo:content-scheduler','coo:trending-scorer','coo:job-scraper'] },
   { team: 'CDO',          emoji: '📊', keys: ['cdo:anomaly-detector'] },
   { team: 'QA',           emoji: '✅', keys: ['qa:content-audit','qa:code-gate'] },
-  { team: '커뮤니티',      emoji: '🎯', keys: ['community:sheet-scrape'] },
   { team: '카페 크롤러',  emoji: '☕', keys: ['cafe_crawler:trend-analysis','cafe_crawler:content-curate','cafe_crawler:cafe-pipeline','cafe_crawler:external-crawl'] },
 ]

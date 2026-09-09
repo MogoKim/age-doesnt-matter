@@ -51,8 +51,6 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cafe_crawler:magazine-generate': () => import('../cafe/magazine-generator.js').then(async m => { await m.main() }),
   'cafe_crawler:content-curate': () => import('../cafe/content-curator.js').then(m => m.main()),
   'cafe_crawler:popular-curate': () => import('../cafe/popular-curator.js').then(m => m.main()),
-  // launchd: com.unao.naver-cafe-sheet-scraper.plist (10:40, 13:00, 15:30, 23:00 KST)
-  'cafe_crawler:image-route': () => import('../cafe/image-router.js').then(m => m.main()),
   'cafe_crawler:popular-sync': () => import('../cafe/popular-sync.js').then(() => {}), // DISPATCH ONLY — Mac launchd 전용. GHA 실행 불가 (네이버 Playwright).
   'cafe_crawler:brief-monitor': () => import('../cafe/brief-monitor.js').then(() => {}),
   // GHA 안전망 — Mac launchd 미실행 시 fallback_yesterday 자동 생성 (09:03 KST, 3 0 * * * UTC)
@@ -67,17 +65,8 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   // CTO 주간 아키텍처 리뷰 (DISPATCH ONLY — 수동 트리거 전용)
   // QA 에이전트 — 콘텐츠 품질 감사 (매일 08:20 KST)
   'qa:content-audit': () => import('../qa/content-audit.js').then(() => {}),
-  'community:sheet-scrape': () => import('../community/sheet-scraper.js').then(m => m.main()),
-  // 새벽 전용 시트 스크랩 (GHA dawn, 01:00~07:00 KST). SHEET_SCRAPER_MODE=dawn + SHEET_SCRAPER_ONLY_SITE=cook82는 workflow env로 주입.
-  'community:dawn-sheet-scrape': () => { if (!process.env.SHEET_SCRAPER_MODE) process.env.SHEET_SCRAPER_MODE = 'dawn'; return import('../community/sheet-scraper.js').then(m => m.main()) },
-  // 새벽 시트 미처리 정리 (GHA 07:10 KST) — PENDING 남은 새벽 행 FAILED 처리
-  'community:dawn-sheet-cleanup': () => import('../community/dawn-cleanup.js').then(m => m.main()),
-  // LOCAL ONLY — 펨코 Cloudflare 차단으로 로컬 Mac launchd에서만 실행 (GitHub Actions 불가)
-  // launchd: com.unao.fmkorea-scraper.plist (11:30, 21:30 KST)
-  'community:fmkorea-scrape': () => import('../community/run-local-fmkorea.js').then(() => {}),
-  // LOCAL ONLY — 네이버 카페는 로그인 세션(storage-state.json) 필요, GHA 미지원
-  // launchd: com.unao.naver-cafe-sheet-scraper.plist (10:40, 13:00, 15:30, 23:00 KST)
-  'community:navercafe-scrape': () => import('../community/run-local-naver-cafe.js').then(() => {}),
+  // community:sheet-scrape · dawn-sheet-scrape · dawn-sheet-cleanup · fmkorea-scrape · navercafe-scrape ·
+  // cafe_crawler:image-route — 삭제됨 2026-09-09 (R4 B-3a: 외부 카페·Google Sheet 공급망 REMOVE)
   // cmo:knowledge-responder — 삭제됨 2026-05-15 (지식인 운영 중단, 코드 삭제)
   // cmo:jisik-answerer — 삭제됨 2026-05-15 (지식인 운영 중단, 코드 삭제)
   // cmo:card-news-generator — 삭제됨 2026-05-15 (카드뉴스 중단, 코드 삭제)
