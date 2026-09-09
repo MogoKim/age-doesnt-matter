@@ -1,5 +1,10 @@
 # Google Indexing API 운영 기획서 (I04)
 
+> ⚠️ **ARCHIVED (2026-09-09)** — 색인 API 를 호출하던 `agents/cafe/indexing-api.ts` 와 그 호출부(매거진 생성기)가
+> R4 B-3 에서 제거됐다. GitHub Secrets `GOOGLE_INDEXING_*` 도 소비처 0 이라 삭제했다.
+> 아래는 당시 구현 기록이며 현재 동작하지 않는다. 재도입하려면 새 판정과 자격 재발급이 필요하다.
+
+
 > 최초 작성: 2026-04-27 | 최근 수정: 2026-04-27
 
 ---
