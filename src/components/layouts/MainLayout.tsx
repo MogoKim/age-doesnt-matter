@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars -- [DIAG-10] 임시 진단. 최종 diff 에서 제거한다. */
 import { Suspense } from 'react'
 import IconMenu from './IconMenu'
 import Footer from './Footer'
@@ -23,10 +24,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
         본문으로 건너뛰기
       </a>
 
-      {/* 전 페이지 최상단 홍보 띠 배너 */}
-      <Suspense fallback={<div className="h-[56px]" />}>
-        <TopPromoBanner />
-      </Suspense>
+      {/* [DIAG-10] DIAG-6 재검증 — Suspense 경계와 TopPromoBanner 를 함께 제거. 10회씩 재측정. */}
 
       {/* 모바일: Header / 데스크탑: GNB — 클라이언트 세션 기반, auth() 없음 */}
       <Header />
