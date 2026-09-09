@@ -15,9 +15,6 @@ import DailyBriefWidget from '@/components/admin/DailyBriefWidget'
 import InsightsSection from '@/components/admin/InsightsSection'
 import AutomationToggle from '@/components/admin/AutomationToggle'
 import InfoTip from '@/components/admin/InfoTip'
-import { prisma } from '@/lib/prisma'
-import KpiHistoryPanel from '@/components/admin/KpiHistoryPanel'
-import type { SnapshotRow } from '@/lib/queries/admin/admin.kpi-history'
 
 // 1~2분 캐시 허용(창업자 합의) — 매 접속 풀렌더 방지. 긴급 알림은 최대 2분 지연 가능.
 export const revalidate = 120
@@ -53,21 +50,6 @@ export default async function AdminDashboardPage() {
       getRetentionQuadrants(),
     ])
 
-  // 운영 상황판용 완료 스냅샷(DailyKpiSnapshot) — 테이블 부재 등은 빈 배열로 폴백(패널이 안내)
-  let snapshotRows: SnapshotRow[] = []
-  try {
-    // 월별 뷰(YoY)용 ~13개월 로드. 하루 1행이라 400행. 패널이 실제 쓰는 필드만 select
-    // (memberUv/guestUv/userPosts/userComments/realCustomers/dataQuality 미사용 → 페이로드 슬림화)
-    snapshotRows = (await prisma.dailyKpiSnapshot.findMany({
-      orderBy: { date: 'desc' },
-      take: 400,
-      select: {
-        id: true, date: true, uv: true, pv: true, newSignups: true,
-        conversionRate: true, wau: true, retention: true, channels: true, updatedAt: true,
-      },
-    })) as unknown as SnapshotRow[]
-  } catch { /* 패널이 빈 상태 안내 */ }
-
   const boardMax = boards.length > 0 ? Math.max(...boards.map((b) => b.total)) : 1
   const trendMaxUv = Math.max(...trend.map((d) => d.uv), 1)
   const trendMaxPv = Math.max(...trend.map((d) => d.pv), 1)
@@ -96,14 +78,11 @@ export default async function AdminDashboardPage() {
         </div>
       )}
 
-      {/* 운영 상황판 — 완료 데이터(DailyKpiSnapshot 스냅샷). 첫 화면 최상단 */}
-      <KpiHistoryPanel rows={snapshotRows} />
-
-      {/* ② 오늘 실시간 (당일 partial) — 완료 데이터와 시각 구분 */}
+      {/* 오늘 실시간 (당일 partial) */}
       <div className="rounded-2xl border border-dashed border-amber-300 bg-amber-50/40 p-4">
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <span className="inline-flex items-center rounded-full bg-amber-500 px-3 py-1 text-xs font-bold text-white">⏳ 오늘 실시간</span>
-        <span className="text-xs text-amber-700">당일 미완결(partial) · 확정 수치는 위 “완료 데이터” 상황판</span>
+        <span className="text-xs text-amber-700">당일 실시간 집계 — 시간에 따라 변동된다</span>
       </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <KpiCard label="오늘 방문 (UV)" value={stats.todayUniqueVisitors} icon="👁️" sub={`회원 ${stats.memberUv} · 비회원 ${stats.guestUv}`} tip="오늘 방문한 고유 사용자(세션) 수. 봇 제외. 회원=오늘 로그인한 세션, 비회원=비로그인 세션, 합=전체. 비회원→회원 전환 유저는 회원으로 1회만(중복 없음)." />
@@ -317,7 +296,7 @@ export default async function AdminDashboardPage() {
         </section>
       )}
 
-      {/* 어드민 가이드 — 하단 이동(운영 상황판 우선) */}
+      {/* 어드민 가이드 — 하단 */}
       <AdminQuickStart />
     </div>
   )

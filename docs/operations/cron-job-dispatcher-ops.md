@@ -40,7 +40,7 @@ agents-cafe-wave           5분 주기          → 288회/일
 ```
 
 ⚠️ **dispatch를 받는 워크플로우는 2종뿐이다**(2026-08-21 실측).
-`agents-cafe-popular-curation` · `agents-killer-post` · `ops-daily-report` ·
+`agents-cafe-popular-curation` ·
 `prewarm-detail-pages` · `push-scheduled`는 전부 100% `schedule`이다.
 토큰이 다른 워크플로우를 건드린 흔적은 없다.
 

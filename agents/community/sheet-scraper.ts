@@ -596,7 +596,6 @@ export async function main() {
                   action: {
                     in: [
                       'SHEET_LIKE_WAVE_PENDING',
-                      'SHEET_COMMENT_WAVE_PENDING',
                       'SHEET_ENGAGE_COMMENT_PENDING',
                       'SHEET_ENGAGE_LIKE_PENDING',
                     ],
@@ -614,14 +613,8 @@ export async function main() {
                 if (tab.isFeatured) {
                   const keyTerms = extractKeyTerms(existingActive.title)
                   const rawContent = (existingActive.content ?? '').slice(0, 2000)
-                  const empathyTarget = imageLikePost ? 0 : 3
-                  const criticalTarget = imageLikePost ? 0 : 2
-                  const reversalTarget = imageLikePost ? 0 : 2
                   const retryWaves = [
                     { waveType: 'like',     action: 'SHEET_LIKE_WAVE_PENDING',    delayMin: 1,  targetCount: undefined },
-                    { waveType: 'empathy',  action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 3,  targetCount: empathyTarget },
-                    { waveType: 'critical', action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 6,  targetCount: criticalTarget },
-                    { waveType: 'reversal', action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 10, targetCount: reversalTarget },
                   ].filter(w => w.targetCount === undefined || w.targetCount > 0)
                   for (const wave of retryWaves) {
                     await prisma.botLog.create({
@@ -933,32 +926,6 @@ export async function main() {
                         sourceCommentsFilteredCount: usable,
                         imageLikePost,
                         targetCount: empathyTarget + criticalTarget + reversalTarget,
-                      }),
-                    },
-                  })
-                }
-                const commentWaves: Array<{ waveType: string; delayMin: number; targetCount: number }> = [
-                  { waveType: 'empathy',  delayMin: 3,  targetCount: empathyTarget },
-                  ...(criticalTarget > 0 ? [{ waveType: 'critical', delayMin: 6,  targetCount: criticalTarget }] : []),
-                  ...(reversalTarget > 0 ? [{ waveType: 'reversal', delayMin: 10, targetCount: reversalTarget }] : []),
-                ]
-                for (const wave of commentWaves.filter(w => w.targetCount > 0)) {
-                  await prisma.botLog.create({
-                    data: {
-                      botType: 'SEED',
-                      action: 'SHEET_COMMENT_WAVE_PENDING',
-                      status: 'PENDING',
-                      details: JSON.stringify({
-                        postId: post.id,
-                        waveType: wave.waveType,
-                        scheduledAt: new Date(now.getTime() + wave.delayMin * 60 * 1000).toISOString(),
-                        personaIds: shuffleArray(WAVE_PERSONAS[wave.waveType] ?? []),
-                        rawContent: content.slice(0, 2000),
-                        keyTerms,
-                        sourceComments: filteredComments,
-                        sourceCommentsRaw: sourceComments,
-                        imageLikePost,
-                        targetCount: wave.targetCount,
                       }),
                     },
                   })

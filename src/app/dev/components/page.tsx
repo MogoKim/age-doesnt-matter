@@ -306,7 +306,7 @@ export default function ComponentShowcasePage() {
       </Section>
 
       <footer className="mt-16 py-8 border-t border-border text-center text-xs text-muted-foreground">
-        우나어 디자인 시스템 v1.0 — Stitch AI / Claude Code / Figma MCP 연동용
+        우나어 디자인 시스템 v1.0 — 컴포넌트 참조용
       </footer>
     </div>
   )

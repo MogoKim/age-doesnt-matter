@@ -54,7 +54,6 @@ export const HANDLER_REGISTRY: HandlerMeta[] = [
   { key: 'cafe_crawler:external-crawl', label: '외부 크롤링',      botType: 'CAFE_CRAWLER', action: 'EXTERNAL_CRAWL', schedule: '—',                    type: 'DISPATCH',                       note: '2026-04-13 제거' },
 
   // ─── DESIGN ────────────────────────────────────────────────────────
-  { key: 'design:ads-loop', label: '광고 크리에이티브', botType: 'DESIGN', action: null, schedule: '매일 09:05', type: 'GHA', workflow: 'agents-design', note: 'LOCAL ONLY 주석 있으나 GHA 등록됨' },
 ]
 
 /** 팀별 그룹핑 (어드민 UI용) */
@@ -66,5 +65,4 @@ export const HANDLER_GROUPS = [
   { team: 'QA',           emoji: '✅', keys: ['qa:content-audit','qa:code-gate'] },
   { team: '커뮤니티',      emoji: '🎯', keys: ['community:sheet-scrape'] },
   { team: '카페 크롤러',  emoji: '☕', keys: ['cafe_crawler:trend-analysis','cafe_crawler:content-curate','cafe_crawler:cafe-pipeline','cafe_crawler:external-crawl'] },
-  { team: 'Design',       emoji: '🎨', keys: ['design:ads-loop'] },
 ]

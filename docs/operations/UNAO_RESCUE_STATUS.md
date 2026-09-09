@@ -196,8 +196,9 @@ T+0은 2026-09-05 KST다. 날짜가 지나도 증거가 없으면 PASS로 넘기
 | **R4** | 사용하지 않는 workflow · runner · registry | 크론 키 **37개** 중 linked **23** · orphaned **14**(dispatchOnly **6** · localOnly **8**). GHA **19개** 중 15개 `disabled_manually`, 활성 4개 |
 | **R4** | 보지 않는 Slack · 리포트 · AdminQueue 자동화 | Slack "NSM" 2벌(`ceo/weekly-report.ts` · `cdo/kpi-collector.ts`)이 **모두 삭제됨(2026-09-08)**. 남은 Slack 리포트는 개별 KEEP 근거로 재판정한다 |
 | **R5** | 오도·중복·정지된 문서 | `NORTH_STAR.md`·`constitution*.yaml` 재감사 대상. 정본이 아닌 것을 정본처럼 쓰지 않게 한다 |
-| **R6** | 오래된 KPI · 지표 · 스냅샷 · 대시보드 | `northStar`가 실제로는 WAU · `DailyKpiSnapshot` 2026-08-23 정지 · KPI 스냅샷 workflow `disabled_manually` |
-| **R6-F** | UI · 디자인 도구 재감사 | figma MCP 연결 실패 상태로 방치. **사용 중인 UI 규칙만 보존**하고 Figma MCP·figma-first·관련 문서·설정을 판정. **신규 디자인 체계 구축은 완료 조건이 아니다** |
+| **R6** | 오래된 KPI · 지표 · 스냅샷 · 대시보드 | **REMOVE 완료(2026-09-09)** — KPI 스냅샷 workflow·수집기·KpiHistoryPanel·전용 조회, ops 일일 리포트, design 광고 루프 제거. `DailyKpiSnapshot` **DB 모델과 기존 데이터는 보존**(migration 없음). `northStar`가 WAU인 표기 정정은 미결 |
+| **R6-F** | UI · 디자인 도구 재감사 | **완료(2026-09-09).** figma-first·FIGMA_STRUCTURE·DESIGN_WORKFLOW·Product Designer 템플릿 제거, `ops-runner-manifest` 의 실재하지 않는 Figma launchd 2개 정리. CLAUDE.md 는 "Figma 를 기본 절차로 강제하지 않고 명시 요청 시에만 사용"으로 확정. **UI 규칙·디자인 토큰·BRAND_VISUAL_GUIDE 는 보존** |
+| **R6** | 어드민 E2E CI 게이트 | **완료(2026-09-09).** 기존 `E2E Admin` job 은 자격증명이 없으면 `exit 0` 이라 **한 번도 실행되지 않은 채 success** 였다(false-green). `vars.E2E_ADMIN_ENABLED` 가 있을 때만 도는 job-level 스위치로 바꿔 기본을 **명시적 skipped** 로 두고, 활성화 후 대상 URL·자격이 비면 **실패**시킨다. 대상은 `vars.E2E_ADMIN_BASE_URL` 이며 실서비스 도메인이면 테스트 전에 즉시 실패한다. 운영 게시글을 숨기고 지우던 `e2e/08-admin-service-sync.spec.ts` 는 제거했다 |
 | **R6** | 일회성 scripts · backfill | `scripts/`·`agents/scripts/` 잔여 |
 | **R6** | 미사용 API · 패키지 · 환경변수 · 테스트 | `COOK82_*` 등 비활성 env |
 
@@ -236,6 +237,14 @@ T+0은 2026-09-05 KST다. 날짜가 지나도 증거가 없으면 PASS로 넘기
   두 결함이 남아 있다 — ① AdSense 슬롯 검사가 **구조적 false-red**(광고는 `'use client'` 지연 로드라
   초기 HTML에 `adsbygoogle` 이 없는 것이 정상) ② `/api/events` POST 에 `x-bot-type` 헤더 미부착.
 - 기타 후보: 도메인·env fallback·모델 ID·localStorage key 단일화.
+- **어드민 E2E 자격증명 (2026-09-09 확정)**: `E2E_ADMIN_EMAIL`·`E2E_ADMIN_PASSWORD` 에 **production 어드민 계정을 등록하지 않는다.**
+  qa-admin 은 어드민 화면을 조작하는 시나리오라 대상 사이트에 부수효과가 남는다. **격리된 staging 과 전용 테스트 계정**이
+  마련되기 전까지 이 job 은 `vars.E2E_ADMIN_ENABLED` 미설정으로 **명시적 disabled/skipped** 상태를 유지한다.
+  계약은 `src/__tests__/e2e-admin-guard.test.ts` 가 정적으로 고정한다.
+- **PR #439 어드민 화면 검증 (2026-09-09)**: Codex 가 별도 임시 worktree에서 로컬 전용 관리자 JWT와 `OPS_BOARD_READONLY_URL` 로
+  **read-only 로컬 렌더링** 검증을 완료했다 — 모든 POST 차단, production 로그인 호출 없음, DB write 0.
+  결과: 데스크톱 1440px·모바일 390px 정상, `/admin` 200, 관리자 오류 없음, 삭제된 KPI 패널 자리의 빈 공간 없음,
+  가로 overflow 없음, 실시간 KPI·OKR·인사이트·리텐션 정상 표시.
 
 ## 10. 역할과 보고 규칙
 

@@ -1,5 +1,14 @@
 # 댓글 파동 프로세서 (A29)
 
+> ⚠️ **ARCHIVED (2026-09-09)** — 이 기능은 현재 운영 계약이 아니다.
+> **processor**(`agents/cafe/wave-processor.ts` · `user-post-wave-processor.ts`),
+> **workflow**(`agents-cafe-wave.yml`), **내부 API**(`/api/internal/comment-wave` ·
+> `/api/internal/user-post-wave`), **producer**(`enqueueUserPostWave` · 큐레이터의
+> `enqueueCommentWave` · `SHEET_COMMENT_WAVE_PENDING`)가 모두 R4 에서 제거됐다.
+> **`CommentWaveQueue`·`UserPostWaveQueue` DB 모델과 기존 데이터만 보존**한다(migration 없음).
+> 아래는 삭제 시점의 설계 기록이다. 현재 판정: `docs/operations/UNAO_RESCUE_STATUS.md`
+
+
 > 최초 작성: 2026-05-13 | V6 P1 신규 기능
 
 ---

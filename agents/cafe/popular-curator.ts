@@ -35,22 +35,6 @@ import {
 const HEALTH_CAP = 2
 const MAX_PUBLISH = 5
 
-async function enqueueCommentWave(postId: string, cafePostId: string, authorPersonaId: string) {
-  const now = new Date()
-  await prisma.commentWaveQueue.create({
-    data: {
-      postId,
-      cafePostId,
-      authorPersonaId,
-      wave1At: new Date(now.getTime() + 60_000),
-      wave2At: new Date(now.getTime() + 300_000),
-      wave3At: new Date(now.getTime() + 1_800_000),
-      wave4At: new Date(now.getTime() + 3_600_000),
-      expiresAt: new Date(now.getTime() + 216_000_000),
-    },
-  })
-}
-
 export async function main() {
   console.log('[PopularCurator] 시작')
   const startTime = Date.now()
@@ -245,7 +229,7 @@ export async function main() {
       // slug는 seoTitle(있으면) 우선 — 없으면 화면 title fallback. 신규 발행에만 적용.
       const slug = await generateCommunitySlug(seo.seoTitle?.trim() || seo.title || title)
 
-      const postId = await prisma.$transaction(async tx => {
+      await prisma.$transaction(async tx => {
         const newPost = await tx.post.create({
           data: {
             title: seo.title,
@@ -276,21 +260,6 @@ export async function main() {
         }
         return newPost.id
       })
-
-      const usable = computeUsableCount(post.topComments)
-      if (usable === 0) {
-        console.log(`[PopularCurator] usable=0 — wave queue 생략 postId=${postId} cafePostId=${post.id}`)
-        await prisma.botLog.create({
-          data: {
-            botType: 'CAFE_CRAWLER',
-            action: 'WAVE_SKIP_USABLE_ZERO',
-            status: 'SKIP',
-            details: JSON.stringify({ postId, cafePostId: post.id, source: 'POPULAR_CURATE' }),
-          },
-        })
-      } else {
-        await enqueueCommentWave(postId, post.id, persona.id)
-      }
 
       if (desire === 'HEALTH' && boardInfo.boardType !== 'MENOPAUSE') healthCount++
       publishedCount++

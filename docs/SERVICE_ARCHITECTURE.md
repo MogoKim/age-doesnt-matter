@@ -5,7 +5,7 @@
 > **변경 시**: 이 문서 하단 [문서 업데이트 가이드](#문서-업데이트-가이드) 참고
 
 > ## ⚠️ 2026-09-05 실측 배너 — 이 문서의 "가동 중" 서술은 현재 상태가 아니다
-> - 2026-05-11(v11) 시점 문서다. "93핸들러·17GHA" 등 수치는 당시 값이며, 현재 실측은 runner HANDLERS **37개** · GitHub Actions **19개 중 15개 `disabled_manually`, 활성 4개**(ci · lighthouse · quarantine-check · agents-moderation). 2026-09-08~09 Gate 2 제거와 R4 에이전트 정리(ORG_THEATER 10 · SUPERSEDED 4 · qa-verify · GROWTH_LEGACY 13)를 반영한 값이다. **SNS 자동 게시·메트릭·토큰 갱신과 `agents-social.yml` 은 제거됐다.** launchd 콘텐츠 발행 12개는 2026-09-06 04:09 KST unload 완료(4개 유지/관찰). production `/api/health`는 2026-09-05 감사 당시 503(DB 28P01)이었으나 R1-A로 복구돼 현재 healthy.
+> - 2026-05-11(v11) 시점 문서다. "93핸들러·17GHA" 등 수치는 당시 값이며, 현재 실측은 runner HANDLERS **36개** · GitHub Actions **16개 중 12개 `disabled_manually`, 활성 4개**(ci · lighthouse · quarantine-check · agents-moderation). 2026-09-08~09 Gate 2 제거와 R4 에이전트 정리(ORG_THEATER 10 · SUPERSEDED 4 · qa-verify · GROWTH_LEGACY 13)를 반영한 값이다. **SNS 자동 게시·메트릭·토큰 갱신과 `agents-social.yml` 은 제거됐다.** launchd 콘텐츠 발행 12개는 2026-09-06 04:09 KST unload 완료(4개 유지/관찰). production `/api/health`는 2026-09-05 감사 당시 503(DB 28P01)이었으나 R1-A로 복구돼 현재 healthy.
 > - §1 "제2의 인생 플랫폼 — 일자리 + 커뮤니티 + 매거진" 정의는 헌법 v5.0(`docs/constitution/NORTH_STAR.md` §2·§14 "일자리 플랫폼이 아니라 커뮤니티")과 충돌한다. Rescue R5에서 REWRITE 대상.
 > - 시드봇 글쓰기는 2026-06-03 retired, `CoupangSearchWidget`은 2026-06-12 제거됐으나 본문에 미반영.
 > - 근거: `docs/operations/2026-09-05-claude-foundation-reset-audit-report.md` §3 A-06·C-07·D-05.
@@ -320,7 +320,6 @@
 | **COMMUNITY** | `community/fmkorea-scraper.ts` | — | Haiku | FM코리아 스크래핑 (LOCAL ONLY — `agents-sheet-viral.yml` 은 2026-09-09 제거) |
 | **COO** | `coo/controversy-chain.ts` | 매일 22:00 | Sonnet | 논쟁 체인 자동화 (댓글 논쟁 구조 생성) |
 | **CMO** | `cmo/jisik-answerer.ts` | 14:30 KST (로컬 launchd) | Sonnet | 지식iN 자동 답변 (로컬 전용, Playwright) |
-| **DESIGN** | `design/ads-loop.ts` | DISPATCH ONLY | Sonnet | 광고 소재 생성 루프 (agents-design.yml) |
 | **QA** | `qa/content-auditor.ts` | 주간 | Haiku | 콘텐츠 품질 감사 |
 | **QA** | `qa/code-gate.ts` | PR 트리거 | Haiku | Gate 1 코드 검증 |
 
@@ -473,7 +472,6 @@ GitHub Actions Cron (12:00, 16:00, 20:00 KST)
 | `agents-moderation.yml` | 09, 15, 21시 | COO(모더레이션) |
 | `agents-cafe.yml` | 09, 13, 19시 | CAFE(네이버 카페 3곳 + 82cook 크롤링) |
 | **`agents-sheet-viral.yml`** | — | **R4 에서 제거됨(2026-09-09).** sheet-scrape 등 COMMUNITY 경로는 `agents-cafe.yml` 참조 |
-| **`agents-design.yml`** | workflow_dispatch | DESIGN(ads-loop) — 광고 소재 생성 (수동 실행) |
 | **`quarantine-check.yml`** | 매주 월요일 00:00 UTC | 격리 항목 기한 초과 점검 |
 
 ### 6.3 로컬 launchd 프로세스 — 2026-09-09 실측

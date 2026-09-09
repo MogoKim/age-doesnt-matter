@@ -142,8 +142,6 @@ export const LAUNCHD_RUNNERS: Readonly<Record<string, RunnerSpec>> = {
 
   // ── 진단·개발 ──
   'com.unaeo.opsboard': { grade: 'read-only', what: '운영 보드 (조회 전용)' },
-  'com.unaoeo.figma-use-mcp': { grade: 'dev-tool', what: 'Figma MCP (개발 도구)' },
-  'com.unaoeo.figma-ws': { grade: 'dev-tool', what: 'Figma WS (개발 도구)' },
 }
 
 /**
@@ -224,16 +222,13 @@ export const GHA_RUNNERS: Readonly<Record<string, RunnerSpec>> = {
   'agents-daily.yml': { grade: 'db-write', what: '일일 에이전트 (발행·봇댓글 포함 17 task)' },
   'agents-jobs.yml': { grade: 'db-write', what: '일자리 스크랩' },
   'agents-moderation.yml': { grade: 'db-write', what: '모더레이션' },
-  'admin-kpi-snapshot.yml': { grade: 'db-write', what: 'KPI 스냅샷 저장' },
   'agents-cafe.yml': { grade: 'notification', what: '브리핑 알림' },
   'agents-hourly.yml': { grade: 'notification', what: '헬스체크 알림' },
   'push-scheduled.yml': { grade: 'notification', what: '예약 푸시 발송' },
   'ci.yml': { grade: 'read-only', what: 'CI 가드 5종' },
   'lighthouse.yml': { grade: 'read-only', what: 'Lighthouse' },
-  'ops-daily-report.yml': { grade: 'read-only', what: '일일 리포트' },
   'prewarm-detail-pages.yml': { grade: 'read-only', what: '상세 페이지 프리웜' },
   'quarantine-check.yml': { grade: 'read-only', what: '격리 점검' },
-  'agents-design.yml': { grade: 'read-only', what: '디자인 에이전트 (인자 미확정)' },
   'agents-weekly.yml': { grade: 'read-only', what: '주간 에이전트 (인자 미확정)' },
   'run-script.yml': { grade: 'read-only', what: '임의 스크립트 (dispatch 전용 · 권한 범위 미확인)' },
 }
@@ -499,7 +494,7 @@ export function judgeRunnerFreshness(i: RunnerCheckInput): RunnerVerdict {
 
   // ── (1) 개발 작업트리 ──
   //     미커밋 코드가 그대로 돈다. ProgramArguments의 스크립트 경로까지 본다.
-  //     ⚠️ dev-tool만 면제한다. Figma MCP 같은 개발 도구가 개발 워크트리를 실행하는 건
+  //     ⚠️ dev-tool만 면제한다. 개발 도구가 개발 워크트리를 실행하는 건
   //        정상이다. 여기서 FATAL을 내면 상시 오탐이 되고, 매일 울리는 FATAL은
   //        아무도 보지 않게 되어 결국 진짜 O1을 놓친다(이 파일 §7 주석과 같은 이유).
   //        면제는 이 FATAL 한 줄뿐 — 뒤처짐 WARN은 dev-tool도 그대로 받는다.

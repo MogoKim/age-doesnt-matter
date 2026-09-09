@@ -4,7 +4,7 @@
 // A룰(확정 크롤러 봇, BOT_UA_PATTERN·PR #28)은 ingestion에서 isBot=true 처리 — 본 필터(B)와 성격이 다르다.
 //   - A = 이름표가 분명한 확정 크롤러 봇 (영구 차단)
 //   - B = PC 직접 단일조회·무활동 세션 (KPI 품질 필터, 가역)
-// 동일 기준을 DailyKpiSnapshot 수집(agents) · /admin 오늘 실시간 · getInsights 채널표에 적용.
+// 동일 기준을 /admin 오늘 실시간 · getInsights 채널표에 적용.
 // (agents/scripts는 src 런타임 import 금지 → 같은 상수/판정을 그쪽에 복제. 변경 시 동기화.)
 
 /** 세션에 하나라도 있으면 '사람 활동'으로 보고 품질 필터에서 제외 면제 */

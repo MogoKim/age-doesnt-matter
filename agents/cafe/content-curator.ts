@@ -6,7 +6,7 @@
  */
 import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
-import { notifySlack, sendSlackMessage } from '../core/notifier.js'
+import { notifySlack } from '../core/notifier.js'
 import { findPoliticalKeyword, hasPoliticalKeyword } from '../core/political-blocklist.js'
 import { findAgeFitViolation, findMedicalAdSignal } from '../core/age-fit-blocklist.js'
 import { findCelebrityOrRaceViolation } from '../core/celebrity-race-blocklist.js'
@@ -848,23 +848,6 @@ async function tryTitleRewrite(postId: string, curated: CuratedContent): Promise
   }
 }
 
-/** 댓글 파동 큐 등록 (wave1: +1분, wave2: +5분, wave3: +30분, wave4: +60분) */
-async function enqueueCommentWave(postId: string, cafePostId: string, authorPersonaId: string) {
-  const now = new Date()
-  await prisma.commentWaveQueue.create({
-    data: {
-      postId,
-      cafePostId,
-      authorPersonaId,
-      wave1At: new Date(now.getTime() + 60_000),
-      wave2At: new Date(now.getTime() + 300_000),
-      wave3At: new Date(now.getTime() + 1_800_000),
-      wave4At: new Date(now.getTime() + 3_600_000),
-      expiresAt: new Date(now.getTime() + 216_000_000), // 60시간
-    },
-  })
-}
-
 /** 메인 실행 */
 export async function main() {
   console.log('[ContentCurator] 시작 — source-backed 콘텐츠 큐레이션')
@@ -1281,26 +1264,6 @@ export async function main() {
       category: curated.category ?? null,
       actualPersonaId: persona.id,
     })
-
-    // 댓글 파동 큐 등록 — WAVE_SKIP_USABLE_ZERO: refs 필터 통과 후에도 usable=0이면 최후 방어선 BotLog
-    const refCafePost = refs[0]
-    const usable = computeUsableCount(refCafePost?.topComments)
-    if (usable === 0) {
-      console.log(`[ContentCurator] 댓글 없는 글 — wave queue 생략 postId=${publishResult.postId}`)
-      await prisma.botLog.create({ data: {
-        botType: 'CAFE_CRAWLER', action: 'WAVE_SKIP_USABLE_ZERO', status: 'SKIP',
-        details: JSON.stringify({
-          postId: publishResult.postId,
-          cafePostId: refCafePost?.id,
-          topCommentsCount: Array.isArray(refCafePost?.topComments) ? refCafePost.topComments.length : 0,
-        }),
-      }}).catch(e => console.error('[ContentCurator] WAVE_SKIP_USABLE_ZERO log 실패:', e))
-    } else {
-      await enqueueCommentWave(publishResult.postId, refCafePost!.id, persona.id).catch(async (err) => {
-        await sendSlackMessage('QA', `[큐레이션] wave 등록 실패: ${String(err).slice(0, 100)}`)
-        console.error('[ContentCurator] wave 큐 등록 실패:', err)
-      })
-    }
   }
 
   // [1단계 가시성] source(killer/trend)별 skip/published 집계 — "왜 0개 게시됐는지" 즉시 판독용.

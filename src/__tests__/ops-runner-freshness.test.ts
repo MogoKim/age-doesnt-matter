@@ -313,9 +313,9 @@ describe('WARN — read-only / diagnostic runner', () => {
 
   it('dev-tool은 unao-ops를 봐도 FATAL이 아니다', () => {
     const v = judgeRunnerFreshness(input({
-      name: 'com.unaoeo.figma-ws',
+      name: 'com.example.dev-tool-ws',
       grade: 'dev-tool',
-      what: 'Figma WS',
+      what: '개발 도구 WS',
       workDirRoot: 'ops',
       envWorkDirRoot: 'ops',
       freshness: { ...healthyProd, root: 'ops', behind: 140, divergedFromRemote: true, syncIntervalHours: null },
@@ -478,9 +478,9 @@ describe('등급 미상 정책 — allowlist 누락이 guard 무력화가 되면
 describe('dev-tool 정책 — 개발 도구가 개발 워크트리를 쓰는 건 정상이다', () => {
   it('dev-tool이 DEV 워크트리를 실행해도 FATAL이 아니다 (상시 오탐 방지)', () => {
     const v = judgeRunnerFreshness(input({
-      name: 'com.unaoeo.figma-use-mcp',
+      name: 'com.example.dev-tool-mcp',
       grade: 'dev-tool',
-      what: 'Figma MCP (개발 도구)',
+      what: '개발 도구 MCP',
       workDirRoot: 'DEV',
       envWorkDirRoot: 'DEV',
       freshness: { ...healthyProd, root: 'DEV' },

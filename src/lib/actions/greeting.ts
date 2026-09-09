@@ -8,7 +8,6 @@ import { sanitizeHtml } from '@/lib/sanitize'
 import { buildSummary } from '@/lib/summary'
 import { generateCommunitySlug } from '@/lib/seo/slug'
 import { checkAndPromote } from '@/lib/grade'
-import { enqueueUserPostWave } from '@/lib/actions/wave-queue'
 import { getWriteBlockReason } from '@/lib/sanctions'
 import { GREETING_CATEGORY } from '@/lib/greeting'
 
@@ -28,7 +27,7 @@ function escapeHtml(s: string): string {
  * 첫 가입인사 작성 — 홈 첫인사 위젯 전용 경량 액션.
  *  - STORY / category='가입인사' / source=USER 고정(회원만, 가드는 assertGreetingByMember와 동일 정책)
  *  - User.firstGreetingAt/firstGreetingPostId 최초 1회 기록(동시요청은 updateMany count로 가드)
- *  - 기존 봇 환대 wave(enqueueUserPostWave) 유지
+ *  - 봇 환대 wave 는 R4 에서 제거됐다(2026-09-09)
  */
 export async function submitGreeting(message: string): Promise<SubmitGreetingResult> {
   const session = await auth()
@@ -108,7 +107,6 @@ export async function submitGreeting(message: string): Promise<SubmitGreetingRes
     })
 
     void checkAndPromote(userId).catch(() => {})
-    void enqueueUserPostWave(post.id, userId).catch(() => {})
     revalidateTag('community-board-page')
     revalidateTag('home-newcomers') // 홈 신입환영 섹션(Phase 3) 즉시 반영
     revalidatePath('/community/stories')
