@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars -- [DIAG-2] 임시 진단 커밋. 홈 본문을 정적 마커로 교체해 hydration 원인을 이분 탐색한다. 최종 diff 에서 전부 제거한다. */
+/* eslint-disable @typescript-eslint/no-unused-vars -- [DIAG-3] 임시 진단 커밋. 홈 본문을 정적 마커로 교체해 hydration 원인을 이분 탐색한다. 최종 diff 에서 전부 제거한다. */
 import type { Metadata } from 'next'
 import HomePopupsClientOnly from '@/components/features/event/HomePopupsClientOnly'
 import { Suspense } from 'react'
@@ -191,10 +191,7 @@ export default function HomePage() {
   return (
     <>
       <div>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
-        />
+        {/* [DIAG-3] organizationJsonLd script 도 제거 — 홈을 완전 정적으로 */}
         {/* [DIAG-2] webSiteJsonLd script 제거 — potentialAction.target 의 {search_term_string} 중괄호 검증 */}
         <h1 className="sr-only">우리 나이가 어때서 — 40대 50대 여성 커뮤니티</h1>
         {/* [DIAG-1] 홈 본문 전체를 정적 마커로 교체 — hydration 원인 이분 탐색. 최종 diff 에서 제거한다. */}
