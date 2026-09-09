@@ -288,7 +288,7 @@
 | `cto:security-audit` | `cto/security-audit.ts` | `agents-daily.yml` **활성** 06:00 KST | Haiku | 로그인 실패·어드민 민감 액션 감사 | 보안 |
 | `cto:count-reconcile` | `agents/scripts/reconcile-counts.ts` | `agents-daily.yml` **활성** 04:00 KST | — | 비정규화 카운트 재계산(멱등) | 데이터 정합성 |
 | `cto:anonymize-withdrawn-apply` | `agents/scripts/anonymize-withdrawn-users.ts` | `agents-weekly.yml` **활성** 월 10:00 KST | — | 30일 경과 탈퇴자 PII 익명화 | 개인정보(F-12) |
-| `cmo:seo-snapshot` | `cmo/seo-snapshot.ts` | `agents-weekly.yml` **활성** 월 10:30 KST | — | 주간 GSC 스냅샷(read-only) | 네이버 색인 추이 관측 |
+| `cmo:seo-snapshot` | `cmo/seo-snapshot.ts` | `agents-weekly.yml` **활성** 월 10:30 KST | — | 주간 **Google Search Console** 스냅샷(read-only) | Google 검색 노출·클릭 추이 관측. **네이버 색인과 무관하다** |
 
 > **총 핸들러 수: 6개.** `automation_status` 는 **PAUSED 를 유지**하되, 지키지 않으면 사용자나
 > 데이터가 다치는 것만 runner 의 `ESSENTIAL_TASKS` 에 올려 PAUSED 에서도 실행한다 —
@@ -438,14 +438,34 @@ GitHub Actions Cron (12:00, 16:00, 20:00 KST)
 
 | 파일 | 스케줄 (KST) | 에이전트 |
 |------|-------------|---------|
-| `agents-daily.yml` | 06~23시 (다수 크론) | COO(트렌딩), CTO(보안감사·카운트재계산) — **현재 `disabled_manually`** |
-| `agents-weekly.yml` | 월 10:00 / 10:30 KST | CTO(anonymize-withdrawn-apply), CMO(seo-snapshot) — **현재 `disabled_manually`** |
+| `agents-daily.yml` | 04:00 / 06:11 KST | CTO(count-reconcile · security-audit) — **active** (2026-09-09 enable) |
+| `agents-weekly.yml` | 월 10:00 / 10:30 KST | CTO(anonymize-withdrawn-apply), CMO(seo-snapshot) — **active** (2026-09-09 enable) |
 | **`agents-hourly.yml`** | — | **R4 에서 제거됨(2026-09-09).** 헬스체크·에러감시·이상감지는 `/api/health` 로 대체 |
-| `agents-jobs.yml` | 12, 16, 20시 | COO(일자리 수집) |
+| `agents-jobs.yml` | — | COO(일자리 수집) — **`disabled_manually` HOLD.** 공급 기준은 R7 에서 정한다 |
 | `agents-moderation.yml` | 09, 15, 21시 | COO(모더레이션) |
 | **`agents-cafe.yml` · `agents-cafe-hourly-curation.yml` · `agents-cafe-popular-curation.yml`** | — | **R4 B-3 에서 제거됨(2026-09-09).** 카페 크롤·큐레이션·브리프 자동화 종료 |
 | **`agents-scraper.yml` · `agents-scraper-dawn.yml` · `agents-sheet-viral.yml`** | — | **R4 에서 제거됨(2026-09-09).** 외부 카페·Google Sheet 공급망 종료 |
 | **`quarantine-check.yml`** | 매주 월요일 00:00 UTC | 격리 항목 기한 초과 점검 |
+
+### 6.2-1 GitHub Actions 실측 상태 — 2026-09-09
+
+| 상태 | workflow |
+|---|---|
+| **active (6)** | `ci` · `lighthouse` · `quarantine-check` · `agents-moderation` · `agents-daily` · `agents-weekly` |
+| **disabled_manually (4)** | `agents-jobs`(R7 HOLD) · `prewarm-detail-pages` · `push-scheduled` · `run-script` |
+
+**다음 자연 실행 예정 (KST)** — `workflow_dispatch` 로 앞당기지 않는다.
+
+| 태스크 | 예정 | 확인할 것 |
+|---|---|---|
+| `cto:count-reconcile` | **2026-09-10 04:00** | runner 완료 로그 · 카운트 드리프트 산출 · AuthenticationFailed 0 |
+| `cto:security-audit` | **2026-09-10 06:11** | runner 완료 로그 · `보안 감사 완료 [상태]` 요약 줄 · AuthenticationFailed 0 |
+| `cto:anonymize-withdrawn-apply` | **2026-09-14 10:00** | runner 완료 로그 · `[APPLY] 익명화 대상` 줄 · 처리 건수 |
+| `cmo:seo-snapshot` | **2026-09-14 10:30** | runner 완료 로그 · GSC 조회 성공 · Slack 스냅샷 |
+
+> ⚠️ **workflow success 만 보고 판단하지 않는다.** `security-audit` 은 2026-09-09 에 lifecycle 을
+> 고치기 전까지 import 만 끝나면 runner 가 프로세스를 죽여서 초록불이어도 완주하지 않았다.
+> 첫 자연 실행에서 **완료 로그와 실제 산출물**을 함께 확인한다.
 
 ### 6.3 로컬 launchd 프로세스 — 2026-09-09 실측
 
