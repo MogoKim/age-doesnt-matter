@@ -476,15 +476,20 @@ GitHub Actions Cron (12:00, 16:00, 20:00 KST)
 | **`agents-design.yml`** | workflow_dispatch | DESIGN(ads-loop) — 광고 소재 생성 (수동 실행) |
 | **`quarantine-check.yml`** | 매주 월요일 00:00 UTC | 격리 항목 기한 초과 점검 |
 
-### 6.3 로컬 launchd 프로세스 (5개 — 창업자 맥북 상시 가동)
+### 6.3 로컬 launchd 프로세스 — 2026-09-09 실측
 
-| plist 파일 | KST 실행 시각 | 환경변수 | 역할 |
-|-----------|-------------|---------|------|
-| `com.unaeo.magazine-morning.plist` | 01:00 | `IMAGE_GENERATOR=gemini`, `SESSION_TIME=morning` | 매거진 모닝 발행 (Gemini 커버 이미지) |
-| `com.unaeo.magazine-afternoon.plist` | 06:00 | `IMAGE_GENERATOR=gemini`, `SESSION_TIME=afternoon` | 매거진 오후 발행 |
-| `com.unaeo.magazine-late.plist` | 08:00 | `IMAGE_GENERATOR=gemini`, `SESSION_TIME=late` | 매거진 레이트 발행 |
-| `com.unaeo.session-refresh.plist` | 02:00 | — | 카카오 NID_SES 세션 갱신 |
-| `com.unaeo.jisik-answerer.plist` | 14:30 | — | 지식iN 자동 답변 (Playwright, 로컬 전용) |
+> 고정 개수로 세지 않는다. **label 과 로드 상태**가 기준이며, plist 파일 존재는 로드 상태가 아니다.
+> 현재 상태는 `launchctl list | grep -E 'com\.unao\.|com\.unaeo\.'` 로 확인한다.
+
+| label | 상태 (2026-09-09) | 역할 |
+|---|---|---|
+| `com.unao.unao-prod-sync` | **로드됨** | production 동기화 — KEEP_CORE |
+| `com.unaeo.opsboard` | **로드됨** | 운영 보드 |
+| `com.unaeo.session-refresh` | **unloaded** | 네이버 NID_SES 세션 갱신. Codex 가 unload 했다 — **재로드·실행하지 않는다** |
+| `com.unao.naver-cafe-sheet-scraper` | **unloaded** | 카페·시트 스크래퍼 |
+
+> 매거진 발행 launchd(`com.unaeo.magazine-*`) 12개는 2026-09-06 04:09 KST `launchctl unload -w` 로 차단됐다.
+> `com.unaeo.jisik-answerer` 를 포함한 나머지 plist 도 현재 로드돼 있지 않다.
 
 ### 6.4 전체 타임라인 (KST)
 

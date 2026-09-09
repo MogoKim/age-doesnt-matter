@@ -15,12 +15,12 @@ if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) 
  * 분산 락 — 동일 에이전트 중복 실행 방지 (F-1, F-5 Race Condition 해결)
  *
  * 사용법:
- *   const result = await withLock('coo:comment-activator', 600, async () => {
+ *   const result = await withLock('<agent>:<task>', 600, async () => {
  *     // 실제 작업
  *   })
  *   if (result === null) console.log('이미 실행 중 — skip')
  *
- * @param key     락 식별자 (예: 'coo:comment-activator')
+ * @param key     락 식별자 — runner HANDLERS 키 형식 '<agent>:<task>'
  * @param ttlSec  최대 락 유지 시간(초) — 작업 예상 시간 × 1.5 권장
  * @param fn      락 획득 후 실행할 함수
  * @returns       fn의 반환값, 또는 null (이미 다른 인스턴스 실행 중)
