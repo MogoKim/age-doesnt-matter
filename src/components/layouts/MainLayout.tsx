@@ -1,11 +1,10 @@
-/* eslint-disable @typescript-eslint/no-unused-vars -- [DIAG-16] 임시 진단. 최종 diff 에서 제거한다. */
 import { Suspense } from 'react'
 import IconMenu from './IconMenu'
 import Footer from './Footer'
 import TopPromoBanner from './TopPromoBanner'
 import Header from './Header'
 import GNB from './GNB'
-import FAB from './FAB'
+import FAB from './FABLazy'
 import ListBanner from '@/components/ad/ListBanner'
 import DetailHeaderBanner from '@/components/ad/DetailHeaderBanner'
 
@@ -49,7 +48,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
       <main id="main-content" className="pb-[72px] lg:pb-0">{children}</main>
 
-      {/* [DIAG-16] FAB 제거 — 마지막 남은 후보. resolveWriteHref('/') 가 홈에서만 특별 분기한다 */}
+      {/* FAB — 클라이언트 세션 기반, auth() 없음 */}
+      <FAB />
 
       <Footer />
     </>
