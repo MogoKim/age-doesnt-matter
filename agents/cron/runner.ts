@@ -49,14 +49,7 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cafe_crawler:trend-analysis': () => import('../cafe/trend-analyzer.js').then(() => {}),
   // 매거진: 로컬 launchd(12:30/21:00 KST) + GitHub Actions(16:00 KST) 이중 발행
   'cafe_crawler:magazine-generate': () => import('../cafe/magazine-generator.js').then(async m => { await m.main() }),
-  'cafe_crawler:content-curate': () => import('../cafe/content-curator.js').then(m => m.main()),
-  'cafe_crawler:popular-curate': () => import('../cafe/popular-curator.js').then(m => m.main()),
   'cafe_crawler:popular-sync': () => import('../cafe/popular-sync.js').then(() => {}), // DISPATCH ONLY — Mac launchd 전용. GHA 실행 불가 (네이버 Playwright).
-  'cafe_crawler:brief-monitor': () => import('../cafe/brief-monitor.js').then(() => {}),
-  // GHA 안전망 — Mac launchd 미실행 시 fallback_yesterday 자동 생성 (09:03 KST, 3 0 * * * UTC)
-  'cafe_crawler:daily-brief-fallback': () => import('../cafe/daily-brief.js').then(async m => { await m.runFallbackBrief() }),
-  // 저녁 안전망 — 11:30 KST full 크롤 실패 시 최대 21시간 공백 방지 (18:00 KST, 0 9 * * * UTC)
-  'cafe_crawler:evening-brief-safety': () => import('../cafe/daily-brief.js').then(async m => { await m.runFallbackBrief() }),
   'cafe_crawler:external-crawl': () => import('../cafe/external-crawler.js').then(() => {}), // DISPATCH ONLY — 82cook 외부 크롤, GHA 스케줄 제거됨 (2026-04-13)
   'cmo:upload-creatives': () => import('../marketing/google-ads/scripts/upload-creatives.js').then(() => {}), // DISPATCH ONLY — 최초 1회 수동 실행
   'cmo:create-campaigns': () => import('../marketing/google-ads/scripts/create-campaigns.js').then(() => {}), // DISPATCH ONLY — 최초 1회 수동 실행
@@ -67,6 +60,8 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'qa:content-audit': () => import('../qa/content-audit.js').then(() => {}),
   // community:sheet-scrape · dawn-sheet-scrape · dawn-sheet-cleanup · fmkorea-scrape · navercafe-scrape ·
   // cafe_crawler:image-route — 삭제됨 2026-09-09 (R4 B-3a: 외부 카페·Google Sheet 공급망 REMOVE)
+  // cafe_crawler:content-curate · popular-curate · brief-monitor · daily-brief-fallback ·
+  // evening-brief-safety — 삭제됨 2026-09-09 (R4 B-3b: 봇 큐레이션·브리프 REMOVE)
   // cmo:knowledge-responder — 삭제됨 2026-05-15 (지식인 운영 중단, 코드 삭제)
   // cmo:jisik-answerer — 삭제됨 2026-05-15 (지식인 운영 중단, 코드 삭제)
   // cmo:card-news-generator — 삭제됨 2026-05-15 (카드뉴스 중단, 코드 삭제)

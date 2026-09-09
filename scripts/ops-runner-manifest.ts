@@ -215,12 +215,9 @@ export function isMonitoredLaunchdFile(file: string): boolean {
  *    이 표는 등급 분류를 한곳에 모아두기 위한 기록물이다(§18 문서와 동기).
  */
 export const GHA_RUNNERS: Readonly<Record<string, RunnerSpec>> = {
-  'agents-cafe-hourly-curation.yml': { grade: 'publish', what: '큐레이션 → 고객 발행' },
-  'agents-cafe-popular-curation.yml': { grade: 'publish', what: '인기 큐레이션 → 고객 발행' },
   'agents-daily.yml': { grade: 'db-write', what: '일일 에이전트 (발행·봇댓글 포함 17 task)' },
   'agents-jobs.yml': { grade: 'db-write', what: '일자리 스크랩' },
   'agents-moderation.yml': { grade: 'db-write', what: '모더레이션' },
-  'agents-cafe.yml': { grade: 'notification', what: '브리핑 알림' },
   'agents-hourly.yml': { grade: 'notification', what: '헬스체크 알림' },
   'push-scheduled.yml': { grade: 'notification', what: '예약 푸시 발송' },
   'ci.yml': { grade: 'read-only', what: 'CI 가드 5종' },
