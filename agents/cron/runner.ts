@@ -30,7 +30,7 @@ const ESSENTIAL_TASKS = new Set([
   'cto:security-audit',             // 로그인 실패·어드민 민감 액션 감사
   'cto:count-reconcile',            // 비정규화 카운트 정합성(멱등) — 멈추면 화면 숫자가 실제와 어긋난다
   'cto:anonymize-withdrawn-apply',  // 30일 경과 탈퇴자 PII 익명화 — 멈추면 개인정보가 남는다
-  'cmo:seo-snapshot',               // GSC read-only 관측 — 네이버 색인 추이는 계속 본다
+  'cmo:seo-snapshot',               // Google Search Console read-only 관측 — Google 검색 노출·클릭 추이
 ])
 
 const HANDLERS: Record<string, () => Promise<void>> = {
@@ -52,7 +52,7 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   // cmo:card-news-generator — 삭제됨 2026-05-15 (카드뉴스 중단, 코드 삭제)
   // seo-snapshot 은 모듈이 top-level `await main()` 이라 import() 가 완료까지 기다린다.
   // 이 파일에서 `.then(() => {})` 이 안전한 유일한 경우다 — 다른 핸들러는 반드시 Promise 를 반환하라.
-  'cmo:seo-snapshot': () => import('../cmo/seo-snapshot.js').then(() => {}), // 주간 GSC 관측 (read-only)
+  'cmo:seo-snapshot': () => import('../cmo/seo-snapshot.js').then(() => {}), // 주간 Google Search Console 관측 (read-only)
 
   // Design 에이전트 (LOCAL ONLY — Gemini API + Playwright)
   // LOCAL ONLY — 이미지 생성 비용 발생, 인터랙티브 세션 전용
