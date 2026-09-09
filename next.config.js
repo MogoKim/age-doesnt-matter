@@ -47,12 +47,12 @@ const nextConfig = {
   // prisma·pg·sharp 가 서버 번들에 딸려 들어가 런타임에서 깨질 수 있다.
   serverExternalPackages: ['@prisma/client', '@prisma/adapter-pg', 'pg', 'bcrypt', 'sharp'],
   experimental: {
-    // dynamic 페이지 클라이언트 라우터 캐시 60초 — 재방문 시 서버 왕복 제거
-    // static 페이지 600초 — /contact, /faq 등 불변 콘텐츠
+    // dynamic 페이지 클라이언트 라우터 캐시 30초 — 재방문 시 서버 왕복 제거
+    // static 페이지 300초 — /contact, /faq 등 불변 콘텐츠
     // Server Action 의 updateTag 호출 시 즉시 무효화된다
     staleTimes: {
-      dynamic: 60,
-      static: 600,
+      dynamic: 30,
+      static: 300,
     },
   },
   async redirects() {

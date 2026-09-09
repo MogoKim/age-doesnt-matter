@@ -11,7 +11,6 @@
 // eslintrc 스키마 검증에 걸려 순환 참조 오류가 난다.
 import nextCoreWebVitals from 'eslint-config-next/core-web-vitals'
 import tseslint from '@typescript-eslint/eslint-plugin'
-import tsparser from '@typescript-eslint/parser'
 
 export default [
   {
@@ -22,9 +21,11 @@ export default [
   ...(Array.isArray(nextCoreWebVitals) ? nextCoreWebVitals : [nextCoreWebVitals]),
 
   {
+    // ⚠️ `@typescript-eslint` 플러그인과 파서를 여기서 다시 등록하지 않는다.
+    //    eslint-config-next 16 이 이미 등록하며, 중복 등록하면 eslint 9 가
+    //    `Cannot redefine plugin "@typescript-eslint"` 로 실행 자체를 거부한다.
+    //    규칙만 얹는다 — `.eslintrc.json` 에 있던 것 그대로다.
     files: ['**/*.ts', '**/*.tsx', '**/*.mts'],
-    languageOptions: { parser: tsparser },
-    plugins: { '@typescript-eslint': tseslint },
     rules: {
       ...tseslint.configs.recommended.rules,
       '@typescript-eslint/no-explicit-any': 'error',
