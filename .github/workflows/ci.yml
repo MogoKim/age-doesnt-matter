@@ -264,12 +264,29 @@ jobs:
         run: npx vitest run agents
 
   # Step 6: 어드민 E2E — src/app/(admin)/** 변경 시
+  #
+  # 🚨 기본값은 **실행하지 않음(job-level skipped)** 이다.
+  #    qa-admin 은 어드민 화면에 로그인해 조작하는 시나리오라, 대상 사이트에 부수효과가 남는다.
+  #    따라서 **격리된 staging 과 그 staging 전용 테스트 계정에서만** 활성화한다.
+  #    production(age-doesnt-matter.com · www.age-doesnt-matter.com)은 대상으로 지정할 수 없고,
+  #    지정되면 테스트를 돌리기 전에 즉시 실패한다.
+  #
+  #    활성화에 필요한 것 (앞의 둘은 repository variables, 뒤의 둘은 secrets):
+  #      vars.E2E_ADMIN_ENABLED     = 'true'
+  #      vars.E2E_ADMIN_BASE_URL    = staging URL
+  #      secrets.E2E_ADMIN_EMAIL    = staging 전용 테스트 계정
+  #      secrets.E2E_ADMIN_PASSWORD = 위 계정의 비밀번호
+  #    → production 어드민 계정을 이 secrets 에 넣지 마라.
+  #
+  #    ⚠️ 자격증명이 없을 때 `exit 0` 으로 넘기던 과거 분기는 제거했다.
+  #       그 분기 때문에 어드민 E2E 가 한 번도 실행되지 않은 채 job 이 계속 success 였다(false-green).
+  #       활성화해 놓고 값이 비어 있으면 이제 **실패**한다.
   e2e-admin:
     name: E2E Admin
     runs-on: ubuntu-latest
     timeout-minutes: 25
     needs: [quality, detect-changes]
-    if: needs.detect-changes.outputs.admin == 'true'
+    if: needs.detect-changes.outputs.admin == 'true' && vars.E2E_ADMIN_ENABLED == 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -280,24 +297,38 @@ jobs:
       - run: npx prisma generate
       - name: Check system Chrome
         run: google-chrome --version
+      # 테스트를 돌리기 **전에** 대상과 자격을 검증한다. 여기서 막지 못하면 production 에 흔적이 남는다.
+      - name: Guard — staging 전용 대상·자격 확인
+        env:
+          E2E_ADMIN_BASE_URL: ${{ vars.E2E_ADMIN_BASE_URL }}
+          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+        run: |
+          set -eu
+          if [ -z "${E2E_ADMIN_BASE_URL:-}" ]; then
+            echo "::error::E2E_ADMIN_ENABLED=true 인데 vars.E2E_ADMIN_BASE_URL 이 비어 있다. staging URL 을 지정하라."
+            exit 1
+          fi
+          if [ -z "${E2E_ADMIN_EMAIL:-}" ] || [ -z "${E2E_ADMIN_PASSWORD:-}" ]; then
+            echo "::error::E2E_ADMIN_ENABLED=true 인데 자격증명이 비어 있다(E2E_ADMIN_EMAIL/E2E_ADMIN_PASSWORD). skip 하지 않고 실패시킨다."
+            exit 1
+          fi
+          HOST=$(printf '%s' "${E2E_ADMIN_BASE_URL}" | sed -E 's#^[a-zA-Z][a-zA-Z0-9+.-]*://##; s#^[^@]*@##; s#[:/?\#].*$##' | tr 'A-Z' 'a-z')
+          case "${HOST}" in
+            age-doesnt-matter.com|www.age-doesnt-matter.com)
+              echo "::error::production 도메인(${HOST})은 어드민 E2E 대상이 될 수 없다. 격리된 staging 을 지정하라."
+              exit 1
+              ;;
+          esac
+          echo "Admin E2E target host: ${HOST} (staging)"
       - name: Admin E2E
         env:
           AUTH_SECRET: ci-build-secret-not-real
           AUTH_URL: http://localhost:3000
-          E2E_BASE_URL: https://age-doesnt-matter.com
-          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
-          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          E2E_BASE_URL: ${{ vars.E2E_ADMIN_BASE_URL }}
           E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
           E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
-        run: |
-          # 어드민 E2E 자격(E2E_ADMIN_EMAIL/PASSWORD)이 없으면 실패가 아니라 skip 처리.
-          # auth.setup.ts가 이 두 값을 읽어 어드민 로그인 storageState를 생성하므로,
-          # 값이 없으면 테스트가 throw → false-red. 값이 있으면 기존 흐름 그대로 실행.
-          if [ -z "$E2E_ADMIN_EMAIL" ] || [ -z "$E2E_ADMIN_PASSWORD" ]; then
-            echo "Admin E2E skipped: missing E2E admin credentials (E2E_ADMIN_EMAIL/E2E_ADMIN_PASSWORD)"
-            exit 0
-          fi
-          npx playwright test --project=qa-admin --workers=1
+        run: npx playwright test --project=qa-admin --workers=1
       - name: Upload report on failure
         uses: actions/upload-artifact@v4
         if: failure()
