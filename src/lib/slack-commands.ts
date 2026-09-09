@@ -280,7 +280,7 @@ async function handleStop(): Promise<SlackCommandResult> {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: 'DB에 `EMERGENCY_STOP` 기록 완료. 다음 GHA 크론 실행부터 모니터링 에이전트(health-check 등)만 실행됩니다.\n재개하려면 `/una-resume` 또는 constitution.yaml을 ACTIVE로 직접 변경하세요.',
+          text: 'DB에 `EMERGENCY_STOP` 기록 완료. 다음 크론 실행부터 모니터링 태스크(`coo:moderator` 등 MONITORING_TASKS)만 실행됩니다.\n재개하려면 `agents/core/constitution.yaml` 의 `automation_status` 를 ACTIVE로 바꾸고 DB의 EMERGENCY_STOP 기록을 해제하세요.',
         },
       },
     ],

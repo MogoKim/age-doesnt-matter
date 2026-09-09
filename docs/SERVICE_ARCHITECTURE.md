@@ -257,73 +257,45 @@
 
 ```
                     ┌─────────┐
-                    │ 창업자    │ Slack #ceo-창업자
-                    │ (Human)  │ /status /approve /stop
+                    │ 창업자    │ Slack /status /approve /stop
+                    │ (Human)  │
                     └────┬────┘
                          │ 승인·지시
-                         ▼
-              ┌──────────────────────┐
-              │    CEO (전략총괄)      │ 매일 09:00
-              │  approval-reminder.ts │ 승인 대기 리마인더
-              └──────────┬───────────┘
-                         │
-    ┌────────┬───────────┼───────────┬────────┬────────┐
-    ▼        ▼           ▼           ▼        ▼        ▼
-┌───────┐┌───────┐┌──────────┐┌───────┐┌───────┐┌───────┐
-│ CTO   ││ CMO   ││   COO    ││ CDO   ││ CFO   │
-│기술총괄││마케팅 ││  운영총괄  ││데이터 ││재무총괄│
-│       ││       ││          ││       ││       │
-│헬스체크││트렌드 ││일자리수집 ││KPI수집││비용   │
-│에러감시││트렌드 ││모더레이션 ││이상감지││추적   │
-│보안감사││팅+실험││콘텐츠편성 ││       ││       │
-│크롤링 ││전략+리││댓글활성화 ││       ││       │
-│헬스   ││뷰+매거││연결촉진   ││       ││       │
-│       ││진+큐레││일자리매칭 ││       ││       │
-│       ││이션   ││대댓글체인 ││       ││       │
-└───────┘└───────┘└────┬─────┘└───────┘└───────┘
-                       │
-              ┌────────┴─────────┐
-              │   SEED (시드봇)    │ **R4 제거됨 (2026-09-09)**
-              │  50명 페르소나     │ 커뮤니티 활성화
-              └──────────────────┘
+    ┌────────────────────┼────────────────────┐
+    ▼                    ▼                    ▼
+┌─────────┐        ┌──────────┐        ┌──────────┐
+│  COO    │        │   CTO    │        │   CMO    │
+│ 운영총괄  │        │ 기술총괄   │        │ 마케팅    │
+│         │        │          │        │          │
+│모더레이션 │        │보안감사    │        │SEO 스냅샷 │
+│일자리수집 │        │카운트정합성 │        │(read-only)│
+│트렌딩점수 │        │탈퇴자익명화 │        │          │
+└─────────┘        └──────────┘        └──────────┘
+
+  ※ 2026-09-09 실측. CEO·CDO·CFO·QA·SEED·COMMUNITY·CAFE_CRAWLER 팀은 R4 에서 제거됐다.
+    지금 실제로 예약 실행되는 것은 `coo:moderator` 하나다(나머지 workflow 는 disabled_manually).
 ```
 
-### 5.2 에이전트 상세
+### 5.2 에이전트 상세 — 2026-09-09 실측
 
-#### 기존 에이전트 (v9)
+> 이 표는 `agents/cron/runner.ts` 의 HANDLERS 와 1:1 이다. 여기 없는 에이전트는 존재하지 않는다.
+> 예전 이 자리에 있던 v9/v10/v11 표와 "총 핸들러 93개"는 R4 이전 기록이라 삭제했다.
 
-| 에이전트 | 파일 | 스케줄 | AI 모델 | 역할 |
-|---------|------|--------|---------|------|
-| **CTO** | `cto/health-check.ts` | 2시간마다 | Haiku | 서비스 헬스체크 (API, DB 응답속도) |
-| **CTO** | `cto/error-monitor.ts` | 2시간마다 | Haiku | 에러 로그 분석 + 알림 |
-| **CTO** | `cto/security-audit.ts` | 매일 06:00 | Haiku | 보안 감사 (로그인 실패, 에러 급증, 비용 이상) |
-| **CMO** | `cmo/knowledge-responder.ts` | 화/목/토 12:00 | Sonnet | 네이버 지식iN Q&A 초안 생성 |
-| **CMO** | `cmo/social-reviewer.ts` | 월요일 10:00 | Haiku | 주간 실험 분석 — 통제/실험군 비교, 인사이트 도출 |
-| **CMO** | `cmo/social-strategy.ts` | 월요일 10:15 | Sonnet | 주간 전략 설계 — 실험 로드맵 + 트렌드 교차 참조 |
-| **CDO** | `cdo/anomaly-detector.ts` | 2시간마다 | Haiku | KPI 이상치 감지 + 알림 |
-| **COO** | `coo/job-scraper.ts` | 12/16/20시 | Haiku | 50plus.or.kr 일자리 크롤링 → AI 가공 → DB |
-| **COO** | `coo/moderator.ts` | 09/15/21시 | Haiku | 신고 처리, 콘텐츠 모더레이션 |
-| **COO** | `coo/content-scheduler.ts` | 매일 14:00 | Haiku | 에디터스 픽 + 시드 콘텐츠 편성 |
-| **COO** | `coo/trending-scorer.ts` | 12/18시 | Haiku | 트렌딩 점수 계산 + HOT 강등 |
+| 키 | 파일 | 트리거 | 모델 | 역할 | 판정 근거 |
+|---|---|---|---|---|---|
+| `coo:moderator` | `coo/moderator.ts` | `agents-moderation.yml` **활성** 09/15/21시 | Haiku | 금지어 감지·자동 숨김, 신고 처리 | 안전 기능 |
+| `coo:job-scraper` | `coo/job-scraper.ts` | `agents-jobs.yml` (disabled) | Haiku | 50plus.or.kr 일자리 → Post 발행 | `/jobs` 사용자 경로 |
+| `coo:trending-scorer` | `coo/trending-scorer.ts` | `agents-daily.yml` (disabled) | Haiku | 트렌딩 점수·HOT 강등 | PostCard 배지(사용자 경로) |
+| `cto:security-audit` | `cto/security-audit.ts` | `agents-daily.yml` (disabled) | Haiku | 로그인 실패·어드민 민감 액션 감사 | 보안 |
+| `cto:count-reconcile` | `agents/scripts/reconcile-counts.ts` | `agents-daily.yml` (disabled) | — | 비정규화 카운트 재계산(멱등) | 데이터 정합성 |
+| `cto:anonymize-withdrawn-apply` | `agents/scripts/anonymize-withdrawn-users.ts` | `agents-weekly.yml` (disabled) | — | 30일 경과 탈퇴자 PII 익명화 | 개인정보(F-12) |
+| `cmo:seo-snapshot` | `cmo/seo-snapshot.ts` | `agents-weekly.yml` (disabled) | — | 주간 GSC 스냅샷(read-only) | 네이버 색인 추이 관측 |
 
-#### 신규 에이전트 (v10 — 2026-03-30 추가)
-
-| 에이전트 | 파일 | 스케줄 | AI 모델 | 역할 |
-|---------|------|--------|---------|------|
-| **CTO** | `cto/crawler-health.ts` | 매일 07:00 | Haiku | 크롤러(카페/일자리) 정상 가동 모니터링 |
-
-#### 신규 에이전트 (v11 — 2026-04~05 추가)
-
-| 에이전트 | 파일 | 스케줄 | AI 모델 | 역할 |
-|---------|------|--------|---------|------|
-| **COMMUNITY** | `community/sheet-scraper.ts` | 30분마다 | Haiku | 구글 시트 4탭 화제성 파이프라인 스크래핑 → PostSource.SHEET |
-| **COMMUNITY** | `community/fmkorea-scraper.ts` | — | Haiku | FM코리아 스크래핑 (LOCAL ONLY — `agents-sheet-viral.yml` 은 2026-09-09 제거) |
-| **COO** | `coo/controversy-chain.ts` | 매일 22:00 | Sonnet | 논쟁 체인 자동화 (댓글 논쟁 구조 생성) |
-| **CMO** | `cmo/jisik-answerer.ts` | 14:30 KST (로컬 launchd) | Sonnet | 지식iN 자동 답변 (로컬 전용, Playwright) |
-| **QA** | `qa/content-auditor.ts` | 주간 | Haiku | 콘텐츠 품질 감사 |
-| **QA** | `qa/code-gate.ts` | PR 트리거 | Haiku | Gate 1 코드 검증 |
-
-> **총 핸들러 수**: **93개** (`agents/cron/runner.ts` HANDLERS 맵 실측, MONITORING_TASKS 6개 별도 포함)
+> **총 핸들러 수: 7개.** 그중 실제 실행 경로가 있는 것은 `coo:moderator` 하나다 —
+> `automation_status: PAUSED` 이고 나머지 workflow 가 `disabled_manually` 이기 때문이다.
+>
+> **수동 운영 스크립트(핸들러 아님)**: `agents/scripts/purge-old-logs.ts`(보존정책, `--apply` 수동),
+> `agents/scripts/anonymize-withdrawn-users.ts`(dry 미리보기), `backfill-*`, `insights.ts`.
 
 ### 5.3 에이전트 기반 구조 (core/)
 
@@ -756,14 +728,19 @@ Slack Workspace: 우나어-ops (14개 채널)
 ## 13. 예산
 
 > **실측 기준 (2026-05, docs/api-cost-audit.md)** — 이전 문서($49.5/월)는 4배 과소계상이었음
+>
+> ⚠️ **이 표는 2026-05 시점 기록이다.** 그 뒤 R4 에서 자동화 대부분을 제거했고(핸들러 93 → 7,
+> 예약 실행되는 것은 `coo:moderator` 하나), 매거진 이미지 생성과 SNS 카드뉴스 경로도 사라졌다.
+> **API·Gemini·DALL-E 실제 청구액은 이보다 크게 낮을 것으로 보이나 재실측하지 않았다** —
+> 청구서 기준 재산정은 후속 과제다. 아래 수치를 현재 비용으로 인용하지 마라.
 
 | 항목 | 월 비용 | 비고 |
 |------|--------|------|
 | **Claude Max 구독** | **$110** | 5x 플랜 (claude.ai 집중 사용) |
-| **Anthropic API** | **~$55** | $11 자동충전 × 5회/월 (93개 핸들러 실행) |
+| **Anthropic API** | ~$55 *(2026-05 기록)* | 당시 93개 핸들러 실행 기준. 현재 핸들러 7개 — 재실측 필요 |
 | **Vercel Pro** | **~$22** | Pro Plan (Hobby에서 업그레이드) |
-| **Google Gemini API** | **~$8** | 매거진 커버 이미지 생성 (3회/일) |
-| **OpenAI DALL-E** | **~$1.5** | CMO SNS 카드뉴스 이미지 (소량) |
+| **Google Gemini API** | ~$8 *(2026-05 기록)* | 매거진 커버 이미지 — **매거진 발행은 R4 B-3 에서 종료** |
+| **OpenAI DALL-E** | ~$1.5 *(2026-05 기록)* | SNS 카드뉴스 — **해당 에이전트는 2026-05-15 제거** |
 | Supabase DB | $0 | Free tier |
 | GitHub Actions | $0 | Free 2,000분/월 |
 | Cloudflare R2 + DNS | $0 | Free tier |

@@ -280,19 +280,20 @@ kpi:
       - "DAU/MAU (건전성 참고)"
       - "일자리 지원 클릭 (돈과 일 축 기능 참고)"
 
-# ⚠️ Rescue Mode R4 — 자동화는 의도적으로 정지 상태다 (2026-09-05 실측, 2026-09-06 04:20 KST 갱신).
-#   - GitHub Actions 25개 중 21개 disabled_manually (2026-08-24 ~06:15 UTC 이후 schedule 실행 없음). 활성 4개: ci · lighthouse · quarantine-check · agents-moderation
-#     (post-deploy-qa 는 R4 에서 제거 — 2026-09-08. 제거 전에는 26개 중 활성 5개였다)
-#   - launchd: 콘텐츠 자동 발행 12개(cafe-crawler 7 · popular 3 · magazine 2)는 2026-09-06 04:09 KST `launchctl unload -w`로 차단됐고,
-#     R4 B-3(2026-09-09)에서 실행 대상 코드와 저장소 plist 를 제거했다.
-#     session-refresh · naver-cafe-sheet-scraper 도 같은 이유로 제거 대상이며 현재 unloaded + disabled 다 — 관찰 대상이 아니다.
-#     남는 launchd 는 unao-prod-sync · opsboard 둘뿐이다.
-#   - production DB: 2026-09-05 감사 시 /api/health 503(28P01)이었으나 R1-A(Vercel env 정정)로 복구됨 — 현재 healthy
+# ⚠️ Rescue Mode R4 — 자동화는 의도적으로 정지 상태다 (2026-09-09 실측).
+#   - GitHub Actions **10개 중 활성 4개**(ci · lighthouse · quarantine-check · agents-moderation).
+#     나머지 6개는 disabled_manually 이고 2026-08-24 이후 schedule 실행이 없다.
+#   - runner HANDLERS **7개**. 그중 지금 실제로 실행 경로가 있는 것은 `coo:moderator` 하나다
+#     (활성 workflow 중 핸들러를 부르는 것이 agents-moderation 뿐이다).
+#   - launchd: 콘텐츠 자동 발행 계열은 2026-09-06 차단 후 R4 B-3(2026-09-09)에서 코드·plist 를 제거했고,
+#     설치본은 archive 로 옮겼다. 남는 것은 unao-prod-sync · opsboard 둘뿐이다.
+#   - production DB: healthy (/api/health · /api/health/auth 200).
 #   - /api/bot/posts·jobs 외부 write 입구는 #412로 기본 차단(BOT_WRITE_ENABLED='true' 일 때만 허용)
-#   근거: docs/operations/2026-09-05-claude-foundation-reset-audit-report.md (§0 후속 조치 + §3 당시 실측)
-#   효과: agents/cron/runner.ts 는 이 값이 ACTIVE가 아니면 MONITORING_TASKS 외 실행을 스킵한다.
-#   coo:moderator 는 #411로 MONITORING_TASKS에 포함됨 → PAUSED 에서도 금지어 감지·숨김은 유지된다.
-#   재가동(ACTIVE 복귀)은 창업자 승인 + R4 KEEP/OFF/REMOVE 표 확정 후에만 한다.
+#   효과: agents/cron/runner.ts 는 이 값이 ACTIVE 가 아니면 MONITORING_TASKS 외 실행을 스킵한다.
+#   coo:moderator 는 #411로 MONITORING_TASKS 에 포함됨 → PAUSED 에서도 금지어 감지·숨김은 유지된다.
+#   재가동(ACTIVE 복귀)은 창업자 승인 후에만 한다.
+#   ※ 이 파일에서 **코드가 파싱하는 값은 automation_status 하나뿐**이다. 나머지는 전부
+#     에이전트 System Prompt 에 그대로 들어가는 텍스트다 — 사실이 아닌 문장은 곧 프롬프트 오염이다.
 automation_status: "PAUSED"   # 2026-09-05 실측 정정. (이전: "ACTIVE" — 2026-03-24 창업자 승인)
 
 # ──────────────────────────────────────────
@@ -366,9 +367,8 @@ guardrails:
 # 9. 댓글 정책 (Comment Policy)
 # ──────────────────────────────────────────
 comment_policy:
-  bot_comment_cap_per_post: 5        # 게시글당 봇 댓글 최대 5개 (2026-05-12 창업자 승인, 기존 3개에서 상향)
-  new_post_priority_hours: 48        # 발행 후 48시간 이내 글 우선 타겟
-  min_comments_guarantee: 2          # 모든 BOT 게시글 최소 2개 댓글 목표
+  # 봇 댓글 수치 계약(게시글당 상한·최소 보장·우선 타겟 시간)은 R4 에서 제거했다(2026-09-09).
+  # 봇 댓글·대댓글·파동 생산자가 모두 사라져 지킬 주체가 없다. 되살리려면 새 판정을 받는다.
 
   image_only_post_policy:            # 이미지 전용 게시글 정책 (2026-05-12 창업자 확정)
     definition: "source='SHEET' AND 본문 50자 미만"
@@ -387,7 +387,7 @@ comment_policy:
 model_policy:
   strategic: "claude-opus-4-7 — 주간 전략 수립, 실험 설계 (주 1-2회)"
   heavy: "claude-sonnet — 고객 대면 콘텐츠, 분석, 일자리 가공 (일 1-3회)"
-  light: "claude-haiku — 데이터 집계, 모니터링, 헬스체크 (빈번 실행)"
+  light: "claude-haiku — 데이터 집계, 모더레이션 2차 판단, 보안 감사 (빈번 실행)"
   rule: "고객이 보는 결과물 = heavy 이상, 내부 운영 = light, 매거진 = heavy (주1 Opus 특집호)"
 
 # ──────────────────────────────────────────
@@ -422,39 +422,18 @@ security:
 cto_governance:
   role: "기술 헌법 집행관 — constitution 기술 규칙이 실제 코드에 지켜지는지 감시"
   domains:
-    - "신뢰성: 헬스체크·에러·보안·크롤러 모니터링 (기존)"
-    - "QA 오케스트레이션: QA 에이전트를 지휘해서 배포 품질 보장"
+    - "보안: 로그인 실패·어드민 민감 액션(AdminAuditLog)·BotLog 실패율 감사"
+    # 헬스체크·에러·크롤러 모니터링과 QA 오케스트레이션은 R4 에서 제거됐다(2026-09-09).
+    # 가용성 감시는 `/api/health`·`/api/health/auth`, 배포 검증은 CI `quality` job 이 맡는다.
   tasks:
     - "security-audit: 매일 06:00 KST, 보안 이상 징후"
 
 # ──────────────────────────────────────────
-# 8-6. QA 에이전트 (신설)
+# 8-6. QA 에이전트 — 폐지 (2026-09-09, R4)
 # ──────────────────────────────────────────
-qa_agent:
-  owner: "QA"
-  reports_to: "CTO"
-  model: "light"  # Haiku — 데이터 검증 위주
-  canWrite: true  # 자동 수정 필요 (JSON unwrap, 이미지 삽입)
-  tasks:
-  gate_system:  # Gate 2(배포 후 감사)는 R4 에서 제거됐다 (2026-09-08). Gate 1 만 남는다.
-    gate1:
-      trigger: "/done 스킬 (Claude Code 대화창에서 작업 완료 선언 시)"
-      checks:
-        - "TypeScript: tsc --noEmit (에러 0개 필수)"
-        - "크론 연결 무결성: check-cron-links.ts (orphaned 핸들러 없음)"
-        - "빌드: npm run build (agents/workflows/prisma 변경 시만)"
-        - "AI 아키텍처: Haiku가 constitution 규칙 위반 여부 판단"
-      pass_action: "git commit + 작업 브랜치 push + '[merge 금지]' PR 생성까지. main 직접 push 금지 · merge와 배포는 창업자 승인 후 별도 진행"
-      fail_action: "Claude 대화창 오류 표시 + Slack #qa 상세 알림 + 커밋 중단"
-      slack_format: "프로젝트명 우나어(age-doesnt-matter) + 구분선 + 각 체크 결과 + 행동 지침"
-  pass_criteria:
-    gate1: "4개 체크 전부 PASS"
-  distinction_from_cto:
-    CTO: "기술 아키텍처 + 보안 + 인프라 (코드 레벨)"
-    QA: "실제 데이터/콘텐츠/사용자 경험 품질 (비즈니스 레벨) + 배포 전 Gate 1 검증"
-  escalation:
-    auto_fixable: "자동 수정 후 Slack #qa info 알림"
-    manual_required: "Slack #qa important 알림 + CTO 에스컬레이션"
+# `qa:content-audit`(대상 MAGAZINE 발행 종료로 대상 0)과 `qa:code-gate`(호출부 0)를 제거했다.
+# 배포 전 검증의 정본은 CI `quality` job(lint → typecheck → test → build)과
+# `.claude/commands/done.md` 의 Gate 1 절차다. 헌법이 그 절차를 중복 서술하지 않는다.
 
 # ──────────────────────────────────────────
 # 9. 알림 채널

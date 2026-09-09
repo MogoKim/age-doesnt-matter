@@ -1,46 +1,24 @@
 import Anthropic from '@anthropic-ai/sdk'
-import { readFileSync, existsSync } from 'fs'
+import { readFileSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { notifyAdmin } from './notifier.js'
-import type { AgentResult, AgentConfig, AgentLog, ConstitutionModule } from './types.js'
+import type { AgentResult, AgentConfig, AgentLog } from './types.js'
 import { prisma } from './db.js'
 
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 /**
- * 에이전트 역할에 맞는 constitution 텍스트를 로드한다.
- * - modules === undefined → 원본 constitution.yaml 전체 (Phase 2b 완료 전 안전 fallback)
- * - modules === [] → constitution-core.yaml만
- * - modules = ['audience', ...] → core + 지정 모듈 합산
+ * 에이전트 프롬프트에 넣을 헌법 텍스트를 읽는다.
+ *
+ * 예전에는 `constitution-core.yaml` + `constitution-<module>.yaml` 을 골라 합치는 분기가 있었다.
+ * 그런데 **그 분기를 타는 호출자가 하나도 없었다** — 모든 에이전트가 modules 를 넘기지 않아
+ * 언제나 `constitution.yaml` 전체를 읽었다. 분할 파일들은 읽히지 않은 채 본문과 어긋나기만 해서
+ * R5 문서 정본화(2026-09-09)에서 제거했다. 정본은 `constitution.yaml` 하나다.
  */
-function loadConstitution(modules?: ConstitutionModule[]): string {
-  try {
-    if (!modules) {
-      return readFileSync(resolve(__dirname, 'constitution.yaml'), 'utf-8')
-    }
-    const corePath = resolve(__dirname, 'constitution-core.yaml')
-    if (!existsSync(corePath)) {
-      console.warn('[constitution] constitution-core.yaml missing, falling back to constitution.yaml')
-      return readFileSync(resolve(__dirname, 'constitution.yaml'), 'utf-8')
-    }
-    const core = readFileSync(corePath, 'utf-8')
-    if (modules.length === 0) return core
-    const parts = [core]
-    for (const mod of modules) {
-      const modPath = resolve(__dirname, `constitution-${mod}.yaml`)
-      if (existsSync(modPath)) {
-        parts.push(readFileSync(modPath, 'utf-8'))
-      } else {
-        console.warn(`[constitution] ${mod} module not found, skipping`)
-      }
-    }
-    return parts.join('\n')
-  } catch (e) {
-    console.error('[constitution] load failed, falling back to constitution.yaml:', e)
-    return readFileSync(resolve(__dirname, 'constitution.yaml'), 'utf-8')
-  }
+function loadConstitution(): string {
+  return readFileSync(resolve(__dirname, 'constitution.yaml'), 'utf-8')
 }
 
 const MODEL_STRATEGIC = process.env.CLAUDE_MODEL_STRATEGIC ?? 'claude-opus-4-7'
@@ -61,7 +39,7 @@ export abstract class BaseAgent {
                : config.model === 'heavy' ? MODEL_HEAVY
                : MODEL_LIGHT
     this.config = config
-    this.constitutionText = loadConstitution(config.constitutionModules)
+    this.constitutionText = loadConstitution()
   }
 
   /**
