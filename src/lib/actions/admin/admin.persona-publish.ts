@@ -30,9 +30,8 @@ import {
  * **화면에 보이는 작성자(`authorId`)만** 기존 페르소나 계정이다. 두 값이 다르다는 사실은
  * 감사 로그(`AdminAuditLog.after.authoredByAdminId` / `displayedAsUserId`)에 매번 남긴다.
  *
- * ## 범위 (창업자 판정)
- *  - 후보는 제거된 persona registry에서 `canWritePost=true`였던 289종뿐이다.
- *    `founder-*` 같은 신규 계정도, `official@unao.bot`도 쓰지 않는다.
+ * ## 범위
+ *  - `FOUNDER_PERSONAS` allowlist에 있는 계정만. 페르소나별 `allowedBoardTypes`를 서버가 강제한다.
  *  - **계정 생성 금지.** DB에 없거나 ACTIVE가 아니면 발행하지 않는다(`user.create`/`upsert` 없음).
  *  - 최종 '발행'에서만 DB write. 미리보기 단계에는 서버 호출조차 없다.
  *  - 상태는 PUBLISHED 고정. DRAFT·예약 발행은 범위 밖이다.
@@ -43,13 +42,26 @@ import {
  */
 export type PublishAsFounderPersonaResult =
   | { error: string }
-  | { duplicate: true; postId: string; postUrl: string; authorNickname: string }
-  | { duplicate: false; postId: string; postUrl: string; authorNickname: string }
+  | { duplicate: boolean; postId: string; postUrl: string; authorNickname: string }
 
-/** Prisma 직렬화 충돌/교착 — Serializable 트랜잭션에서 동시 요청이 부딪히면 난다 */
+/** 최초 1회 + 재시도 2회. 직렬화 충돌(P2034)과 slug 충돌(P2002)이 겹쳐도 덮인다. */
+const MAX_PUBLISH_ATTEMPTS = 3
+
+/** 직렬화 충돌/교착 — Serializable 트랜잭션에서 동시 요청이 부딪히면 난다 */
 function isSerializationFailure(e: unknown): boolean {
-  const code = (e as { code?: string })?.code
-  return code === 'P2034'
+  return (e as { code?: string })?.code === 'P2034'
+}
+
+/**
+ * unique 제약 충돌. 이 경로에서 값이 들어가는 unique 컬럼은 `Post.slug` 하나뿐이다
+ * (`sourceUrl`은 항상 null). 같은 제목의 글이 slug 확보와 INSERT 사이에 먼저 커밋되면 난다.
+ */
+function isSlugConflict(e: unknown): boolean {
+  const err = e as { code?: string; meta?: { target?: unknown } }
+  if (err?.code !== 'P2002') return false
+  const target = err.meta?.target
+  if (target === undefined) return true
+  return JSON.stringify(target).includes('slug')
 }
 
 interface TxOutcome {
@@ -66,22 +78,22 @@ export async function publishAsFounderPersona(
 
   const validated = validateFounderPersonaInput(input)
   if ('error' in validated) return validated
-  const { candidate, boardType, title, content } = validated.ok
+  const { persona, boardType, title, content } = validated.ok
 
-  // 작성자 계정 확정 — 후보 카탈로그의 email로 조회만 한다. 없으면 그대로 실패시킨다.
+  // 작성자 계정 확정 — allowlist의 email로 조회만 한다. 없으면 그대로 실패시킨다.
   const account = await prisma.user.findUnique({
-    where: { email: candidate.email },
+    where: { email: persona.email },
     select: { id: true, nickname: true, email: true, status: true },
   })
   if (!account) {
     return {
-      error: `페르소나 계정(${candidate.email})이 DB에 없습니다. 이 화면은 계정을 만들지 않습니다.`,
+      error: `페르소나 계정(${persona.email})이 DB에 없습니다. 이 화면은 계정을 만들지 않습니다.`,
     }
   }
   if (account.status !== 'ACTIVE') {
     return { error: `페르소나 계정이 ACTIVE 상태가 아닙니다 (${account.status}).` }
   }
-  // 카탈로그가 잘못 수정돼도 실회원 계정으로는 발행되지 않게 하는 2차 방어선
+  // allowlist가 잘못 수정돼도 실회원 계정으로는 발행되지 않게 하는 2차 방어선
   if (!account.email?.endsWith('@unao.bot')) {
     return { error: '페르소나 계정이 아닌 사용자로는 발행할 수 없습니다.' }
   }
@@ -97,39 +109,37 @@ export async function publishAsFounderPersona(
 
   // 평문 입력 → 이스케이프 + <p> 분할 + 새니타이즈. 폼 미리보기(whitespace-pre-wrap)와 같은 결과.
   const safeContent = plainTextToSafeHtml(content)
-  // slug 생성은 트랜잭션 밖에서 미리 끝낸다 — 트랜잭션 구간을 짧게 유지(Serializable 충돌 최소화).
-  const slug = needsCommunitySlug(boardType) ? await generateCommunitySlug(title) : null
+  // slug 확보는 트랜잭션 밖에서 끝낸다 — 트랜잭션 구간을 짧게 유지(Serializable 충돌 최소화).
+  const wantsSlug = needsCommunitySlug(boardType)
+  let slug = wantsSlug ? await generateCommunitySlug(title) : null
 
-  let outcome: TxOutcome
-  try {
-    outcome = await runPublishTransaction({
-      authorId: account.id,
-      adminId: admin.adminId,
-      personaEmail: candidate.email,
-      boardType,
-      title,
-      safeContent,
-      slug,
-    })
-  } catch (e) {
-    if (isSerializationFailure(e)) {
-      // 동시에 들어온 같은 요청과 부딪혔다. 한 번만 재시도하면 이번엔 중복 검사에서 걸린다.
-      try {
-        outcome = await runPublishTransaction({
-          authorId: account.id,
-          adminId: admin.adminId,
-          personaEmail: candidate.email,
-          boardType,
-          title,
-          safeContent,
-          slug,
-        })
-      } catch {
-        return { error: '동시에 같은 요청이 들어와 발행하지 못했습니다. 잠시 후 다시 시도해 주세요.' }
+  let outcome: TxOutcome | null = null
+  for (let attempt = 0; attempt < MAX_PUBLISH_ATTEMPTS && outcome === null; attempt++) {
+    try {
+      outcome = await runPublishTransaction({
+        authorId: account.id,
+        adminId: admin.adminId,
+        personaEmail: persona.email,
+        boardType,
+        title,
+        safeContent,
+        slug,
+      })
+    } catch (e) {
+      if (isSlugConflict(e)) {
+        // 같은 제목의 글이 slug 확보와 INSERT 사이에 먼저 커밋됐다.
+        // 새 slug를 뽑아 다시 시도한다 — 내용까지 같은 글이었다면 다음 시도의 중복 검사에서 잡히고,
+        // 제목만 같고 내용이 다르면 새 고유 slug로 정상 발행된다.
+        slug = wantsSlug ? await generateCommunitySlug(title) : null
+        continue
       }
-    } else {
+      if (isSerializationFailure(e)) continue
       throw e
     }
+  }
+
+  if (outcome === null) {
+    return { error: '동시에 같은 요청이 들어와 발행하지 못했습니다. 잠시 후 다시 시도해 주세요.' }
   }
 
   const boardPath = BOARD_URL_PREFIX[boardType]
@@ -171,11 +181,14 @@ interface PublishTxArgs {
  * 만들지 않는다 — 누가 어느 페르소나 이름으로 썼는지 추적할 수 없는 글은 남기지 않는다.
  *
  * isolationLevel Serializable: 중복 검사(SELECT)와 INSERT 사이에 다른 요청이 끼어들어
- * 같은 글이 두 번 들어가는 걸 DB가 막는다. 부딪히면 P2034로 실패하고 호출부가 1회 재시도한다.
+ * 같은 글이 두 번 들어가는 걸 DB가 막는다. 부딪히면 P2034로 실패하고 호출부가 재시도한다.
  *
- * 중복 판정 키: authorId + boardType + 정규화 title + safeContent 완전 일치, 최근 10분 이내.
- * 정규화 title은 DB에 없는 값이라 where로 못 건다 — 같은 작성자·게시판의 최근 글만
- * 좁게 뽑아(`@@index([authorId])`) 메모리에서 비교한다.
+ * ## 중복 판정
+ * `authorId` + `boardType` + `status='PUBLISHED'` + 최근 10분 + `content` 완전 일치를
+ * where로 걸고, 정규화 제목만 메모리에서 비교한다(정규화 제목은 DB에 없는 값이라 where로 못 건다).
+ *
+ * **공개된 글만 중복으로 본다.** DRAFT·HIDDEN·SEO_ONLY·DELETED 글을 "기존 글"이라며
+ * 돌려주면, 창업자에게 지금 볼 수 없는 URL을 주고 발행은 안 되는 상태가 된다.
  */
 async function runPublishTransaction(args: PublishTxArgs): Promise<TxOutcome> {
   const { authorId, adminId, personaEmail, boardType, title, safeContent, slug } = args
@@ -188,18 +201,15 @@ async function runPublishTransaction(args: PublishTxArgs): Promise<TxOutcome> {
         where: {
           authorId,
           boardType,
-          status: { not: 'DELETED' },
+          status: 'PUBLISHED',
           createdAt: { gte: since },
+          content: safeContent,
         },
-        select: { id: true, title: true, content: true, slug: true },
+        select: { id: true, title: true, slug: true },
         orderBy: { createdAt: 'desc' },
-        take: 20,
       })
 
-      const dup = recent.find(
-        (p) =>
-          normalizeFounderPersonaTitle(p.title) === normalizedTitle && p.content === safeContent,
-      )
+      const dup = recent.find((p) => normalizeFounderPersonaTitle(p.title) === normalizedTitle)
       if (dup) {
         return { postId: dup.id, slug: dup.slug, duplicate: true }
       }

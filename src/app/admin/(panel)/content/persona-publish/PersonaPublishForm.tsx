@@ -3,7 +3,6 @@
 import { useMemo, useState, useTransition } from 'react'
 import { getBoardDisplayName } from '@/lib/board-constants'
 import {
-  FOUNDER_PERSONA_BOARD_TYPES,
   FOUNDER_PERSONA_CONTENT_MIN,
   FOUNDER_PERSONA_TITLE_MAX,
   validateFounderPersonaInput,
@@ -15,9 +14,12 @@ export interface PersonaOption {
   email: string
   /** DB User.nickname — 화면에 실제로 보이는 이름의 정본 */
   nickname: string
-  origin: 'seed' | 'curator'
-  /** 과거 registry의 기본 게시판 — 힌트일 뿐 제약이 아니다 */
-  registryBoard: string
+  /** 운영 라벨 — 어떤 역할로 쓰는 계정인지. 표시 이름은 nickname이다. */
+  roleLabel: string
+  /** 작성 톤 안내 */
+  voice: string
+  /** 이 페르소나가 쓸 수 있는 게시판 — 서버 액션이 같은 규칙을 강제한다 */
+  allowedBoardTypes: string[]
   /** ISO 문자열. 한 번도 안 썼으면 null */
   lastPostedAt: string | null
   lastTitle: string | null
@@ -37,7 +39,7 @@ function daysSince(iso: string): number {
 }
 
 function lastUseLabel(o: PersonaOption): string {
-  if (!o.lastPostedAt) return '발행 기록 없음'
+  if (!o.lastPostedAt) return '공개 글 없음'
   const days = daysSince(o.lastPostedAt)
   const when = days === 0 ? '오늘' : `${days}일 전`
   const where = o.lastBoardType ? getBoardDisplayName(o.lastBoardType) : null
@@ -56,7 +58,7 @@ function lastUseLabel(o: PersonaOption): string {
  */
 export default function PersonaPublishForm({ options }: { options: PersonaOption[] }) {
   const [personaEmail, setPersonaEmail] = useState(options[0]?.email ?? '')
-  const [boardType, setBoardType] = useState<string>(FOUNDER_PERSONA_BOARD_TYPES[0])
+  const [boardType, setBoardType] = useState<string>(options[0]?.allowedBoardTypes[0] ?? '')
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [stage, setStage] = useState<Stage>('edit')
@@ -156,7 +158,13 @@ export default function PersonaPublishForm({ options }: { options: PersonaOption
           id="persona"
           value={personaEmail}
           onChange={(e) => {
-            setPersonaEmail(e.target.value)
+            const nextEmail = e.target.value
+            setPersonaEmail(nextEmail)
+            // 페르소나를 바꾸면 현재 게시판이 허용 목록 밖일 수 있다 → 첫 허용 게시판으로 되돌린다
+            const next = options.find((o) => o.email === nextEmail)
+            if (next && !next.allowedBoardTypes.includes(boardType)) {
+              setBoardType(next.allowedBoardTypes[0] ?? '')
+            }
             setError('')
           }}
           disabled={stage === 'preview'}
@@ -164,14 +172,17 @@ export default function PersonaPublishForm({ options }: { options: PersonaOption
         >
           {options.map((o) => (
             <option key={o.email} value={o.email}>
-              {o.nickname} — {lastUseLabel(o)}
+              {o.nickname} ({o.roleLabel}) — {lastUseLabel(o)}
             </option>
           ))}
         </select>
         {persona && (
           <p className="mt-1 text-xs text-zinc-500">
-            {persona.email} · {persona.origin} · 원래 배정 게시판{' '}
-            {getBoardDisplayName(persona.registryBoard)} · 최근 사용 {lastUseLabel(persona)}
+            {persona.voice}
+            <br />
+            {persona.email} · 쓸 수 있는 게시판{' '}
+            {persona.allowedBoardTypes.map(getBoardDisplayName).join(' · ')} · 최근 공개{' '}
+            {lastUseLabel(persona)}
           </p>
         )}
       </div>
@@ -184,10 +195,10 @@ export default function PersonaPublishForm({ options }: { options: PersonaOption
           id="board"
           value={boardType}
           onChange={(e) => setBoardType(e.target.value)}
-          disabled={stage === 'preview'}
+          disabled={stage === 'preview' || !persona}
           className="min-h-[52px] w-full rounded-lg border border-zinc-300 px-3 text-base outline-none focus:border-zinc-500 disabled:bg-zinc-100"
         >
-          {FOUNDER_PERSONA_BOARD_TYPES.map((b) => (
+          {(persona?.allowedBoardTypes ?? []).map((b) => (
             <option key={b} value={b}>
               {getBoardDisplayName(b)}
             </option>

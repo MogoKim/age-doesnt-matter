@@ -5,9 +5,9 @@ import { getAdminSession } from '@/lib/admin-auth'
 import ContentNavTabs from '@/components/admin/ContentNavTabs'
 import { getPersonaRecentUsage } from '@/lib/queries/admin/admin.persona-usage'
 import {
-  FOUNDER_PERSONA_CANDIDATES,
+  FOUNDER_PERSONAS,
   FOUNDER_PERSONA_EMAILS,
-  findFounderPersonaCandidate,
+  findFounderPersona,
 } from '@/lib/founder-personas'
 import PersonaPublishForm, { type PersonaOption } from './PersonaPublishForm'
 
@@ -22,8 +22,8 @@ export const dynamic = 'force-dynamic'
  *
  * 인증은 `(panel)/layout.tsx`가 이미 막지만, 이 페이지에서도 getAdminSession()으로 재검증한다.
  *
- * 목록은 **DB에 실제로 있고 ACTIVE인 계정만** 보여준다. 후보 카탈로그(289종)에 있어도
- * 계정이 없으면 화면에 나오지 않는다 — 이 화면은 계정을 만들지 않는다.
+ * 목록은 **allowlist에 있고 DB에 ACTIVE로 존재하는 계정만** 보여준다.
+ * 이 화면은 계정을 만들지 않는다.
  */
 export default async function FounderPersonaPublishPage() {
   const session = await getAdminSession()
@@ -37,26 +37,28 @@ export default async function FounderPersonaPublishPage() {
   // 계정 수와 무관하게 쿼리 2개 (N+1 아님)
   const usage = await getPersonaRecentUsage(accounts.map((a) => a.id))
 
-  const options: PersonaOption[] = accounts
-    .map((account) => {
-      const candidate = account.email ? findFounderPersonaCandidate(account.email) : undefined
-      if (!candidate || !account.email) return null
-      const recent = usage.get(account.id)
-      return {
-        email: account.email,
-        nickname: account.nickname,
-        origin: candidate.origin,
-        registryBoard: candidate.registryBoard,
-        lastPostedAt: recent?.lastPostedAt.toISOString() ?? null,
-        lastTitle: recent?.lastTitle ?? null,
-        lastBoardType: recent?.lastBoardType ?? null,
-      } satisfies PersonaOption
+  const options: PersonaOption[] = []
+  for (const account of accounts) {
+    const persona = account.email ? findFounderPersona(account.email) : undefined
+    if (!persona || !account.email) continue
+    const recent = usage.get(account.id)
+    options.push({
+      email: account.email,
+      nickname: account.nickname,
+      roleLabel: persona.roleLabel,
+      voice: persona.voice,
+      allowedBoardTypes: [...persona.allowedBoardTypes],
+      lastPostedAt: recent?.lastPostedAt.toISOString() ?? null,
+      lastTitle: recent?.lastTitle ?? null,
+      lastBoardType: recent?.lastBoardType ?? null,
     })
-    .filter((o): o is PersonaOption => o !== null)
-    // 오래 안 쓴 페르소나가 위로 오게 — 한 번도 안 쓴 계정이 가장 위
-    .sort((a, b) => (a.lastPostedAt ?? '').localeCompare(b.lastPostedAt ?? ''))
+  }
+  // 오래 안 쓴 페르소나가 위로 오게 — 한 번도 공개 글이 없는 계정이 가장 위
+  options.sort((a, b) => (a.lastPostedAt ?? '').localeCompare(b.lastPostedAt ?? ''))
 
-  const missingCount = FOUNDER_PERSONA_CANDIDATES.length - options.length
+  const missing = FOUNDER_PERSONAS.filter(
+    (p) => !accounts.some((a) => a.email === p.email),
+  ).map((p) => p.email)
 
   return (
     <div>
@@ -73,16 +75,16 @@ export default async function FounderPersonaPublishPage() {
 
       {options.length === 0 ? (
         <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          발행에 쓸 수 있는 ACTIVE 페르소나 계정이 DB에 하나도 없습니다. 후보{' '}
-          {FOUNDER_PERSONA_CANDIDATES.length}종(과거 persona registry에서 canWritePost=true였던
-          계정) 중 조회된 ACTIVE 계정이 0건입니다.
+          발행에 쓸 수 있는 ACTIVE 페르소나 계정이 DB에 하나도 없습니다. 허용 목록{' '}
+          {FOUNDER_PERSONAS.length}종 중 조회된 ACTIVE 계정이 0건입니다.
         </div>
       ) : (
         <>
-          <p className="mb-4 text-xs text-zinc-500">
-            후보 {FOUNDER_PERSONA_CANDIDATES.length}종 중 ACTIVE 계정 <strong>{options.length}종</strong>
-            {missingCount > 0 && ` (계정 없음·비활성 ${missingCount}종은 목록에서 제외)`}
-          </p>
+          {missing.length > 0 && (
+            <p className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-xs text-amber-800">
+              계정 없음·비활성 {missing.length}종은 목록에서 제외됐습니다: {missing.join(', ')}
+            </p>
+          )}
           <PersonaPublishForm options={options} />
         </>
       )}

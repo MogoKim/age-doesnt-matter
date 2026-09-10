@@ -1,14 +1,15 @@
 import { describe, it, expect } from 'vitest'
 import {
+  FOUNDER_PERSONAS,
   FOUNDER_PERSONA_BOARD_TYPES,
-  FOUNDER_PERSONA_CANDIDATES,
   FOUNDER_PERSONA_EMAILS,
   FOUNDER_PERSONA_SLUG_BOARD_TYPES,
   FOUNDER_PERSONA_TITLE_MAX,
-  findFounderPersonaCandidate,
+  findFounderPersona,
   isFounderPersonaEmail,
   needsCommunitySlug,
   normalizeFounderPersonaTitle,
+  personaAllowsBoard,
   validateFounderPersonaInput,
 } from '@/lib/founder-personas'
 import { BOARD_URL_PREFIX } from '@/lib/board-registry'
@@ -20,65 +21,71 @@ const VALID = {
   content: '아침부터 비가 와서 한참을 서 있었어요. 별것 아닌데 기분이 묘하더라고요.',
 }
 
-describe('후보 카탈로그 — 제거된 persona registry에서 canWritePost=true였던 계정만', () => {
-  it('289종 (seed 64 + curator 225)', () => {
-    expect(FOUNDER_PERSONA_CANDIDATES.length).toBe(289)
-    expect(FOUNDER_PERSONA_CANDIDATES.filter((c) => c.origin === 'seed').length).toBe(64)
-    expect(FOUNDER_PERSONA_CANDIDATES.filter((c) => c.origin === 'curator').length).toBe(225)
+/** 창업자가 확정한 운영 allowlist — 이 표가 바뀌면 테스트가 먼저 깨져야 한다 */
+const EXPECTED = [
+  { email: 'bot-a@unao.bot', roleLabel: '하늘바라기', boards: ['STORY', 'MENOPAUSE'] },
+  { email: 'bot-b@unao.bot', roleLabel: '정순씨', boards: ['LIFE2', 'STORY'] },
+  { email: 'bot-h@unao.bot', roleLabel: '만보걷기', boards: ['STORY', 'MENOPAUSE'] },
+  { email: 'bot-n@unao.bot', roleLabel: '알뜰맘', boards: ['STORY', 'LIFE2'] },
+  { email: 'bot-ay@unao.bot', roleLabel: '웃음보따리', boards: ['HUMOR'] },
+]
+
+describe('운영 allowlist', () => {
+  it('정확히 5명이고, email·역할·허용 게시판이 확정값과 일치한다', () => {
+    expect(FOUNDER_PERSONAS).toHaveLength(5)
+    expect(
+      FOUNDER_PERSONAS.map((p) => ({
+        email: p.email,
+        roleLabel: p.roleLabel,
+        boards: [...p.allowedBoardTypes],
+      })),
+    ).toEqual(EXPECTED)
   })
 
-  it('이메일이 중복되지 않는다', () => {
-    expect(new Set(FOUNDER_PERSONA_EMAILS).size).toBe(FOUNDER_PERSONA_EMAILS.length)
-  })
-
-  it('전부 bot-* 또는 curator-* @unao.bot 네임스페이스다', () => {
-    for (const c of FOUNDER_PERSONA_CANDIDATES) {
-      expect(c.email).toMatch(/^(bot|curator)-[a-z0-9]+@unao\.bot$/)
+  it('이메일이 중복되지 않고 전부 @unao.bot이다', () => {
+    expect(new Set(FOUNDER_PERSONA_EMAILS).size).toBe(5)
+    for (const p of FOUNDER_PERSONAS) {
+      expect(p.email.endsWith('@unao.bot')).toBe(true)
     }
   })
 
-  it('official@unao.bot은 후보가 아니다 — 페르소나가 아니라 운영 공식 계정', () => {
-    expect(isFounderPersonaEmail('official@unao.bot')).toBe(false)
-  })
-
-  it('신규 founder-* 계정은 후보가 아니다 — 계정을 새로 만들지 않는다', () => {
+  it('allowlist 밖 계정은 전부 거부된다 — 실회원·official·신규·다른 봇', () => {
     for (const email of [
+      'someone@kakao.com',
+      'official@unao.bot',
       'founder-life2@unao.bot',
-      'founder-money@unao.bot',
-      'founder-body@unao.bot',
-      'founder-humor@unao.bot',
+      'bot-job@unao.bot',
+      'curator-a@unao.bot',
+      'bot-bi@unao.bot',
     ]) {
       expect(isFounderPersonaEmail(email)).toBe(false)
-    }
-    expect(FOUNDER_PERSONA_EMAILS.some((e) => e.startsWith('founder-'))).toBe(false)
-  })
-
-  it('스크래퍼봇(canWritePost=false, REACTION_ONLY_KEYS BI~BW)은 제외됐다', () => {
-    for (const key of ['bi', 'bj', 'bk', 'bl', 'bm', 'bn', 'bo', 'bp', 'bq', 'br', 'bs', 'bt', 'bu', 'bv', 'bw']) {
-      expect(isFounderPersonaEmail(`bot-${key}@unao.bot`)).toBe(false)
+      expect(findFounderPersona(email)).toBeUndefined()
     }
   })
 
-  it('system feed 봇(bot-job 등)은 제외됐다 — role=system_feed', () => {
-    expect(isFounderPersonaEmail('bot-job@unao.bot')).toBe(false)
-  })
-
-  it('registryBoard는 모두 board-registry에 존재하는 BoardType이다', () => {
-    for (const c of FOUNDER_PERSONA_CANDIDATES) {
-      expect(BOARD_URL_PREFIX[c.registryBoard as keyof typeof BOARD_URL_PREFIX]).toBeTruthy()
+  it('카탈로그에 닉네임을 담지 않는다 — 표시 이름은 DB User.nickname이 정본', () => {
+    for (const p of FOUNDER_PERSONAS) {
+      expect(Object.keys(p).sort()).toEqual([
+        'allowedBoardTypes',
+        'email',
+        'roleLabel',
+        'voice',
+      ])
     }
   })
 
-  it('findFounderPersonaCandidate / isFounderPersonaEmail', () => {
-    expect(findFounderPersonaCandidate('bot-a@unao.bot')?.origin).toBe('seed')
-    expect(findFounderPersonaCandidate('curator-a@unao.bot')?.origin).toBe('curator')
-    expect(findFounderPersonaCandidate('nope@unao.bot')).toBeUndefined()
-    expect(isFounderPersonaEmail('bot-a@unao.bot')).toBe(true)
+  it('브랜드 금지어(시니어·어르신·노인·실버)를 라벨·톤 안내에 쓰지 않는다', () => {
+    for (const p of FOUNDER_PERSONAS) {
+      const text = `${p.roleLabel} ${p.voice}`
+      for (const word of ['시니어', '어르신', '노인', '실버']) {
+        expect(text).not.toContain(word)
+      }
+    }
   })
 })
 
 describe('게시판 규칙', () => {
-  it('허용 게시판은 커뮤니티 4종이고 모두 URL 접두사가 있다', () => {
+  it('허용 게시판 전체 집합은 커뮤니티 4종이고 모두 URL 접두사가 있다', () => {
     expect([...FOUNDER_PERSONA_BOARD_TYPES].sort()).toEqual([
       'HUMOR',
       'LIFE2',
@@ -88,6 +95,23 @@ describe('게시판 규칙', () => {
     for (const b of FOUNDER_PERSONA_BOARD_TYPES) {
       expect(BOARD_URL_PREFIX[b]).toBeTruthy()
     }
+  })
+
+  it('페르소나별 allowedBoardTypes는 전체 집합의 부분집합이다', () => {
+    for (const p of FOUNDER_PERSONAS) {
+      expect(p.allowedBoardTypes.length).toBeGreaterThan(0)
+      for (const b of p.allowedBoardTypes) {
+        expect(FOUNDER_PERSONA_BOARD_TYPES).toContain(b)
+      }
+    }
+  })
+
+  it('personaAllowsBoard — 허용 목록 밖은 false', () => {
+    const humorOnly = findFounderPersona('bot-ay@unao.bot')!
+    expect(personaAllowsBoard(humorOnly, 'HUMOR')).toBe(true)
+    expect(personaAllowsBoard(humorOnly, 'STORY')).toBe(false)
+    expect(personaAllowsBoard(humorOnly, 'LIFE2')).toBe(false)
+    expect(personaAllowsBoard(humorOnly, 'MENOPAUSE')).toBe(false)
   })
 
   it('slug 생성 게시판은 회원 createPost와 같은 STORY/HUMOR/LIFE2다', () => {
@@ -123,17 +147,15 @@ describe('validateFounderPersonaInput', () => {
     expect('ok' in r).toBe(true)
     if ('ok' in r) {
       expect(r.ok.title).toBe(VALID.title)
-      expect(r.ok.candidate.email).toBe('bot-a@unao.bot')
+      expect(r.ok.persona.email).toBe('bot-a@unao.bot')
       expect(r.ok.boardType).toBe('STORY')
     }
   })
 
-  it('후보 목록 밖 이메일은 거부 — 실회원·official·신규 계정 전부', () => {
-    for (const personaEmail of ['someone@kakao.com', 'official@unao.bot', 'founder-life2@unao.bot']) {
-      expect(validateFounderPersonaInput({ ...VALID, personaEmail })).toEqual({
-        error: '후보 목록에 없는 페르소나입니다',
-      })
-    }
+  it('allowlist 밖 이메일은 거부', () => {
+    expect(validateFounderPersonaInput({ ...VALID, personaEmail: 'curator-a@unao.bot' })).toEqual({
+      error: '허용 목록에 없는 페르소나입니다',
+    })
   })
 
   it('허용 목록 밖 게시판(MAGAZINE·JOB·WEEKLY)은 거부', () => {
@@ -144,9 +166,16 @@ describe('validateFounderPersonaInput', () => {
     }
   })
 
-  it('모든 후보는 4개 게시판 어디에나 쓸 수 있다 — registryBoard는 힌트일 뿐', () => {
-    for (const boardType of FOUNDER_PERSONA_BOARD_TYPES) {
-      expect('ok' in validateFounderPersonaInput({ ...VALID, boardType })).toBe(true)
+  it('페르소나별 허용 게시판만 통과한다', () => {
+    for (const p of FOUNDER_PERSONAS) {
+      for (const boardType of FOUNDER_PERSONA_BOARD_TYPES) {
+        const r = validateFounderPersonaInput({ ...VALID, personaEmail: p.email, boardType })
+        if ((p.allowedBoardTypes as readonly string[]).includes(boardType)) {
+          expect('ok' in r).toBe(true)
+        } else {
+          expect('error' in r && r.error).toContain('이 게시판에 쓸 수 없습니다')
+        }
+      }
     }
   })
 
