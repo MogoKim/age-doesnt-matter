@@ -348,6 +348,33 @@ describe('[R8-7] 데이터 품질 — 미수집을 0 으로 읽지 못하게 막
     expect(note.message).toContain('이벤트 미수집')
   })
 
+  it('이벤트가 실제 가입자의 절반에 못 미치면 WARN 으로 올린다 (production 30일: 3 vs 7)', async () => {
+    // 실회원 3명 가입, sign_up 이벤트는 1건 → 1 < 3/2 → 유실 의심
+    db.users = [
+      { id: 'a', providerId: '1', role: 'USER', createdAt: ago(3 * DAY) },
+      { id: 'b', providerId: '2', role: 'USER', createdAt: ago(3 * DAY) },
+      { id: 'c', providerId: '3', role: 'USER', createdAt: ago(3 * DAY) },
+    ]
+    db.events = [{ eventName: 'sign_up', sessionId: 's1', isBot: false, createdAt: ago(DAY) }]
+    const note = (await run()).dataQuality.find((q) => q.key === 'signup_cross_check')!
+    expect(note.level).toBe('WARN')
+    expect(note.message).toContain('유실 의심')
+  })
+
+  it('이벤트가 가입자 수와 맞으면 OK 다', async () => {
+    db.users = [{ id: 'a', providerId: '1', role: 'USER', createdAt: ago(3 * DAY) }]
+    db.events = [{ eventName: 'sign_up', sessionId: 's1', isBot: false, createdAt: ago(DAY) }]
+    expect((await run()).dataQuality.find((q) => q.key === 'signup_cross_check')?.level).toBe('OK')
+  })
+
+  it('가입자가 0이면 대조할 것이 없어 OK 다 — 이벤트 0 을 결손으로 오인하지 않는다', async () => {
+    db.users = []
+    db.events = [{ eventName: 'page_view', sessionId: 's1', isBot: false, createdAt: ago(DAY) }]
+    const note = (await run()).dataQuality.find((q) => q.key === 'signup_cross_check')!
+    expect(note.level).toBe('OK')
+    expect(note.message).toContain('대조할 것이 없다')
+  })
+
   it('로그인 시작 유실 가능성을 항상 경고로 남긴다', async () => {
     seedUsers()
     const d = await run()

@@ -430,12 +430,26 @@ async function computeMemberRecovery(windowDays: number): Promise<MemberRecovery
     },
     {
       key: 'signup_cross_check',
-      level: signup.size === 0 && cohort.length > 0 ? 'GAP' : 'OK',
+      // 🔴 이벤트 0 만 잡으면 부족하다. production 실측(2026-09-10): 30일 신규 실회원 7명 vs
+      //    `sign_up` 이벤트 3건 — 절반 이상 유실인데도 "0 이 아니니 정상"으로 넘어갔다.
+      //    그래서 **비율로도** 판정한다. 기준은 절반이다.
+      level:
+        cohort.length === 0
+          ? 'OK'
+          : signup.size === 0
+            ? 'GAP'
+            : signup.size < cohort.length / 2
+              ? 'WARN'
+              : 'OK',
       message:
         `창 안 \`sign_up\` 이벤트 세션 ${signup.size}건 · \`User.createdAt\` 기준 신규 실회원 ${cohort.length}명. ` +
-        (signup.size === 0 && cohort.length > 0
-          ? '이벤트가 0인데 실제 가입자가 있다 — **이벤트 미수집**이므로 퍼널 마지막 칸을 0% 로 읽지 마라.'
-          : '두 값이 크게 어긋나면 이벤트 유실을 의심한다.'),
+        (cohort.length === 0
+          ? '가입자가 없어 대조할 것이 없다.'
+          : signup.size === 0
+            ? '이벤트가 0인데 실제 가입자가 있다 — **이벤트 미수집**이므로 퍼널 마지막 칸을 0% 로 읽지 마라.'
+            : signup.size < cohort.length / 2
+              ? `이벤트가 실제 가입자의 절반에 못 미친다(${signup.size}/${cohort.length}) — **유실 의심**. 퍼널의 가입 완료 칸은 하한값으로 읽어라.`
+              : '두 값이 크게 어긋나지 않는다.'),
     },
     {
       key: 'immature_excluded',
