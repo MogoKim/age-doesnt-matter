@@ -10,6 +10,7 @@ import PostListWithAds from '@/components/features/common/PostListWithAds'
 import BoardPaginationFooter from '@/components/features/common/BoardPaginationFooter'
 import EmptyState from '@/components/ui/EmptyState'
 import SearchParamsBridge from '@/components/features/common/SearchParamsBridge'
+import { normalizeClientQuery } from '@/lib/list-query'
 
 const LIMIT = 12
 
@@ -18,6 +19,8 @@ interface BoardPostListClientProps {
   boardType: BoardType
   initialPosts: PostSummary[]
   initialTotal: number
+  /** 서버가 이미 그려 준 쿼리(정규화). 같은 쿼리면 다시 가져오지 않는다. */
+  initialQuery: string
 }
 
 interface BoardPostsResponse {
@@ -55,12 +58,14 @@ export default function BoardPostListClient({
   boardType: _boardType,
   initialPosts,
   initialTotal,
+  initialQuery,
 }: BoardPostListClientProps) {
   // 🔴 `useSearchParams()` 를 여기서 부르면 정적 렌더가 CSR 로 bail out 되어
   //    서버 HTML 에 목록이 통째로 빠진다(글 링크 0건). 다리로 받는다 — SearchParamsBridge 주석 참조.
   //    서버 렌더와 hydration 첫 렌더는 쿼리를 모르는 상태(기본 목록)로 **동일하게** 그린다.
-  const [rawQuery, setRawQuery] = useState('')
-  const handleQueryChange = useCallback((next: string) => { setRawQuery(next) }, [])
+  // 서버가 그린 쿼리로 시작한다 — 서버 HTML 과 hydration 첫 렌더가 같아야 #418 이 안 난다.
+  const [rawQuery, setRawQuery] = useState(initialQuery)
+  const handleQueryChange = useCallback((next: string) => { setRawQuery(normalizeClientQuery(next)) }, [])
   const searchParams = useMemo(() => new URLSearchParams(rawQuery), [rawQuery])
 
   const category = searchParams.get('category') || undefined
@@ -68,7 +73,8 @@ export default function BoardPostListClient({
   const q = searchParams.get('q')?.trim() || undefined
   const sf = parseSearchField(searchParams.get('sf'))
   const page = Math.max(1, Number.parseInt(searchParams.get('page') ?? '1', 10) || 1)
-  const isDefaultView = !category && sortOption === 'latest' && !q && page === 1
+  // 서버가 이미 그린 화면이면 재조회하지 않는다(초기 깜빡임·불필요한 요청 방지).
+  const isServerRendered = rawQuery === initialQuery
 
   const [data, setData] = useState<BoardPostsResponse>({
     posts: initialPosts,
@@ -89,7 +95,7 @@ export default function BoardPostListClient({
   }, [category, sortOption, q, sf, page])
 
   useEffect(() => {
-    if (isDefaultView) {
+    if (isServerRendered) {
       setData({ posts: initialPosts, total: initialTotal })
       setIsLoading(false)
       return
@@ -112,7 +118,7 @@ export default function BoardPostListClient({
       .finally(() => setIsLoading(false))
 
     return () => controller.abort()
-  }, [boardSlug, initialPosts, initialTotal, isDefaultView, queryKey])
+  }, [boardSlug, initialPosts, initialTotal, isServerRendered, queryKey])
 
   const sortSuffix = sortOption === 'likes' ? '&sort=likes' : ''
   const categorySuffix = category && category !== '전체' ? `&category=${encodeURIComponent(category)}` : ''

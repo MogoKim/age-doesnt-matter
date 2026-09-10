@@ -194,3 +194,10 @@ export const getCachedMagazinePage = unstable_cache(
   ['magazine-list-page1'],
   { revalidate: 60, tags: ['magazine-list'] },
 )
+
+/** 요청된 페이지를 서버에서 가져온다 — 캐시 키가 page 로 갈리고 revalidate·태그는 동일하다. */
+export const getCachedMagazinePageAt = unstable_cache(
+  (page: number) => getMagazineListPage({ skip: (Math.max(1, page) - 1) * 12, limit: 12 }),
+  ['magazine-list-page-at'],
+  { revalidate: 60, tags: ['magazine-list'] },
+)

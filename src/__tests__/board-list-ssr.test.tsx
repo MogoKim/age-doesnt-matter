@@ -61,6 +61,51 @@ describe('[SSR-1] 목록 컴포넌트는 useSearchParams 를 직접 부르지 �
  * hydration 시점("4시간 전")이 달라진다. 실측(2026-09-10 Preview): `/community/stories` #418 5/5.
  * 의도된 차이라 해당 텍스트 노드에서만 경고를 끈다 — `CommentItem` 과 같은 처리(PR #357).
  */
+describe('[SSR-4] 목록 쿼리 해석은 서버·클라이언트가 같은 규칙을 쓴다', () => {
+  it('page·sort 만 서버가 책임지고, page 는 1 이상으로 정규화된다', async () => {
+    const { parseListQuery } = await import('@/lib/list-query')
+    expect(parseListQuery({}).page).toBe(1)
+    expect(parseListQuery({ page: '2' }).page).toBe(2)
+    expect(parseListQuery({ page: '0' }).page).toBe(1)
+    expect(parseListQuery({ page: 'abc' }).page).toBe(1)
+    expect(parseListQuery({ page: '-3' }).page).toBe(1)
+    expect(parseListQuery({ sort: 'likes' }).sort).toBe('likes')
+    expect(parseListQuery({ sort: '이상한값' }).sort).toBe('latest')
+  })
+
+  it('정규화 쿼리는 page=1·latest 를 빈 문자열로 만든다 — 서버 기본 렌더와 같다는 뜻', async () => {
+    const { parseListQuery } = await import('@/lib/list-query')
+    expect(parseListQuery({}).query).toBe('')
+    expect(parseListQuery({ page: '1' }).query).toBe('')
+    expect(parseListQuery({ page: '2' }).query).toBe('page=2')
+    expect(parseListQuery({ sort: 'likes', page: '3' }).query).toBe('sort=likes&page=3')
+  })
+
+  it('클라이언트 전용 축(검색·카테고리·지역)이 있으면 서버 렌더와 다르다고 본다', async () => {
+    const { normalizeClientQuery } = await import('@/lib/list-query')
+    expect(normalizeClientQuery('')).toBe('')
+    expect(normalizeClientQuery('page=2')).toBe('page=2')
+    expect(normalizeClientQuery('q=갱년기')).toMatch(/^client:/)
+    expect(normalizeClientQuery('category=건강')).toMatch(/^client:/)
+    expect(normalizeClientQuery('region=서울')).toMatch(/^client:/)
+    // '전체' 는 필터가 없는 것과 같다
+    expect(normalizeClientQuery('category=전체')).toBe('')
+  })
+})
+
+describe('[SSR-5] 로딩 중에도 다리를 유지한다', () => {
+  it.each([
+    'src/components/features/magazine/MagazineContent.tsx',
+    'src/components/features/jobs/JobsContent.tsx',
+    'src/components/features/community/BoardPostListClient.tsx',
+  ])('%s 의 로딩 분기에 bridge 가 있다', (rel) => {
+    const code = codeOf(rel)
+    const loadingBlock = code.slice(code.indexOf('isLoading'))
+    const upToReturn = loadingBlock.slice(0, loadingBlock.indexOf('data.posts.length === 0') + 1 || 2000)
+    expect(upToReturn, `${rel} 로딩 중 다리가 빠지면 그 사이 URL 변경(뒤로가기 포함)을 놓친다`).toContain('bridge')
+  })
+})
+
 describe('[SSR-3] SSR 되는 상대시각은 suppressHydrationWarning 을 단다', () => {
   it.each([
     ['src/components/features/community/PostCard.tsx', 'post.createdAt'],
@@ -102,7 +147,7 @@ describe('[SSR-2] 서버 렌더 출력에 글 링크가 실제로 있다', () =>
     const { default: BoardPostListClient } = await import('@/components/features/community/BoardPostListClient')
 
     const html = renderToStaticMarkup(
-      <BoardPostListClient boardSlug="stories" boardType="STORY" initialPosts={posts} initialTotal={posts.length} />,
+      <BoardPostListClient boardSlug="stories" boardType="STORY" initialPosts={posts} initialTotal={posts.length} initialQuery="" />,
     )
 
     const links = [...html.matchAll(/href="(\/community\/stories\/[^"]+)"/g)].map((m) => m[1])
