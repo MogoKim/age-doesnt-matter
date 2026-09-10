@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  NAVER_ORIGIN_FILTER, PRODUCTION_PROJECT_REF, EXPECTED, checkBaseline, decidePost, isNaverOrigin,
+  NAVER_ORIGIN_FILTER, PRODUCTION_PROJECT_REF_SHA256, isProductionProjectRef, EXPECTED, checkBaseline, decidePost, isNaverOrigin,
   assertNoUserPosts, assertMutationIsScoped, TOMBSTONE_PATCH, CONTENT_BEARING_FIELDS, isTombstoned,
   redactForLog, type BaselineActual,
 } from './naver-origin-policy.js'
@@ -171,8 +171,19 @@ describe('[T7] 로그에 title/content/comment/secret 이 실리지 않는다', 
   })
 })
 
-describe('project ref allowlist', () => {
-  it('production ref 가 고정돼 있다', () => {
-    expect(PRODUCTION_PROJECT_REF).toMatch(/^[a-z]{20}$/)
+describe('project ref allowlist — 평문 노출 없이 고정한다', () => {
+  it('해시만 저장한다 (공개 저장소에 ref 평문을 넣지 않는다)', () => {
+    expect(PRODUCTION_PROJECT_REF_SHA256).toMatch(/^[0-9a-f]{64}$/)
+  })
+
+  it('다른 project ref 는 거부한다', () => {
+    expect(isProductionProjectRef('some-other-project')).toBe(false)
+    expect(isProductionProjectRef('')).toBe(false)
+  })
+
+  it('환경변수의 실제 ref 만 통과한다', () => {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    if (!url) return // CI 에는 운영 env 가 없다 — 그 경우 이 단언은 건너뛴다
+    expect(isProductionProjectRef(new URL(url).host.split('.')[0])).toBe(true)
   })
 })

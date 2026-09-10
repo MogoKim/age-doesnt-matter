@@ -8,9 +8,20 @@
  * 정책 출처: 창업자 결정(2026-09-10) — 네이버 카페에서 수집·재게시한 원문과 댓글 사본을 영구 폐기.
  * 측정 근거: `docs/operations/2026-09-10-naver-cafe-purge-facts.md`
  */
+import { createHash } from 'node:crypto'
 
-/** production Supabase project ref allowlist. 이 값이 아니면 도구는 즉시 중단한다. */
-export const PRODUCTION_PROJECT_REF = 'dkufnfnynisbmsjsqlsn'
+/**
+ * production Supabase project ref allowlist.
+ *
+ * ref 자체를 적지 않고 **SHA-256 해시로만** 둔다. 이 저장소는 공개이고, ref 는 현재
+ * `origin/main`·`.env.example`·배포된 HTML 어디에도 없다 — 여기에 평문으로 적으면
+ * 없던 노출을 새로 만드는 셈이다. 해시 대조로도 allowlist 는 그대로 작동한다.
+ */
+export const PRODUCTION_PROJECT_REF_SHA256 = '6df9dc71f519af491447c292eac9b9f704534517c5e9fc4b8e0f9cf3e81b85a5'
+
+export function isProductionProjectRef(ref: string): boolean {
+  return createHash('sha256').update(ref).digest('hex') === PRODUCTION_PROJECT_REF_SHA256
+}
 
 /**
  * "명시적 네이버 유래 Post" 의 단일 정의.

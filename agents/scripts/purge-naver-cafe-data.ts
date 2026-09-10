@@ -17,7 +17,7 @@
  * 실행이 끝나면 이 파일과 `agents/purge/` 는 별도 PR 로 제거한다(일회성).
  */
 import {
-  PRODUCTION_PROJECT_REF, NAVER_ORIGIN_FILTER, BOT_AUTHOR_FILTER, HUMAN_AUTHOR_FILTER,
+  isProductionProjectRef, NAVER_ORIGIN_FILTER, BOT_AUTHOR_FILTER, HUMAN_AUTHOR_FILTER,
   EXPECTED, checkBaseline, decidePost, assertNoUserPosts, assertMutationIsScoped,
   TOMBSTONE_PATCH, redactForLog, type BaselineActual,
 } from '../purge/naver-origin-policy.js'
@@ -226,7 +226,7 @@ export async function main(argv: string[] = process.argv): Promise<void> {
   if (!url || !key) throw new Error('[ABORT] NEXT_PUBLIC_SUPABASE_URL · SUPABASE_SERVICE_ROLE_KEY 가 필요하다.')
 
   const ref = projectRefOf(url)
-  if (ref !== PRODUCTION_PROJECT_REF) throw new Error('[ABORT] production project ref 가 아니다 — 중단한다.')
+  if (!isProductionProjectRef(ref)) throw new Error('[ABORT] production project ref 가 아니다 — 중단한다.')
 
   const args = parseArgs(argv)
   const execute = isExecutionAuthorized(args, ref)

@@ -1,8 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { parseArgs, projectRefOf, isExecutionAuthorized, resolveTargets, run, type Ctx } from './purge-naver-cafe-data.js'
-import { PRODUCTION_PROJECT_REF, EXPECTED } from '../purge/naver-origin-policy.js'
+import { EXPECTED } from '../purge/naver-origin-policy.js'
 
-const URL_ = `https://${PRODUCTION_PROJECT_REF}.supabase.co`
+/** 테스트용 가짜 ref — 실제 production ref 를 테스트에도 적지 않는다. */
+const REF = 'test-project-ref'
+
+const URL_ = `https://${REF}.supabase.co`
 const ctx = (execute: boolean): Ctx => ({ url: URL_, key: 'test-key', execute })
 
 /** 실제 production 데이터 모양을 흉내낸 fetch — 네트워크로 나가지 않는다. */
@@ -54,23 +57,23 @@ afterEach(() => { vi.unstubAllGlobals() })
 
 describe('[T3] 확인 토큰이 없으면 실행 권한이 없다', () => {
   it('--execute 만으로는 권한이 없다', () => {
-    expect(isExecutionAuthorized(parseArgs(['--execute']), PRODUCTION_PROJECT_REF)).toBe(false)
+    expect(isExecutionAuthorized(parseArgs(['--execute']), REF)).toBe(false)
   })
 
   it('토큰이 틀리면 권한이 없다', () => {
-    expect(isExecutionAuthorized(parseArgs(['--execute', '--confirm=PURGE-wrong']), PRODUCTION_PROJECT_REF)).toBe(false)
+    expect(isExecutionAuthorized(parseArgs(['--execute', '--confirm=PURGE-wrong']), REF)).toBe(false)
   })
 
   it('--execute 없이 토큰만 있어도 권한이 없다', () => {
-    expect(isExecutionAuthorized(parseArgs([`--confirm=PURGE-${PRODUCTION_PROJECT_REF}`]), PRODUCTION_PROJECT_REF)).toBe(false)
+    expect(isExecutionAuthorized(parseArgs([`--confirm=PURGE-${REF}`]), REF)).toBe(false)
   })
 
   it('둘 다 맞아야 권한이 있다', () => {
-    expect(isExecutionAuthorized(parseArgs(['--execute', `--confirm=PURGE-${PRODUCTION_PROJECT_REF}`]), PRODUCTION_PROJECT_REF)).toBe(true)
+    expect(isExecutionAuthorized(parseArgs(['--execute', `--confirm=PURGE-${REF}`]), REF)).toBe(true)
   })
 
   it('project ref 를 URL 에서 뽑는다', () => {
-    expect(projectRefOf(URL_)).toBe(PRODUCTION_PROJECT_REF)
+    expect(projectRefOf(URL_)).toBe(REF)
   })
 })
 
