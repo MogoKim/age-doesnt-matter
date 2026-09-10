@@ -15,7 +15,7 @@ const FIXTURE_EXPECTED: Omit<PurgeExpectation, 'publicUserPosts'> = {
   reportsOnNaver: EXPECTED.reportsOnNaver,
   homeCurationOnNaver: EXPECTED.homeCurationOnNaver,
   cafePost: 120, cafeTrend: 30, commentWaveQueue: 40,
-  botLogCafeCrawler: 60, r2Objects: EXPECTED.r2Objects,
+  botLogPurgeTargets: 70, r2Objects: EXPECTED.r2Objects,
 }
 
 /** 테스트용 가짜 ref — 실제 production ref 를 테스트에도 적지 않는다. */
@@ -33,6 +33,11 @@ type Fault = {
   /** 특정 테이블만 절반 삭제 */ halfTable?: string
   /** P4 PATCH 에서 일부 필드를 빠뜨린다 */ partialPatch?: boolean
   /** R2 삭제를 무시한다 */ r2Noop?: boolean
+  /** R2 HEAD 를 이 상태로 답한다 (403·429·5xx → 판정 불가라 ABORT 여야 한다) */ r2HeadStatus?: number
+  /** DELETE **뒤**의 HEAD 만 이 상태로 답한다 (삭제 후 검증 실패 주입) */ r2HeadStatusAfterDelete?: number
+  /** 조회에서 마지막 행을 빼먹는다 (누락 주입) */ dropLastRow?: string
+  /** 조회에서 첫 행을 두 번 준다 (중복 주입) */ duplicateRow?: string
+  /** exact count 만 부풀린다 (조회는 정상 — 누락처럼 보이게) */ inflateCount?: string
 }
 
 function makeDb() {
@@ -63,7 +68,12 @@ function makeDb() {
   for (let i = 0; i < EXPECTED.botCommentsOnTombstone; i++) comments.push({ id: `cb${i}`, postId: posts[i % T].id, authorId: `b${i % 320}` })
   const db: Record<string, Row[]> = {
     User: users, Post: posts, Comment: comments,
-    Like: [],
+    // 실측(production)에 맞춰 채운다 — 실회원 공감은 **이미 흔적이 있는 글**에 둬서
+    // tombstone 집합(T건)이 달라지지 않게 한다. 빈 배열이면 누락·중복 주입을 검증할 수 없다.
+    Like: [
+      ...Array.from({ length: 40 }, (_, i) => ({ id: `lh${i}`, postId: posts[i % H].id, userId: `u${i % EXPECTED.humanUsers}` })),
+      ...Array.from({ length: 200 }, (_, i) => ({ id: `lb${i}`, postId: posts[i % N].id, userId: `b${i % 320}` })),
+    ],
     GuestLike: Array.from({ length: G }, (_, i) => ({ id: `g${i}`, postId: posts[H + NU + i].id })),
     Report: [{ id: 'r0', postId: posts[0].id }], // 이미 실회원 댓글이 있는 글 — 중복 흔적
     HomeCurationOverride: Array.from({ length: EXPECTED.homeCurationOnNaver }, (_, i) => ({ id: `h${i}`, postId: posts[H + NU + G + (i % curationPosts)].id })),
@@ -84,6 +94,7 @@ function makeDb() {
 function makeFetch(state: ReturnType<typeof makeDb>, fault: Fault = {}) {
   let mutationCount = 0
   const calls: { method: string; url: string }[] = []
+  const deletedKeys = new Set<string>()
 
   const matches = (row: Row, params: URLSearchParams, embedded: string[]): boolean => {
     for (const [k, v] of params) {
@@ -122,8 +133,14 @@ function makeFetch(state: ReturnType<typeof makeDb>, fault: Fault = {}) {
     if (url.includes('r2.cloudflarestorage.com')) {
       const key = url.split(/\/(?=[^/]*$)/).slice(-1)[0]
       const full = url.split('.com/')[1].split('/').slice(1).join('/')
-      if (method === 'HEAD') return { ok: state.r2.has(full), status: state.r2.has(full) ? 200 : 404, headers: new Headers(), json: async () => ({}) } as unknown as Response
-      if (method === 'DELETE') { if (!fault.r2Noop) state.r2.delete(full); return { ok: true, status: 204, headers: new Headers(), json: async () => ({}) } as unknown as Response }
+      if (method === 'HEAD') {
+        if (fault.r2HeadStatus) return { ok: false, status: fault.r2HeadStatus, headers: new Headers(), json: async () => ({}) } as unknown as Response
+        if (fault.r2HeadStatusAfterDelete && deletedKeys.has(full)) {
+          return { ok: false, status: fault.r2HeadStatusAfterDelete, headers: new Headers(), json: async () => ({}) } as unknown as Response
+        }
+        return { ok: state.r2.has(full), status: state.r2.has(full) ? 200 : 404, headers: new Headers(), json: async () => ({}) } as unknown as Response
+      }
+      if (method === 'DELETE') { if (!fault.r2Noop) { state.r2.delete(full); deletedKeys.add(full) } return { ok: true, status: 204, headers: new Headers(), json: async () => ({}) } as unknown as Response }
       void key
     }
 
@@ -136,10 +153,15 @@ function makeFetch(state: ReturnType<typeof makeDb>, fault: Fault = {}) {
 
     if (method === 'GET') {
       if ((init?.headers as Record<string, string>)?.Prefer === 'count=exact') {
-        return { ok: true, status: 206, headers: new Headers({ 'content-range': `0-0/${hit.length}` }), json: async () => [] } as unknown as Response
+        const n = hit.length + (fault.inflateCount === table ? 1 : 0)
+        return { ok: true, status: 206, headers: new Headers({ 'content-range': `0-0/${n}` }), json: async () => [] } as unknown as Response
       }
       const limit = Number(params.get('limit') ?? hit.length)
-      const sorted = [...hit].sort((a, b) => String(a.id).localeCompare(String(b.id)))
+      let sorted = [...hit].sort((a, b) => String(a.id).localeCompare(String(b.id)))
+      // 누락·중복 주입은 **마지막 페이지에서만** 한다(페이지 경계를 흔들지 않기 위해).
+      const isLastPage = sorted.length <= limit
+      if (isLastPage && fault.dropLastRow === table && sorted.length > 0) sorted = sorted.slice(0, -1)
+      if (isLastPage && fault.duplicateRow === table && sorted.length > 0) sorted = [sorted[0], ...sorted]
       return { ok: true, status: 200, headers: new Headers(), json: async () => sorted.slice(0, limit) } as unknown as Response
     }
 
@@ -281,6 +303,76 @@ describe('[T5-실패주입] 상태가 안 바뀌면 반드시 FAIL 한다', () =
     const state = makeDb()
     const { ctx } = ctxWith(state, { r2Noop: true }, true)
     await expect(run(ctx)).rejects.toThrow(/ABORT/)
+  }, 30_000)
+})
+
+describe('[T11] R2 HEAD 는 200/404 만 판정한다 — 그 외는 ABORT', () => {
+  it.each([403, 429, 500, 502])('dry-run 에서 HEAD %i 는 판정 불가라 던진다', async (code) => {
+    const state = makeDb()
+    const { ctx } = ctxWith(state, { r2HeadStatus: code }, false)
+    await expect(run(ctx)).rejects.toThrow(/판정할 수 없다|ABORT/)
+  }, 30_000)
+
+  it.each([403, 500])('DELETE 뒤 HEAD %i 도 부재로 세지 않고 던진다', async (code) => {
+    const state = makeDb()
+    const { ctx } = ctxWith(state, { r2HeadStatusAfterDelete: code }, true)
+    await expect(run(ctx)).rejects.toThrow(/판정할 수 없다|ABORT/)
+  }, 30_000)
+
+  it('404 는 부재로 정상 처리한다 — 이미 없던 키는 삭제 실적에 넣지 않는다', async () => {
+    const state = makeDb()
+    // 앞 10키를 미리 없앤다
+    const keys = [...state.r2]
+    for (const k of keys.slice(0, 10)) state.r2.delete(k)
+    const { ctx, calls } = ctxWith(state, {}, true)
+    await run(ctx)
+    const r2Deletes = calls.filter((c) => c.method === 'DELETE' && c.url.includes('r2.cloudflare'))
+    expect(r2Deletes.length, '이미 없던 10키에는 DELETE 를 보내지 않아야 한다').toBe(EXPECTED.r2Objects - 10)
+    expect(state.r2.size).toBe(0)
+  }, 30_000)
+})
+
+describe('[T12] BotLog 완료 판정은 폐기 대상 전체 잔량이다', () => {
+  it('CAFE_CRAWLER 가 0 이고 파생 로그만 남으면 P0 를 건너뛰지 않는다', async () => {
+    const state = makeDb()
+    // 앞선 실행이 CAFE_CRAWLER 만 지운 상태를 만든다
+    state.db.BotLog = state.db.BotLog.filter((b) => b.botType !== 'CAFE_CRAWLER')
+    const derived = state.db.BotLog.filter((b) => b.botType === 'COO').length
+    expect(derived, '파생 로그가 남아 있어야 의미 있는 테스트다').toBeGreaterThan(0)
+
+    const { ctx, calls } = ctxWith(state, {}, true)
+    await run(ctx)
+
+    // 남아 있던 파생 로그가 실제로 지워졌다
+    expect(state.db.BotLog.filter((b) => b.botType === 'COO')).toHaveLength(0)
+    // 무관한 로그는 보존
+    expect(state.db.BotLog.filter((b) => b.botType === 'CTO')).toHaveLength(5)
+    // P0 에서 BotLog DELETE 가 실제로 나갔다
+    expect(calls.some((c) => c.method === 'DELETE' && c.url.includes('/BotLog?'))).toBe(true)
+  }, 30_000)
+})
+
+describe('[T13] 판정 조회의 누락·중복은 write 전에 FAIL 한다', () => {
+  it.each(['Comment', 'Like', 'GuestLike', 'Report', 'HomeCurationOverride', 'BotLog', 'Post'])(
+    '%s 조회에서 한 행이 빠지면 던진다', async (table) => {
+      const state = makeDb()
+      const { ctx, calls } = ctxWith(state, { dropLastRow: table }, true)
+      await expect(run(ctx)).rejects.toThrow(/누락|FAIL-CLOSED|ABORT/)
+      expect(calls.filter((c) => !['GET', 'HEAD'].includes(c.method))).toHaveLength(0)
+    }, 30_000)
+
+  it.each(['Comment', 'Like', 'HomeCurationOverride'])('%s 조회에 중복 행이 섞이면 던진다', async (table) => {
+    const state = makeDb()
+    const { ctx, calls } = ctxWith(state, { duplicateRow: table }, true)
+    await expect(run(ctx)).rejects.toThrow(/중복 ID|FAIL-CLOSED|ABORT/)
+    expect(calls.filter((c) => !['GET', 'HEAD'].includes(c.method))).toHaveLength(0)
+  }, 30_000)
+
+  it('exact count 만 어긋나도(조회는 정상) 누락으로 보고 던진다', async () => {
+    const state = makeDb()
+    const { ctx, calls } = ctxWith(state, { inflateCount: 'GuestLike' }, true)
+    await expect(run(ctx)).rejects.toThrow(/누락|ABORT/)
+    expect(calls.filter((c) => !['GET', 'HEAD'].includes(c.method))).toHaveLength(0)
   }, 30_000)
 })
 

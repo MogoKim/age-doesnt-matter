@@ -46,8 +46,8 @@ hard delete 를 tombstone 보다 먼저 해야, 남은 네이버 유래 글이 �
 | 단계 | 작업 | 대상 | PASS | ABORT |
 |---|---|---:|---|---|
 | 사전 | 대상 판정 · 시작 상태 | – | 조회 중복 0·누락 0 | USER Post 1건이라도 포함 / 대상이 기준선보다 **증가** / 보존 대상 **감소** / 공개 네이버 유래 > 0 → **write 전 중단** |
-| **P0** | BotLog 삭제 | 99,578 | `CAFE_CRAWLER` 잔량 0 | 배치 요청 수 ≠ 실제 영향 행 |
-| **P1** | R2 객체 삭제 | 518키 | 삭제 후 HEAD 로 **부재 확인** | 삭제 후에도 존재 |
+| **P0** | BotLog 삭제 | 99,578 | **폐기 대상 전체 잔량 0**(CAFE_CRAWLER + 원문 조각 파생) | 배치 요청 수 ≠ 실제 영향 행 |
+| **P1** | R2 객체 삭제 | 518키 | 삭제 후 HEAD **404** 로 부재 확인. 이미 없던 키는 DELETE 를 보내지 않고 `skipped` 로 센다 | 삭제 후에도 200 / **HEAD 가 200·404 가 아닌 응답**(403·429·5xx) → 판정 불가라 즉시 중단 |
 | **P2** | Post hard delete | 7,125 | 네이버 유래 잔량 = tombstone 대상 수 | 잔량 불일치 / RESTRICT 거부 |
 | **P3** | tombstone 글의 봇 댓글 삭제 | 2,545 | 봇 댓글 잔량 0 | 잔량 > 0 |
 | **P4** | tombstone | 324 | 네이버 유래 0 **그리고** 서명 글 전건 `isTombstoned=true` **그리고** 서명 수 = 324 | 하나라도 불일치 |
@@ -58,6 +58,11 @@ hard delete 를 tombstone 보다 먼저 해야, 남은 네이버 유래 글이 �
 
 모든 mutation 은 `Prefer: return=representation` 으로 **실제 영향 행**을 세고, 요청 건수와 다르면 즉시 던진다. 추정하지 않는다.
 
+**판정을 좌우하는 조회는 전부 같은 필터의 exact count 와 대조한다** — `Comment`·`Like`·`GuestLike`·
+`Report`·`HomeCurationOverride`(hard delete/tombstone 분기) · `BotLog`(폐기 대상) ·
+`Post(thumbnailUrl)`(R2 공유 판정). 한 건이라도 어긋나면 **write 전에** 중단한다.
+누락되면 사람 흔적이 있는 글을 통째로 지우거나 보존 Post 가 쓰는 이미지를 지우게 된다.
+
 ## 4. 최종 검증표 (통과 전 `done` 없음)
 
 | # | 확인 | PASS |
@@ -66,14 +71,14 @@ hard delete 를 tombstone 보다 먼저 해야, 남은 네이버 유래 글이 �
 | 2 | tombstone 서명 글 수 | **324**, 전건 `isTombstoned=true` |
 | 3 | 네이버 유래 글의 봇 댓글 | **0** |
 | 4 | `CafePost` / `CafeTrend` / `CommentWaveQueue` | 각 **0** |
-| 5 | `BotLog(CAFE_CRAWLER)` | **0** |
+| 5 | `BotLog` 폐기 대상 전체(CAFE_CRAWLER + 파생) | **0** |
 | 6 | R2 잔존 객체 | **0** |
 | 7 | 실회원 댓글 | **71** |
 | 8 | `authorId` NULL 댓글 | **56** |
 | 9 | GuestLike | **111** |
 | 10 | Report | **1** |
 | 11 | HomeCurationOverride | **139** |
-| 12 | 공개 USER Post | 시작 시점과 **동일** |
+| 12 | 공개 USER Post | 시작값 **이상**(실행 중 실회원 신규 글은 허용, **감소하면 실패**) |
 
 배포 표면은 별도로 확인한다 — `/` 200 · sitemap URL 수 불변 · `/api/health` · `/api/health/auth` 200 ·
 Slack `/trend` 는 CafeTrend 부재 시 안내 문구를 반환(정상).

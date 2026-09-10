@@ -59,6 +59,8 @@ export const EXPECTED = {
   commentWaveQueue: 276,
   botLogNaverDerived: 8_861,
   botLogCafeCrawler: 99_026,
+  /** CAFE_CRAWLER + 원문 조각 파생 = 폐기 대상 전체 */
+  botLogPurgeTargets: 99_578,
   r2Objects: 518,
   humanUsers: 188,
 } as const
@@ -202,7 +204,8 @@ export type LiveCounts = {
   cafePost: number
   cafeTrend: number
   commentWaveQueue: number
-  botLogCafeCrawler: number
+  /** 폐기 대상 BotLog **전체** 잔량 — CAFE_CRAWLER + 원문 조각 파생 로그. CAFE_CRAWLER 만 세면 파생분이 남는다. */
+  botLogPurgeTargets: number
   r2Remaining: number
   publicUserPosts: number
 }
@@ -227,7 +230,7 @@ export function checkStartState(c: LiveCounts, exp: PurgeExpectation): Violation
   notAbove('cafePost', exp.cafePost)
   notAbove('cafeTrend', exp.cafeTrend)
   notAbove('commentWaveQueue', exp.commentWaveQueue)
-  notAbove('botLogCafeCrawler', exp.botLogCafeCrawler)
+  notAbove('botLogPurgeTargets', exp.botLogPurgeTargets)
   notAbove('r2Remaining', exp.r2Objects)
   // 🔴 보존 대상은 한 건도 줄면 안 된다.
   eq('humanCommentsOnTombstone', exp.humanCommentsOnTombstone)
@@ -235,7 +238,8 @@ export function checkStartState(c: LiveCounts, exp: PurgeExpectation): Violation
   eq('guestLikesOnNaver', exp.guestLikesOnNaver)
   eq('reportsOnNaver', exp.reportsOnNaver)
   eq('homeCurationOnNaver', exp.homeCurationOnNaver)
-  eq('publicUserPosts', exp.publicUserPosts)
+  // 실행 중 실회원이 새 글을 쓸 수 있다 — **늘어나는 것은 허용, 줄어들면 실패.**
+  if (c.publicUserPosts < exp.publicUserPosts) v.push({ key: 'publicUserPosts', expected: `${exp.publicUserPosts} 이상`, actual: c.publicUserPosts })
   eq('naverOriginPublic', 0)
   // tombstone 서명이 예상 총량을 넘으면 대상 밖 글을 덮었다는 뜻이다.
   notAbove('tombstoneSignature', exp.tombstonePosts)
@@ -255,7 +259,7 @@ export function checkFinalState(c: LiveCounts, exp: PurgeExpectation): Violation
   zero('cafePost')
   zero('cafeTrend')
   zero('commentWaveQueue')
-  zero('botLogCafeCrawler')
+  zero('botLogPurgeTargets')
   zero('r2Remaining')
   eq('tombstoneSignature', exp.tombstonePosts)
   // 보존 수치는 시작과 같아야 한다.
@@ -264,7 +268,8 @@ export function checkFinalState(c: LiveCounts, exp: PurgeExpectation): Violation
   eq('guestLikesOnNaver', exp.guestLikesOnNaver)
   eq('reportsOnNaver', exp.reportsOnNaver)
   eq('homeCurationOnNaver', exp.homeCurationOnNaver)
-  eq('publicUserPosts', exp.publicUserPosts)
+  // 시작값보다 줄면 실패. 늘어난 것은 실행 중 실회원이 쓴 글이다.
+  if (c.publicUserPosts < exp.publicUserPosts) v.push({ key: 'publicUserPosts', expected: `${exp.publicUserPosts} 이상`, actual: c.publicUserPosts })
   return v
 }
 
@@ -277,13 +282,15 @@ export type PurgeExpectation = {
   humanCommentsOnTombstone: number; nullAuthorCommentsOnTombstone: number
   guestLikesOnNaver: number; reportsOnNaver: number; homeCurationOnNaver: number
   cafePost: number; cafeTrend: number; commentWaveQueue: number
-  botLogCafeCrawler: number; r2Objects: number; publicUserPosts: number
+  /** 폐기 대상 BotLog **전체** 잔량 — CAFE_CRAWLER + 원문 조각 파생 로그. CAFE_CRAWLER 만 세면 파생분이 남는다. */
+  botLogPurgeTargets: number; r2Objects: number; publicUserPosts: number
 }
 
 /** 각 단계가 이미 끝났는지 라이브 카운트로 판정한다 — 저장된 ID 없이 재개할 수 있다. */
 export function completedSteps(c: LiveCounts, exp: PurgeExpectation): Set<StepName> {
   const done = new Set<StepName>()
-  if (c.botLogCafeCrawler === 0) done.add('P0-botlog')
+  // 🔴 CAFE_CRAWLER 가 0 이어도 **원문 조각 파생 로그가 남아 있으면 P0 는 끝난 게 아니다.**
+  if (c.botLogPurgeTargets === 0) done.add('P0-botlog')
   if (c.r2Remaining === 0) done.add('P1-r2')
   if (c.naverOrigin <= exp.tombstonePosts) done.add('P2-hard-delete')
   if (c.botCommentsOnNaver === 0) done.add('P3-bot-comments')
@@ -302,7 +309,7 @@ const LOG_ALLOWED_KEYS = new Set<string>([
   'naverOrigin', 'naverOriginPublic', 'tombstoneSignature', 'botCommentsOnNaver',
   'humanCommentsOnTombstone', 'nullAuthorCommentsOnTombstone', 'guestLikesOnNaver',
   'reportsOnNaver', 'homeCurationOnNaver', 'cafePost', 'cafeTrend', 'commentWaveQueue',
-  'botLogCafeCrawler', 'r2Remaining', 'publicUserPosts',
+  'botLogPurgeTargets', 'r2Remaining', 'publicUserPosts',
 ])
 
 export function redactForLog(value: unknown): unknown {

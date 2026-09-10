@@ -53,8 +53,8 @@ Prisma schema 와 DB 가 어긋난다. **DB 가 정본**이다.
 | **DELETE** | `CafePost` | **33,031** |
 | **DELETE** | `CafeTrend` | **191** |
 | **DELETE** | `CommentWaveQueue` | **276** |
-| **DELETE** | `BotLog` (CAFE_CRAWLER 99,026 + 원문 조각 보유 552) | **99,578** |
-| **DELETE** | R2 객체 | **518키**(현재 존재 504) |
+| **DELETE** | `BotLog` (CAFE_CRAWLER 99,026 + 원문 조각 보유 552) | **99,578** — 완료 판정도 이 **전체 잔량 0** 으로 한다(CAFE_CRAWLER 만 보면 파생분이 남는다) |
+| **DELETE** | R2 객체 | **518키** — 현재 존재 **504**, 이미 없음 **14**. 실제 삭제 대상은 504이며 없던 14는 `skipped` 로 구분해 센다 |
 | **PRESERVE** | 실회원 댓글 **71** · NULL 댓글 **56** · GuestLike **111** · Report **1** · HomeCurationOverride **139** | |
 | **PRESERVE** | USER Post 전량 · `Notification` 1,010 · `AdminQueue` 160 · 그 외 BotLog 25,447 | |
 

@@ -21,7 +21,7 @@ const START: LiveCounts = {
   cafePost: EXPECTED.cafePost,
   cafeTrend: EXPECTED.cafeTrend,
   commentWaveQueue: EXPECTED.commentWaveQueue,
-  botLogCafeCrawler: EXPECTED.botLogCafeCrawler,
+  botLogPurgeTargets: EXPECTED.botLogPurgeTargets,
   r2Remaining: EXPECTED.r2Objects,
   publicUserPosts: 73,
 }
@@ -36,7 +36,7 @@ const EXP: PurgeExpectation = {
   cafePost: EXPECTED.cafePost,
   cafeTrend: EXPECTED.cafeTrend,
   commentWaveQueue: EXPECTED.commentWaveQueue,
-  botLogCafeCrawler: EXPECTED.botLogCafeCrawler,
+  botLogPurgeTargets: EXPECTED.botLogPurgeTargets,
   r2Objects: EXPECTED.r2Objects,
   publicUserPosts: 73,
 }
@@ -44,7 +44,7 @@ const EXP: PurgeExpectation = {
 const DONE: LiveCounts = {
   ...START,
   naverOrigin: 0, tombstoneSignature: EXPECTED.tombstonePosts, botCommentsOnNaver: 0,
-  cafePost: 0, cafeTrend: 0, commentWaveQueue: 0, botLogCafeCrawler: 0, r2Remaining: 0,
+  cafePost: 0, cafeTrend: 0, commentWaveQueue: 0, botLogPurgeTargets: 0, r2Remaining: 0,
 }
 
 describe('[T6] 네이버 유래 판정 — 회귀 방지', () => {
@@ -129,7 +129,7 @@ describe('[T2] 시작 상태 검사 — 재실행을 막지 않되 늘어나면 
     expect(checkStartState(START, EXP)).toEqual([])
   })
   it('중간까지 진행된 상태(줄어든 방향)도 통과 — resume 가능', () => {
-    expect(checkStartState({ ...START, botLogCafeCrawler: 0, r2Remaining: 0, naverOrigin: 324, tombstoneSignature: 0 }, EXP)).toEqual([])
+    expect(checkStartState({ ...START, botLogPurgeTargets: 0, r2Remaining: 0, naverOrigin: 324, tombstoneSignature: 0 }, EXP)).toEqual([])
   })
   it('대상이 예상보다 늘어나면 중단', () => {
     expect(checkStartState({ ...START, cafePost: EXPECTED.cafePost + 1 }, EXP).map((v) => v.key)).toContain('cafePost')
@@ -153,7 +153,7 @@ describe('[T4] 최종 검증 — 하나라도 어긋나면 done 이 아니다', 
   })
   it.each([
     ['naverOrigin', 1], ['botCommentsOnNaver', 1], ['cafePost', 1], ['cafeTrend', 1],
-    ['commentWaveQueue', 1], ['botLogCafeCrawler', 1], ['r2Remaining', 1],
+    ['commentWaveQueue', 1], ['botLogPurgeTargets', 1], ['r2Remaining', 1],
   ] as const)('%s 이 0 이 아니면 실패', (k, v) => {
     expect(checkFinalState({ ...DONE, [k]: v }, EXP).map((x) => x.key)).toContain(k)
   })
@@ -162,7 +162,10 @@ describe('[T4] 최종 검증 — 하나라도 어긋나면 done 이 아니다', 
   })
   it('보존 수치가 달라지면 실패', () => {
     expect(checkFinalState({ ...DONE, humanCommentsOnTombstone: 70 }, EXP).map((v) => v.key)).toContain('humanCommentsOnTombstone')
-    expect(checkFinalState(DONE, { ...EXP, publicUserPosts: 74 }).map((v) => v.key)).toContain('publicUserPosts')
+    // 실행 중 실회원이 새 글을 쓰면 늘어난다 — 허용
+    expect(checkFinalState({ ...DONE, publicUserPosts: 80 }, EXP)).toEqual([])
+    // 줄어들면 실패
+    expect(checkFinalState({ ...DONE, publicUserPosts: 72 }, EXP).map((v) => v.key)).toContain('publicUserPosts')
   })
 })
 
@@ -174,11 +177,11 @@ describe('[T8-resume] 라이브 카운트로 완료 단계를 판정한다', () 
     expect(completedSteps(DONE, EXP).size).toBe(STEPS.length)
   })
   it('P0·P1 만 끝난 중간 상태를 정확히 읽는다', () => {
-    const mid = { ...START, botLogCafeCrawler: 0, r2Remaining: 0 }
+    const mid = { ...START, botLogPurgeTargets: 0, r2Remaining: 0 }
     expect([...completedSteps(mid, EXP)].sort()).toEqual(['P0-botlog', 'P1-r2'])
   })
   it('hard delete 까지 끝나면 P2 가 완료로 잡힌다 (잔량 = tombstone 대상)', () => {
-    const mid = { ...START, botLogCafeCrawler: 0, r2Remaining: 0, naverOrigin: EXPECTED.tombstonePosts }
+    const mid = { ...START, botLogPurgeTargets: 0, r2Remaining: 0, naverOrigin: EXPECTED.tombstonePosts }
     expect(completedSteps(mid, EXP).has('P2-hard-delete')).toBe(true)
     expect(completedSteps(mid, EXP).has('P4-tombstone')).toBe(false)
   })

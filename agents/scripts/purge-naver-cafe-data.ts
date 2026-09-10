@@ -133,18 +133,27 @@ function sigV4Headers(cfg: R2Config, method: string, key: string): Record<string
   }
 }
 
+/**
+ * R2 객체 존재 판정 — **200 만 존재, 404 만 부재**다.
+ *
+ * 🔴 그 밖의 상태(403·429·5xx 등)를 "부재"로 세면 **지우지도 않은 객체를 지웠다고 보고**하게 된다.
+ * 자격증명이 틀렸거나(403) 한도에 걸렸을(429) 때 조용히 통과하는 것이 가장 위험하다.
+ * 판정할 수 없으면 **던진다.**
+ */
 async function r2Exists(ctx: Ctx, key: string): Promise<boolean> {
-  if (!ctx.r2) return false
+  if (!ctx.r2) throw new Error('[ABORT] R2 자격증명이 없어 객체 상태를 판정할 수 없다.')
   const url = `https://${ctx.r2.accountId}.r2.cloudflarestorage.com/${ctx.r2.bucket}/${key}`
   const r = await ctx.fetch(url, { method: 'HEAD', headers: sigV4Headers(ctx.r2, 'HEAD', key) })
-  return r.status === 200
+  if (r.status === 200) return true
+  if (r.status === 404) return false
+  throw new Error(`[ABORT] R2 HEAD 응답 ${r.status} — 존재 여부를 판정할 수 없다. 중단한다.`)
 }
 
 async function r2Delete(ctx: Ctx, key: string): Promise<void> {
   if (!ctx.r2) throw new Error('[ABORT] R2 자격증명이 없다 — 객체를 지울 수 없다.')
   const url = `https://${ctx.r2.accountId}.r2.cloudflarestorage.com/${ctx.r2.bucket}/${key}`
   const r = await ctx.fetch(url, { method: 'DELETE', headers: sigV4Headers(ctx.r2, 'DELETE', key) })
-  if (r.status !== 204 && r.status !== 200 && r.status !== 404) throw new Error(`R2 DELETE 실패 ${r.status}`)
+  if (r.status !== 204 && r.status !== 200 && r.status !== 404) throw new Error(`[ABORT] R2 DELETE 응답 ${r.status} — 중단한다.`)
 }
 
 // ── 대상 판정 ───────────────────────────────────────────────────────────────
@@ -178,7 +187,12 @@ export async function resolveTargets(ctx: Ctx): Promise<Targets> {
   const traces = new Map<string, TraceReason[]>()
   const add = (pid: string | null, why: TraceReason) => { if (pid) traces.set(pid, [...(traces.get(pid) ?? []), why]) }
 
-  const comments = await selectAll<{ id: string; postId: string; authorId: string | null }>(ctx, 'Comment', 'id,postId,authorId,post:Post!inner(id)', emb)
+  // 🔴 아래 조회들은 **hard delete / tombstone 판정을 좌우한다.** 한 건이라도 빠지면
+  //    사람 흔적이 있는 글을 통째로 지우게 된다. 전부 같은 필터의 exact count 와 대조한다.
+  const comments = await selectVerified<{ id: string; postId: string; authorId: string | null }>(
+    ctx, 'Comment(네이버유래)', 'Comment', 'id,postId,authorId,post:Post!inner(id)', emb,
+    `Comment?select=id,post:Post!inner(id)&${emb}`,
+  )
   const botCommentIdsOnNaver: string[] = []
   const botCommentsByPost = new Map<string, string[]>()
   for (const c of comments) {
@@ -186,13 +200,26 @@ export async function resolveTargets(ctx: Ctx): Promise<Targets> {
     else if (humans.has(c.authorId)) add(c.postId, 'comment-human')
     else { botCommentIdsOnNaver.push(c.id); botCommentsByPost.set(c.postId, [...(botCommentsByPost.get(c.postId) ?? []), c.id]) }
   }
-  for (const l of await selectAll<{ id: string; postId: string; userId: string }>(ctx, 'Like', 'id,postId,userId,post:Post!inner(id)', emb)) {
+  const likes = await selectVerified<{ id: string; postId: string; userId: string }>(
+    ctx, 'Like(네이버유래)', 'Like', 'id,postId,userId,post:Post!inner(id)', emb,
+    `Like?select=id,post:Post!inner(id)&${emb}`,
+  )
+  for (const l of likes) {
     if (humans.has(l.userId)) add(l.postId, 'like-human')
   }
-  for (const g of await selectAll<{ id: string; postId: string }>(ctx, 'GuestLike', 'id,postId,post:Post!inner(id)', emb)) add(g.postId, 'guestlike')
-  for (const r of await selectAll<{ id: string; postId: string }>(ctx, 'Report', 'id,postId,post:Post!inner(id)', emb)) add(r.postId, 'report')
+  for (const g of await selectVerified<{ id: string; postId: string }>(
+    ctx, 'GuestLike(네이버유래)', 'GuestLike', 'id,postId,post:Post!inner(id)', emb,
+    `GuestLike?select=id,post:Post!inner(id)&${emb}`,
+  )) add(g.postId, 'guestlike')
+  for (const r of await selectVerified<{ id: string; postId: string }>(
+    ctx, 'Report(네이버유래)', 'Report', 'id,postId,post:Post!inner(id)', emb,
+    `Report?select=id,post:Post!inner(id)&${emb}`,
+  )) add(r.postId, 'report')
   // 🔴 HomeCurationOverride 는 DB 에서 RESTRICT 다 — 참조가 있으면 hard delete 가 막힌다.
-  for (const h of await selectAll<{ id: string; postId: string }>(ctx, 'HomeCurationOverride', 'id,postId,post:Post!inner(id)', emb)) add(h.postId, 'home-curation')
+  for (const h of await selectVerified<{ id: string; postId: string }>(
+    ctx, 'HomeCurationOverride(네이버유래)', 'HomeCurationOverride', 'id,postId,post:Post!inner(id)', emb,
+    `HomeCurationOverride?select=id,post:Post!inner(id)&${emb}`,
+  )) add(h.postId, 'home-curation')
 
   const tombstoneIds: string[] = []
   const hardDeleteIds: string[] = []
@@ -205,7 +232,11 @@ export async function resolveTargets(ctx: Ctx): Promise<Targets> {
   // R2 — 보존 Post 와 객체를 공유하면 지우지 않는다.
   const navKeys = new Set(posts.map((p) => r2KeyOf(p.thumbnailUrl)).filter((k): k is string => k != null))
   const navIds = new Set(posts.map((p) => p.id))
-  for (const other of await selectAll<{ id: string; thumbnailUrl: string | null }>(ctx, 'Post', 'id,thumbnailUrl', 'thumbnailUrl=not.is.null')) {
+  // 공유 객체 판정도 누락되면 **보존 Post 가 쓰는 이미지를 지우게 된다.** 같은 필터로 대조한다.
+  const withThumb = await selectVerified<{ id: string; thumbnailUrl: string | null }>(
+    ctx, 'Post(thumbnailUrl)', 'Post', 'id,thumbnailUrl', 'thumbnailUrl=not.is.null', 'Post?thumbnailUrl=not.is.null',
+  )
+  for (const other of withThumb) {
     if (navIds.has(other.id)) continue
     const k = r2KeyOf(other.thumbnailUrl)
     if (k && navKeys.has(k)) navKeys.delete(k) // 공유 객체 → 삭제 금지
@@ -214,7 +245,11 @@ export async function resolveTargets(ctx: Ctx): Promise<Targets> {
   // BotLog — 원문 제목 조각을 담은 행 + 카페 크롤러 전량
   const frags = [...new Set(posts.map((p) => (p.title ?? '').trim()).filter((t) => t.length >= 8).map((t) => t.slice(0, 12)))]
   const botLogIds: string[] = []
-  for (const b of await selectAll<{ id: string; botType: string; details: string | null; logData: unknown }>(ctx, 'BotLog', 'id,botType,details,logData')) {
+  // BotLog 도 누락되면 파생 로그가 남는다.
+  const botLogs = await selectVerified<{ id: string; botType: string; details: string | null; logData: unknown }>(
+    ctx, 'BotLog(전량)', 'BotLog', 'id,botType,details,logData', '', 'BotLog',
+  )
+  for (const b of botLogs) {
     if (b.botType === 'CAFE_CRAWLER') { botLogIds.push(b.id); continue }
     const blob = `${b.details ?? ''} ${JSON.stringify(b.logData ?? {})}`
     if (frags.some((f) => blob.includes(f))) botLogIds.push(b.id)
@@ -262,7 +297,7 @@ export async function readCounts(ctx: Ctx, t: Targets): Promise<LiveCounts> {
     cafePost: await count(ctx, 'CafePost'),
     cafeTrend: await count(ctx, 'CafeTrend'),
     commentWaveQueue: await count(ctx, 'CommentWaveQueue'),
-    botLogCafeCrawler: await count(ctx, 'BotLog?botType=eq.CAFE_CRAWLER'),
+    botLogPurgeTargets: t.botLogIds.length,
     r2Remaining,
     publicUserPosts: await count(ctx, 'Post?source=eq.USER&status=in.(PUBLISHED,SEO_ONLY)'),
   }
@@ -329,14 +364,22 @@ export async function run(ctx: Ctx): Promise<void> {
 
   if (!done.has('P0-botlog')) {
     const n = await deleteByIds(ctx, 'P0-botlog', 'BotLog', targets.botLogIds)
-    const after = await count(ctx, 'BotLog?botType=eq.CAFE_CRAWLER')
-    if (after !== 0) throw new Error(`[ABORT] P0: CAFE_CRAWLER 잔량 ${after} — 중단한다.`)
+    // 🔴 CAFE_CRAWLER 만 보면 원문 조각 파생 로그가 남은 채 통과한다. **대상 전체**를 다시 구해 확인한다.
+    const after = (await resolveTargets(ctx)).botLogIds.length
+    if (after !== 0) throw new Error(`[ABORT] P0: BotLog 폐기 대상 잔량 ${after} — 중단한다.`)
     appendCp(ctx, 'P0-botlog', n); log({ step: 'P0-botlog', affected: n, after })
   }
   if (!done.has('P1-r2')) {
-    let n = 0
-    for (const k of targets.r2Keys) { await r2Delete(ctx, k); if (await r2Exists(ctx, k)) throw new Error('[ABORT] P1: R2 객체가 삭제 후에도 남아 있다 — 중단한다.'); n++ }
-    appendCp(ctx, 'P1-r2', n); log({ step: 'P1-r2', affected: n, after: 0 })
+    // 🔴 "이미 없던 키" 와 "이번에 지운 객체" 를 구분해 센다. 합쳐 세면 지우지 않은 것도 실적이 된다.
+    let alreadyAbsent = 0, deleted = 0
+    for (const k of targets.r2Keys) {
+      if (!(await r2Exists(ctx, k))) { alreadyAbsent++; continue }
+      await r2Delete(ctx, k)
+      if (await r2Exists(ctx, k)) throw new Error('[ABORT] P1: R2 객체가 삭제 후에도 남아 있다 — 중단한다.')
+      deleted++
+    }
+    appendCp(ctx, 'P1-r2', deleted)
+    log({ step: 'P1-r2', action: 'delete', expected: targets.r2Keys.length, deleted, skipped: alreadyAbsent, after: 0 })
   }
   if (!done.has('P2-hard-delete')) {
     const n = await deleteByIds(ctx, 'P2-hard-delete', 'Post', targets.hardDeleteIds)
