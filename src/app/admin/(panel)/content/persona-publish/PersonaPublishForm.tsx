@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from 'react'
 import { getBoardDisplayName } from '@/lib/board-constants'
 import {
+  FOUNDER_PERSONA_BOARD_TYPES,
   FOUNDER_PERSONA_CONTENT_MIN,
   FOUNDER_PERSONA_TITLE_MAX,
   validateFounderPersonaInput,
@@ -10,22 +11,37 @@ import {
 import { publishAsFounderPersona } from '@/lib/actions/admin/admin.persona-publish'
 
 export interface PersonaOption {
-  id: string
-  displayName: string
-  accountEmail: string
-  boardTypes: string[]
-  voice: string
-  /** DB에서 조회한 실제 표시 닉네임 — 계정이 없으면 null */
-  nickname: string | null
-  /** null이면 선택 가능. 값이 있으면 선택 불가 사유. */
-  unavailableReason: string | null
+  /** DB User.email — 페르소나 식별자 */
+  email: string
+  /** DB User.nickname — 화면에 실제로 보이는 이름의 정본 */
+  nickname: string
+  origin: 'seed' | 'curator'
+  /** 과거 registry의 기본 게시판 — 힌트일 뿐 제약이 아니다 */
+  registryBoard: string
+  /** ISO 문자열. 한 번도 안 썼으면 null */
+  lastPostedAt: string | null
+  lastTitle: string | null
+  lastBoardType: string | null
 }
 
 type Stage = 'edit' | 'preview'
 
-interface Published {
+interface PublishedState {
   postUrl: string
   authorNickname: string
+  duplicate: boolean
+}
+
+function daysSince(iso: string): number {
+  return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000)
+}
+
+function lastUseLabel(o: PersonaOption): string {
+  if (!o.lastPostedAt) return '발행 기록 없음'
+  const days = daysSince(o.lastPostedAt)
+  const when = days === 0 ? '오늘' : `${days}일 전`
+  const where = o.lastBoardType ? getBoardDisplayName(o.lastBoardType) : null
+  return [when, where, o.lastTitle].filter(Boolean).join(' · ')
 }
 
 /**
@@ -35,34 +51,26 @@ interface Published {
  * 서버는 평문을 plainTextToSafeHtml(이스케이프 + 줄바꿈 <p> 분할)로 저장하므로,
  * 미리보기의 whitespace-pre-wrap 렌더와 결과가 일치한다.
  * DB에 쓰이는 시점은 마지막 '발행' 버튼 하나뿐이다.
+ *
+ * 목록에 오는 페르소나는 전부 DB에 있고 ACTIVE인 계정이다(서버 컴포넌트에서 이미 걸렀다).
  */
 export default function PersonaPublishForm({ options }: { options: PersonaOption[] }) {
-  const selectable = useMemo(() => options.filter((o) => !o.unavailableReason), [options])
-
-  const [personaId, setPersonaId] = useState(selectable[0]?.id ?? '')
-  const [boardType, setBoardType] = useState(selectable[0]?.boardTypes[0] ?? '')
+  const [personaEmail, setPersonaEmail] = useState(options[0]?.email ?? '')
+  const [boardType, setBoardType] = useState<string>(FOUNDER_PERSONA_BOARD_TYPES[0])
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [stage, setStage] = useState<Stage>('edit')
   const [error, setError] = useState('')
-  const [published, setPublished] = useState<Published | null>(null)
+  const [published, setPublished] = useState<PublishedState | null>(null)
   const [isPending, startTransition] = useTransition()
 
-  const persona = options.find((o) => o.id === personaId) ?? null
-  const canPublish = Boolean(persona && !persona.unavailableReason)
-
-  function handlePersonaChange(nextId: string) {
-    setPersonaId(nextId)
-    const next = options.find((o) => o.id === nextId)
-    // 페르소나를 바꾸면 현재 게시판이 허용 목록 밖일 수 있다 → 첫 허용 게시판으로 되돌린다
-    if (next && !next.boardTypes.includes(boardType)) {
-      setBoardType(next.boardTypes[0] ?? '')
-    }
-    setError('')
-  }
+  const persona = useMemo(
+    () => options.find((o) => o.email === personaEmail) ?? null,
+    [options, personaEmail],
+  )
 
   function handlePreview() {
-    const result = validateFounderPersonaInput({ personaId, boardType, title, content })
+    const result = validateFounderPersonaInput({ personaEmail, boardType, title, content })
     if ('error' in result) {
       setError(result.error)
       return
@@ -72,16 +80,19 @@ export default function PersonaPublishForm({ options }: { options: PersonaOption
   }
 
   function handlePublish() {
-    if (!canPublish) return
     setError('')
     startTransition(async () => {
-      const result = await publishAsFounderPersona({ personaId, boardType, title, content })
+      const result = await publishAsFounderPersona({ personaEmail, boardType, title, content })
       if ('error' in result) {
         setError(result.error)
         setStage('edit')
         return
       }
-      setPublished({ postUrl: result.postUrl, authorNickname: result.authorNickname })
+      setPublished({
+        postUrl: result.postUrl,
+        authorNickname: result.authorNickname,
+        duplicate: result.duplicate,
+      })
     })
   }
 
@@ -94,17 +105,24 @@ export default function PersonaPublishForm({ options }: { options: PersonaOption
   }
 
   if (published) {
+    const tone = published.duplicate
+      ? 'border-amber-300 bg-amber-50'
+      : 'border-emerald-300 bg-emerald-50'
     return (
-      <div className="space-y-4 rounded-xl border border-emerald-300 bg-emerald-50 p-6">
-        <p className="text-base font-semibold text-emerald-900">발행됐어요</p>
-        <p className="text-sm text-emerald-800">
+      <div className={`space-y-4 rounded-xl border p-6 ${tone}`}>
+        <p className="text-base font-semibold text-zinc-900">
+          {published.duplicate
+            ? '이미 같은 글이 있어 새로 만들지 않았어요'
+            : '발행됐어요'}
+        </p>
+        <p className="text-sm text-zinc-700">
           작성자 <strong>{published.authorNickname}</strong> · {getBoardDisplayName(boardType)}
         </p>
         <a
           href={published.postUrl}
           target="_blank"
           rel="noreferrer"
-          className="inline-block break-all text-sm text-emerald-700 underline"
+          className="inline-block break-all text-sm text-zinc-700 underline"
         >
           {published.postUrl}
         </a>
@@ -131,28 +149,29 @@ export default function PersonaPublishForm({ options }: { options: PersonaOption
 
       <div>
         <label htmlFor="persona" className="mb-1 block text-sm font-medium text-zinc-700">
-          페르소나
+          페르소나{' '}
+          <span className="font-normal text-zinc-400">— 오래 안 쓴 이름이 위에 옵니다</span>
         </label>
         <select
           id="persona"
-          value={personaId}
-          onChange={(e) => handlePersonaChange(e.target.value)}
+          value={personaEmail}
+          onChange={(e) => {
+            setPersonaEmail(e.target.value)
+            setError('')
+          }}
           disabled={stage === 'preview'}
           className="min-h-[52px] w-full rounded-lg border border-zinc-300 px-3 text-base outline-none focus:border-zinc-500 disabled:bg-zinc-100"
         >
           {options.map((o) => (
-            <option key={o.id} value={o.id} disabled={Boolean(o.unavailableReason)}>
-              {o.displayName}
-              {o.nickname ? ` — ${o.nickname}` : ''}
-              {o.unavailableReason ? ` (${o.unavailableReason})` : ''}
+            <option key={o.email} value={o.email}>
+              {o.nickname} — {lastUseLabel(o)}
             </option>
           ))}
         </select>
         {persona && (
           <p className="mt-1 text-xs text-zinc-500">
-            {persona.unavailableReason
-              ? `이 페르소나로는 발행할 수 없습니다 — ${persona.unavailableReason}`
-              : persona.voice}
+            {persona.email} · {persona.origin} · 원래 배정 게시판{' '}
+            {getBoardDisplayName(persona.registryBoard)} · 최근 사용 {lastUseLabel(persona)}
           </p>
         )}
       </div>
@@ -165,10 +184,10 @@ export default function PersonaPublishForm({ options }: { options: PersonaOption
           id="board"
           value={boardType}
           onChange={(e) => setBoardType(e.target.value)}
-          disabled={stage === 'preview' || !persona}
+          disabled={stage === 'preview'}
           className="min-h-[52px] w-full rounded-lg border border-zinc-300 px-3 text-base outline-none focus:border-zinc-500 disabled:bg-zinc-100"
         >
-          {(persona?.boardTypes ?? []).map((b) => (
+          {FOUNDER_PERSONA_BOARD_TYPES.map((b) => (
             <option key={b} value={b}>
               {getBoardDisplayName(b)}
             </option>
@@ -218,7 +237,7 @@ export default function PersonaPublishForm({ options }: { options: PersonaOption
             미리보기 — 아직 저장되지 않았습니다
           </p>
           <p className="text-sm text-zinc-500">
-            {getBoardDisplayName(boardType)} · {persona?.nickname ?? persona?.displayName}
+            {getBoardDisplayName(boardType)} · {persona?.nickname}
           </p>
           <h3 className="mt-1 text-xl font-semibold text-zinc-900">{title}</h3>
           <div className="mt-3 whitespace-pre-wrap break-words text-base leading-relaxed text-zinc-800">
@@ -232,8 +251,7 @@ export default function PersonaPublishForm({ options }: { options: PersonaOption
           <button
             type="button"
             onClick={handlePreview}
-            disabled={!canPublish}
-            className="min-h-[52px] rounded-lg bg-zinc-800 px-6 text-base font-medium text-white disabled:bg-zinc-300"
+            className="min-h-[52px] rounded-lg bg-zinc-800 px-6 text-base font-medium text-white"
           >
             미리보기
           </button>
@@ -242,7 +260,7 @@ export default function PersonaPublishForm({ options }: { options: PersonaOption
             <button
               type="button"
               onClick={handlePublish}
-              disabled={isPending || !canPublish}
+              disabled={isPending}
               className="min-h-[52px] rounded-lg bg-emerald-600 px-6 text-base font-medium text-white disabled:bg-zinc-300"
             >
               {isPending ? '발행 중…' : '발행'}
@@ -260,7 +278,9 @@ export default function PersonaPublishForm({ options }: { options: PersonaOption
       </div>
 
       <p className="text-xs text-zinc-400">
-        발행하면 곧바로 서비스에 공개됩니다. 임시저장·예약 발행은 이 화면에서 지원하지 않습니다.
+        발행하면 곧바로 서비스에 공개됩니다. 임시저장·예약 발행은 지원하지 않습니다. 같은 이름으로
+        같은 게시판에 제목·본문이 똑같은 글을 10분 안에 다시 보내면 새 글을 만들지 않고 기존 글을
+        알려 드립니다.
       </p>
     </div>
   )
