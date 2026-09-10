@@ -65,7 +65,10 @@ export default function BoardPostListClient({
   //    서버 렌더와 hydration 첫 렌더는 쿼리를 모르는 상태(기본 목록)로 **동일하게** 그린다.
   // 서버가 그린 쿼리로 시작한다 — 서버 HTML 과 hydration 첫 렌더가 같아야 #418 이 안 난다.
   const [rawQuery, setRawQuery] = useState(initialQuery)
-  const handleQueryChange = useCallback((next: string) => { setRawQuery(normalizeClientQuery(next)) }, [])
+  // ⚠️ 저장은 **원본 쿼리 그대로** 한다. 정규화값(`client:` 접두사)을 저장하면
+  //    아래에서 URLSearchParams 로 다시 파싱할 때 q·category 가 통째로 사라진다.
+  //    정규화는 "서버가 이미 그렸는가" 비교에만 쓴다.
+  const handleQueryChange = useCallback((next: string) => { setRawQuery(next) }, [])
   const searchParams = useMemo(() => new URLSearchParams(rawQuery), [rawQuery])
 
   const category = searchParams.get('category') || undefined
@@ -74,7 +77,7 @@ export default function BoardPostListClient({
   const sf = parseSearchField(searchParams.get('sf'))
   const page = Math.max(1, Number.parseInt(searchParams.get('page') ?? '1', 10) || 1)
   // 서버가 이미 그린 화면이면 재조회하지 않는다(초기 깜빡임·불필요한 요청 방지).
-  const isServerRendered = rawQuery === initialQuery
+  const isServerRendered = normalizeClientQuery(rawQuery) === initialQuery
 
   const [data, setData] = useState<BoardPostsResponse>({
     posts: initialPosts,

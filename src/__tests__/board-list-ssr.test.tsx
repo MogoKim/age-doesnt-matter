@@ -93,6 +93,34 @@ describe('[SSR-4] 목록 쿼리 해석은 서버·클라이언트가 같은 규�
   })
 })
 
+describe('[SSR-6] 정규화값을 쿼리로 저장하지 않는다', () => {
+  /**
+   * 실제로 냈던 결함: `setRawQuery(normalizeClientQuery(next))` 로 저장했더니
+   * `client:q=…` 문자열을 `URLSearchParams` 로 다시 파싱하면서 **검색어가 통째로 사라졌다**.
+   * Preview 실측에서 검색 결과가 기본 목록과 100% 같아졌다(production 은 정상 필터).
+   * 정규화는 "서버가 이미 그렸는가" 비교 전용이다.
+   */
+  it.each([
+    'src/components/features/community/BoardPostListClient.tsx',
+    'src/components/features/magazine/MagazineContent.tsx',
+    'src/components/features/jobs/JobsContent.tsx',
+  ])('%s 는 원본 쿼리를 저장한다', (rel) => {
+    const code = codeOf(rel)
+    expect(code, `${rel}: 정규화값을 저장하면 q·category 가 파싱 단계에서 사라진다`)
+      .not.toMatch(/setRawQuery\(\s*normalizeClientQuery/)
+    expect(code, `${rel}: 비교에는 정규화를 써야 서버 렌더분과 맞춘다`)
+      .toMatch(/normalizeClientQuery\(rawQuery\)\s*===\s*initialQuery/)
+  })
+
+  it('정규화는 비교용이라 파싱 불가능한 형태를 만들 수 있다 — 저장하면 안 되는 이유', async () => {
+    const { normalizeClientQuery } = await import('@/lib/list-query')
+    const normalized = normalizeClientQuery('q=갱년기&sf=both')
+    expect(normalized).toMatch(/^client:/)
+    // 이 값을 다시 파싱하면 q 를 잃는다 — 저장 금지의 근거
+    expect(new URLSearchParams(normalized).get('q')).toBeNull()
+  })
+})
+
 describe('[SSR-5] 로딩 중에도 다리를 유지한다', () => {
   it.each([
     'src/components/features/magazine/MagazineContent.tsx',

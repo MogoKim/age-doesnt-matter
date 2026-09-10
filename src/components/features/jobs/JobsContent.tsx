@@ -35,7 +35,10 @@ export default function JobsContent({ initialJobs, initialTotal, initialQuery }:
   //    서버 HTML 에 목록이 통째로 빠진다(링크 0건). 다리로 받는다 — SearchParamsBridge 주석 참조.
   // 서버가 그린 쿼리로 시작한다 — 서버 HTML 과 hydration 첫 렌더가 같아야 #418 이 안 난다.
   const [rawQuery, setRawQuery] = useState(initialQuery)
-  const handleQueryChange = useCallback((next: string) => { setRawQuery(normalizeClientQuery(next)) }, [])
+  // ⚠️ 저장은 **원본 쿼리 그대로** 한다. 정규화값(`client:` 접두사)을 저장하면
+  //    아래에서 URLSearchParams 로 다시 파싱할 때 q·category 가 통째로 사라진다.
+  //    정규화는 "서버가 이미 그렸는가" 비교에만 쓴다.
+  const handleQueryChange = useCallback((next: string) => { setRawQuery(next) }, [])
   const searchParams = useMemo(() => new URLSearchParams(rawQuery), [rawQuery])
   const region = searchParams.get('region') || undefined
   const tags = searchParams.get('tags')?.split(',').filter(Boolean)
@@ -44,7 +47,7 @@ export default function JobsContent({ initialJobs, initialTotal, initialQuery }:
   const page = Math.max(1, Number.parseInt(searchParams.get('page') ?? '1', 10) || 1)
   const hasFilters = !!region || !!(tags && tags.length > 0)
   // 서버가 이미 그린 화면이면 재조회하지 않는다.
-  const isServerRendered = rawQuery === initialQuery
+  const isServerRendered = normalizeClientQuery(rawQuery) === initialQuery
 
   const [data, setData] = useState<JobsResponse>({
     jobs: initialJobs,
