@@ -182,7 +182,11 @@ function MagazineCard({ post, priority }: { post: PostSummary; priority?: boolea
           <p className="text-body text-muted-foreground mt-1 m-0 line-clamp-2">{post.preview}</p>
         )}
         <p className="text-caption text-muted-foreground mt-1 m-0">
-          👁 {post.viewCount} · {formatTimeAgo(post.createdAt)}
+          {/* suppressHydrationWarning: 상대시각은 렌더 시점의 now 기준이라 서버 HTML 과
+            hydration 시점 값이 다를 수 있다(예: "3시간 전" → "4시간 전").
+            의도된 차이이므로 이 텍스트 노드에서만 경고를 끈다 — CommentItem 과 같은 처리(PR #357).
+            ⚠️ 목록이 SSR 되기 전에는 드러나지 않던 문제다. 이 속성을 지우면 React #418 이 재발한다. */}
+          👁 {post.viewCount} · <span suppressHydrationWarning>{formatTimeAgo(post.createdAt)}</span>
         </p>
       </div>
     </Link>

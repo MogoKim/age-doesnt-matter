@@ -55,6 +55,26 @@ describe('[SSR-1] 목록 컴포넌트는 useSearchParams 를 직접 부르지 �
   })
 })
 
+/**
+ * 목록이 SSR 되면서 **상대시각이 hydration mismatch 를 일으킨다.**
+ * `formatTimeAgo` 는 렌더 시점의 `now` 를 쓰므로 서버 HTML("3시간 전")과
+ * hydration 시점("4시간 전")이 달라진다. 실측(2026-09-10 Preview): `/community/stories` #418 5/5.
+ * 의도된 차이라 해당 텍스트 노드에서만 경고를 끈다 — `CommentItem` 과 같은 처리(PR #357).
+ */
+describe('[SSR-3] SSR 되는 상대시각은 suppressHydrationWarning 을 단다', () => {
+  it.each([
+    ['src/components/features/community/PostCard.tsx', 'post.createdAt'],
+    ['src/components/features/magazine/MagazineContent.tsx', 'post.createdAt'],
+    ['src/components/features/jobs/JobCard.tsx', 'job.createdAt'],
+  ])('%s', (rel, field) => {
+    const code = codeOf(rel)
+    const line = code.split('\n').find((l) => l.includes(`formatTimeAgo(${field})`))
+    expect(line, `${rel} 에서 formatTimeAgo 렌더 줄을 찾지 못했다`).toBeDefined()
+    expect(line, `${rel} 의 상대시각에 suppressHydrationWarning 이 없으면 React #418 이 재발한다`)
+      .toMatch(/suppressHydrationWarning/)
+  })
+})
+
 describe('[SSR-2] 서버 렌더 출력에 글 링크가 실제로 있다', () => {
   const posts: PostSummary[] = [
     {
