@@ -1,120 +1,102 @@
-# 네이버 카페 유래 데이터 — 폐기 전 실측 사실 (2026-09-10)
+# 네이버 카페 유래 데이터 — 폐기 전 실측 사실 (2026-09-10, 개정 2판)
 
 > 기준 커밋 `c8f996e0` · production Supabase REST **읽기 전용** 측정 · **DB write 0**
-> 측정 도구: `agents/scripts/purge-naver-cafe-data.ts` (dry-run) + read-only probe
-> ⚠️ 이 문서에는 row ID·제목·본문·댓글·닉네임을 남기지 않는다. 집계와 분류만 남긴다.
+> ⚠️ row ID·제목·본문·댓글·닉네임·secret·project ref 평문을 남기지 않는다. 집계와 분류만 남긴다.
+>
+> **1판 정정 3건** — 2판에서 바로잡았다.
+> ① 실회원 판정을 providerId 접두어(bot·seed·curator)로 했다 → **순수 숫자 `^\d+$`** 로 통일(7건 오분류).
+> ② FK 를 Prisma schema 로 읽었다 → **migration SQL 이 정본**. `HomeCurationOverride` 는 RESTRICT 다.
+> ③ BotLog 를 30건 표본으로 "원문 없음" 이라 했다 → 전수 스캔 결과 **8,861건이 원문 조각 보유**.
 
 ## 1. 대상 정의
 
-**명시적 네이버 유래 Post** = `cafePostId IS NOT NULL` **OR** `sourceUrl ILIKE '%cafe.naver.com%'`
+`cafePostId IS NOT NULL` **OR** `sourceUrl ILIKE '%cafe.naver.com%'` → **7,449건**
+(cafePostId 6,275 · sourceUrl 1,174 / source 분포 BOT 6,275 · SHEET 1,174 / 공개 0 · HIDDEN 7,380 · DELETED 69)
 
-| 조건 | 건수 |
-|---|---:|
-| `cafePostId` 보유 | 6,275 |
-| `sourceUrl` 이 cafe.naver.com | 1,174 |
-| **합집합 (대상)** | **7,449** |
+정의는 `NAVER_ORIGIN_FILTER` 하나뿐이고 dry-run 과 execute 가 같은 값을 쓴다.
+조회는 전부 `order=id.asc` + `id=gt.<cursor>` keyset 이며, 가져온 뒤 **중복·누락을 exact count 와 대조**한다(실측 중복 0 · 누락 0).
 
-정의는 `agents/purge/naver-origin-policy.ts` 의 `NAVER_ORIGIN_FILTER` 하나뿐이고, dry-run 과 실제 실행이 같은 값을 쓴다.
+## 2. 실회원 SSoT
 
-## 2. 처분 분류
+`providerId` 가 **순수 숫자**면 사람이다(카카오 user ID). 실측 **실회원 188 · 봇 320 / 전체 508** —
+정본 상태판의 "실회원 188명"과 정확히 일치한다. 접두어 목록 방식은 195로 7건 어긋났다.
+`authorId` NULL 은 게스트·탈퇴로 **별도의 사람 흔적**으로 센다.
 
-| 처분 | 대상 | 건수 | 이유 |
-|---|---|---:|---|
-| **HARD DELETE** | Post | **7,223** | 실회원 흔적 없음 |
-| **TOMBSTONE** | Post | **226** | 실회원 댓글·공감·게스트공감·신고가 붙어 있어 hard delete 시 사람의 흔적까지 cascade 로 사라진다 |
-| **DELETE** | `CafePost` | **33,031** | 네이버 카페 원문 사본 (`topComments` 보유 32,335 · `commentCrawled=true` 25,426) |
-| **DELETE** | `CafeTrend` | **191** | 원문 파생 텍스트 보유 (`hotTopics.examples` · `personaHints.examplePosts` · `magazineTopics` · `cafeSummary`) |
-| **DELETE** | `CommentWaveQueue` | **276** | `cafePostId` 참조 봇 댓글 예약 큐 |
-| **DELETE** | tombstone 글 위의 봇 댓글 | **1,765** | 네이버 원문에서 파생된 봇 발화 |
-| **PRESERVE** | 실회원 댓글 (tombstone 글 위) | **75** | 사람이 쓴 글 — 자동 삭제하지 않는다 |
-| **PRESERVE** | `authorId` NULL 댓글 (tombstone 글 위) | **56** | 게스트·탈퇴 회원 — 사람 흔적 |
-| **PRESERVE** | USER Post | **73 공개 / 전체** | 정책상 절대 대상 아님 |
-| **PRESERVE** | `BotLog` | 125,025 | 카페 크롤 로그 99,026건을 포함하나 `logData` 는 **카운터뿐**(최대 120B, 키: totalProcessed·totalFailed 등), `details` 최대 35자. **원문 없음** |
-| **PRESERVE** | `AdminQueue` | 160 | `payload` 는 소셜 발행 문구(xText·threadsText·personaId). 카페 원문이 아니고 Post 링크 키도 없다. ⚠️ Codex 재판정 여지 |
-| **PRESERVE** | `UserPostWaveQueue` | 11 | 실회원 글 대상 큐 — 네이버 유래 아님. 개인정보 인접이라 별도 판단 |
+| 지표 | 접두어 방식(1판) | 숫자 SSoT(2판) |
+|---|---:|---:|
+| 실회원 계정 | 195 | **188** |
+| 네이버 유래 글의 실회원 댓글 | 75 | **71** |
+| 네이버 유래 글의 실회원 공감 | 45 | **40** |
 
-## 3. 실회원 활동 영향
+## 3. 실제 FK — migration SQL 기준
 
-네이버 유래 Post 7,449건 위의 활동:
+Prisma schema 와 DB 가 어긋난다. **DB 가 정본**이다.
 
-| 항목 | 총계 | 봇 | 실회원 | 처리 |
-|---|---:|---:|---:|---|
-| Comment | 54,623 | 54,492 | **75** (+ `authorId` NULL 56) | 봇분은 삭제/cascade · 실회원분 75 + NULL 56 은 **보존** |
-| Like | 15,925 | 15,880 | **45** | hard delete 대상 글의 것은 cascade · tombstone 글의 것은 보존 |
-| GuestLike | 111 | – | **111** | 전량 tombstone 글에 있어 **보존** |
-| Scrap | 0 | – | 0 | 없음 |
-| Report | 1 | – | **1** | tombstone 글에 있어 **보존** (FK `Restrict` 충족) |
+| 테이블 | schema | **실제(migration)** | hard delete 영향 |
+|---|---|---|---|
+| Comment · Like · GuestLike · Scrap · PostView · CpsLink · JobDetail | Cascade | **CASCADE** | 함께 삭제 |
+| Notification | SetNull | **SET NULL** | `postId` 만 NULL |
+| **HomeCurationOverride** | Cascade | **RESTRICT** ⚠️ | **삭제 차단** |
+| **Report** | Restrict | **RESTRICT** | **삭제 차단** |
 
-**실회원 흔적이 사라지는 건수 = 0.** 흔적이 있는 글은 전부 tombstone 으로 남긴다.
+`HomeCurationOverride` 는 `20260601000000_add_home_curation_override` 에서 RESTRICT 로 만들어졌고,
+`Report` 는 init 의 CASCADE 를 `20260423000000_..._report_restrict` 가 RESTRICT 로 바꿨다.
+→ **참조가 있는 글은 임의 삭제하지 않고 tombstone 으로 재분류**한다(관리자 흔적 보존).
 
-## 4. Phase B — 레거시 164건 분류
+## 4. 처분
 
-대상: `source=BOT` · 공개 · `cafePostId IS NULL` · `createdAt < 2026-05-20` = **164건**
+| 처분 | 대상 | 건수 |
+|---|---|---:|
+| **HARD DELETE** | Post (흔적 없음) | **7,125** |
+| **TOMBSTONE** | Post (사람·관리자 흔적 보유) | **324** |
+| **DELETE** | tombstone 글 위 봇 댓글 | **2,545** |
+| **DELETE** | `CafePost` | **33,031** |
+| **DELETE** | `CafeTrend` | **191** |
+| **DELETE** | `CommentWaveQueue` | **276** |
+| **DELETE** | `BotLog` (CAFE_CRAWLER 99,026 + 원문 조각 보유 552) | **99,578** |
+| **DELETE** | R2 객체 | **518키**(현재 존재 504) |
+| **PRESERVE** | 실회원 댓글 **71** · NULL 댓글 **56** · GuestLike **111** · Report **1** · HomeCurationOverride **139** | |
+| **PRESERVE** | USER Post 전량 · `Notification` 1,010 · `AdminQueue` 160 · 그 외 BotLog 25,447 | |
 
-| 판정 | 건수 |
-|---|---:|
-| CONFIRMED_NAVER | **0** |
-| LIKELY_NAVER | **0** |
-| NOT_NAVER | **163** |
-| UNKNOWN | **1** |
+tombstone 사유별 글 수(중복 포함): 관리자 큐레이션 120 · GuestLike 98 · 실회원 댓글 69 · NULL 댓글 49 · 실회원 공감 38 · 신고 1 → **합집합 324**.
 
-판정 근거(원문은 프로세스 메모리에서만 비교했고 저장·출력하지 않았다):
+## 5. 외부·파생 데이터 closure
 
-1. **구조**: 164건 전부 `sourceUrl`·`sourceSite` 가 NULL 이다. 어드민 분류상 `cafePostId IS NULL` 인 BOT 은 `seed`(자체 생성)이고, 카페 큐레이션(`curate`)은 정의상 `cafePostId` 를 갖는다.
-2. **구성**: MAGAZINE 102 · JOB 48 · 커뮤니티 14(STORY 10 · LIFE2 2 · HUMOR 1 · MENOPAUSE 1). MAGAZINE·JOB 은 카페와 무관한 별도 파이프라인이다.
-3. **본문 대조**: 커뮤니티 14건을 `CafePost` 33,031건 전량과 대조 — 본문 Jaccard 최대 **0.078**, 본문 포함률 최대 **0.269**. 복사 수준(0.5/0.85)에 크게 못 미친다. UNKNOWN 1건은 제목 토큰 유사도 0.429뿐이고 본문 유사도는 0.073 이라 흔한 한국어 어휘가 겹친 것이다.
+| 대상 | 실측 | 판정 | 근거 |
+|---|---|---|---|
+| **R2 객체** | 고유 키 **518**, 현재 존재 504 | **DELETE** | 전부 `pub-…r2.dev`. **보존 Post 와 공유되는 키 0** — 공유되면 삭제하지 않도록 도구가 제외한다. 자격증명 보유(`CLOUDFLARE_R2_*`) |
+| **Notification** | 네이버 유래 연결 **144** (COMMENT 26 · HOT_POST 96 · LIKE 22) | **PRESERVE** | `content` 최대 28자 정형문, **원문 제목 조각 0건**, `linkUrl` 1건. FK 가 SET NULL 이라 글이 사라져도 행은 남고 원문은 없다 |
+| **AdminQueue** | **160** (CONTENT_PUBLISH, payload ≤519B) | **PRESERVE** | 소셜 발행 문구(xText·threadsText·personaId). **원문 제목 조각 0건**, Post 링크 키 없음 |
+| **BotLog** | 전체 125,025 · CAFE_CRAWLER **99,026** · 원문 조각 보유 **8,861**(CAFE_CRAWLER 8,309 · COO 429 · SEED 121 · CEO 1 · CMO 1) | **DELETE 99,578 / PRESERVE 25,447** | `details` 최대 198자에 원문 제목이 들어간다. 카페 크롤러 로그는 파이프라인 전체가 대상. 나머지 봇 로그는 원문 무관 |
+| **로컬(`unao-prod`)** | `agents/cafe/` 코드 사본 · `logs/cafe-crawler-*.log` 포함 28개 | **DELETE (별도 조치)** | DB·R2 밖이라 이 도구 범위가 아니다. runbook 에 수동 절차로 둔다 |
+| **Supabase Storage** | 버킷 **0** | 해당 없음 | 이미지는 전부 R2 |
 
-**결론: 레거시 164건은 폐기 범위에 넣지 않는다.**
-
-⚠️ **탐지 사각**: `CafePost` 보존 정책은 "90일 경과 + Post 미참조분 삭제"다. 2026-03~05 에 크롤된 미참조 원문은 이미 사라졌을 수 있어, 본문 대조만으로는 완전하지 않다. 위 판정은 **구조 근거가 1차**이고 본문 대조는 보강이다.
-
-## 5. Dependency closure
-
-### 5-1. Post FK (DB 레벨 cascade — REST DELETE 에도 그대로 적용)
-
-| 참조 모델 | onDelete | hard delete 시 |
-|---|---|---|
-| `Comment` `Like` `GuestLike` `Scrap` `PostView` `CpsLink` `HomeCurationOverride` `JobDetail` | **Cascade** | 함께 삭제 |
-| `Report` | **Restrict** | ⚠️ 삭제 차단. 해당 1건은 tombstone 대상이라 충돌 없음 |
-| `Notification` | **SetNull** | `postId` 만 NULL (알림 행은 남음, 144건) |
-
-### 5-2. 코드·운영 소비처
-
-| 대상 | 소비처 | 폐기 후 |
-|---|---|---|
-| `prisma.cafePost` | `agents/scripts/purge-old-logs.ts` 1곳 | 보존 정책 purge — 대상이 0건이 될 뿐 정상 동작 |
-| `prisma.cafeTrend` | `src/lib/slack-commands.ts` `handleTrend()` 1곳 | 행이 없으면 "아직 오늘의 트렌드 분석 결과가 없어요" 반환 — **graceful** |
-| `/landing` | `src/app/landing/page.tsx` → 홈 redirect (307 실측) | 영향 없음 |
-| `src/lib/queries/cafe-posts.landing.ts` | DB 접근 없이 빈 배열 반환하는 stub | 영향 없음 |
-| API 라우트 · 어드민 화면 | **0건** | 없음 |
-| workflow · launchd | 우나어 카페 크롤 **0건** (`agents/cafe/` 부재, `com.unao.cafe-crawler-*` 없음) | 재수집 경로 없음 |
-| `cto:purge-old-logs` | runner HANDLERS 에 **없음**(미스케줄) | 대상 테이블이 자동 감소하지 않아 기준선이 동결된다 |
-
-### 5-3. DB 밖 잔재 (이번 배치 범위 밖 — 별도 조치 필요)
-
-| 위치 | 내용 | 조치 |
-|---|---|---|
-| **Cloudflare R2** (`pub-*.r2.dev` / `img.age-doesnt-matter.com`) | 네이버 유래 Post 의 썸네일 **518건**이 참조 | DB 삭제로 사라지지 않는다. R2 객체 삭제는 별도 배치 |
-| Supabase Storage | **버킷 0개** | 해당 없음 |
-| `unao-prod` 로컬 | `agents/cafe/` 코드 사본 · `logs/cafe-crawler-*.log` 등 로그 28개 | 로컬 정리 별도 (이번 배치는 읽기만) |
-
-### 5-4. 백업 · PITR
+## 6. 백업 — **backup expiry pending**
 
 | 항목 | 상태 |
 |---|---|
-| PITR | **비활성** (2026-08-20 창업자 확인, `2026-08-20-database-disaster-recovery.md` §8-1) |
-| daily backup | **있음** — 자정 무렵 1회 |
-| 보존 기간 | **미확인** — Supabase 플랜 설정값. 창업자 콘솔 확인 필요 |
+| PITR | **비활성** (2026-08-20 창업자 확인) |
+| daily backup | 있음 |
+| 플랜 · 보존 기간 · 가장 오래된 복원 지점 | **backup expiry pending** — 창업자 콘솔 확인 전까지 미확정 |
 
-⚠️ **영구 폐기의 의미**: 삭제해도 **백업 보존 기간 동안은 백업 안에 남는다.** 보존 기간이 지나야 완전 소멸한다.
-그리고 **삭제 이후 백업으로 복원하면 지운 데이터가 되살아난다.** 복원 필요 시 이 폐기를 다시 적용해야 한다 —
-runbook §5 에 그 절차를 둔다.
+🔴 **복원 시 자동 재적용을 하지 않는다.** 백업에서 복원하면 폐기한 데이터가 되살아나므로,
+**복원 절차의 필수 게이트**로 이 도구를 다시 실행하도록 runbook §5 에 고정했다.
 
-## 6. 기준선 동결 근거
+## 7. 레거시 164건 (변경 없음)
 
-`naverOrigin` · `CafePost` · `CafeTrend` · `CommentWaveQueue` 는 **정확히 일치**를 요구한다.
-생산자(카페 크롤러 · 큐레이터 · 트렌드 분석 · 댓글 파동)가 R4 B-3 에서 전부 제거됐고,
-`cto:purge-old-logs` 도 핸들러에 없어 자동 감소 경로가 없다.
+`source=BOT` · 공개 · `cafePostId IS NULL` · 2026-05-20 이전 164건 →
+**CONFIRMED_NAVER 0 · LIKELY_NAVER 0 · NOT_NAVER 163 · UNKNOWN 1 → 폐기 범위 제외**
 
-`postTotal` 은 실회원 글로 늘 수 있어 ±1%, `tombstonePosts` 는 실회원이 지금도 댓글을 달 수 있어
-**하한만** 본다(늘어나는 방향은 안전 — hard delete 가 줄고 tombstone 이 는다).
+근거: ① 전건 `sourceUrl`·`sourceSite` NULL(seed 경로. 큐레이션은 정의상 `cafePostId` 보유)
+② MAGAZINE 102 · JOB 48 · 커뮤니티 14 ③ 커뮤니티 14건을 `CafePost` 33,031건 전량과 본문 대조 — Jaccard 최대 **0.078**, 포함률 최대 **0.269**.
+원문은 프로세스 메모리에서만 비교했고 저장·출력하지 않았다.
+
+⚠️ 탐지 사각: `CafePost` 보존 정책이 "90일 경과 + Post 미참조분 삭제"라 2026-03~05 미참조 원문은 이미 없을 수 있다. 구조 근거가 1차, 본문 대조는 보강이다.
+
+## 8. 기준선 취급
+
+`naverOrigin`·`CafePost`·`CafeTrend`·`CommentWaveQueue`·`BotLog(CAFE_CRAWLER)`·R2 는 **줄어드는 방향만** 허용한다
+(생산자가 전부 제거됐고 `cto:purge-old-logs` 도 핸들러에 없다). 그래서 **중간 실패 후 재실행이 막히지 않는다.**
+보존 대상(실회원 댓글·NULL 댓글·GuestLike·Report·HomeCurationOverride·공개 USER Post)은 **한 건이라도 줄면 즉시 중단**한다.
+
+`Post` 총계는 고정하지 않는다 — 실회원이 지금도 글을 쓴다(2026-09-10 측정 중 11,715 → 11,718, 공개 USER 73 → 76).
