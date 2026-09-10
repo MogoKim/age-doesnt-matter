@@ -1,6 +1,9 @@
-# 네이버 카페 유래 데이터 — 폐기 전 실측 사실 (2026-09-10, 개정 2판)
+# 네이버 카페 유래 데이터 — 실측 사실과 폐기 실행 기록 (2026-09-10, 개정 3판)
 
-> 기준 커밋 `c8f996e0` · production Supabase REST **읽기 전용** 측정 · **DB write 0**
+> 🔴 **폐기는 2026-09-10 09:10~09:32 UTC 에 실행 완료됐다.** 결과는 [§9](#9-실행-결과-2026-09-10-실행-완료) 를 본다.
+> §1~§8 은 **실행 직전의 상태**이며 현재 상태가 아니다.
+>
+> 측정 기준 커밋 `c8f996e0` · 실행 커밋 `e7778998`(PR #454 squash merge) · production Supabase REST
 > ⚠️ row ID·제목·본문·댓글·닉네임·secret·project ref 평문을 남기지 않는다. 집계와 분류만 남긴다.
 >
 > **1판 정정 3건** — 2판에서 바로잡았다.
@@ -39,6 +42,11 @@ Prisma schema 와 DB 가 어긋난다. **DB 가 정본**이다.
 | **HomeCurationOverride** | Cascade | **RESTRICT** ⚠️ | **삭제 차단** |
 | **Report** | Restrict | **RESTRICT** | **삭제 차단** |
 
+⚠️ **2판 누락(3판에서 정정)** — 위 표는 `Post` FK 만 봤다. `Comment` 에도 CASCADE 자식이 있다.
+`GuestLike.commentId` 와 `Like.commentId` 는 **댓글**을 참조하며 둘 다 CASCADE 다.
+즉 **봇 댓글을 지우면 그 댓글에 달린 공감·게스트 공감도 함께 사라진다.**
+판정 도구는 이 경로를 흔적으로 세지도, 계측하지도 않았다. 실제 영향은 §9-C 에 적었다.
+
 `HomeCurationOverride` 는 `20260601000000_add_home_curation_override` 에서 RESTRICT 로 만들어졌고,
 `Report` 는 init 의 CASCADE 를 `20260423000000_..._report_restrict` 가 RESTRICT 로 바꿨다.
 → **참조가 있는 글은 임의 삭제하지 않고 tombstone 으로 재분류**한다(관리자 흔적 보존).
@@ -68,7 +76,7 @@ tombstone 사유별 글 수(중복 포함): 관리자 큐레이션 120 · GuestL
 | **Notification** | 네이버 유래 연결 **144** (COMMENT 26 · HOT_POST 96 · LIKE 22) | **PRESERVE** | `content` 최대 28자 정형문, **원문 제목 조각 0건**, `linkUrl` 1건. FK 가 SET NULL 이라 글이 사라져도 행은 남고 원문은 없다 |
 | **AdminQueue** | **160** (CONTENT_PUBLISH, payload ≤519B) | **PRESERVE** | 소셜 발행 문구(xText·threadsText·personaId). **원문 제목 조각 0건**, Post 링크 키 없음 |
 | **BotLog** | 전체 125,025 · CAFE_CRAWLER **99,026** · 원문 조각 보유 **8,861**(CAFE_CRAWLER 8,309 · COO 429 · SEED 121 · CEO 1 · CMO 1) | **DELETE 99,578 / PRESERVE 25,447** | `details` 최대 198자에 원문 제목이 들어간다. 카페 크롤러 로그는 파이프라인 전체가 대상. 나머지 봇 로그는 원문 무관 |
-| **로컬(`unao-prod`)** | `agents/cafe/` 코드 사본 · `logs/cafe-crawler-*.log` 포함 28개 | **DELETE (별도 조치)** | DB·R2 밖이라 이 도구 범위가 아니다. runbook 에 수동 절차로 둔다 |
+| **로컬(`unao-prod`)** | `agents/cafe/` **54파일** · cafe 로그 **22개**(18MB) | **DELETE — 2026-09-10 완료** | DB·R2 밖이라 도구 범위가 아니다. ⚠️ 2판의 "로그 28개"는 실측과 달랐다(실제 22). §9-D 참조 |
 | **Supabase Storage** | 버킷 **0** | 해당 없음 | 이미지는 전부 R2 |
 
 ## 6. 백업 — **backup expiry pending**
@@ -100,3 +108,97 @@ tombstone 사유별 글 수(중복 포함): 관리자 큐레이션 120 · GuestL
 보존 대상(실회원 댓글·NULL 댓글·GuestLike·Report·HomeCurationOverride·공개 USER Post)은 **한 건이라도 줄면 즉시 중단**한다.
 
 `Post` 총계는 고정하지 않는다 — 실회원이 지금도 글을 쓴다(2026-09-10 측정 중 11,715 → 11,718, 공개 USER 73 → 76).
+
+---
+
+## 9. 실행 결과 (2026-09-10, 실행 완료)
+
+창업자 최종 승인 → PR #454 squash merge(`e7778998`) → 코드 동일성 대조 → main CI success →
+실행 직전 dry-run → `--execute` 순서로 종결했다. 도구 코드는 승인본 `a712115a` 와 **blob 단위로 동일**하다.
+
+### 9-A. 실행 로그 (09:10:12Z → 09:32:39Z · exit 0 · `done ok:true`)
+
+| 단계 | 결과 |
+|---|---|
+| P0 BotLog | affected **99,578** · 잔량 **0** |
+| P1 R2 | expected 518 · 실제 삭제 **504** · 이미 없음 **14** · 잔존 **0** |
+| P2 hard delete | affected **7,125** · 네이버 유래 잔량 324 |
+| P3 봇 댓글 | affected **2,545** · 잔량 0 |
+| P4 tombstone | affected **324** · 서명 324 전건 전 필드 일치(미완 0) |
+| P5 `CommentWaveQueue` | 276 → **0** |
+| P6 `CafeTrend` | 191 → **0** |
+| P7 `CafePost` | 33,031 → **0** |
+
+ABORT · FAIL-CLOSED · R2 403/429/5xx · DB 비정상 응답 **0건**. 재개 없이 1회 완주했다.
+
+### 9-B. 검증표 12항목 — 전항 PASS
+
+네이버 유래 Post **0** · tombstone 서명 **324** · 봇 댓글 **0** ·
+`CafePost`/`CafeTrend`/`CommentWaveQueue` 각 **0** · BotLog 폐기 대상 **0** · R2 잔존 **0** ·
+실회원 댓글 **71** · NULL 댓글 **56** · GuestLike(글 경로) **111** · Report **1** ·
+HomeCurationOverride **139** · 공개 USER Post **76**(시작값 이상).
+
+독립 재측정(실행 후 read-only): tombstone Post **324** · 그 글의 Comment **127**(= 71 + 56) · GuestLike **111**.
+
+### 9-C. 🔴 검증표가 잡지 못한 부수 손실 — 댓글에 달린 공감
+
+**GuestLike 총계가 283 → 201 로 82건 줄었다.** 검증표는 GuestLike 를 **글 경로(`postId`)** 로만 셌고
+그 111건은 그대로다. 줄어든 82건은 **댓글 경로(`commentId`)** 다.
+
+| 경로 | 실행 전 | 실행 후 |
+|---|---:|---:|
+| `GuestLike.postId` (글에 달린 게스트 공감) | 160 | **160** — 변화 없음 |
+| `GuestLike.commentId` (댓글에 달린 게스트 공감) | 123 | **41** — **82건 폐기** |
+
+원인은 §3 정정에 적은 `Comment → GuestLike/Like` CASCADE 다. 봇 댓글 **54,496건**
+(P3 직접 삭제 2,545 + hard delete 글의 cascade 51,951)이 사라지면서 **그 댓글에 달려 있던 공감이 함께 삭제**됐다.
+
+- 이 손실은 **불가역**이며 사전에 계측하지도, 창업자에게 보고하지도 않았다. 도구 설계 누락이다.
+- **`Like.commentId` 경로의 손실 건수는 알 수 없다.** 실행 전 `Like` 를 글/댓글 경로로 분해해 재지 않았다.
+  실행 후 댓글 경로 `Like` 는 **63건(실회원 44 · 봇 19)** 이다 — 실회원이 댓글에 공감을 누르는 행동이
+  실재하므로, 봇 댓글에 달렸던 실회원 공감 일부가 함께 사라졌을 가능성을 **배제할 수 없다**.
+- 없어진 것은 **봇이 쓴 댓글에 달린 공감**이다. 실회원이 **직접 쓴 댓글**과 그 댓글은 전부 남아 있다(실회원 댓글 71 불변).
+
+교훈: 처분 대상의 FK 는 `Post` 뿐 아니라 **함께 지우는 모든 테이블**에 대해 자식을 훑어야 한다.
+
+### 9-D. DB·R2 밖 잔재 (수동 삭제 완료)
+
+| 대상 | 실측 | 조치 |
+|---|---:|---|
+| `unao-prod/agents/cafe/` | **54파일**(`.magazine-daily-*.json` 51 · `.nid-aut-alerted` · `.session-halted` · `storage-state.json`) | 삭제, 빈 디렉터리 제거 |
+| `unao-prod/logs/` cafe 로그 | **22개**(`cafe-crawler-*` 20 · `naver-cafe-sheet-scraper*` 2, 18MB) | 삭제 |
+
+삭제 후 잔존 0. `unao-prod/logs` 의 비-cafe 파일 6개와 `agents/` 의 다른 하위 디렉터리는 건드리지 않았다.
+
+### 9-E. 폐기 후 DB 집계 (실행 후 실측)
+
+| 테이블 | 실행 전 | 실행 후 |
+|---|---:|---:|
+| Post | 11,718 | **4,595** |
+| Comment | 67,086 | **12,590** |
+| Like | 31,187 | **16,612** |
+| GuestLike | 283 | **201** |
+| BotLog | 125,025 | **25,448** |
+| CafePost / CafeTrend / CommentWaveQueue | 33,031 / 191 / 276 | **0 / 0 / 0** |
+| User | 508 | **508** |
+| Notification | 1,010 | **1,010** |
+
+`Post` 감소 7,123 = hard delete 7,125 − 실행 중 실회원 신규 2.
+`Comment` 감소 **54,496** 은 실행 전 측정한 `botCommentsOnNaver` 와 **정확히 일치**한다.
+
+### 9-F. 배포 표면
+
+`/` 200 · `/api/health` 200 · `/api/health/auth` 200 · `/community/stories` 200 · `/magazine` 200 ·
+`sitemap.xml` 200 · `<loc>` **859 → 859 불변**(폐기 대상이 전부 비공개였다).
+
+### 9-G. 반드시 함께 읽을 기록
+
+1. **실회원이 작성한 콘텐츠·댓글·공감은 보존했다.** 실회원 댓글 71 · NULL 작성자 댓글 56 ·
+   글에 달린 GuestLike 111 · Report 1 · HomeCurationOverride 139 는 실행 전후 값이 같다.
+   실회원 공감이 달린 글은 `like-human` 흔적으로 TOMBSTONE 처리되어 글 자체가 삭제되지 않았다.
+   단, **봇 댓글에 달려 있던 공감은 §9-C 대로 함께 사라졌다.**
+2. **hard delete 한 7,125건의 `PostView` 조회 이력은 함께 폐기됐다.** `PostView` 는 `Post` FK 가 CASCADE 다.
+   같은 이유로 그 글들의 `Like`·`Scrap`·`CpsLink`·`JobDetail` 행도 함께 사라졌다.
+   `Scrap` 은 흔적으로 세지 않았다 — 실행 후 전체 **0건**이나 실행 전 값을 재지 않았으므로 "손실 0"이라고 단정하지 않는다.
+3. **`backup expiry` 는 여전히 pending 이다.** daily backup 은 남아 있고 보존 기간·가장 오래된 복원 지점은 미확인이다.
+   이 실행으로 **백업에서까지 소멸했다고 주장하지 않는다.** 복원 시 runbook §5 게이트를 반드시 거친다.

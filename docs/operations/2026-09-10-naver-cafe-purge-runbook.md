@@ -2,7 +2,9 @@
 
 > 실측 근거: [`2026-09-10-naver-cafe-purge-facts.md`](./2026-09-10-naver-cafe-purge-facts.md)
 > 도구 `agents/scripts/purge-naver-cafe-data.ts` · 판정 `agents/purge/naver-origin-policy.ts`
-> 🔴 **Codex 승인 전에는 `--execute` 를 붙이지 않는다.**
+> 🔴 **이 폐기는 2026-09-10 09:10~09:32 UTC 에 실행 완료됐다** (창업자 최종 승인 · 실행 커밋 `e7778998`).
+> 결과·부수 손실은 facts 문서 §9 를 본다. 아래는 **실행에 쓴 절차의 기록**이며, 남는 용도는
+> **백업 복원 시 §5 게이트를 다시 밟는 것** 하나다. 평시에 `--execute` 를 다시 붙일 일은 없다.
 
 ## 0. 전제
 
@@ -103,10 +105,12 @@ checkpoint 파일(기본 `$TMPDIR/unao-naver-purge-checkpoint.json`)에는 **단
 
 ## 7. DB·R2 밖 잔재 (수동)
 
-`unao-prod` 의 `agents/cafe/` 코드 사본과 `logs/cafe-crawler-*.log` 28개는 이 도구 범위가 아니다.
-폐기 완료 후 창업자가 직접 정리하고 그 사실을 facts 문서에 기록한다.
+**2026-09-10 완료.** `unao-prod/agents/cafe/` **54파일**과 cafe 로그 **22개**(18MB)를 목록 확인 후 삭제했고,
+빈 `agents/cafe/` 디렉터리도 제거했다. 잔존 0. 다른 로컬 파일은 건드리지 않았다.
+⚠️ 이 절의 이전 값 "28개"는 실측과 달랐다 — 실제 **22개**다. facts 문서 §9-D 에 목록 근거를 남겼다.
 
 ## 8. 일회성 — 실행 후 제거
 
-검증표가 전부 PASS 하면 **별도 PR** 로 `agents/scripts/purge-naver-cafe-data*.ts` 와 `agents/purge/` 를 지운다.
-두 문서는 감사 증빙으로 보존한다.
+검증표는 2026-09-10 전항 PASS 했다. 다만 **§5 백업 복원 게이트가 이 도구를 필수 절차로 지목**하고 있고
+`backup expiry` 가 pending 이라, **보존 기간이 확정되고 복원 가능성이 닫히기 전까지 도구를 지우지 않는다.**
+제거는 창업자가 백업 보존 기간을 확인한 뒤 별도 PR 로 판단한다. 두 문서는 감사 증빙으로 계속 보존한다.
