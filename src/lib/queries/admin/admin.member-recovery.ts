@@ -134,7 +134,7 @@ export interface ReplyLoop {
 
 /**
  * `sign_up` **이벤트 수**와 **실제 가입자 수**는 다르다 — 섞어 읽으면 "가입에서 끊겼다"고 오판한다.
- * production 실측(2026-09-10 30일): 이벤트 3 vs 실제 7.
+ * 완전성 판정은 **회원 ID 대조 하나뿐**이다. 건수 비교는 판정 근거가 아니다.
  */
 export interface SignupEventCoverage {
   /** `sign_up` 이벤트를 낸 **방문자** 수(sessionId 기준) — 퍼널 단계와 같은 단위 */
@@ -150,6 +150,44 @@ export interface SignupEventCoverage {
   /** **matchedMembers / actualNewMembers**. 건수 비교가 아니다. 분모 0이면 null */
   rate: number | null
   status: 'OK' | 'PARTIAL' | 'GAP' | 'NO_DENOM'
+}
+
+/**
+ * `signup_banner_eligible` 과 `signup_banner_shown` 은 **같은 `tryFire` 에서 연속 호출**되는
+ * fire-and-forget POST 다. 서버 처리 순서가 뒤집힐 수 있어 **둘 사이에 전환율을 만들면 안 된다** —
+ * 네트워크 경쟁을 전환 실패로 오독한다. 대신 **계측이 일관된지**만 본다.
+ */
+export interface BannerConsistency {
+  eligibleVisitors: number
+  shownVisitors: number
+  /** 두 이벤트가 모두 있는 방문자 — 정상 */
+  matched: number
+  /** 적격만 있고 노출이 없는 방문자 — 전송 유실 의심 */
+  eligibleOnly: number
+  /** 노출만 있고 적격이 없는 방문자 — 전송 유실 의심 */
+  shownOnly: number
+}
+
+/** 배너에서 실제로 무엇을 눌렀는지. `cta_type` 별 분해가 먼저고 카카오는 그 하위다. */
+export interface BannerCtaBreakdown {
+  /** 배너 CTA 를 하나라도 누른 방문자(모든 `cta_type`) */
+  anyVisitors: number
+  byType: {
+    kakao_oauth: number
+    app_install: number
+    external_browser: number
+    /** `cta_type` 이 없거나 위 셋이 아닌 클릭 */
+    other: number
+  }
+}
+
+/**
+ * 사이트 전체의 `kakao_button_click` — **배너 클릭이 아니다.**
+ * 로그인 화면·게스트 댓글 카드 등 여러 표면에서 발생하므로 배너 전환에 귀속하지 않고 참고값으로만 둔다.
+ */
+export interface SiteWideKakaoClick {
+  visitors: number
+  note: string
 }
 
 export interface MemberRetentionView {
@@ -182,6 +220,12 @@ export interface MemberRecoveryData {
   }
   /** 퍼널 마지막 칸을 해석하기 전에 반드시 함께 읽는다 */
   signupEventCoverage: SignupEventCoverage
+  /** 적격·노출은 전환이 아니라 계측 일관성으로 본다 */
+  bannerConsistency: BannerConsistency
+  /** 배너 반응은 CTA 전체가 먼저, 카카오는 하위 분해 */
+  bannerCta: BannerCtaBreakdown
+  /** 배너와 무관한 사이트 전체 카카오 클릭 — 참고값 */
+  siteWideKakaoClick: SiteWideKakaoClick
   activation: ActivationCohort
   replyLoop: ReplyLoop
   retention: MemberRetentionView
@@ -293,7 +337,7 @@ async function computeMemberRecovery(windowDays: number): Promise<MemberRecovery
    * 판정 기준: **이벤트 시각이 그 계정의 `createdAt` 보다 이르면 "가입 전 방문"** 이므로 분모에 넣는다.
    * 반대로 계정 생성 이후의 방문(= 기존 회원의 재방문)은 가입 퍼널의 분모가 아니다.
    */
-  const [anonVisit, attributedRows, eligible, exposure, kakaoBtn, bannerKakao, signup] = await Promise.all([
+  const [anonVisit, attributedRows, eligible, exposure, kakaoBtn, bannerClickAny, signup] = await Promise.all([
     visitorSpans({ ...base, eventName: 'page_view', userId: null }, internal),
     prisma.eventLog.groupBy({
       by: ['sessionId', 'userId'],
@@ -304,12 +348,22 @@ async function computeMemberRecovery(windowDays: number): Promise<MemberRecovery
     visitorSpans({ ...base, eventName: 'signup_banner_eligible' }, internal),
     visitorSpans({ ...base, eventName: 'signup_banner_shown' }, internal),
     visitorSpans({ ...base, eventName: 'kakao_button_click' }, internal),
-    visitorSpans(
-      { ...base, eventName: 'signup_banner_clicked', properties: { path: ['cta_type'], equals: 'kakao_oauth' } },
-      internal,
-    ),
+    visitorSpans({ ...base, eventName: 'signup_banner_clicked' }, internal),
     visitorSpans({ ...base, eventName: 'sign_up' }, internal),
   ])
+
+  // 배너 CTA 는 세 종류다. 카카오만 세면 앱 설치·외부 브라우저 클릭이 **배너 실패로 오독**된다.
+  const [ctaKakao, ctaAppInstall, ctaExternal] = await Promise.all(
+    (['kakao_oauth', 'app_install', 'external_browser'] as const).map((t) =>
+      visitorSpans(
+        { ...base, eventName: 'signup_banner_clicked', properties: { path: ['cta_type'], equals: t } },
+        internal,
+      ),
+    ),
+  )
+  const knownCta = new Set([...ctaKakao.keys(), ...ctaAppInstall.keys(), ...ctaExternal.keys()])
+  let ctaOther = 0
+  for (const id of bannerClickAny.keys()) if (!knownCta.has(id)) ctaOther++
 
   const joinedAt = new Map(allUsers.map((u) => [u.id, u.createdAt.getTime()]))
   const preSignupVisit: SpanMap = new Map()
@@ -331,8 +385,9 @@ async function computeMemberRecovery(windowDays: number): Promise<MemberRecovery
   }
   const visit = unionSpans(anonVisit, preSignupVisit)
 
-  // 로그인 시작 = 공용 CTA 버튼(kakao_button_click) ∪ 배너의 카카오 CTA
-  const loginStart = unionSpans(kakaoBtn, bannerKakao)
+  // 🔴 사이트 전체 kakao_button_click 은 배너 클릭이 아니다(로그인 화면·게스트 댓글 카드 등).
+  //    배너 전환에 귀속하지 않고 참고값으로만 둔다.
+  const bannerCtaAny = bannerClickAny
 
   /**
    * 🔴 수집 완전성은 **건수 비교가 아니라 회원 ID 대조**다.
@@ -364,20 +419,24 @@ async function computeMemberRecovery(windowDays: number): Promise<MemberRecovery
           ? 'PARTIAL'
           : 'OK'
 
+  // 적격·노출은 같은 tryFire 에서 나가므로 **순서를 믿을 수 없다.** 일치 여부만 센다.
+  let consistencyMatched = 0
+  for (const id of eligible.keys()) if (exposure.has(id)) consistencyMatched++
+  const bannerConsistency: BannerConsistency = {
+    eligibleVisitors: eligible.size,
+    shownVisitors: exposure.size,
+    matched: consistencyMatched,
+    eligibleOnly: eligible.size - consistencyMatched,
+    shownOnly: exposure.size - consistencyMatched,
+  }
+
   const steps: FunnelStep[] = [
     {
       key: 'visit',
       label: '비회원 방문자',
       visitors: visit.size,
       status: 'COLLECTED',
-      note: '`page_view` 중 `userId` 가 없는 것만 — 이미 로그인한 회원은 가입 퍼널의 분모가 아니다. 봇·내부 방문자 제외',
-    },
-    {
-      key: 'eligible',
-      label: '가입 유도 적격',
-      visitors: eligible.size,
-      status: 'COLLECTED',
-      note: '`signup_banner_eligible` — 배너 노출 조건을 만족한 방문자. 노출 직전 단계라 "보여줄 수 있었는데 안 보여준" 구간이 여기서 드러난다',
+      note: '`page_view` 중 **가입 전** 방문만 — `userId` 가 없거나, 있어도 이벤트 시각이 그 계정 생성보다 이른 것(온보딩이 소급 귀속한 분). 계정 생성 이후 방문(기존 회원 재방문)과 봇·내부 방문자는 제외',
     },
     {
       key: 'exposure',
@@ -387,20 +446,20 @@ async function computeMemberRecovery(windowDays: number): Promise<MemberRecovery
       note: '`signup_banner_shown`. 앱 설치 유도(`android_conversion_prompt_*`)·띠배너(`top_promo_*`)는 가입 배너가 아니라 제외',
     },
     {
-      key: 'login_start',
-      label: '카카오 로그인 시작',
-      visitors: loginStart.size,
-      status: 'PARTIAL',
-      note: '`kakao_button_click` ∪ `signup_banner_clicked{cta_type:kakao_oauth}`. `kakao_button_click` 은 rate limit 면제 목록에 없어 **유실 가능** → 하한값',
+      key: 'banner_cta',
+      label: '배너 CTA 반응(전체)',
+      visitors: bannerCtaAny.size,
+      status: 'COLLECTED',
+      note: '`signup_banner_clicked` **모든 `cta_type`** — 카카오 로그인·앱 설치·외부 브라우저. 카카오만 세면 나머지 클릭이 실패로 잡힌다',
     },
     {
       key: 'signup_done',
       label: '가입 완료(이벤트)',
       visitors: signup.size,
-      // 🔴 실측상 이벤트가 실제 가입자보다 적다. 절대 COLLECTED 로 표시하지 않는다 —
-      //    이 칸을 사실로 읽으면 "가입에서 끊겼다"는 잘못된 결론이 나온다.
+      // 🔴 이 칸을 사실로 읽으면 "가입에서 끊겼다"는 잘못된 결론이 나온다.
+      //    완전성 판정은 ID 대조(signupEventCoverage) 하나뿐이다.
       status: coverageStatus === 'GAP' ? 'NOT_COLLECTED' : 'PARTIAL',
-      note: `이벤트 기준이다. 실제 신규 실회원은 **${cohort.length}명**(\`User.createdAt\`). 수집 완전성은 별도 지표로 본다`,
+      note: `이벤트 기준이다. 실제 신규 실회원은 **${cohort.length}명**(\`User.createdAt\`). 수집 완전성은 ID 대조 지표로 본다`,
     },
   ]
 
@@ -427,14 +486,14 @@ async function computeMemberRecovery(windowDays: number): Promise<MemberRecovery
     }
   }
 
+  // ⚠️ 「적격 → 노출」 전환율은 만들지 않는다 — 두 이벤트가 같은 tryFire 에서 연속 전송돼
+  //    서버 기록 순서가 경쟁 조건이다. 대신 bannerConsistency 로 계측 일관성만 본다.
   const conversions: Conversion[] = [
-    step('visit_to_eligible', '비회원 방문 → 가입 유도 적격', visit, '비회원 방문자', eligible, '이후 적격이 된 방문자', 'OK',
+    step('visit_to_exposure', '비회원 방문 → 가입 유도 노출', visit, '비회원 방문자', exposure, '이후 배너가 노출된 방문자', 'OK',
       '배너는 로그인·온보딩·어드민 경로에서 뜨지 않는다 — 100% 가 목표가 아니다'),
-    step('eligible_to_exposure', '가입 유도 적격 → 노출', eligible, '적격 방문자', exposure, '이후 실제로 노출된 방문자', 'OK',
-      '적격인데 노출이 안 됐다면 배너 노출 조건·타이밍을 본다'),
-    step('exposure_to_login_start', '가입 유도 노출 → 카카오 로그인 시작', exposure, '노출 방문자', loginStart, '노출 이후 로그인 시작', 'PARTIAL',
-      '분자가 하한값(로그인 시작 이벤트 유실 가능) — 실제 비율은 이 값 이상'),
-    step('login_start_to_signup', '카카오 로그인 시작 → 가입 완료(이벤트)', loginStart, '로그인 시작 방문자', signup, '이후 가입 이벤트 발생', 'PARTIAL',
+    step('exposure_to_banner_cta', '가입 유도 노출 → 배너 CTA 반응(전체)', exposure, '노출 방문자', bannerCtaAny, '이후 배너 CTA 를 누른 방문자', 'PARTIAL',
+      '모든 `cta_type` 을 센다. 분모(`signup_banner_shown`)에는 CTA 종류 정보가 없어 **CTA별 노출 분모는 복원할 수 없다**'),
+    step('banner_kakao_to_signup', '배너 카카오 CTA → 가입 완료(이벤트)', ctaKakao, '카카오 CTA 를 누른 방문자', signup, '이후 가입 이벤트 발생', 'PARTIAL',
       '이벤트 기준이다. 카카오 OAuth 왕복으로 식별자가 갈리거나 이벤트가 유실되면 낮게 나온다 — **가입 실패로 읽지 마라**'),
   ]
 
@@ -603,8 +662,24 @@ async function computeMemberRecovery(windowDays: number): Promise<MemberRecovery
       key: 'login_start_rate_limit',
       level: 'WARN',
       message:
-        '`kakao_button_click` 이 `api/events` 의 rate limit 면제 목록(CONVERSION_EVENTS)에 없다. ' +
-        '`page_view` 와 같은 버킷(event:ip, max 30)을 써서 429 로 조용히 유실될 수 있다 → 로그인 시작은 **하한값**이다.',
+        '사이트 전체 `kakao_button_click` 이 `api/events` 의 rate limit 면제 목록(CONVERSION_EVENTS)에 없다. ' +
+        '`page_view` 와 같은 버킷(event:ip, max 30)을 써서 429 로 조용히 유실될 수 있다 → 그 참고값은 **하한값**이다. ' +
+        '배너 클릭(`signup_banner_clicked`)은 면제 목록에 있어 이 영향을 받지 않는다.',
+    },
+    {
+      key: 'exposure_cta_unknown',
+      level: 'WARN',
+      message:
+        '노출 분모(`signup_banner_shown`)에는 **어떤 CTA 를 보여줬는지 정보가 없다.** ' +
+        '그래서 "카카오 CTA 를 본 사람 중 몇 %가 눌렀나" 같은 **CTA별 전환율은 과거 데이터로 복원할 수 없다.** ' +
+        '지금 표시하는 것은 전체 노출 대비 전체 CTA 반응이며, `cta_type` 분해는 **클릭 쪽에만** 있다.',
+    },
+    {
+      key: 'banner_vs_sitewide_click',
+      level: 'OK',
+      message:
+        '배너 반응은 `signup_banner_clicked` 로만 센다. 사이트 전체 `kakao_button_click`(로그인 화면·게스트 댓글 카드 등)은 ' +
+        '배너 클릭이 아니므로 **배너 전환에 귀속하지 않고** 참고값으로 따로 둔다.',
     },
     {
       key: 'oauth_session_split',
@@ -635,29 +710,6 @@ async function computeMemberRecovery(windowDays: number): Promise<MemberRecovery
         '집합 교집합이 아니라서 "누른 뒤 배너를 본" 방문자는 전환에 들어가지 않는다.',
     },
     {
-      key: 'signup_cross_check',
-      // 🔴 이벤트 0 만 잡으면 부족하다. 절반 이상 유실인데도 "0 이 아니니 정상"으로 넘어간 적이 있다.
-      //    그래서 **비율로도** 판정한다. 기준은 절반이다.
-      //    ⚠️ 이 대조는 **건수 기준 참고치**다. 완전성 판정의 정본은 ID 대조(`signupEventCoverage`)다.
-      level:
-        cohort.length === 0
-          ? 'OK'
-          : signup.size === 0
-            ? 'GAP'
-            : signup.size < cohort.length / 2
-              ? 'WARN'
-              : 'OK',
-      message:
-        `창 안 \`sign_up\` 이벤트 세션 ${signup.size}건 · \`User.createdAt\` 기준 신규 실회원 ${cohort.length}명. ` +
-        (cohort.length === 0
-          ? '가입자가 없어 대조할 것이 없다.'
-          : signup.size === 0
-            ? '이벤트가 0인데 실제 가입자가 있다 — **이벤트 미수집**이므로 퍼널 마지막 칸을 0% 로 읽지 마라.'
-            : signup.size < cohort.length / 2
-              ? `이벤트가 실제 가입자의 절반에 못 미친다(${signup.size}/${cohort.length}) — **유실 의심**. 퍼널의 가입 완료 칸은 하한값이며, 이것을 "가입에서 끊겼다"로 읽으면 안 된다.`
-              : '두 값이 크게 어긋나지 않는다.'),
-    },
-    {
       key: 'immature_excluded',
       level: 'OK',
       message:
@@ -676,6 +728,20 @@ async function computeMemberRecovery(windowDays: number): Promise<MemberRecovery
     realMemberTotal: realUsers.length,
     newMembers: cohort.length,
     signupFunnel: { steps, conversions },
+    bannerConsistency,
+    bannerCta: {
+      anyVisitors: bannerCtaAny.size,
+      byType: {
+        kakao_oauth: ctaKakao.size,
+        app_install: ctaAppInstall.size,
+        external_browser: ctaExternal.size,
+        other: ctaOther,
+      },
+    },
+    siteWideKakaoClick: {
+      visitors: kakaoBtn.size,
+      note: '배너 클릭이 아니다 — 로그인 화면·게스트 댓글 카드 등 사이트 전체의 카카오 버튼. 배너 전환에 귀속하지 않는다.',
+    },
     signupEventCoverage: {
       events: signup.size,
       actualNewMembers: cohort.length,

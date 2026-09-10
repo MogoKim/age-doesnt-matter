@@ -239,22 +239,25 @@ describe('[R8-2] 1단계 퍼널 — 내부 세션과 봇을 분모에서 뺀다'
     expect(d.signupFunnel.steps.find((s) => s.key === 'visit')?.visitors).toBe(3)
   })
 
-  it('로그인 시작 = kakao_button_click ∪ 배너 카카오 CTA — app_install 은 안 센다', async () => {
+  it('배너 반응은 signup_banner_clicked 만 — 사이트 전체 kakao_button_click 은 참고값이다', async () => {
     const d = await run()
-    expect(d.signupFunnel.steps.find((s) => s.key === 'login_start')?.visitors).toBe(2) // s1, s2
+    // s2(kakao_oauth) + s3(app_install) = 배너 클릭 2명. s1 의 kakao_button_click 은 배너가 아니다.
+    expect(d.signupFunnel.steps.find((s) => s.key === 'banner_cta')?.visitors).toBe(2)
+    expect(d.bannerCta.byType).toMatchObject({ kakao_oauth: 1, app_install: 1 })
+    expect(d.siteWideKakaoClick.visitors).toBe(1)
   })
 
   it('전환마다 분모·분자를 함께 돌려준다', async () => {
     const d = await run()
-    const c = d.signupFunnel.conversions.find((x) => x.key === 'exposure_to_login_start')!
-    expect(c.denom).toBe(2)
-    expect(c.numer).toBe(2)
-    expect(c.rate).toBe(100)
+    const c = d.signupFunnel.conversions.find((x) => x.key === 'exposure_to_banner_cta')!
+    expect(c.denom).toBe(2) // s1, s2 노출
+    expect(c.numer).toBe(1) // s2 만 배너 CTA 를 눌렀다(s3 은 노출 기록이 없다)
+    expect(c.rate).toBe(50)
   })
 
-  it('로그인 시작은 유실 가능이라 PARTIAL 로 표시한다 — 정확값으로 읽으면 안 된다', async () => {
+  it('가입 완료 칸은 이벤트 기준이라 COLLECTED 가 아니다', async () => {
     const d = await run()
-    expect(d.signupFunnel.steps.find((s) => s.key === 'login_start')?.status).toBe('PARTIAL')
+    expect(d.signupFunnel.steps.find((s) => s.key === 'signup_done')?.status).not.toBe('COLLECTED')
   })
 })
 
@@ -263,7 +266,7 @@ describe('[R8-3] 분모 0 은 0% 가 아니라 판정 불가', () => {
     seedUsers()
     db.events = [{ eventName: 'page_view', sessionId: 's1', isBot: false, createdAt: ago(DAY) }]
     const d = await run()
-    const c = d.signupFunnel.conversions.find((x) => x.key === 'exposure_to_login_start')!
+    const c = d.signupFunnel.conversions.find((x) => x.key === 'exposure_to_banner_cta')!
     expect(c.denom).toBe(0)
     expect(c.rate).toBeNull() // 🔴 0 이면 안 된다
     expect(c.status).toBe('NO_DENOM')
@@ -360,49 +363,13 @@ describe('[R8-6] 4단계 — 기존 리텐션 지표를 재사용하고 비회�
 })
 
 describe('[R8-7] 데이터 품질 — 미수집을 0 으로 읽지 못하게 막는다', () => {
-  it('실제 가입자가 있는데 sign_up 이벤트가 0이면 GAP 으로 올린다', async () => {
-    seedUsers() // 신규 실회원 2명
-    db.events = [{ eventName: 'page_view', sessionId: 's1', isBot: false, createdAt: ago(DAY) }]
-    const d = await run()
-    const note = d.dataQuality.find((q) => q.key === 'signup_cross_check')!
-    expect(note.level).toBe('GAP')
-    expect(note.message).toContain('이벤트 미수집')
-  })
-
-  it('이벤트가 실제 가입자의 절반에 못 미치면 WARN 으로 올린다 (production 30일: 3 vs 7)', async () => {
-    // 실회원 3명 가입, sign_up 이벤트는 1건 → 1 < 3/2 → 유실 의심
-    db.users = [
-      { id: 'a', providerId: '1', role: 'USER', createdAt: ago(3 * DAY) },
-      { id: 'b', providerId: '2', role: 'USER', createdAt: ago(3 * DAY) },
-      { id: 'c', providerId: '3', role: 'USER', createdAt: ago(3 * DAY) },
-    ]
-    db.events = [{ eventName: 'sign_up', sessionId: 's1', isBot: false, createdAt: ago(DAY) }]
-    const note = (await run()).dataQuality.find((q) => q.key === 'signup_cross_check')!
-    expect(note.level).toBe('WARN')
-    expect(note.message).toContain('유실 의심')
-  })
-
-  it('이벤트가 가입자 수와 맞으면 OK 다', async () => {
-    db.users = [{ id: 'a', providerId: '1', role: 'USER', createdAt: ago(3 * DAY) }]
-    db.events = [{ eventName: 'sign_up', sessionId: 's1', isBot: false, createdAt: ago(DAY) }]
-    expect((await run()).dataQuality.find((q) => q.key === 'signup_cross_check')?.level).toBe('OK')
-  })
-
-  it('가입자가 0이면 대조할 것이 없어 OK 다 — 이벤트 0 을 결손으로 오인하지 않는다', async () => {
-    db.users = []
-    db.events = [{ eventName: 'page_view', sessionId: 's1', isBot: false, createdAt: ago(DAY) }]
-    const note = (await run()).dataQuality.find((q) => q.key === 'signup_cross_check')!
-    expect(note.level).toBe('OK')
-    expect(note.message).toContain('대조할 것이 없다')
-  })
-
   it('로그인 시작 유실 가능성을 항상 경고로 남긴다', async () => {
     seedUsers()
     const d = await run()
     expect(d.dataQuality.find((q) => q.key === 'login_start_rate_limit')?.level).toBe('WARN')
   })
 
-  it('제외한 내부 세션·어드민 수를 밝힌다', async () => {
+  it('제외한 내부 방문자·어드민 수를 밝힌다', async () => {
     seedUsers()
     db.events = [{ eventName: 'page_view', sessionId: 'sAdmin', isBot: false, createdAt: ago(DAY), path: '/admin' }]
     const d = await run()
@@ -440,28 +407,27 @@ describe('[R8-P1-1] 퍼널 단위 — 비회원 방문 · eligible 단계 · 시
     expect(d.signupFunnel.steps.find((s) => s.key === 'visit')?.visitors).toBe(2)
   })
 
-  it('signup_banner_eligible 단계를 퍼널에 포함한다', async () => {
+  it('퍼널 단계는 방문 → 노출 → 배너 CTA → 가입 이벤트다', async () => {
     seedUsers()
     const d = await run()
-    const keys = d.signupFunnel.steps.map((s) => s.key)
-    expect(keys).toEqual(['visit', 'eligible', 'exposure', 'login_start', 'signup_done'])
+    // 적격(eligible)은 노출과 같은 tryFire 라 전환 단계가 아니라 일관성 지표로 뺐다.
+    expect(d.signupFunnel.steps.map((s) => s.key)).toEqual(['visit', 'exposure', 'banner_cta', 'signup_done'])
+    expect(d.bannerConsistency.eligibleVisitors).toBeDefined()
   })
 
   it('시간 순서가 뒤집힌 전환은 세지 않는다 — 단순 교집합이면 오답이 나온다', async () => {
     seedUsers()
     db.events = [
-      // v1: eligible(3일 전) → shown(2일 전). 정상 순서
+      // v1: 방문(4일 전) → 노출(2일 전). 정상 순서
       { eventName: 'page_view', sessionId: 'v1', isBot: false, createdAt: ago(4 * DAY), userId: null },
-      { eventName: 'signup_banner_eligible', sessionId: 'v1', isBot: false, createdAt: ago(3 * DAY) },
       { eventName: 'signup_banner_shown', sessionId: 'v1', isBot: false, createdAt: ago(2 * DAY) },
-      // 🔴 v2: shown(3일 전)이 eligible(1일 전)보다 **먼저**다 — 전환으로 세면 안 된다
-      { eventName: 'page_view', sessionId: 'v2', isBot: false, createdAt: ago(4 * DAY), userId: null },
+      // 🔴 v2: 노출(3일 전)이 방문 기록(1일 전)보다 **먼저**다 — 전환으로 세면 안 된다
       { eventName: 'signup_banner_shown', sessionId: 'v2', isBot: false, createdAt: ago(3 * DAY) },
-      { eventName: 'signup_banner_eligible', sessionId: 'v2', isBot: false, createdAt: ago(DAY) },
+      { eventName: 'page_view', sessionId: 'v2', isBot: false, createdAt: ago(DAY), userId: null },
     ]
-    const d = await run()
-    const c = d.signupFunnel.conversions.find((x) => x.key === 'eligible_to_exposure')!
-    expect(c.denom).toBe(2) // eligible 방문자 2
+    const d = await run(30)
+    const c = d.signupFunnel.conversions.find((x) => x.key === 'visit_to_exposure')!
+    expect(c.denom).toBe(2) // 방문자 2
     expect(c.numer).toBe(1) // v1 만 — 교집합이면 2 가 나온다
   })
 
@@ -615,14 +581,13 @@ describe('[R8-P2-2] 전환은 최초 시각끼리만 비교하지 않는다', ()
   it('앞 단계 이후에 대상 이벤트가 다시 발생했으면 전환이다', async () => {
     seedUsers()
     db.events = [
-      { eventName: 'page_view', sessionId: 'v1', isBot: false, createdAt: ago(6 * DAY), userId: null },
-      // 노출이 적격보다 먼저 한 번 있었지만, 적격 이후에 **다시** 있었다 → 전환
+      // 배너 클릭이 방문보다 먼저 한 번 있었지만(이전 세션 잔재), 노출 이후에 **다시** 있었다 → 전환
+      { eventName: 'signup_banner_clicked', sessionId: 'v1', isBot: false, createdAt: ago(6 * DAY), properties: { cta_type: 'kakao_oauth' } },
       { eventName: 'signup_banner_shown', sessionId: 'v1', isBot: false, createdAt: ago(5 * DAY) },
-      { eventName: 'signup_banner_eligible', sessionId: 'v1', isBot: false, createdAt: ago(4 * DAY) },
-      { eventName: 'signup_banner_shown', sessionId: 'v1', isBot: false, createdAt: ago(3 * DAY) },
+      { eventName: 'signup_banner_clicked', sessionId: 'v1', isBot: false, createdAt: ago(3 * DAY), properties: { cta_type: 'kakao_oauth' } },
     ]
     const d = await run(30)
-    const c = d.signupFunnel.conversions.find((x) => x.key === 'eligible_to_exposure')!
+    const c = d.signupFunnel.conversions.find((x) => x.key === 'exposure_to_banner_cta')!
     expect(c.denom).toBe(1)
     expect(c.numer).toBe(1) // 🔴 _min 끼리만 비교하면 0 이 나온다
   })
@@ -630,14 +595,13 @@ describe('[R8-P2-2] 전환은 최초 시각끼리만 비교하지 않는다', ()
   it('대상 이벤트가 앞 단계 이전에만 있으면 전환이 아니다', async () => {
     seedUsers()
     db.events = [
-      { eventName: 'page_view', sessionId: 'v2', isBot: false, createdAt: ago(6 * DAY), userId: null },
+      { eventName: 'signup_banner_clicked', sessionId: 'v2', isBot: false, createdAt: ago(6 * DAY), properties: { cta_type: 'kakao_oauth' } },
       { eventName: 'signup_banner_shown', sessionId: 'v2', isBot: false, createdAt: ago(5 * DAY) },
-      { eventName: 'signup_banner_eligible', sessionId: 'v2', isBot: false, createdAt: ago(4 * DAY) },
     ]
     const d = await run(30)
-    const c = d.signupFunnel.conversions.find((x) => x.key === 'eligible_to_exposure')!
+    const c = d.signupFunnel.conversions.find((x) => x.key === 'exposure_to_banner_cta')!
     expect(c.denom).toBe(1)
-    expect(c.numer).toBe(0)
+    expect(c.numer).toBe(0) // 클릭이 노출 이전에만 있었다
   })
 })
 
@@ -707,5 +671,148 @@ describe('[R8-P2-4] 잔존 모순이 남아 있지 않다', () => {
   it('ID 대조 전에 "3/3 = 100%" 라고 단정하지 않는다', () => {
     const doc = read('docs/operations/2026-09-10-r8-member-recovery-measurement.md')
     expect(doc).not.toMatch(/3\/3\s*=\s*100%/)
+  })
+})
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * P1 3차 보정 (2026-09-11) — 측정 '의미' 보정. 실패 테스트를 먼저 넣었다.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+describe('[R8-P3-1] eligible/shown 은 전환이 아니라 계측 일관성이다', () => {
+  /**
+   * `SignupPromptBanner.tryFire` 는 `trackEvent('signup_banner_eligible')` 와
+   * `trackEvent('signup_banner_shown')` 을 **연속 동기 호출**한다(fire-and-forget POST).
+   * 서버가 두 요청을 처리하는 순서는 경쟁 조건이라 `createdAt` 선후가 뒤집힐 수 있다.
+   * 이 둘 사이에 "전환율"을 만들면 **네트워크 경쟁을 전환 실패로 오독**한다.
+   */
+  it('적격→노출 전환율을 만들지 않는다', async () => {
+    seedUsers()
+    const d = await run()
+    expect(d.signupFunnel.conversions.map((c) => c.key)).not.toContain('eligible_to_exposure')
+  })
+
+  it('순서가 뒤집혀도 실패로 판정되지 않는다 — 일관성 지표로만 센다', async () => {
+    seedUsers()
+    db.events = [
+      { eventName: 'page_view', sessionId: 'v1', isBot: false, createdAt: ago(4 * DAY), userId: null },
+      // 🔴 shown 이 eligible 보다 먼저 기록됐다(경쟁 조건). 전환 실패가 아니다.
+      { eventName: 'signup_banner_shown', sessionId: 'v1', isBot: false, createdAt: ago(3 * DAY) },
+      { eventName: 'signup_banner_eligible', sessionId: 'v1', isBot: false, createdAt: ago(3 * DAY - 1) },
+    ]
+    const d = await run(30)
+    expect(d.bannerConsistency.matched).toBe(1)
+    expect(d.bannerConsistency.eligibleOnly).toBe(0)
+    expect(d.bannerConsistency.shownOnly).toBe(0)
+  })
+
+  it('한쪽만 있는 방문자를 분리해 센다', async () => {
+    seedUsers()
+    db.events = [
+      { eventName: 'signup_banner_eligible', sessionId: 'vE', isBot: false, createdAt: ago(3 * DAY) },
+      { eventName: 'signup_banner_shown', sessionId: 'vS', isBot: false, createdAt: ago(3 * DAY) },
+      { eventName: 'signup_banner_eligible', sessionId: 'vB', isBot: false, createdAt: ago(3 * DAY) },
+      { eventName: 'signup_banner_shown', sessionId: 'vB', isBot: false, createdAt: ago(3 * DAY) },
+    ]
+    const d = await run(30)
+    expect(d.bannerConsistency).toMatchObject({ matched: 1, eligibleOnly: 1, shownOnly: 1 })
+  })
+})
+
+describe('[R8-P3-2] 배너 반응은 CTA 전체가 먼저다', () => {
+  it('app_install·external_browser 클릭도 배너 CTA 반응으로 센다 — 실패가 아니다', async () => {
+    seedUsers()
+    db.events = [
+      { eventName: 'signup_banner_shown', sessionId: 'v1', isBot: false, createdAt: ago(3 * DAY) },
+      { eventName: 'signup_banner_shown', sessionId: 'v2', isBot: false, createdAt: ago(3 * DAY) },
+      { eventName: 'signup_banner_shown', sessionId: 'v3', isBot: false, createdAt: ago(3 * DAY) },
+      { eventName: 'signup_banner_clicked', sessionId: 'v1', isBot: false, createdAt: ago(2 * DAY), properties: { cta_type: 'kakao_oauth' } },
+      { eventName: 'signup_banner_clicked', sessionId: 'v2', isBot: false, createdAt: ago(2 * DAY), properties: { cta_type: 'app_install' } },
+      { eventName: 'signup_banner_clicked', sessionId: 'v3', isBot: false, createdAt: ago(2 * DAY), properties: { cta_type: 'external_browser' } },
+    ]
+    const d = await run(30)
+    const c = d.signupFunnel.conversions.find((x) => x.key === 'exposure_to_banner_cta')!
+    expect(c.denom).toBe(3)
+    expect(c.numer).toBe(3) // 🔴 kakao_oauth 만 세면 1 이 된다
+    expect(d.bannerCta.byType).toMatchObject({ kakao_oauth: 1, app_install: 1, external_browser: 1 })
+  })
+
+  it('카카오 OAuth 직행은 하위 분해값으로만 준다', async () => {
+    seedUsers()
+    db.events = [
+      { eventName: 'signup_banner_shown', sessionId: 'v1', isBot: false, createdAt: ago(3 * DAY) },
+      { eventName: 'signup_banner_clicked', sessionId: 'v1', isBot: false, createdAt: ago(2 * DAY), properties: { cta_type: 'app_install' } },
+    ]
+    const d = await run(30)
+    expect(d.bannerCta.anyVisitors).toBe(1)
+    expect(d.bannerCta.byType.kakao_oauth).toBe(0)
+  })
+
+  it('나중에 발생한 사이트 전체 kakao_button_click 을 배너 전환으로 귀속하지 않는다', async () => {
+    seedUsers()
+    db.events = [
+      { eventName: 'signup_banner_shown', sessionId: 'v1', isBot: false, createdAt: ago(3 * DAY) },
+      // 🔴 배너 클릭이 아니라 사이트 어딘가(로그인 화면 등)의 카카오 버튼이다
+      { eventName: 'kakao_button_click', sessionId: 'v1', isBot: false, createdAt: ago(2 * DAY) },
+    ]
+    const d = await run(30)
+    const c = d.signupFunnel.conversions.find((x) => x.key === 'exposure_to_banner_cta')!
+    expect(c.numer).toBe(0)
+    expect(d.siteWideKakaoClick.visitors).toBe(1) // 참고값으로만 남는다
+  })
+
+  it('과거 signup_banner_shown 에 cta_type 이 없다는 한계를 명시한다', async () => {
+    seedUsers()
+    const d = await run()
+    expect(d.dataQuality.some((q) => q.key === 'exposure_cta_unknown')).toBe(true)
+  })
+})
+
+describe('[R8-P3-3] 수집 완전성 판정은 ID 대조 하나뿐이다', () => {
+  it('건수 기반 signup_cross_check 항목이 없다', async () => {
+    seedUsers()
+    const d = await run()
+    expect(d.dataQuality.map((q) => q.key)).not.toContain('signup_cross_check')
+  })
+
+  it('ID 대조가 GAP 인데 OK 라고 말하는 항목이 공존하지 않는다', async () => {
+    db.users = [
+      { id: 'm1', providerId: '1', role: 'USER', createdAt: ago(3 * DAY) },
+      { id: 'm2', providerId: '2', role: 'USER', createdAt: ago(3 * DAY) },
+      { id: 'm3', providerId: '3', role: 'USER', createdAt: ago(3 * DAY) },
+    ]
+    // 이벤트 3건이지만 전부 연결 불가 → 건수만 보면 3/3 이라 OK 로 보인다
+    db.events = [
+      { eventName: 'sign_up', sessionId: 'a', isBot: false, createdAt: ago(2 * DAY) },
+      { eventName: 'sign_up', sessionId: 'b', isBot: false, createdAt: ago(2 * DAY) },
+      { eventName: 'sign_up', sessionId: 'c', isBot: false, createdAt: ago(2 * DAY) },
+    ]
+    const d = await run()
+    expect(d.signupEventCoverage.status).toBe('GAP')
+    // 완전성을 언급하는 항목 중 OK 등급이 있으면 ID 대조 GAP 과 모순된다
+    const completenessNotes = d.dataQuality.filter((q) => q.message.includes('완전성'))
+    expect(completenessNotes.every((q) => q.level !== 'OK'), '건수 비교로 완전성 OK 라고 말하는 항목이 남아 있다').toBe(true)
+    expect(d.dataQuality.map((q) => q.key)).not.toContain('signup_cross_check')
+  })
+})
+
+describe('[R8-P3-4] 잔존 문구', () => {
+  const read = (rel: string) => readFileSync(path.join(__dirname, '..', '..', rel), 'utf8')
+
+  it('철회된 "이벤트 3 vs 실제 7" 주석이 없다', () => {
+    expect(read('src/lib/queries/admin/admin.member-recovery.ts')).not.toMatch(/이벤트 3 vs 실제 7/)
+  })
+
+  it('visit 단계 설명이 소급 귀속 로직과 일치한다', async () => {
+    seedUsers()
+    const d = await run()
+    const note = d.signupFunnel.steps.find((s) => s.key === 'visit')!.note
+    expect(note).not.toMatch(/`userId` 가 없는 것만/)
+    expect(note).toMatch(/가입 전/)
+  })
+
+  it('문서가 병목을 확정으로 쓰지 않는다', () => {
+    const doc = read('docs/operations/2026-09-10-r8-member-recovery-measurement.md')
+    expect(doc).not.toMatch(/병목 확정|병목이다/)
+    expect(doc).toMatch(/직접 로그인 기록이 낮은 후보/)
   })
 })

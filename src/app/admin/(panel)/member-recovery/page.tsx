@@ -126,7 +126,7 @@ export default async function MemberRecoveryPage({ searchParams }: Props) {
   const params = await searchParams
   const windowDays = parseWindowDays(params.window)
   const data: MemberRecoveryData = await getMemberRecovery(windowDays)
-  const { activation, replyLoop, retention, signupEventCoverage: cov } = data
+  const { activation, replyLoop, retention, signupEventCoverage: cov, bannerConsistency: bc, bannerCta, siteWideKakaoClick } = data
 
   return (
     <div className="space-y-4">
@@ -175,10 +175,86 @@ export default async function MemberRecoveryPage({ searchParams }: Props) {
       </header>
 
       <Section
-        title="1단계 · 방문 → 가입 유도 노출 → 카카오 로그인 시작 → 가입 완료"
-        lead={`방문자 기준(식별자 _anon_sid = 30일 쿠키). 분모·분자를 함께 적는다. ≥ 표시는 이벤트 유실 가능성이 있어 실제 값이 그 이상이라는 뜻이다.`}
+        title="1단계 · 비회원 방문 → 가입 유도 노출 → 배너 CTA 반응 → 가입 완료"
+        lead={`방문자 기준(식별자 _anon_sid = 30일 쿠키). 분모·분자를 함께 적는다. ≥ 표시는 이벤트 유실 가능성이 있어 실제 값이 그 이상이라는 뜻이다. 노출 분모에는 CTA 종류 정보가 없어 CTA별 전환율은 만들 수 없다.`}
       >
         <FunnelTable steps={data.signupFunnel.steps} conversions={data.signupFunnel.conversions} />
+
+        <div className="mt-4 grid gap-3 lg:grid-cols-2">
+          <div className="rounded border border-zinc-200 p-3">
+            <h3 className="text-sm font-bold text-zinc-900">배너 CTA 분해 — 무엇을 눌렀나</h3>
+            <p className="mt-1 text-xs leading-5 text-zinc-500">
+              배너에는 카카오 로그인 외에 <strong>앱 설치·외부 브라우저</strong> CTA 도 있다.
+              카카오만 세면 나머지 반응이 <strong>실패로 잡힌다</strong>.
+            </p>
+            <table className="mt-2 w-full text-sm">
+              <tbody>
+                <tr className="border-b border-zinc-200 font-medium">
+                  <td className="py-1.5 pr-3 text-zinc-900">배너 CTA 반응(전체)</td>
+                  <td className="py-1.5 text-right tabular-nums">{num(bannerCta.anyVisitors)}명</td>
+                </tr>
+                <tr className="border-b border-zinc-100">
+                  <td className="py-1.5 pr-3 pl-4 text-zinc-600">↳ 카카오 로그인</td>
+                  <td className="py-1.5 text-right tabular-nums">{num(bannerCta.byType.kakao_oauth)}명</td>
+                </tr>
+                <tr className="border-b border-zinc-100">
+                  <td className="py-1.5 pr-3 pl-4 text-zinc-600">↳ 앱 설치</td>
+                  <td className="py-1.5 text-right tabular-nums">{num(bannerCta.byType.app_install)}명</td>
+                </tr>
+                <tr className="border-b border-zinc-100">
+                  <td className="py-1.5 pr-3 pl-4 text-zinc-600">↳ 외부 브라우저</td>
+                  <td className="py-1.5 text-right tabular-nums">{num(bannerCta.byType.external_browser)}명</td>
+                </tr>
+                <tr className="border-b border-zinc-100">
+                  <td className="py-1.5 pr-3 pl-4 text-zinc-600">↳ 기타·미상</td>
+                  <td className="py-1.5 text-right tabular-nums text-zinc-500">{num(bannerCta.byType.other)}명</td>
+                </tr>
+                <tr>
+                  <td className="py-1.5 pr-3 text-zinc-600">
+                    참고 — 사이트 전체 <code>kakao_button_click</code>
+                  </td>
+                  <td className="py-1.5 text-right tabular-nums text-zinc-500">{num(siteWideKakaoClick.visitors)}명</td>
+                </tr>
+              </tbody>
+            </table>
+            <p className="mt-2 text-xs leading-5 text-zinc-500">{siteWideKakaoClick.note}</p>
+          </div>
+
+          <div className="rounded border border-zinc-200 p-3">
+            <h3 className="text-sm font-bold text-zinc-900">계측 일관성 — 적격 vs 노출</h3>
+            <p className="mt-1 text-xs leading-5 text-zinc-500">
+              두 이벤트는 <strong>같은 시점에 연속 전송</strong>되므로 서버 기록 순서를 믿을 수 없다.
+              그래서 <strong>전환율을 만들지 않고</strong> 일치 여부만 본다.
+            </p>
+            <table className="mt-2 w-full text-sm">
+              <tbody>
+                <tr className="border-b border-zinc-100">
+                  <td className="py-1.5 pr-3 text-zinc-600">적격 방문자</td>
+                  <td className="py-1.5 text-right tabular-nums">{num(bc.eligibleVisitors)}명</td>
+                </tr>
+                <tr className="border-b border-zinc-100">
+                  <td className="py-1.5 pr-3 text-zinc-600">노출 방문자</td>
+                  <td className="py-1.5 text-right tabular-nums">{num(bc.shownVisitors)}명</td>
+                </tr>
+                <tr className="border-b border-zinc-200 font-medium">
+                  <td className="py-1.5 pr-3 text-zinc-900">둘 다 있음(정상)</td>
+                  <td className="py-1.5 text-right tabular-nums">{num(bc.matched)}명</td>
+                </tr>
+                <tr className="border-b border-zinc-100">
+                  <td className="py-1.5 pr-3 text-amber-700">적격만 있음</td>
+                  <td className="py-1.5 text-right tabular-nums text-amber-700">{num(bc.eligibleOnly)}명</td>
+                </tr>
+                <tr>
+                  <td className="py-1.5 pr-3 text-amber-700">노출만 있음</td>
+                  <td className="py-1.5 text-right tabular-nums text-amber-700">{num(bc.shownOnly)}명</td>
+                </tr>
+              </tbody>
+            </table>
+            <p className="mt-2 text-xs leading-5 text-zinc-500">
+              한쪽만 있는 방문자는 <strong>전환 실패가 아니라 전송 유실</strong> 신호다.
+            </p>
+          </div>
+        </div>
 
         <div className="mt-4 rounded border border-amber-200 bg-amber-50 p-3">
           <h3 className="text-sm font-bold text-amber-900">
