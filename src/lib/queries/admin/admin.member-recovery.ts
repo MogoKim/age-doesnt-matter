@@ -55,8 +55,12 @@ export type CollectionStatus =
 export interface FunnelStep {
   key: string
   label: string
-  /** 세션 수. `null` 이면 미수집(0 이 아니다) */
-  sessions: number | null
+  /**
+   * **방문자 수**(세션 수가 아니다).
+   * 식별자 `_anon_sid` 는 `maxAge = 30일` 쿠키라 한 사람이 여러 번 와도 같은 값이다.
+   * `null` 이면 미수집 — 0 이 아니다.
+   */
+  visitors: number | null
   status: CollectionStatus
   note: string
 }
@@ -81,6 +85,10 @@ export interface Conversion {
   note: string
 }
 
+/**
+ * 첫 참여는 **D1 기준**이다 — 가입 후 24시간 이내 작성만 성공으로 센다.
+ * 기간을 열어두면 "언젠가는 썼다"가 섞여 첫 참여 실패가 가려진다.
+ */
 export interface ActivationCohort {
   /** 창 안에 가입한 실회원 전체 */
   cohortTotal: number
@@ -88,12 +96,15 @@ export interface ActivationCohort {
   immature: number
   /** 성숙 분모 = cohortTotal − immature */
   matureDenom: number
-  wrotePost: number
-  wroteComment: number
-  wroteAny: number
+  wrotePostWithin24h: number
+  wroteCommentWithin24h: number
+  /** 분자 — 가입 후 24시간 이내에 글 또는 댓글을 쓴 사람 */
+  wroteAnyWithin24h: number
+  /** D1 은 실패했지만 그 뒤에 쓴 사람. **분자가 아니다** — 참고용으로만 센다 */
+  wroteAnyLater: number
   rate: number | null
   status: RateStatus
-  /** 첫 작성까지 걸린 시간의 중앙값(시간). 작성자가 없으면 null */
+  /** 첫 작성까지 걸린 시간의 중앙값(시간). 24시간 초과분도 포함한 관측값 */
   medianHoursToFirst: number | null
 }
 
@@ -107,14 +118,32 @@ export interface ReplyLoop {
   /** 쓴 지 24시간이 안 돼 답글이 달릴 시간이 없었던 댓글 — 분모에서 뺀다 */
   immature: number
   matureDenom: number
-  /** 그 중 **다른 실회원**의 답글을 받은 댓글 수 */
+  /** 분자 — **24시간 이내**에 **다른 실회원**의 답글을 받은 댓글 수 */
   gotReplyFromMember: number
-  /** 답글은 받았으나 전부 본인 것 — 루프로 세지 않는다 */
+  /** 다른 실회원의 답글이 있었으나 24시간을 넘겼다. 루프로 세지 않고 따로 본다 */
+  lateMemberReply: number
+  /** 답글이 전부 본인 것 */
   selfReplyOnly: number
-  /** 답글은 받았으나 전부 봇·비회원 — 루프로 세지 않는다 */
+  /** 답글이 전부 봇·비회원 */
   nonMemberReplyOnly: number
+  /** 본인 답글과 봇·비회원 답글이 **섞인** 경우. 어느 한쪽으로 몰아 세면 오독된다 */
+  selfAndNonMemberReply: number
   rate: number | null
   status: RateStatus
+}
+
+/**
+ * `sign_up` **이벤트 수**와 **실제 가입자 수**는 다르다 — 섞어 읽으면 "가입에서 끊겼다"고 오판한다.
+ * production 실측(2026-09-10 30일): 이벤트 3 vs 실제 7.
+ */
+export interface SignupEventCoverage {
+  /** `sign_up` 이벤트를 낸 방문자 수 */
+  events: number
+  /** `User.createdAt` 기준 실제 신규 실회원 수 — 이쪽이 사실이다 */
+  actualNewMembers: number
+  /** events / actualNewMembers. 분모 0이면 null */
+  rate: number | null
+  status: 'OK' | 'PARTIAL' | 'GAP' | 'NO_DENOM'
 }
 
 export interface MemberRetentionView {
@@ -145,6 +174,8 @@ export interface MemberRecoveryData {
     steps: FunnelStep[]
     conversions: Conversion[]
   }
+  /** 퍼널 마지막 칸을 해석하기 전에 반드시 함께 읽는다 */
+  signupEventCoverage: SignupEventCoverage
   activation: ActivationCohort
   replyLoop: ReplyLoop
   retention: MemberRetentionView
@@ -162,27 +193,48 @@ function median(values: number[]): number | null {
 }
 
 /**
- * 이벤트별 **세션 집합**. `groupBy` 라 DB 에서 중복이 제거된다 —
+ * 이벤트별 **방문자 → 최초 발생 시각**. `groupBy` 라 DB 에서 집계되므로
  * `page_view` 처럼 행이 많은 이벤트를 전부 끌어오지 않는다.
+ *
+ * 최초 시각이 필요한 이유: 퍼널은 **순서가 있는** 전환이다.
+ * 단순 집합 교집합은 "배너를 본 뒤 눌렀다"와 "누른 뒤 배너를 봤다"를 구분하지 못한다.
  */
-async function sessionSet(
+async function visitorFirstAt(
   where: Record<string, unknown>,
   internal: Set<string>,
-): Promise<Set<string>> {
-  const rows = await prisma.eventLog.groupBy({ by: ['sessionId'], where })
-  const out = new Set<string>()
+): Promise<Map<string, number>> {
+  const rows = await prisma.eventLog.groupBy({ by: ['sessionId'], where, _min: { createdAt: true } })
+  const out = new Map<string, number>()
   for (const r of rows) {
     if (!r.sessionId) continue
-    if (internal.has(r.sessionId)) continue // 창업자·어드민 세션 제외
-    out.add(r.sessionId)
+    if (internal.has(r.sessionId)) continue // 창업자·어드민 방문자 제외
+    const t = r._min?.createdAt
+    if (!t) continue
+    out.set(r.sessionId, t.getTime())
   }
   return out
 }
 
-const intersect = (a: Set<string>, b: Set<string>): number => {
+/** 앞 단계를 밟은 방문자 중, **그 시각 이후에** 다음 단계를 밟은 수. */
+function advancedAfter(from: Map<string, number>, to: Map<string, number>): number {
   let n = 0
-  for (const v of a) if (b.has(v)) n++
+  for (const [id, t0] of from) {
+    const t1 = to.get(id)
+    if (t1 != null && t1 >= t0) n++
+  }
   return n
+}
+
+/** 두 이벤트 계열의 합집합 — 방문자별로 **더 이른** 시각을 취한다. */
+function earliestUnion(...maps: Map<string, number>[]): Map<string, number> {
+  const out = new Map<string, number>()
+  for (const m of maps) {
+    for (const [id, t] of m) {
+      const cur = out.get(id)
+      if (cur == null || t < cur) out.set(id, t)
+    }
+  }
+  return out
 }
 
 async function computeMemberRecovery(windowDays: number): Promise<MemberRecoveryData> {
@@ -202,85 +254,99 @@ async function computeMemberRecovery(windowDays: number): Promise<MemberRecovery
   // ───────── 1단계: 방문 → 가입 유도 노출 → 카카오 로그인 시작 → 가입 완료 ─────────
   const base = { isBot: false, createdAt: { gte: since }, sessionId: { not: null } } as const
 
-  const [visit, exposure, kakaoBtn, bannerKakao, signup] = await Promise.all([
-    sessionSet({ ...base, eventName: 'page_view' }, internal),
-    sessionSet({ ...base, eventName: 'signup_banner_shown' }, internal),
-    sessionSet({ ...base, eventName: 'kakao_button_click' }, internal),
-    sessionSet(
+  const [visit, eligible, exposure, kakaoBtn, bannerKakao, signup] = await Promise.all([
+    // 🔴 가입 퍼널의 분모는 **비회원 방문**이다. 이미 로그인한 회원의 방문을 넣으면
+    //    분모가 부풀어 "가입 유도 노출률"이 실제보다 낮게 보인다.
+    visitorFirstAt({ ...base, eventName: 'page_view', userId: null }, internal),
+    visitorFirstAt({ ...base, eventName: 'signup_banner_eligible' }, internal),
+    visitorFirstAt({ ...base, eventName: 'signup_banner_shown' }, internal),
+    visitorFirstAt({ ...base, eventName: 'kakao_button_click' }, internal),
+    visitorFirstAt(
       { ...base, eventName: 'signup_banner_clicked', properties: { path: ['cta_type'], equals: 'kakao_oauth' } },
       internal,
     ),
-    sessionSet({ ...base, eventName: 'sign_up' }, internal),
+    visitorFirstAt({ ...base, eventName: 'sign_up' }, internal),
   ])
 
   // 로그인 시작 = 공용 CTA 버튼(kakao_button_click) ∪ 배너의 카카오 CTA
-  const loginStart = new Set<string>([...kakaoBtn, ...bannerKakao])
+  const loginStart = earliestUnion(kakaoBtn, bannerKakao)
+
+  const signupCoverageRate = rateOf(signup.size, cohort.length)
+  const coverageStatus: SignupEventCoverage['status'] =
+    cohort.length === 0 ? 'NO_DENOM' : signup.size === 0 ? 'GAP' : signup.size < cohort.length ? 'PARTIAL' : 'OK'
 
   const steps: FunnelStep[] = [
     {
       key: 'visit',
-      label: '방문',
-      sessions: visit.size,
+      label: '비회원 방문자',
+      visitors: visit.size,
       status: 'COLLECTED',
-      note: '`page_view` 세션 수(봇·내부 세션 제외)',
+      note: '`page_view` 중 `userId` 가 없는 것만 — 이미 로그인한 회원은 가입 퍼널의 분모가 아니다. 봇·내부 방문자 제외',
+    },
+    {
+      key: 'eligible',
+      label: '가입 유도 적격',
+      visitors: eligible.size,
+      status: 'COLLECTED',
+      note: '`signup_banner_eligible` — 배너 노출 조건을 만족한 방문자. 노출 직전 단계라 "보여줄 수 있었는데 안 보여준" 구간이 여기서 드러난다',
     },
     {
       key: 'exposure',
       label: '가입 유도 노출',
-      sessions: exposure.size,
+      visitors: exposure.size,
       status: 'COLLECTED',
       note: '`signup_banner_shown`. 앱 설치 유도(`android_conversion_prompt_*`)·띠배너(`top_promo_*`)는 가입 배너가 아니라 제외',
     },
     {
       key: 'login_start',
       label: '카카오 로그인 시작',
-      sessions: loginStart.size,
+      visitors: loginStart.size,
       status: 'PARTIAL',
       note: '`kakao_button_click` ∪ `signup_banner_clicked{cta_type:kakao_oauth}`. `kakao_button_click` 은 rate limit 면제 목록에 없어 **유실 가능** → 하한값',
     },
     {
       key: 'signup_done',
-      label: '가입 완료',
-      sessions: signup.size,
-      status: 'COLLECTED',
-      note: '`sign_up` 이벤트 세션 수. 같은 창의 `User.createdAt` 기준 신규 실회원 수와 함께 본다',
+      label: '가입 완료(이벤트)',
+      visitors: signup.size,
+      // 🔴 실측상 이벤트가 실제 가입자보다 적다. 절대 COLLECTED 로 표시하지 않는다 —
+      //    이 칸을 사실로 읽으면 "가입에서 끊겼다"는 잘못된 결론이 나온다.
+      status: coverageStatus === 'GAP' ? 'NOT_COLLECTED' : 'PARTIAL',
+      note: `이벤트 기준이다. 실제 신규 실회원은 **${cohort.length}명**(\`User.createdAt\`). 수집 완전성은 별도 지표로 본다`,
     },
   ]
 
+  // 🔴 전환은 **순서가 있다.** 앞 단계 시각 이후에 다음 단계가 있어야 전환이다.
+  //    단순 집합 교집합을 쓰면 "누른 뒤 배너를 본" 방문자까지 전환으로 세게 된다.
+  const step = (
+    key: string,
+    label: string,
+    from: Map<string, number>,
+    fromLabel: string,
+    to: Map<string, number>,
+    toLabel: string,
+    status: RateStatus,
+    note: string,
+  ): Conversion => {
+    const numer = advancedAfter(from, to)
+    return {
+      key, label,
+      denom: from.size, denomLabel: fromLabel,
+      numer, numerLabel: toLabel,
+      rate: rateOf(numer, from.size),
+      status: from.size > 0 ? status : 'NO_DENOM',
+      note,
+    }
+  }
+
   const conversions: Conversion[] = [
-    {
-      key: 'visit_to_exposure',
-      label: '방문 → 가입 유도 노출',
-      denom: visit.size,
-      denomLabel: '방문 세션',
-      numer: intersect(exposure, visit),
-      numerLabel: '노출된 방문 세션',
-      rate: rateOf(intersect(exposure, visit), visit.size),
-      status: visit.size > 0 ? 'OK' : 'NO_DENOM',
-      note: '배너는 로그인·온보딩·어드민 경로에서 노출되지 않는다 — 100% 가 목표가 아니다',
-    },
-    {
-      key: 'exposure_to_login_start',
-      label: '가입 유도 노출 → 카카오 로그인 시작',
-      denom: exposure.size,
-      denomLabel: '노출 세션',
-      numer: intersect(loginStart, exposure),
-      numerLabel: '노출 후 로그인 시작 세션',
-      rate: rateOf(intersect(loginStart, exposure), exposure.size),
-      status: exposure.size > 0 ? 'PARTIAL' : 'NO_DENOM',
-      note: '분자가 하한값(로그인 시작 이벤트 유실 가능) — 실제 비율은 이 값 이상',
-    },
-    {
-      key: 'login_start_to_signup',
-      label: '카카오 로그인 시작 → 가입 완료',
-      denom: loginStart.size,
-      denomLabel: '로그인 시작 세션',
-      numer: intersect(signup, loginStart),
-      numerLabel: '같은 세션에서 가입 완료',
-      rate: rateOf(intersect(signup, loginStart), loginStart.size),
-      status: loginStart.size > 0 ? 'PARTIAL' : 'NO_DENOM',
-      note: '카카오 OAuth 왕복 중 세션이 갈리면 같은 세션으로 안 잡힌다 — 하한값',
-    },
+    step('visit_to_eligible', '비회원 방문 → 가입 유도 적격', visit, '비회원 방문자', eligible, '이후 적격이 된 방문자', 'OK',
+      '배너는 로그인·온보딩·어드민 경로에서 뜨지 않는다 — 100% 가 목표가 아니다'),
+    step('eligible_to_exposure', '가입 유도 적격 → 노출', eligible, '적격 방문자', exposure, '이후 실제로 노출된 방문자', 'OK',
+      '적격인데 노출이 안 됐다면 배너 노출 조건·타이밍을 본다'),
+    step('exposure_to_login_start', '가입 유도 노출 → 카카오 로그인 시작', exposure, '노출 방문자', loginStart, '노출 이후 로그인 시작', 'PARTIAL',
+      '분자가 하한값(로그인 시작 이벤트 유실 가능) — 실제 비율은 이 값 이상'),
+    step('login_start_to_signup', '카카오 로그인 시작 → 가입 완료(이벤트)', loginStart, '로그인 시작 방문자', signup, '이후 가입 이벤트 발생', 'PARTIAL',
+      '이벤트 기준이다. 카카오 OAuth 왕복으로 식별자가 갈리거나 이벤트가 유실되면 낮게 나온다 — **가입 실패로 읽지 마라**'),
   ]
 
   // ───────── 2단계: 가입 → 첫 글 또는 첫 댓글 ─────────
@@ -302,31 +368,38 @@ async function computeMemberRecovery(windowDays: number): Promise<MemberRecovery
   // 가입 직후는 '아직 안 썼다'가 아니라 '판정할 시간이 없었다'
   const matureCohort = cohort.filter((u) => now - u.createdAt.getTime() >= DAY)
   const hoursToFirst: number[] = []
-  let wrotePost = 0
-  let wroteComment = 0
-  let wroteAny = 0
+  let wrotePostWithin24h = 0
+  let wroteCommentWithin24h = 0
+  let wroteAnyWithin24h = 0
+  let wroteAnyLater = 0
   for (const u of matureCohort) {
+    const joined = u.createdAt.getTime()
     const p = firstPostAt.get(u.id)
     const c = firstCommentAt.get(u.id)
-    if (p != null) wrotePost++
-    if (c != null) wroteComment++
+    // 🔴 D1 기준 — 가입 시각으로부터 24시간 이내만 성공이다.
+    //    기간을 열어두면 "언젠가는 썼다"가 섞여 첫 참여 실패가 가려진다.
+    if (p != null && p - joined <= DAY) wrotePostWithin24h++
+    if (c != null && c - joined <= DAY) wroteCommentWithin24h++
     const first = Math.min(p ?? Infinity, c ?? Infinity)
     if (Number.isFinite(first)) {
-      wroteAny++
-      hoursToFirst.push(Math.max(0, (first - u.createdAt.getTime()) / HOUR))
+      hoursToFirst.push(Math.max(0, (first - joined) / HOUR))
+      if (first - joined <= DAY) wroteAnyWithin24h++
+      else wroteAnyLater++
     }
   }
+  const medianHours = median(hoursToFirst)
 
   const activation: ActivationCohort = {
     cohortTotal: cohort.length,
     immature: cohort.length - matureCohort.length,
     matureDenom: matureCohort.length,
-    wrotePost,
-    wroteComment,
-    wroteAny,
-    rate: rateOf(wroteAny, matureCohort.length),
+    wrotePostWithin24h,
+    wroteCommentWithin24h,
+    wroteAnyWithin24h,
+    wroteAnyLater,
+    rate: rateOf(wroteAnyWithin24h, matureCohort.length),
     status: matureCohort.length > 0 ? 'OK' : 'NO_DENOM',
-    medianHoursToFirst: median(hoursToFirst) != null ? Math.round((median(hoursToFirst) as number) * 10) / 10 : null,
+    medianHoursToFirst: medianHours != null ? Math.round(medianHours * 10) / 10 : null,
   }
 
   // ───────── 3단계: 실회원 댓글 → 다른 실회원의 답글 ─────────
@@ -342,41 +415,63 @@ async function computeMemberRecovery(windowDays: number): Promise<MemberRecovery
   const replies = matureIds.length
     ? await prisma.comment.findMany({
         where: { parentId: { in: matureIds }, status: 'ACTIVE' },
-        select: { parentId: true, authorId: true },
+        // 🔴 createdAt 을 반드시 읽는다 — 24시간 안에 왔는지 판정해야 한다.
+        select: { parentId: true, authorId: true, createdAt: true },
       })
     : []
 
   const realIdSet = new Set(realIds)
+  const parentAt = new Map<string, number>()
   const parentAuthor = new Map<string, string | null>()
-  for (const c of matureComments) parentAuthor.set(c.id, c.authorId)
+  for (const c of matureComments) {
+    parentAt.set(c.id, c.createdAt.getTime())
+    parentAuthor.set(c.id, c.authorId)
+  }
 
-  const byMember = new Set<string>()
-  const anyReply = new Set<string>()
-  const selfOnlyCandidate = new Set<string>()
+  /** 댓글별로 어떤 답글이 왔는지 분해한다. 한쪽으로 몰아 세지 않기 위해서다. */
+  const kinds = new Map<string, { inTime: boolean; lateMember: boolean; self: boolean; nonMember: boolean }>()
   for (const r of replies) {
     if (!r.parentId) continue
-    anyReply.add(r.parentId)
-    if (r.authorId && realIdSet.has(r.authorId)) {
-      if (r.authorId === parentAuthor.get(r.parentId)) selfOnlyCandidate.add(r.parentId)
-      else byMember.add(r.parentId) // 🔴 '다른' 실회원만 루프로 센다
+    const t0 = parentAt.get(r.parentId)
+    if (t0 == null) continue
+    const k = kinds.get(r.parentId) ?? { inTime: false, lateMember: false, self: false, nonMember: false }
+    const within24h = r.createdAt.getTime() - t0 <= DAY
+    if (r.authorId && realIdSet.has(r.authorId) && r.authorId !== parentAuthor.get(r.parentId)) {
+      // 다른 실회원의 답글 — 24시간 안에 온 것만 루프로 센다
+      if (within24h) k.inTime = true
+      else k.lateMember = true
+    } else if (r.authorId && r.authorId === parentAuthor.get(r.parentId)) {
+      k.self = true
+    } else {
+      k.nonMember = true // 봇 또는 비회원(authorId NULL)
     }
+    kinds.set(r.parentId, k)
   }
+
+  let gotReplyFromMember = 0
+  let lateMemberReply = 0
   let selfReplyOnly = 0
   let nonMemberReplyOnly = 0
-  for (const id of anyReply) {
-    if (byMember.has(id)) continue
-    if (selfOnlyCandidate.has(id)) selfReplyOnly++
-    else nonMemberReplyOnly++
+  let selfAndNonMemberReply = 0
+  for (const k of kinds.values()) {
+    if (k.inTime) { gotReplyFromMember++; continue }
+    if (k.lateMember) { lateMemberReply++; continue }
+    // 🔴 본인·봇이 섞였는데 '본인 답글뿐'으로 표시하면 오독된다 — 별도 칸으로 센다.
+    if (k.self && k.nonMember) selfAndNonMemberReply++
+    else if (k.self) selfReplyOnly++
+    else if (k.nonMember) nonMemberReplyOnly++
   }
 
   const replyLoop: ReplyLoop = {
     memberComments: memberComments.length,
     immature: memberComments.length - matureComments.length,
     matureDenom: matureComments.length,
-    gotReplyFromMember: byMember.size,
+    gotReplyFromMember,
+    lateMemberReply,
     selfReplyOnly,
     nonMemberReplyOnly,
-    rate: rateOf(byMember.size, matureComments.length),
+    selfAndNonMemberReply,
+    rate: rateOf(gotReplyFromMember, matureComments.length),
     status: matureComments.length > 0 ? 'OK' : 'NO_DENOM',
   }
 
@@ -429,6 +524,20 @@ async function computeMemberRecovery(windowDays: number): Promise<MemberRecovery
         '카카오 OAuth 는 외부 도메인을 왕복한다. 복귀 시 세션 식별자가 바뀌면 "로그인 시작 → 가입 완료"가 같은 세션으로 안 이어져 전환율이 실제보다 낮게 나온다.',
     },
     {
+      key: 'visitor_id_semantics',
+      level: 'OK',
+      message:
+        '퍼널의 단위는 **방문자**다. 식별자 `_anon_sid` 는 `maxAge = 30일` 쿠키라 한 사람이 여러 번 와도 같은 값이다 — ' +
+        '"세션"으로 읽으면 방문 횟수로 오해한다. 쿠키·localStorage 를 지우거나 기기를 바꾸면 다른 방문자로 잡힌다.',
+    },
+    {
+      key: 'funnel_ordering',
+      level: 'OK',
+      message:
+        '전환은 **시간 순서**로 센다 — 앞 단계 최초 발생 이후에 다음 단계가 있어야 전환이다. ' +
+        '집합 교집합이 아니라서 "누른 뒤 배너를 본" 방문자는 전환에 들어가지 않는다.',
+    },
+    {
       key: 'signup_cross_check',
       // 🔴 이벤트 0 만 잡으면 부족하다. production 실측(2026-09-10): 30일 신규 실회원 7명 vs
       //    `sign_up` 이벤트 3건 — 절반 이상 유실인데도 "0 이 아니니 정상"으로 넘어갔다.
@@ -448,7 +557,7 @@ async function computeMemberRecovery(windowDays: number): Promise<MemberRecovery
           : signup.size === 0
             ? '이벤트가 0인데 실제 가입자가 있다 — **이벤트 미수집**이므로 퍼널 마지막 칸을 0% 로 읽지 마라.'
             : signup.size < cohort.length / 2
-              ? `이벤트가 실제 가입자의 절반에 못 미친다(${signup.size}/${cohort.length}) — **유실 의심**. 퍼널의 가입 완료 칸은 하한값으로 읽어라.`
+              ? `이벤트가 실제 가입자의 절반에 못 미친다(${signup.size}/${cohort.length}) — **유실 의심**. 퍼널의 가입 완료 칸은 하한값이며, 이것을 "가입에서 끊겼다"로 읽으면 안 된다.`
               : '두 값이 크게 어긋나지 않는다.'),
     },
     {
@@ -470,6 +579,12 @@ async function computeMemberRecovery(windowDays: number): Promise<MemberRecovery
     realMemberTotal: realUsers.length,
     newMembers: cohort.length,
     signupFunnel: { steps, conversions },
+    signupEventCoverage: {
+      events: signup.size,
+      actualNewMembers: cohort.length,
+      rate: signupCoverageRate,
+      status: coverageStatus,
+    },
     activation,
     replyLoop,
     retention,

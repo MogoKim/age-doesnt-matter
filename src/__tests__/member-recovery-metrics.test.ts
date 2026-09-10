@@ -22,6 +22,8 @@ interface EventRow {
   sessionId: string | null
   isBot: boolean
   createdAt: Date
+  /** 로그인 회원이 낸 이벤트면 값이 있다. 비회원 방문 분모를 가르는 축이다. */
+  userId?: string | null
   path?: string | null
   botType?: string | null
   properties?: Record<string, unknown> | null
@@ -41,7 +43,8 @@ interface EventWhere {
   isBot?: boolean
   createdAt?: { gte?: Date }
   sessionId?: { not?: null }
-  eventName?: string
+  userId?: null | { in: string[] }
+  eventName?: string | { in: string[] }
   properties?: { path?: string[]; equals?: unknown }
   OR?: { path?: { startsWith?: string }; botType?: string | null }[]
 }
@@ -65,14 +68,21 @@ vi.mock('@/lib/prisma', () => ({
           if (where.isBot !== undefined && e.isBot !== where.isBot) return false
           if (where.createdAt?.gte && e.createdAt < where.createdAt.gte) return false
           if (where.sessionId?.not === null && e.sessionId == null) return false
-          if (where.eventName && e.eventName !== where.eventName) return false
+          if (where.userId === null && (e.userId ?? null) !== null) return false
+          if (typeof where.eventName === 'string' && e.eventName !== where.eventName) return false
           if (where.properties?.path) {
             const [key] = where.properties.path
             if ((e.properties?.[key] ?? null) !== where.properties.equals) return false
           }
           return true
         })
-        return [...new Set(rows.map((r) => r.sessionId))].map((sessionId) => ({ sessionId }))
+        // 순서 검증을 하려면 방문자별 **최초 시각**이 필요하다 — _min 집계를 흉내낸다.
+        const min = new Map<string | null, Date>()
+        for (const r of rows) {
+          const cur = min.get(r.sessionId)
+          if (!cur || r.createdAt < cur) min.set(r.sessionId, r.createdAt)
+        }
+        return [...min].map(([sessionId, createdAt]) => ({ sessionId, _min: { createdAt } }))
       },
       findMany: async ({ where }: { where: EventWhere }) => {
         const rows = db.events.filter((e) => {
@@ -213,14 +223,14 @@ describe('[R8-2] 1단계 퍼널 — 내부 세션과 봇을 분모에서 뺀다'
     ]
   })
 
-  it('방문 세션은 봇·내부를 뺀 3건이다', async () => {
+  it('비회원 방문자는 봇·내부를 뺀 3명이다', async () => {
     const d = await run()
-    expect(d.signupFunnel.steps.find((s) => s.key === 'visit')?.sessions).toBe(3)
+    expect(d.signupFunnel.steps.find((s) => s.key === 'visit')?.visitors).toBe(3)
   })
 
   it('로그인 시작 = kakao_button_click ∪ 배너 카카오 CTA — app_install 은 안 센다', async () => {
     const d = await run()
-    expect(d.signupFunnel.steps.find((s) => s.key === 'login_start')?.sessions).toBe(2) // s1, s2
+    expect(d.signupFunnel.steps.find((s) => s.key === 'login_start')?.visitors).toBe(2) // s1, s2
   })
 
   it('전환마다 분모·분자를 함께 돌려준다', async () => {
@@ -257,7 +267,7 @@ describe('[R8-4] 2단계 — 미성숙 코호트를 분모에서 빼고 따로 �
     expect(d.activation.cohortTotal).toBe(2)
     expect(d.activation.immature).toBe(1) // u2 (2시간 전 가입)
     expect(d.activation.matureDenom).toBe(1)
-    expect(d.activation.wroteAny).toBe(1)
+    expect(d.activation.wroteAnyWithin24h).toBe(1)
     expect(d.activation.rate).toBe(100) // 1/1 — u2 를 분모에 넣었으면 50% 로 오판했다
   })
 
@@ -399,5 +409,140 @@ describe('[R8-8] 관측 창', () => {
     ]
     expect((await run(7)).newMembers).toBe(1)
     expect((await run(30)).newMembers).toBe(2)
+  })
+})
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * P1 측정 정확성 보정 (2026-09-10) — 아래는 **먼저 실패시켜 놓고** 고친 항목이다.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+describe('[R8-P1-1] 퍼널 단위 — 비회원 방문 · eligible 단계 · 시간 순서', () => {
+  it('로그인 회원의 page_view 는 방문 분모에서 뺀다', async () => {
+    seedUsers()
+    db.events = [
+      { eventName: 'page_view', sessionId: 'v1', isBot: false, createdAt: ago(2 * DAY), userId: null },
+      { eventName: 'page_view', sessionId: 'v2', isBot: false, createdAt: ago(2 * DAY), userId: null },
+      // 🔴 이미 로그인한 회원 — 가입 퍼널의 분모가 아니다
+      { eventName: 'page_view', sessionId: 'vMember', isBot: false, createdAt: ago(2 * DAY), userId: 'u1' },
+    ]
+    const d = await run()
+    expect(d.signupFunnel.steps.find((s) => s.key === 'visit')?.visitors).toBe(2)
+  })
+
+  it('signup_banner_eligible 단계를 퍼널에 포함한다', async () => {
+    seedUsers()
+    const d = await run()
+    const keys = d.signupFunnel.steps.map((s) => s.key)
+    expect(keys).toEqual(['visit', 'eligible', 'exposure', 'login_start', 'signup_done'])
+  })
+
+  it('시간 순서가 뒤집힌 전환은 세지 않는다 — 단순 교집합이면 오답이 나온다', async () => {
+    seedUsers()
+    db.events = [
+      // v1: eligible(3일 전) → shown(2일 전). 정상 순서
+      { eventName: 'page_view', sessionId: 'v1', isBot: false, createdAt: ago(4 * DAY), userId: null },
+      { eventName: 'signup_banner_eligible', sessionId: 'v1', isBot: false, createdAt: ago(3 * DAY) },
+      { eventName: 'signup_banner_shown', sessionId: 'v1', isBot: false, createdAt: ago(2 * DAY) },
+      // 🔴 v2: shown(3일 전)이 eligible(1일 전)보다 **먼저**다 — 전환으로 세면 안 된다
+      { eventName: 'page_view', sessionId: 'v2', isBot: false, createdAt: ago(4 * DAY), userId: null },
+      { eventName: 'signup_banner_shown', sessionId: 'v2', isBot: false, createdAt: ago(3 * DAY) },
+      { eventName: 'signup_banner_eligible', sessionId: 'v2', isBot: false, createdAt: ago(DAY) },
+    ]
+    const d = await run()
+    const c = d.signupFunnel.conversions.find((x) => x.key === 'eligible_to_exposure')!
+    expect(c.denom).toBe(2) // eligible 방문자 2
+    expect(c.numer).toBe(1) // v1 만 — 교집합이면 2 가 나온다
+  })
+
+  it('방문자 식별자를 "세션"이라고 부르지 않는다 — _anon_sid 는 30일 쿠키다', async () => {
+    seedUsers()
+    const d = await run()
+    const text = JSON.stringify(d.signupFunnel) + JSON.stringify(d.dataQuality)
+    expect(text).toContain('방문자')
+    expect(d.dataQuality.some((q) => q.key === 'visitor_id_semantics')).toBe(true)
+  })
+})
+
+describe('[R8-P1-2] 가입 이벤트와 실제 가입자를 분리한다', () => {
+  it('sign_up 단계는 COLLECTED 로 표시하지 않는다', async () => {
+    seedUsers()
+    db.events = [{ eventName: 'sign_up', sessionId: 'v1', isBot: false, createdAt: ago(DAY) }]
+    const d = await run()
+    expect(d.signupFunnel.steps.find((s) => s.key === 'signup_done')?.status).not.toBe('COLLECTED')
+  })
+
+  it('실제 가입자 수와 이벤트 수집 완전성을 별도 지표로 준다', async () => {
+    db.users = [
+      { id: 'a', providerId: '1', role: 'USER', createdAt: ago(3 * DAY) },
+      { id: 'b', providerId: '2', role: 'USER', createdAt: ago(3 * DAY) },
+      { id: 'c', providerId: '3', role: 'USER', createdAt: ago(3 * DAY) },
+    ]
+    db.events = [{ eventName: 'sign_up', sessionId: 'v1', isBot: false, createdAt: ago(DAY) }]
+    const d = await run()
+    expect(d.signupEventCoverage.actualNewMembers).toBe(3)
+    expect(d.signupEventCoverage.events).toBe(1)
+    expect(d.signupEventCoverage.rate).toBe(33.3)
+    expect(d.signupEventCoverage.status).toBe('PARTIAL')
+  })
+})
+
+describe('[R8-P1-3] 첫 참여는 D1 기준이다', () => {
+  it('가입 25시간 뒤 작성은 D1 성공이 아니다', async () => {
+    db.users = [{ id: 'u1', providerId: '1001', role: 'USER', createdAt: ago(5 * DAY) }]
+    // 가입 5일 전 → 첫 글은 가입 후 25시간
+    db.posts = [{ authorId: 'u1', createdAt: ago(5 * DAY - 25 * HOUR) }]
+    const d = await run()
+    expect(d.activation.matureDenom).toBe(1)
+    expect(d.activation.wroteAnyWithin24h).toBe(0) // 🔴 24시간 규칙이 없으면 1
+    expect(d.activation.rate).toBe(0)
+    expect(d.activation.wroteAnyLater).toBe(1) // 나중에 쓴 것은 따로 센다
+  })
+
+  it('가입 3시간 뒤 작성은 D1 성공이다', async () => {
+    db.users = [{ id: 'u1', providerId: '1001', role: 'USER', createdAt: ago(5 * DAY) }]
+    db.posts = [{ authorId: 'u1', createdAt: ago(5 * DAY - 3 * HOUR) }]
+    const d = await run()
+    expect(d.activation.wroteAnyWithin24h).toBe(1)
+    expect(d.activation.rate).toBe(100)
+  })
+})
+
+describe('[R8-P1-4] 답글 루프도 24시간 기준이다', () => {
+  it('25시간 뒤 답글은 분자가 아니라 늦은 답글로 센다', async () => {
+    seedUsers()
+    db.comments = [
+      { id: 'c1', authorId: 'u1', parentId: null, status: 'ACTIVE', createdAt: ago(5 * DAY) },
+      { id: 'r1', authorId: 'u2', parentId: 'c1', status: 'ACTIVE', createdAt: ago(5 * DAY - 25 * HOUR) },
+    ]
+    const d = await run(30)
+    expect(d.replyLoop.gotReplyFromMember).toBe(0) // 🔴 시간 조건이 없으면 1
+    expect(d.replyLoop.lateMemberReply).toBe(1)
+  })
+
+  it('본인 답글과 봇 답글이 섞이면 "본인 답글뿐"으로 세지 않는다', async () => {
+    seedUsers()
+    db.comments = [
+      { id: 'c1', authorId: 'u1', parentId: null, status: 'ACTIVE', createdAt: ago(5 * DAY) },
+      { id: 'rSelf', authorId: 'u1', parentId: 'c1', status: 'ACTIVE', createdAt: ago(5 * DAY - HOUR) },
+      { id: 'rBot', authorId: 'bot', parentId: 'c1', status: 'ACTIVE', createdAt: ago(5 * DAY - 2 * HOUR) },
+    ]
+    const d = await run(30)
+    expect(d.replyLoop.selfReplyOnly).toBe(0) // 🔴 섞였는데 '본인뿐'으로 세면 안 된다
+    expect(d.replyLoop.nonMemberReplyOnly).toBe(0)
+    expect(d.replyLoop.selfAndNonMemberReply).toBe(1)
+  })
+
+  it('24시간 이내 다른 실회원 답글만 루프로 센다', async () => {
+    seedUsers()
+    db.comments = [
+      { id: 'c1', authorId: 'u1', parentId: null, status: 'ACTIVE', createdAt: ago(5 * DAY) },
+      { id: 'r1', authorId: 'u2', parentId: 'c1', status: 'ACTIVE', createdAt: ago(5 * DAY - 2 * HOUR) },
+    ]
+    const d = await run(30)
+    expect(d.replyLoop.gotReplyFromMember).toBe(1)
+    // 답글 r1 자체도 실회원 댓글이라 분모에 들어간다(§ReplyLoop.memberComments 주석).
+    // r1 에는 답글이 없으므로 2건 중 1건 → 50%.
+    expect(d.replyLoop.matureDenom).toBe(2)
+    expect(d.replyLoop.rate).toBe(50)
   })
 })

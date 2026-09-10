@@ -73,7 +73,14 @@ export const getRetentionQuadrants = unstable_cache(
     const realIds = real.map((u) => u.id)
     const memberEvents = realIds.length
       ? await prisma.eventLog.findMany({
-          where: { userId: { in: realIds }, eventName: { in: ['page_view', 'login'] }, createdAt: { gte: since } },
+          // 🔴 isBot=false 필수 — 회원 id 가 붙은 이벤트라도 봇으로 표시된 것(e2e-test·founder 플래그 등)이
+          //    섞이면 그 날짜가 '활성'으로 잡혀 회원 리텐션이 부풀려진다. 비회원 쪽은 아래에서 이미 걸러진다.
+          where: {
+            userId: { in: realIds },
+            eventName: { in: ['page_view', 'login'] },
+            createdAt: { gte: since },
+            isBot: false,
+          },
           select: { userId: true, createdAt: true },
         })
       : []
@@ -136,6 +143,6 @@ export const getRetentionQuadrants = unstable_cache(
       note: '회원=가입일 코호트(providerId 순수숫자, role≠ADMIN) / 비회원=첫방문 코호트(sessionId). 각 D-N은 N일이 경과한(성숙) 코호트만 분모에 포함 — 아직 N일 안 지난 코호트는 실패가 아니라 분모에서 제외. 괄호=해당 D-N의 분모(성숙 코호트 수)로 D-N마다 다를 수 있음. KR4(EventLog 비회원 D7)와 동일 정의. 표본 작으면 참고용. 비회원은 30일 쿠키 한도로 장기 과소측정.',
     }
   },
-  ['admin-retention-quadrants-v3'], // v3: 성숙 코호트만 분모(per-Dn denom/returned/rate)로 정의 변경
+  ['admin-retention-quadrants-v4'], // v4: 회원 활성 이벤트에 isBot=false 적용(봇 표시 이벤트가 회원 리텐션을 부풀리던 것 수정)
   { revalidate: 1800 },
 )

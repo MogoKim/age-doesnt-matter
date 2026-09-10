@@ -68,7 +68,7 @@ function FunnelTable({ steps, conversions }: { steps: FunnelStep[]; conversions:
           <thead>
             <tr className="border-b border-zinc-200 text-left text-xs text-zinc-500">
               <th className="py-2 pr-3">단계</th>
-              <th className="py-2 pr-3 text-right">세션</th>
+              <th className="py-2 pr-3 text-right">방문자</th>
               <th className="py-2 pr-3">수집</th>
               <th className="py-2">측정 방식</th>
             </tr>
@@ -78,7 +78,7 @@ function FunnelTable({ steps, conversions }: { steps: FunnelStep[]; conversions:
               <tr key={s.key} className="border-b border-zinc-100 align-top">
                 <td className="py-2 pr-3 font-medium text-zinc-900">{s.label}</td>
                 <td className="py-2 pr-3 text-right tabular-nums">
-                  {s.sessions == null ? <span className="text-zinc-400">미수집</span> : num(s.sessions)}
+                  {s.visitors == null ? <span className="text-zinc-400">미수집</span> : num(s.visitors)}
                 </td>
                 <td className="py-2 pr-3"><StatusChip status={s.status} /></td>
                 <td className="py-2 text-xs leading-5 text-zinc-500">{s.note}</td>
@@ -126,7 +126,7 @@ export default async function MemberRecoveryPage({ searchParams }: Props) {
   const params = await searchParams
   const windowDays = parseWindowDays(params.window)
   const data: MemberRecoveryData = await getMemberRecovery(windowDays)
-  const { activation, replyLoop, retention } = data
+  const { activation, replyLoop, retention, signupEventCoverage: cov } = data
 
   return (
     <div className="space-y-4">
@@ -179,6 +179,36 @@ export default async function MemberRecoveryPage({ searchParams }: Props) {
         lead={`세션 기준. 분모·분자를 함께 적는다. ≥ 표시는 이벤트 유실 가능성이 있어 실제 값이 그 이상이라는 뜻이다.`}
       >
         <FunnelTable steps={data.signupFunnel.steps} conversions={data.signupFunnel.conversions} />
+
+        <div className="mt-4 rounded border border-amber-200 bg-amber-50 p-3">
+          <h3 className="text-sm font-bold text-amber-900">
+            가입 완료 칸을 읽기 전에 — 이벤트 수와 실제 가입자는 다르다
+          </h3>
+          <div className="mt-2 overflow-x-auto">
+            <table className="w-full min-w-[420px] text-sm">
+              <tbody>
+                <tr className="border-b border-amber-200">
+                  <td className="py-1.5 pr-3 text-amber-900">실제 신규 실회원 <span className="text-xs">(`User.createdAt` — 이쪽이 사실)</span></td>
+                  <td className="py-1.5 text-right font-bold tabular-nums text-amber-900">{num(cov.actualNewMembers)}명</td>
+                </tr>
+                <tr className="border-b border-amber-200">
+                  <td className="py-1.5 pr-3 text-amber-800">`sign_up` 이벤트를 낸 방문자</td>
+                  <td className="py-1.5 text-right tabular-nums text-amber-800">{num(cov.events)}명</td>
+                </tr>
+                <tr>
+                  <td className="py-1.5 pr-3 text-amber-800">이벤트 수집 완전성</td>
+                  <td className="py-1.5 text-right">
+                    <Rate rate={cov.rate} status="OK" /> <StatusChip status={cov.status} />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-2 text-xs leading-5 text-amber-800">
+            이벤트가 실제 가입자보다 적으면 퍼널의 마지막 칸은 <strong>하한값</strong>이다.
+            낮은 값을 보고 <strong>&ldquo;가입 자체에서 끊겼다&rdquo;고 결론짓지 마라</strong> — 계측 유실과 구분되지 않는다.
+          </p>
+        </div>
       </Section>
 
       <Section
@@ -203,19 +233,25 @@ export default async function MemberRecoveryPage({ searchParams }: Props) {
                 <td className="py-2 text-right tabular-nums">{num(activation.matureDenom)}명</td>
               </tr>
               <tr className="border-b border-zinc-100">
-                <td className="py-2 pr-3 text-zinc-600">첫 글을 쓴 사람</td>
-                <td className="py-2 text-right tabular-nums">{num(activation.wrotePost)}명</td>
+                <td className="py-2 pr-3 text-zinc-600">24시간 이내 첫 글</td>
+                <td className="py-2 text-right tabular-nums">{num(activation.wrotePostWithin24h)}명</td>
               </tr>
               <tr className="border-b border-zinc-100">
-                <td className="py-2 pr-3 text-zinc-600">첫 댓글을 쓴 사람</td>
-                <td className="py-2 text-right tabular-nums">{num(activation.wroteComment)}명</td>
+                <td className="py-2 pr-3 text-zinc-600">24시간 이내 첫 댓글</td>
+                <td className="py-2 text-right tabular-nums">{num(activation.wroteCommentWithin24h)}명</td>
               </tr>
               <tr className="border-b border-zinc-100 font-medium">
-                <td className="py-2 pr-3 text-zinc-900">둘 중 하나라도 쓴 사람 (분자)</td>
-                <td className="py-2 text-right tabular-nums">{num(activation.wroteAny)}명</td>
+                <td className="py-2 pr-3 text-zinc-900">D1 성공 — 24시간 이내 글 또는 댓글 (분자)</td>
+                <td className="py-2 text-right tabular-nums">{num(activation.wroteAnyWithin24h)}명</td>
               </tr>
               <tr className="border-b border-zinc-100">
-                <td className="py-2 pr-3 text-zinc-900">활성화율</td>
+                <td className="py-2 pr-3 text-zinc-600">
+                  24시간을 넘겨 쓴 사람 <span className="text-xs text-zinc-400">(D1 성공 아님 · 참고)</span>
+                </td>
+                <td className="py-2 text-right tabular-nums text-zinc-500">{num(activation.wroteAnyLater)}명</td>
+              </tr>
+              <tr className="border-b border-zinc-100">
+                <td className="py-2 pr-3 text-zinc-900">D1 첫 참여율</td>
                 <td className="py-2 text-right">
                   <Rate rate={activation.rate} status={activation.status} />
                 </td>
@@ -257,8 +293,12 @@ export default async function MemberRecoveryPage({ searchParams }: Props) {
                 <td className="py-2 text-right tabular-nums">{num(replyLoop.matureDenom)}건</td>
               </tr>
               <tr className="border-b border-zinc-100 font-medium">
-                <td className="py-2 pr-3 text-zinc-900">다른 실회원의 답글을 받음 (분자)</td>
+                <td className="py-2 pr-3 text-zinc-900">24시간 이내 다른 실회원의 답글 (분자)</td>
                 <td className="py-2 text-right tabular-nums">{num(replyLoop.gotReplyFromMember)}건</td>
+              </tr>
+              <tr className="border-b border-zinc-100">
+                <td className="py-2 pr-3 text-zinc-600">다른 실회원 답글이 왔지만 <strong>24시간 초과</strong></td>
+                <td className="py-2 text-right tabular-nums text-amber-700">{num(replyLoop.lateMemberReply)}건</td>
               </tr>
               <tr className="border-b border-zinc-100">
                 <td className="py-2 pr-3 text-zinc-600">답글이 본인 것뿐</td>
@@ -268,8 +308,12 @@ export default async function MemberRecoveryPage({ searchParams }: Props) {
                 <td className="py-2 pr-3 text-zinc-600">답글이 봇·비회원뿐</td>
                 <td className="py-2 text-right tabular-nums text-zinc-500">{num(replyLoop.nonMemberReplyOnly)}건</td>
               </tr>
+              <tr className="border-b border-zinc-100">
+                <td className="py-2 pr-3 text-zinc-600">본인 답글과 봇·비회원 답글이 섞임</td>
+                <td className="py-2 text-right tabular-nums text-zinc-500">{num(replyLoop.selfAndNonMemberReply)}건</td>
+              </tr>
               <tr>
-                <td className="py-2 pr-3 text-zinc-900">답글 루프 발생률</td>
+                <td className="py-2 pr-3 text-zinc-900">D1 답글 루프 발생률</td>
                 <td className="py-2 text-right">
                   <Rate rate={replyLoop.rate} status={replyLoop.status} />
                 </td>
