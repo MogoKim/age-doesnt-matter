@@ -11,6 +11,13 @@ const nextConfig = {
   images: {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 86400,  // 24시간 — R2 이미지는 URL별 고유 (교체 시 URL 변경)
+    // Next 16 부터 `images.qualities` 허용 목록 밖의 q 는 **400 으로 거부**된다. 기본값은 [75].
+    // 우리 저장 콘텐츠(매거진 본문 HTML)에는 `sanitize.ts` 가 만들어 넣은 `&q=80` URL 이
+    // 이미 들어 있다 — 실측 2026-09-10: 매거진 22페이지 · 고유 이미지 55건이 전부 400 이었다
+    // (원본 R2 URL 은 55/55 모두 200 이었다. 깨진 것은 프록시 계층뿐이다).
+    // 생성 코드를 q=75 로 바꿔도 **이미 저장된 HTML 은 복구되지 않으므로** 80 을 허용 목록에 남긴다.
+    // ⚠️ 이 배열에서 80 을 빼면 그 22페이지의 이미지가 다시 400 이 된다.
+    qualities: [75, 80],
     remotePatterns: [
       {
         protocol: 'https',

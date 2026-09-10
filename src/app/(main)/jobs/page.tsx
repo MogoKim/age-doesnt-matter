@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import nextDynamic from 'next/dynamic'
-import { getCachedJobsPage } from '@/lib/queries/posts'
+import { getCachedJobsPageAt } from '@/lib/queries/posts'
+import { parseListQuery } from '@/lib/list-query'
 import JobFilterButton from '@/components/features/jobs/JobFilterButton'
 import JobRegionButton from '@/components/features/jobs/JobRegionButton'
 import BoardViewTracker from '@/components/features/community/BoardViewTracker'
@@ -10,6 +11,12 @@ import JobsContent from '@/components/features/jobs/JobsContent'
 const JobQuickTags = nextDynamic(() => import('@/components/features/jobs/JobQuickTags'))
 const JobSearchBar = nextDynamic(() => import('@/components/features/jobs/JobSearchBar'))
 
+/**
+ * ⚠️ `searchParams` 를 읽으므로 **동적 렌더**가 된다(전체 페이지 ISR 은 쓰지 않는다).
+ * DB 부하는 그대로다 — 목록 데이터는 `getCached*PageAt` 의 `unstable_cache` 가
+ * page 조합마다 같은 revalidate 창으로 잡는다. `revalidate` 상수는 그 의도를 나타낸다.
+ * 정적 렌더로 두면 `?page=2` 가 1페이지 HTML 을 돌려줘 수집기가 같은 링크만 다시 본다.
+ */
 export const revalidate = 120
 
 const CI_DUMMY_DB = process.env.CI === 'true' && process.env.DATABASE_URL?.includes('localhost:5432/dummy')
@@ -20,17 +27,18 @@ export const metadata: Metadata = {
   alternates: { canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'}/jobs` },
 }
 
-async function getInitialJobsData() {
+async function getInitialJobsData(page: number) {
   try {
-    return await getCachedJobsPage()
+    return await getCachedJobsPageAt(page)
   } catch (error) {
     if (!CI_DUMMY_DB) throw error
     return { jobs: [], total: 0 }
   }
 }
 
-export default async function JobsPage() {
-  const initialData = await getInitialJobsData()
+export default async function JobsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const { page, query } = parseListQuery(await searchParams)
+  const initialData = await getInitialJobsData(page)
 
   return (
     <div className="min-h-screen bg-background">
@@ -61,7 +69,7 @@ export default async function JobsPage() {
 
         {/* 일자리 목록 */}
         <Suspense fallback={null}>
-          <JobsContent initialJobs={initialData.jobs} initialTotal={initialData.total} />
+          <JobsContent initialJobs={initialData.jobs} initialTotal={initialData.total} initialQuery={query} />
         </Suspense>
       </div>
     </div>
