@@ -1,7 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import type { JobCardItem } from '@/lib/queries/posts'
 import type { SearchField } from '@/lib/queries/posts/posts.base'
@@ -9,6 +8,7 @@ import PostListWithAds from '@/components/features/common/PostListWithAds'
 import BoardPaginationFooter from '@/components/features/common/BoardPaginationFooter'
 import JobCard from '@/components/features/jobs/JobCard'
 import EmptyState from '@/components/ui/EmptyState'
+import SearchParamsBridge from '@/components/features/common/SearchParamsBridge'
 
 const LIMIT = 12
 
@@ -28,7 +28,11 @@ function parseSearchField(raw: string | null): SearchField {
 }
 
 export default function JobsContent({ initialJobs, initialTotal }: JobsContentProps) {
-  const searchParams = useSearchParams()
+  // 🔴 `useSearchParams()` 를 여기서 부르면 정적 렌더가 CSR 로 bail out 되어
+  //    서버 HTML 에 목록이 통째로 빠진다(링크 0건). 다리로 받는다 — SearchParamsBridge 주석 참조.
+  const [rawQuery, setRawQuery] = useState('')
+  const handleQueryChange = useCallback((next: string) => { setRawQuery(next) }, [])
+  const searchParams = useMemo(() => new URLSearchParams(rawQuery), [rawQuery])
   const region = searchParams.get('region') || undefined
   const tags = searchParams.get('tags')?.split(',').filter(Boolean)
   const q = searchParams.get('q')?.trim() || undefined
@@ -84,8 +88,11 @@ export default function JobsContent({ initialJobs, initialTotal }: JobsContentPr
   const tagsSuffix = tags && tags.length > 0 ? `&tags=${encodeURIComponent(tags.join(','))}` : ''
   const qSuffix = q ? `&q=${encodeURIComponent(q)}&sf=${sf}` : ''
 
+
+  const bridge = <SearchParamsBridge onChange={handleQueryChange} />
   return (
     <>
+      {bridge}
       {hasFilters && (
         <div className="flex items-center gap-2 mb-4 text-body text-muted-foreground">
           <span className="font-medium">적용된 필터:</span>

@@ -1,7 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import type { BoardType } from '@/generated/prisma/client'
 import type { PostSummary } from '@/types/api'
@@ -10,6 +9,7 @@ import PostCard from '@/components/features/community/PostCard'
 import PostListWithAds from '@/components/features/common/PostListWithAds'
 import BoardPaginationFooter from '@/components/features/common/BoardPaginationFooter'
 import EmptyState from '@/components/ui/EmptyState'
+import SearchParamsBridge from '@/components/features/common/SearchParamsBridge'
 
 const LIMIT = 12
 
@@ -56,7 +56,13 @@ export default function BoardPostListClient({
   initialPosts,
   initialTotal,
 }: BoardPostListClientProps) {
-  const searchParams = useSearchParams()
+  // 🔴 `useSearchParams()` 를 여기서 부르면 정적 렌더가 CSR 로 bail out 되어
+  //    서버 HTML 에 목록이 통째로 빠진다(글 링크 0건). 다리로 받는다 — SearchParamsBridge 주석 참조.
+  //    서버 렌더와 hydration 첫 렌더는 쿼리를 모르는 상태(기본 목록)로 **동일하게** 그린다.
+  const [rawQuery, setRawQuery] = useState('')
+  const handleQueryChange = useCallback((next: string) => { setRawQuery(next) }, [])
+  const searchParams = useMemo(() => new URLSearchParams(rawQuery), [rawQuery])
+
   const category = searchParams.get('category') || undefined
   const sortOption = searchParams.get('sort') === 'likes' ? 'likes' : 'latest'
   const q = searchParams.get('q')?.trim() || undefined
@@ -112,7 +118,9 @@ export default function BoardPostListClient({
   const categorySuffix = category && category !== '전체' ? `&category=${encodeURIComponent(category)}` : ''
   const qSuffix = q ? `&q=${encodeURIComponent(q)}&sf=${sf}` : ''
 
-  if (isLoading) return <PostListSkeleton />
+  const bridge = <SearchParamsBridge onChange={handleQueryChange} />
+
+  if (isLoading) return <>{bridge}<PostListSkeleton /></>
 
   if (data.posts.length === 0) {
     const resetParams = [
@@ -125,6 +133,7 @@ export default function BoardPostListClient({
 
     return (
       <>
+        {bridge}
         <EmptyState
           className="mt-6"
           icon="📝"
@@ -163,6 +172,7 @@ export default function BoardPostListClient({
 
   return (
     <>
+      {bridge}
       <PostListWithAds
         items={data.posts}
         renderCard={(post) => <PostCard post={post} boardSlug={boardSlug} />}

@@ -1,7 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { PostSummary } from '@/types/api'
@@ -10,6 +9,7 @@ import { formatTimeAgo } from '@/components/features/community/utils'
 import PostListWithAds from '@/components/features/common/PostListWithAds'
 import BoardPaginationFooter from '@/components/features/common/BoardPaginationFooter'
 import EmptyState from '@/components/ui/EmptyState'
+import SearchParamsBridge from '@/components/features/common/SearchParamsBridge'
 
 const LIMIT = 12
 
@@ -29,7 +29,11 @@ function parseSearchField(raw: string | null): SearchField {
 }
 
 export default function MagazineContent({ initialPosts, initialTotal }: MagazineContentProps) {
-  const searchParams = useSearchParams()
+  // 🔴 `useSearchParams()` 를 여기서 부르면 정적 렌더가 CSR 로 bail out 되어
+  //    서버 HTML 에 목록이 통째로 빠진다(링크 0건). 다리로 받는다 — SearchParamsBridge 주석 참조.
+  const [rawQuery, setRawQuery] = useState('')
+  const handleQueryChange = useCallback((next: string) => { setRawQuery(next) }, [])
+  const searchParams = useMemo(() => new URLSearchParams(rawQuery), [rawQuery])
   const q = searchParams.get('q')?.trim() || undefined
   const sf = parseSearchField(searchParams.get('sf'))
   const category = searchParams.get('category') || undefined
@@ -81,6 +85,8 @@ export default function MagazineContent({ initialPosts, initialTotal }: Magazine
   const qSuffix = q ? `&q=${encodeURIComponent(q)}&sf=${sf}` : ''
   const categorySuffix = category ? `&category=${encodeURIComponent(category)}` : ''
 
+
+  const bridge = <SearchParamsBridge onChange={handleQueryChange} />
   if (isLoading) {
     return (
       <div className="space-y-3 mt-4">
@@ -94,6 +100,7 @@ export default function MagazineContent({ initialPosts, initialTotal }: Magazine
   if (data.posts.length === 0) {
     return (
       <>
+        {bridge}
         <EmptyState
           className="mt-4"
           message={
@@ -125,6 +132,7 @@ export default function MagazineContent({ initialPosts, initialTotal }: Magazine
 
   return (
     <>
+      {bridge}
       <PostListWithAds
         items={data.posts}
         renderCard={(post, index) => <MagazineCard post={post} priority={index < 2} />}
