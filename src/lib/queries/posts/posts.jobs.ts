@@ -211,6 +211,13 @@ export const getCachedJobsPage = unstable_cache(
   { revalidate: 120, tags: [JOBS_LIST_TAG] },
 )
 
+/** 요청된 페이지를 서버에서 가져온다 — 캐시 키가 page 로 갈리고 revalidate·태그는 동일하다. */
+export const getCachedJobsPageAt = unstable_cache(
+  (page: number) => getJobListPage({ skip: (Math.max(1, page) - 1) * 12, limit: 12 }),
+  ['jobs-list-page-at'],
+  { revalidate: 120, tags: [JOBS_LIST_TAG] },
+)
+
 /* ── 일자리 상세 ── */
 
 export interface JobDetailItem {

@@ -3,7 +3,8 @@ import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import Link from 'next/link'
 import { getBoardConfig } from '@/lib/queries/boards'
-import { getCachedBoardPage } from '@/lib/queries/posts'
+import { getCachedBoardPageAt } from '@/lib/queries/posts'
+import { parseListQuery } from '@/lib/list-query'
 import BoardFilter from '@/components/features/community/BoardFilter'
 import SortToggle from '@/components/features/community/SortToggle'
 import BoardViewTracker from '@/components/features/community/BoardViewTracker'
@@ -14,6 +15,7 @@ import type { BoardType } from '@/generated/prisma/client'
 
 interface PageProps {
   params: Promise<{ boardSlug: string }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
 const CI_DUMMY_DB = process.env.CI === 'true' && process.env.DATABASE_URL?.includes('localhost:5432/dummy')
@@ -62,6 +64,15 @@ const STATIC_BOARD_CONFIGS: Record<string, {
 
 // ISR Writes 절감: 글 작성 Server Action 이 updateTag('community-board-page') 로 즉시 무효화한다.
 // (즉시성은 updateTag 가 보장한다 — revalidateTag(tag,'max') 는 즉시가 아니다)
+/**
+ * ⚠️ `searchParams` 를 읽으므로 이 페이지는 **동적 렌더**가 된다(전체 페이지 ISR 은 쓰지 않는다).
+ * 그래도 **DB 부하는 그대로**다 — 목록 데이터는 아래 `getCached*PageAt` 의
+ * `unstable_cache` 가 (필터, page) 조합마다 같은 revalidate 창으로 잡아 준다.
+ * `revalidate` 상수는 그 데이터 캐시 의도를 나타내는 값으로 유지한다.
+ *
+ * 왜 동적이어야 하나: 정적 렌더는 쿼리를 모르므로 `?page=2` 도 1페이지 HTML 을 준다.
+ * 수집기가 페이지네이션을 따라와도 **같은 12개 링크**를 다시 보게 된다.
+ */
 export const revalidate = 300
 const SHOW_COMMUNITY_CATEGORY_FILTER = false
 const SHOW_COMMUNITY_SORT_TOGGLE = true
@@ -177,24 +188,26 @@ async function getBoardForPage(boardSlug: string) {
   return STATIC_BOARD_CONFIGS[boardSlug] ?? null
 }
 
-async function getInitialBoardData(boardType: BoardType) {
+async function getInitialBoardData(boardType: BoardType, sort: 'latest' | 'likes', page: number) {
   try {
-    return await getCachedBoardPage(boardType, 'all', 'latest')
+    return await getCachedBoardPageAt(boardType, 'all', sort, page)
   } catch (error) {
     if (!CI_DUMMY_DB) throw error
     return { posts: [], total: 0 }
   }
 }
 
-export default async function BoardListPage({ params }: PageProps) {
+export default async function BoardListPage({ params, searchParams }: PageProps) {
   const { boardSlug } = await params
+  const sp = await searchParams
+  const { page, sort, query } = parseListQuery(sp)
   if (boardSlug === 'magazine') permanentRedirect('/magazine')
   if (boardSlug === 'jobs') permanentRedirect('/jobs')
 
   const board = await getBoardForPage(boardSlug)
   if (!board) notFound()
 
-  const initialData = await getInitialBoardData(board.boardType)
+  const initialData = await getInitialBoardData(board.boardType, sort, page)
   const topicHub = TOPIC_HUB[boardSlug]
 
   const boardFaqJsonLd = getBoardFaqJsonLd(boardSlug)
@@ -283,6 +296,7 @@ export default async function BoardListPage({ params }: PageProps) {
       <Suspense fallback={<PostListSkeleton />}>
         <BoardPostListClient
           boardType={board.boardType}
+        initialQuery={query}
           boardSlug={boardSlug}
           initialPosts={initialData.posts}
           initialTotal={initialData.total}

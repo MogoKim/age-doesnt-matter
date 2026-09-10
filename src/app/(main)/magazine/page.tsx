@@ -1,12 +1,19 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import nextDynamic from 'next/dynamic'
-import { getCachedMagazinePage } from '@/lib/queries/posts'
+import { getCachedMagazinePageAt } from '@/lib/queries/posts'
+import { parseListQuery } from '@/lib/list-query'
 import BoardViewTracker from '@/components/features/community/BoardViewTracker'
 import MagazineContent from '@/components/features/magazine/MagazineContent'
 
 const MagazineFilter = nextDynamic(() => import('@/components/features/magazine/MagazineFilter'))
 
+/**
+ * ⚠️ `searchParams` 를 읽으므로 **동적 렌더**가 된다(전체 페이지 ISR 은 쓰지 않는다).
+ * DB 부하는 그대로다 — 목록 데이터는 `getCached*PageAt` 의 `unstable_cache` 가
+ * page 조합마다 같은 revalidate 창으로 잡는다. `revalidate` 상수는 그 의도를 나타낸다.
+ * 정적 렌더로 두면 `?page=2` 가 1페이지 HTML 을 돌려줘 수집기가 같은 링크만 다시 본다.
+ */
 export const revalidate = 60
 
 const CI_DUMMY_DB = process.env.CI === 'true' && process.env.DATABASE_URL?.includes('localhost:5432/dummy')
@@ -52,17 +59,18 @@ const magazineCollectionPageJsonLd = {
   },
 }
 
-async function getInitialMagazineData() {
+async function getInitialMagazineData(page: number) {
   try {
-    return await getCachedMagazinePage()
+    return await getCachedMagazinePageAt(page)
   } catch (error) {
     if (!CI_DUMMY_DB) throw error
     return { posts: [], total: 0 }
   }
 }
 
-export default async function MagazinePage() {
-  const initialData = await getInitialMagazineData()
+export default async function MagazinePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const { page, query } = parseListQuery(await searchParams)
+  const initialData = await getInitialMagazineData(page)
 
   return (
     <div className="min-h-screen bg-background">
@@ -79,7 +87,7 @@ export default async function MagazinePage() {
         </Suspense>
 
         <Suspense fallback={null}>
-          <MagazineContent initialPosts={initialData.posts} initialTotal={initialData.total} />
+          <MagazineContent initialPosts={initialData.posts} initialTotal={initialData.total} initialQuery={query} />
         </Suspense>
       </div>
     </div>

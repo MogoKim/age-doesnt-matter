@@ -249,6 +249,28 @@ export const getCachedBoardPage = unstable_cache(
   { revalidate: 300, tags: ['community-board-page'] },
 )
 
+/**
+ * 목록의 **요청된 페이지**를 서버에서 가져온다.
+ *
+ * 왜 page 인자가 필요한가: 서버가 늘 1페이지만 그리면 `?page=2` 를 따라온 수집기가
+ * 1페이지와 **똑같은 12개 링크**를 다시 본다. 페이지네이션이 사실상 없는 것과 같다.
+ *
+ * 캐시·DB 부하: `unstable_cache` 는 인자로 키를 나누므로 (boardType, category, sort, page)
+ * 조합마다 항목이 하나씩 생긴다. revalidate 300초·태그는 1페이지용과 **동일**하게 유지한다.
+ * 즉 한 조합당 5분에 쿼리 1회로 DB 부하는 그대로이고, 캐시 항목 수만 페이지 수만큼 늘어난다.
+ */
+export const getCachedBoardPageAt = unstable_cache(
+  (boardType: BoardType, category: string, sort: string, page: number) =>
+    getPostsByBoardPage(boardType, {
+      category: category === 'all' ? undefined : category,
+      sort: sort as 'latest' | 'likes',
+      skip: (Math.max(1, page) - 1) * 12,
+      limit: 12,
+    }),
+  ['community-board-page-at'],
+  { revalidate: 300, tags: ['community-board-page'] },
+)
+
 /* ── 관련글 (글 상세 본문끝·하단 내부 링크용) ──
  * 같은 게시판 + 같은 category 우선 → 부족하면 같은 게시판 fallback(중복 제거).
  * 정렬: trendingScore(인기) 우선 + createdAt 보조 — 시드/저품질 글이 상위에 뜨는 것 방지.

@@ -86,7 +86,11 @@ function PostCard({ post, boardSlug, showBoardBadge = false }: PostCardProps) {
         )}
         <span>{post.author.nickname}</span>
         <span aria-hidden="true">·</span>
-        <span>{formatTimeAgo(post.createdAt)}</span>
+        {/* suppressHydrationWarning: 상대시각은 렌더 시점의 now 기준이라 서버 HTML 과
+            hydration 시점 값이 다를 수 있다(예: "3시간 전" → "4시간 전").
+            의도된 차이이므로 이 텍스트 노드에서만 경고를 끈다 — CommentItem 과 같은 처리(PR #357).
+            ⚠️ 목록이 SSR 되기 전에는 드러나지 않던 문제다. 이 속성을 지우면 React #418 이 재발한다. */}
+        <span suppressHydrationWarning>{formatTimeAgo(post.createdAt)}</span>
       </div>
 
       {/* 통계 줄 — 메타와 같은 층위(muted-subtle)라 간격을 좁게 둬 한 덩어리로 묶는다.
