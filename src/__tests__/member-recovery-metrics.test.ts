@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 
 /**
  * R8 회원 소생 측정 — 판정 규칙 회귀 테스트.
@@ -43,7 +45,7 @@ interface EventWhere {
   isBot?: boolean
   createdAt?: { gte?: Date }
   sessionId?: { not?: null }
-  userId?: null | { in: string[] }
+  userId?: null | { in?: string[]; not?: null }
   eventName?: string | { in: string[] }
   properties?: { path?: string[]; equals?: unknown }
   OR?: { path?: { startsWith?: string }; botType?: string | null }[]
@@ -63,12 +65,14 @@ vi.mock('@/lib/prisma', () => ({
         db.users.filter((u) => (where?.role ? u.role === where.role : true)),
     },
     eventLog: {
-      groupBy: async ({ where }: { where: EventWhere }) => {
+      groupBy: async ({ by, where }: { by: string[]; where: EventWhere }) => {
         const rows = db.events.filter((e) => {
           if (where.isBot !== undefined && e.isBot !== where.isBot) return false
           if (where.createdAt?.gte && e.createdAt < where.createdAt.gte) return false
           if (where.sessionId?.not === null && e.sessionId == null) return false
           if (where.userId === null && (e.userId ?? null) !== null) return false
+          if (where.userId && typeof where.userId === 'object' && 'not' in where.userId
+              && where.userId.not === null && (e.userId ?? null) === null) return false
           if (typeof where.eventName === 'string' && e.eventName !== where.eventName) return false
           if (where.properties?.path) {
             const [key] = where.properties.path
@@ -76,13 +80,20 @@ vi.mock('@/lib/prisma', () => ({
           }
           return true
         })
-        // 순서 검증을 하려면 방문자별 **최초 시각**이 필요하다 — _min 집계를 흉내낸다.
-        const min = new Map<string | null, Date>()
+        // 순서 검증에는 방문자별 **최초·최종 시각**이 둘 다 필요하다 — _min/_max 집계를 흉내낸다.
+        const agg = new Map<string, { key: Record<string, unknown>; min: Date; max: Date }>()
         for (const r of rows) {
-          const cur = min.get(r.sessionId)
-          if (!cur || r.createdAt < cur) min.set(r.sessionId, r.createdAt)
+          const key: Record<string, unknown> = {}
+          for (const f of by) key[f] = f === 'sessionId' ? r.sessionId : f === 'userId' ? (r.userId ?? null) : null
+          const k = JSON.stringify(key)
+          const cur = agg.get(k)
+          if (!cur) agg.set(k, { key, min: r.createdAt, max: r.createdAt })
+          else {
+            if (r.createdAt < cur.min) cur.min = r.createdAt
+            if (r.createdAt > cur.max) cur.max = r.createdAt
+          }
         }
-        return [...min].map(([sessionId, createdAt]) => ({ sessionId, _min: { createdAt } }))
+        return [...agg.values()].map((v) => ({ ...v.key, _min: { createdAt: v.min }, _max: { createdAt: v.max } }))
       },
       findMany: async ({ where }: { where: EventWhere }) => {
         const rows = db.events.filter((e) => {
@@ -477,12 +488,15 @@ describe('[R8-P1-2] 가입 이벤트와 실제 가입자를 분리한다', () =>
       { id: 'b', providerId: '2', role: 'USER', createdAt: ago(3 * DAY) },
       { id: 'c', providerId: '3', role: 'USER', createdAt: ago(3 * DAY) },
     ]
+    // userId 가 붙지 않은 sign_up 이벤트 1건 — 누구의 가입인지 이을 수 없다
     db.events = [{ eventName: 'sign_up', sessionId: 'v1', isBot: false, createdAt: ago(DAY) }]
     const d = await run()
     expect(d.signupEventCoverage.actualNewMembers).toBe(3)
-    expect(d.signupEventCoverage.events).toBe(1)
-    expect(d.signupEventCoverage.rate).toBe(33.3)
-    expect(d.signupEventCoverage.status).toBe('PARTIAL')
+    expect(d.signupEventCoverage.events).toBe(1) // 퍼널 단위(방문자)
+    expect(d.signupEventCoverage.matchedMembers).toBe(0) // ID 로 연결된 회원 없음
+    expect(d.signupEventCoverage.unlinkableEvents).toBe(1)
+    expect(d.signupEventCoverage.rate).toBe(0) // 🔴 건수비(1/3=33.3)로 계산하면 안 된다
+    expect(d.signupEventCoverage.status).toBe('GAP')
   })
 })
 
@@ -544,5 +558,154 @@ describe('[R8-P1-4] 답글 루프도 24시간 기준이다', () => {
     // r1 에는 답글이 없으므로 2건 중 1건 → 50%.
     expect(d.replyLoop.matureDenom).toBe(2)
     expect(d.replyLoop.rate).toBe(50)
+  })
+})
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * P1 2차 보정 (2026-09-10) — 아래도 **먼저 실패시켜 놓고** 고친 항목이다.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+describe('[R8-P2-1] 가입 과정의 EventLog 소급 귀속을 반영한다', () => {
+  /**
+   * `onboarding.ts` 는 온보딩 완료 시
+   * `eventLog.updateMany({ sessionId: anonSid, userId: null }, { userId })` 로
+   * **그 방문자의 과거 익명 이벤트에 userId 를 소급 입력**한다.
+   * 그래서 `userId IS NULL` 만으로 비회원 방문을 세면
+   * **가입에 성공한 사람의 가입 전 방문이 분모에서 통째로 빠진다** — 전환 성공자만 분모에서 사라지는 편향이다.
+   */
+  it('소급 귀속된 가입 전 page_view 는 비회원 방문 분모에 포함한다', async () => {
+    db.users = [
+      { id: 'newbie', providerId: '2001', role: 'USER', createdAt: ago(2 * DAY) }, // 2일 전 가입
+    ]
+    db.events = [
+      // 가입(2일 전)보다 이른 3일 전 방문인데 온보딩이 userId 를 소급 입력했다
+      { eventName: 'page_view', sessionId: 'vNew', isBot: false, createdAt: ago(3 * DAY), userId: 'newbie' },
+    ]
+    const d = await run()
+    expect(d.signupFunnel.steps.find((s) => s.key === 'visit')?.visitors).toBe(1)
+  })
+
+  it('기존 회원의 가입 후 방문은 분모에서 제외한다', async () => {
+    db.users = [
+      { id: 'old', providerId: '1001', role: 'USER', createdAt: ago(60 * DAY) }, // 오래된 회원
+    ]
+    db.events = [
+      { eventName: 'page_view', sessionId: 'vOld', isBot: false, createdAt: ago(DAY), userId: 'old' },
+    ]
+    const d = await run()
+    expect(d.signupFunnel.steps.find((s) => s.key === 'visit')?.visitors).toBe(0)
+  })
+
+  it('세 경우를 한 번에 — 익명 · 소급 귀속(가입 전) 포함, 기존 회원 제외', async () => {
+    db.users = [
+      { id: 'newbie', providerId: '2001', role: 'USER', createdAt: ago(2 * DAY) },
+      { id: 'old', providerId: '1001', role: 'USER', createdAt: ago(60 * DAY) },
+    ]
+    db.events = [
+      { eventName: 'page_view', sessionId: 'vAnon', isBot: false, createdAt: ago(DAY), userId: null },
+      { eventName: 'page_view', sessionId: 'vNew', isBot: false, createdAt: ago(3 * DAY), userId: 'newbie' },
+      { eventName: 'page_view', sessionId: 'vOld', isBot: false, createdAt: ago(DAY), userId: 'old' },
+    ]
+    const d = await run()
+    expect(d.signupFunnel.steps.find((s) => s.key === 'visit')?.visitors).toBe(2)
+  })
+})
+
+describe('[R8-P2-2] 전환은 최초 시각끼리만 비교하지 않는다', () => {
+  it('앞 단계 이후에 대상 이벤트가 다시 발생했으면 전환이다', async () => {
+    seedUsers()
+    db.events = [
+      { eventName: 'page_view', sessionId: 'v1', isBot: false, createdAt: ago(6 * DAY), userId: null },
+      // 노출이 적격보다 먼저 한 번 있었지만, 적격 이후에 **다시** 있었다 → 전환
+      { eventName: 'signup_banner_shown', sessionId: 'v1', isBot: false, createdAt: ago(5 * DAY) },
+      { eventName: 'signup_banner_eligible', sessionId: 'v1', isBot: false, createdAt: ago(4 * DAY) },
+      { eventName: 'signup_banner_shown', sessionId: 'v1', isBot: false, createdAt: ago(3 * DAY) },
+    ]
+    const d = await run(30)
+    const c = d.signupFunnel.conversions.find((x) => x.key === 'eligible_to_exposure')!
+    expect(c.denom).toBe(1)
+    expect(c.numer).toBe(1) // 🔴 _min 끼리만 비교하면 0 이 나온다
+  })
+
+  it('대상 이벤트가 앞 단계 이전에만 있으면 전환이 아니다', async () => {
+    seedUsers()
+    db.events = [
+      { eventName: 'page_view', sessionId: 'v2', isBot: false, createdAt: ago(6 * DAY), userId: null },
+      { eventName: 'signup_banner_shown', sessionId: 'v2', isBot: false, createdAt: ago(5 * DAY) },
+      { eventName: 'signup_banner_eligible', sessionId: 'v2', isBot: false, createdAt: ago(4 * DAY) },
+    ]
+    const d = await run(30)
+    const c = d.signupFunnel.conversions.find((x) => x.key === 'eligible_to_exposure')!
+    expect(c.denom).toBe(1)
+    expect(c.numer).toBe(0)
+  })
+})
+
+describe('[R8-P2-3] 가입 수집 완전성은 건수가 아니라 회원 ID 대조다', () => {
+  it('서로 다른 대상의 3건/3명을 100% 로 판정하지 않는다', async () => {
+    db.users = [
+      { id: 'm1', providerId: '1', role: 'USER', createdAt: ago(3 * DAY) },
+      { id: 'm2', providerId: '2', role: 'USER', createdAt: ago(3 * DAY) },
+      { id: 'm3', providerId: '3', role: 'USER', createdAt: ago(3 * DAY) },
+      { id: 'other', providerId: '9', role: 'USER', createdAt: ago(60 * DAY) }, // 코호트 아님
+    ]
+    db.events = [
+      { eventName: 'sign_up', sessionId: 'sA', isBot: false, createdAt: ago(2 * DAY), userId: 'm1' },
+      { eventName: 'sign_up', sessionId: 'sB', isBot: false, createdAt: ago(2 * DAY), userId: null },
+      { eventName: 'sign_up', sessionId: 'sC', isBot: false, createdAt: ago(2 * DAY), userId: 'other' },
+    ]
+    const cov = (await run()).signupEventCoverage
+    expect(cov.actualNewMembers).toBe(3)
+    expect(cov.matchedMembers).toBe(1) // m1 만 ID 로 연결됨
+    expect(cov.missingMembers).toBe(2) // m2, m3
+    expect(cov.unlinkableEvents).toBe(2) // userId 없음 1 + 코호트 밖 1
+    expect(cov.rate).toBe(33.3) // 🔴 건수 비교(3/3)면 100 이 나온다
+    expect(cov.status).toBe('PARTIAL')
+  })
+
+  it('코호트 전원이 ID 로 연결되면 100% 다', async () => {
+    db.users = [{ id: 'm1', providerId: '1', role: 'USER', createdAt: ago(3 * DAY) }]
+    db.events = [{ eventName: 'sign_up', sessionId: 'sA', isBot: false, createdAt: ago(2 * DAY), userId: 'm1' }]
+    const cov = (await run()).signupEventCoverage
+    expect(cov.matchedMembers).toBe(1)
+    expect(cov.missingMembers).toBe(0)
+    expect(cov.rate).toBe(100)
+    expect(cov.status).toBe('OK')
+  })
+
+  it('퍼널의 sessionId 연결과 회원 ID 대조는 분리한다', async () => {
+    db.users = [{ id: 'm1', providerId: '1', role: 'USER', createdAt: ago(3 * DAY) }]
+    db.events = [{ eventName: 'sign_up', sessionId: 'sA', isBot: false, createdAt: ago(2 * DAY), userId: null }]
+    const d = await run()
+    // 퍼널 단계는 sessionId 기준이라 1 (이벤트가 있었다)
+    expect(d.signupFunnel.steps.find((s) => s.key === 'signup_done')?.visitors).toBe(1)
+    // 회원 대조는 ID 기준이라 0 (누구인지 연결이 안 된다)
+    expect(d.signupEventCoverage.matchedMembers).toBe(0)
+    expect(d.signupEventCoverage.unlinkableEvents).toBe(1)
+  })
+})
+
+describe('[R8-P2-4] 잔존 모순이 남아 있지 않다', () => {
+  const read = (rel: string) =>
+    readFileSync(path.join(__dirname, '..', '..', rel), 'utf8')
+
+  it('화면이 퍼널을 "세션 기준"이라고 설명하지 않는다', () => {
+    const page = read('src/app/admin/(panel)/member-recovery/page.tsx')
+    expect(page).not.toContain('세션 기준')
+    expect(page).toContain('방문자 기준')
+  })
+
+  it('철회된 "신규 실회원 7명" 표현이 코드·문서에 없다', () => {
+    for (const rel of [
+      'src/lib/queries/admin/admin.member-recovery.ts',
+      'docs/operations/2026-09-10-r8-member-recovery-measurement.md',
+    ]) {
+      expect(read(rel), `${rel} 에 철회된 수치가 남아 있다`).not.toMatch(/신규 실회원 7명/)
+    }
+  })
+
+  it('ID 대조 전에 "3/3 = 100%" 라고 단정하지 않는다', () => {
+    const doc = read('docs/operations/2026-09-10-r8-member-recovery-measurement.md')
+    expect(doc).not.toMatch(/3\/3\s*=\s*100%/)
   })
 })

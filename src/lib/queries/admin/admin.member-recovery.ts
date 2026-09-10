@@ -137,11 +137,17 @@ export interface ReplyLoop {
  * production 실측(2026-09-10 30일): 이벤트 3 vs 실제 7.
  */
 export interface SignupEventCoverage {
-  /** `sign_up` 이벤트를 낸 방문자 수 */
+  /** `sign_up` 이벤트를 낸 **방문자** 수(sessionId 기준) — 퍼널 단계와 같은 단위 */
   events: number
   /** `User.createdAt` 기준 실제 신규 실회원 수 — 이쪽이 사실이다 */
   actualNewMembers: number
-  /** events / actualNewMembers. 분모 0이면 null */
+  /** 코호트 회원 중 **자기 `userId` 가 붙은 `sign_up` 이벤트가 실제로 있는** 인원 */
+  matchedMembers: number
+  /** 코호트에 있으나 이벤트로 연결되지 않은 인원 */
+  missingMembers: number
+  /** `userId` 가 없거나 이 코호트가 아닌 `sign_up` 이벤트 수 — 누구의 가입인지 못 잇는다 */
+  unlinkableEvents: number
+  /** **matchedMembers / actualNewMembers**. 건수 비교가 아니다. 분모 0이면 null */
   rate: number | null
   status: 'OK' | 'PARTIAL' | 'GAP' | 'NO_DENOM'
 }
@@ -199,41 +205,62 @@ function median(values: number[]): number | null {
  * 최초 시각이 필요한 이유: 퍼널은 **순서가 있는** 전환이다.
  * 단순 집합 교집합은 "배너를 본 뒤 눌렀다"와 "누른 뒤 배너를 봤다"를 구분하지 못한다.
  */
-async function visitorFirstAt(
-  where: Record<string, unknown>,
-  internal: Set<string>,
-): Promise<Map<string, number>> {
-  const rows = await prisma.eventLog.groupBy({ by: ['sessionId'], where, _min: { createdAt: true } })
-  const out = new Map<string, number>()
+/** 방문자별 이벤트 **발생 구간**. `_min`/`_max` 집계라 원본 행을 끌어오지 않는다. */
+export interface VisitorSpan {
+  first: number
+  last: number
+}
+type SpanMap = Map<string, VisitorSpan>
+
+function addSpan(map: SpanMap, id: string, first: number, last: number): void {
+  const cur = map.get(id)
+  if (!cur) map.set(id, { first, last })
+  else {
+    if (first < cur.first) cur.first = first
+    if (last > cur.last) cur.last = last
+  }
+}
+
+async function visitorSpans(where: Record<string, unknown>, internal: Set<string>): Promise<SpanMap> {
+  const rows = await prisma.eventLog.groupBy({
+    by: ['sessionId'],
+    where,
+    _min: { createdAt: true },
+    _max: { createdAt: true },
+  })
+  const out: SpanMap = new Map()
   for (const r of rows) {
     if (!r.sessionId) continue
     if (internal.has(r.sessionId)) continue // 창업자·어드민 방문자 제외
-    const t = r._min?.createdAt
-    if (!t) continue
-    out.set(r.sessionId, t.getTime())
+    const a = r._min?.createdAt
+    const b = r._max?.createdAt
+    if (!a || !b) continue
+    addSpan(out, r.sessionId, a.getTime(), b.getTime())
   }
   return out
 }
 
-/** 앞 단계를 밟은 방문자 중, **그 시각 이후에** 다음 단계를 밟은 수. */
-function advancedAfter(from: Map<string, number>, to: Map<string, number>): number {
+/**
+ * 앞 단계를 밟은 방문자 중 **그 이후에 다음 단계가 (다시) 있었던** 수.
+ *
+ * 🔴 최초 시각끼리 비교하면 안 된다. 배너를 한 번 본 뒤 적격이 되고 **또 본** 방문자는
+ * `to.first < from.first` 라서 미전환으로 빠진다. 실제로는 전환이다.
+ * 그래서 앞 단계의 **최초**와 뒤 단계의 **최종**을 비교한다 —
+ * "이전에만 있었다"(`to.last < from.first`)만 제외된다.
+ */
+function advancedAfter(from: SpanMap, to: SpanMap): number {
   let n = 0
-  for (const [id, t0] of from) {
-    const t1 = to.get(id)
-    if (t1 != null && t1 >= t0) n++
+  for (const [id, a] of from) {
+    const b = to.get(id)
+    if (b && b.last >= a.first) n++
   }
   return n
 }
 
-/** 두 이벤트 계열의 합집합 — 방문자별로 **더 이른** 시각을 취한다. */
-function earliestUnion(...maps: Map<string, number>[]): Map<string, number> {
-  const out = new Map<string, number>()
-  for (const m of maps) {
-    for (const [id, t] of m) {
-      const cur = out.get(id)
-      if (cur == null || t < cur) out.set(id, t)
-    }
-  }
+/** 두 이벤트 계열의 합집합 — 방문자별 구간을 합친다. */
+function unionSpans(...maps: SpanMap[]): SpanMap {
+  const out: SpanMap = new Map()
+  for (const m of maps) for (const [id, sp] of m) addSpan(out, id, sp.first, sp.last)
   return out
 }
 
@@ -254,26 +281,88 @@ async function computeMemberRecovery(windowDays: number): Promise<MemberRecovery
   // ───────── 1단계: 방문 → 가입 유도 노출 → 카카오 로그인 시작 → 가입 완료 ─────────
   const base = { isBot: false, createdAt: { gte: since }, sessionId: { not: null } } as const
 
-  const [visit, eligible, exposure, kakaoBtn, bannerKakao, signup] = await Promise.all([
-    // 🔴 가입 퍼널의 분모는 **비회원 방문**이다. 이미 로그인한 회원의 방문을 넣으면
-    //    분모가 부풀어 "가입 유도 노출률"이 실제보다 낮게 보인다.
-    visitorFirstAt({ ...base, eventName: 'page_view', userId: null }, internal),
-    visitorFirstAt({ ...base, eventName: 'signup_banner_eligible' }, internal),
-    visitorFirstAt({ ...base, eventName: 'signup_banner_shown' }, internal),
-    visitorFirstAt({ ...base, eventName: 'kakao_button_click' }, internal),
-    visitorFirstAt(
+  /**
+   * 🔴 비회원 방문 분모는 `userId IS NULL` 만으로 만들 수 없다.
+   *
+   * `onboarding.ts` 는 온보딩 완료 시
+   * `eventLog.updateMany({ sessionId, userId: null }, { userId })` 로
+   * **그 방문자의 과거 익명 이벤트에 userId 를 소급 입력**한다.
+   * 그래서 `userId IS NULL` 로만 세면 **가입에 성공한 사람의 가입 전 방문이 통째로 빠진다** —
+   * 전환에 성공한 쪽만 분모에서 사라져 전환율이 구조적으로 낮아진다.
+   *
+   * 판정 기준: **이벤트 시각이 그 계정의 `createdAt` 보다 이르면 "가입 전 방문"** 이므로 분모에 넣는다.
+   * 반대로 계정 생성 이후의 방문(= 기존 회원의 재방문)은 가입 퍼널의 분모가 아니다.
+   */
+  const [anonVisit, attributedRows, eligible, exposure, kakaoBtn, bannerKakao, signup] = await Promise.all([
+    visitorSpans({ ...base, eventName: 'page_view', userId: null }, internal),
+    prisma.eventLog.groupBy({
+      by: ['sessionId', 'userId'],
+      where: { ...base, eventName: 'page_view', userId: { not: null } },
+      _min: { createdAt: true },
+      _max: { createdAt: true },
+    }),
+    visitorSpans({ ...base, eventName: 'signup_banner_eligible' }, internal),
+    visitorSpans({ ...base, eventName: 'signup_banner_shown' }, internal),
+    visitorSpans({ ...base, eventName: 'kakao_button_click' }, internal),
+    visitorSpans(
       { ...base, eventName: 'signup_banner_clicked', properties: { path: ['cta_type'], equals: 'kakao_oauth' } },
       internal,
     ),
-    visitorFirstAt({ ...base, eventName: 'sign_up' }, internal),
+    visitorSpans({ ...base, eventName: 'sign_up' }, internal),
   ])
 
-  // 로그인 시작 = 공용 CTA 버튼(kakao_button_click) ∪ 배너의 카카오 CTA
-  const loginStart = earliestUnion(kakaoBtn, bannerKakao)
+  const joinedAt = new Map(allUsers.map((u) => [u.id, u.createdAt.getTime()]))
+  const preSignupVisit: SpanMap = new Map()
+  let excludedMemberVisitors = 0
+  for (const r of attributedRows) {
+    const sid = r.sessionId
+    const uid = r.userId
+    const a = r._min?.createdAt
+    const b = r._max?.createdAt
+    if (!sid || !uid || !a || !b) continue
+    if (internal.has(sid)) continue
+    const firstMs = a.getTime()
+    const lastMs = b.getTime()
+    const joined = joinedAt.get(uid)
+    // 계정 생성 시각을 모르면(삭제 등) 가입 퍼널 분모에 넣지 않는다 — 보수적으로 뺀다.
+    if (joined == null || firstMs >= joined) { excludedMemberVisitors++; continue }
+    // 가입 전 방문이 있었다 → 분모에 포함. 구간은 가입 시각 이전까지로 본다.
+    addSpan(preSignupVisit, sid, firstMs, Math.min(lastMs, joined))
+  }
+  const visit = unionSpans(anonVisit, preSignupVisit)
 
-  const signupCoverageRate = rateOf(signup.size, cohort.length)
+  // 로그인 시작 = 공용 CTA 버튼(kakao_button_click) ∪ 배너의 카카오 CTA
+  const loginStart = unionSpans(kakaoBtn, bannerKakao)
+
+  /**
+   * 🔴 수집 완전성은 **건수 비교가 아니라 회원 ID 대조**다.
+   * "이벤트 3건 · 신규 3명"이라도 서로 다른 사람이면 완전성은 100% 가 아니다.
+   * 퍼널의 `sign_up` 단계(방문자=sessionId 기준)와는 **별개 지표**로 둔다.
+   */
+  const signUpUserRows = await prisma.eventLog.groupBy({
+    by: ['userId'],
+    where: { isBot: false, createdAt: { gte: since }, eventName: 'sign_up', userId: { not: null } },
+  })
+  const signUpUserIds = new Set(signUpUserRows.map((r) => r.userId).filter((v): v is string => !!v))
+  const cohortIdSet = new Set(cohort.map((u) => u.id))
+  let matchedMembers = 0
+  for (const id of cohortIdSet) if (signUpUserIds.has(id)) matchedMembers++
+  const missingMembers = cohortIdSet.size - matchedMembers
+  // 연결 불가 = userId 가 없는 이벤트 + userId 는 있으나 이 코호트가 아닌 이벤트
+  const signupWithoutUser = await visitorSpans({ ...base, eventName: 'sign_up', userId: null }, internal)
+  let offCohortEvents = 0
+  for (const id of signUpUserIds) if (!cohortIdSet.has(id)) offCohortEvents++
+  const unlinkableEvents = signupWithoutUser.size + offCohortEvents
+
+  const signupCoverageRate = rateOf(matchedMembers, cohortIdSet.size)
   const coverageStatus: SignupEventCoverage['status'] =
-    cohort.length === 0 ? 'NO_DENOM' : signup.size === 0 ? 'GAP' : signup.size < cohort.length ? 'PARTIAL' : 'OK'
+    cohortIdSet.size === 0
+      ? 'NO_DENOM'
+      : matchedMembers === 0
+        ? 'GAP'
+        : matchedMembers < cohortIdSet.size
+          ? 'PARTIAL'
+          : 'OK'
 
   const steps: FunnelStep[] = [
     {
@@ -320,9 +409,9 @@ async function computeMemberRecovery(windowDays: number): Promise<MemberRecovery
   const step = (
     key: string,
     label: string,
-    from: Map<string, number>,
+    from: SpanMap,
     fromLabel: string,
-    to: Map<string, number>,
+    to: SpanMap,
     toLabel: string,
     status: RateStatus,
     note: string,
@@ -524,6 +613,14 @@ async function computeMemberRecovery(windowDays: number): Promise<MemberRecovery
         '카카오 OAuth 는 외부 도메인을 왕복한다. 복귀 시 세션 식별자가 바뀌면 "로그인 시작 → 가입 완료"가 같은 세션으로 안 이어져 전환율이 실제보다 낮게 나온다.',
     },
     {
+      key: 'signup_attribution',
+      level: 'OK',
+      message:
+        `가입 퍼널 분모는 **비회원 방문**이다. \`onboarding.ts\` 가 가입 시 과거 익명 이벤트에 userId 를 소급 입력하므로, ` +
+        `\`userId IS NULL\` 만 세면 **가입 성공자의 가입 전 방문이 빠진다**. 이벤트 시각이 계정 생성보다 이르면 분모에 포함했고, ` +
+        `계정 생성 이후 방문(기존 회원의 재방문) **${excludedMemberVisitors}명분**은 제외했다.`,
+    },
+    {
       key: 'visitor_id_semantics',
       level: 'OK',
       message:
@@ -539,9 +636,9 @@ async function computeMemberRecovery(windowDays: number): Promise<MemberRecovery
     },
     {
       key: 'signup_cross_check',
-      // 🔴 이벤트 0 만 잡으면 부족하다. production 실측(2026-09-10): 30일 신규 실회원 7명 vs
-      //    `sign_up` 이벤트 3건 — 절반 이상 유실인데도 "0 이 아니니 정상"으로 넘어갔다.
+      // 🔴 이벤트 0 만 잡으면 부족하다. 절반 이상 유실인데도 "0 이 아니니 정상"으로 넘어간 적이 있다.
       //    그래서 **비율로도** 판정한다. 기준은 절반이다.
+      //    ⚠️ 이 대조는 **건수 기준 참고치**다. 완전성 판정의 정본은 ID 대조(`signupEventCoverage`)다.
       level:
         cohort.length === 0
           ? 'OK'
@@ -582,6 +679,9 @@ async function computeMemberRecovery(windowDays: number): Promise<MemberRecovery
     signupEventCoverage: {
       events: signup.size,
       actualNewMembers: cohort.length,
+      matchedMembers,
+      missingMembers,
+      unlinkableEvents,
       rate: signupCoverageRate,
       status: coverageStatus,
     },

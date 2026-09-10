@@ -136,7 +136,7 @@ export default async function MemberRecoveryPage({ searchParams }: Props) {
             <h1 className="text-lg font-bold text-zinc-900">R8 회원 소생 측정</h1>
             <p className="mt-1 text-xs text-zinc-500">
               실회원이 <strong>어느 단계에서 끊기는지</strong> 본다. 실회원 = <code>providerId</code> 순수 숫자 AND{' '}
-              <code>role ≠ ADMIN</code> · 이벤트 <code>isBot=false</code> · 내부(창업자·어드민) 세션 제외.
+              <code>role ≠ ADMIN</code> · 이벤트 <code>isBot=false</code> · 내부(창업자·어드민) 방문자 제외.
             </p>
           </div>
           <nav className="flex gap-1" aria-label="관측 기간">
@@ -176,7 +176,7 @@ export default async function MemberRecoveryPage({ searchParams }: Props) {
 
       <Section
         title="1단계 · 방문 → 가입 유도 노출 → 카카오 로그인 시작 → 가입 완료"
-        lead={`세션 기준. 분모·분자를 함께 적는다. ≥ 표시는 이벤트 유실 가능성이 있어 실제 값이 그 이상이라는 뜻이다.`}
+        lead={`방문자 기준(식별자 _anon_sid = 30일 쿠키). 분모·분자를 함께 적는다. ≥ 표시는 이벤트 유실 가능성이 있어 실제 값이 그 이상이라는 뜻이다.`}
       >
         <FunnelTable steps={data.signupFunnel.steps} conversions={data.signupFunnel.conversions} />
 
@@ -192,11 +192,31 @@ export default async function MemberRecoveryPage({ searchParams }: Props) {
                   <td className="py-1.5 text-right font-bold tabular-nums text-amber-900">{num(cov.actualNewMembers)}명</td>
                 </tr>
                 <tr className="border-b border-amber-200">
-                  <td className="py-1.5 pr-3 text-amber-800">`sign_up` 이벤트를 낸 방문자</td>
+                  <td className="py-1.5 pr-3 text-amber-800">
+                    ID 로 연결된 회원 <span className="text-xs">(자기 `userId` 가 붙은 `sign_up` 이벤트가 있음)</span>
+                  </td>
+                  <td className="py-1.5 text-right tabular-nums text-amber-800">{num(cov.matchedMembers)}명</td>
+                </tr>
+                <tr className="border-b border-amber-200">
+                  <td className="py-1.5 pr-3 text-amber-800">이벤트로 연결되지 않은 회원</td>
+                  <td className="py-1.5 text-right tabular-nums text-amber-800">{num(cov.missingMembers)}명</td>
+                </tr>
+                <tr className="border-b border-amber-200">
+                  <td className="py-1.5 pr-3 text-amber-800">
+                    연결 불가 이벤트 <span className="text-xs">(`userId` 없음 또는 이 코호트 밖)</span>
+                  </td>
+                  <td className="py-1.5 text-right tabular-nums text-amber-800">{num(cov.unlinkableEvents)}건</td>
+                </tr>
+                <tr className="border-b border-amber-200">
+                  <td className="py-1.5 pr-3 text-amber-800">
+                    참고 — `sign_up` 이벤트를 낸 방문자 <span className="text-xs">(퍼널과 같은 단위)</span>
+                  </td>
                   <td className="py-1.5 text-right tabular-nums text-amber-800">{num(cov.events)}명</td>
                 </tr>
                 <tr>
-                  <td className="py-1.5 pr-3 text-amber-800">이벤트 수집 완전성</td>
+                  <td className="py-1.5 pr-3 text-amber-800">
+                    <strong>수집 완전성</strong> <span className="text-xs">(ID 대조 = 연결된 회원 / 실제 신규)</span>
+                  </td>
                   <td className="py-1.5 text-right">
                     <Rate rate={cov.rate} status="OK" /> <StatusChip status={cov.status} />
                   </td>
@@ -205,7 +225,8 @@ export default async function MemberRecoveryPage({ searchParams }: Props) {
             </table>
           </div>
           <p className="mt-2 text-xs leading-5 text-amber-800">
-            이벤트가 실제 가입자보다 적으면 퍼널의 마지막 칸은 <strong>하한값</strong>이다.
+            완전성은 <strong>건수 비교가 아니라 회원 ID 대조</strong>다 — &ldquo;이벤트 3건 · 신규 3명&rdquo;이라도 서로 다른 사람이면 100%가 아니다.
+            퍼널의 <code>sign_up</code> 칸은 방문자(<code>sessionId</code>) 단위라 이 표와 <strong>단위가 다르다</strong>.
             낮은 값을 보고 <strong>&ldquo;가입 자체에서 끊겼다&rdquo;고 결론짓지 마라</strong> — 계측 유실과 구분되지 않는다.
           </p>
         </div>
