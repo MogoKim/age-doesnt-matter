@@ -1,8 +1,8 @@
-verdict,reason,source,boardType,authorReal,bodyLen,viewCount,realTraffic30d,realComment,realLike,guestLike,report,anyComment,bannedSeo,bannedBody,bannedSlug,duplicateTitle,publishedAt,slug,title,id
+verdict,reason,source,boardType,authorReal,bodyLen,viewCount,realTraffic30d,realComment,realLike,guestLike,report,anyComment,bannedSeo,bannedPublicText,bannedSlug,duplicateTitle,publishedAt,slug,title,id
 PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,STORY,true,38,223,37,1,0,0,0,6,,,,false,2026-08-13,점심-뭐드세요-2,점심 뭐드세요??,cmsqxrl4q000004jms0vlitfe
 PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,STORY,true,89,377,16,6,0,0,0,11,,,,false,2026-08-12,창원-번개-모임,창원 번개 모임,cmsqo0j69000004l7q0gymdtf
 PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,STORY,true,802,263,11,0,0,0,0,0,,,,false,2026-09-07,갱년기-오면서-부부관계고-성욕이고-싹-사라진-분-계신가요-저만-이런가,갱년기 오면서 부부관계고 성욕이고 싹 사라진 분 계신가요.. 저만 이런가,cmtqkpvg8000204l53yomnc4o
-PRESERVE,30일 비봇 실조회 11건 — 실제 열람 경로다,SHEET,LIFE2,false,33,461,11,0,0,0,0,2,,,,false,2026-08-11,50대에-돈적으로-여유로워지고-먹고살걱정없으면-행복한가요,50대에 돈적으로 여유로워지고 먹고살걱정없으면 행복한가요?,cmso088lc000l244sabaaukz0
+PRESERVE,30일 비봇 실조회 11건 — 실제 열람 경로다,SHEET,LIFE2,false,33,462,11,0,0,0,0,2,,,,false,2026-08-11,50대에-돈적으로-여유로워지고-먹고살걱정없으면-행복한가요,50대에 돈적으로 여유로워지고 먹고살걱정없으면 행복한가요?,cmso088lc000l244sabaaukz0
 PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,STORY,true,654,380,6,0,1,1,0,0,,,,false,2026-09-08,오늘-당근마켓-거래하러-나갔다가-깜짝-놀라-자빠질-뻔했어요,오늘 당근마켓 거래하러 나갔다가 깜짝 놀라 자빠질 뻔했어요 ㅋㅋㅋ,cmtry9nf0000004l435xq48ir
 PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,STORY,true,383,218,6,0,0,0,0,0,,,,false,2026-09-08,뱃살이-진짜-튜브-낀것처럼-차오르는데-저만-이러나요,뱃살이 진짜 튜브 낀것처럼 차오르는데..... 저만 이러나요? ㅜㅜㅜ,cmtrxitq5000004l691uog8cy
 PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,STORY,true,235,3858,6,0,0,0,0,9,,,,false,2026-05-16,친정엄마,친정엄마,cmp7on43s000004kzhkiwow2j
@@ -12,7 +12,7 @@ PRESERVE,30일 비봇 실조회 3건 — 실제 열람 경로다,ADMIN,STORY,fal
 PRESERVE,실회원 반응(댓글 1·공감 1·신고 0) — 사용자 활동이 붙어 있다,SHEET,STORY,false,403,456,3,1,1,0,0,8,,,,false,2026-07-16,30년-친구-이제-그만-만나려구요,30년 친구 이제 그만 만나려구요,cmrn36pqo000hy12cgb6kmig8
 PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,STORY,true,347,230,3,0,1,0,0,0,,,,false,2026-09-08,요세-단어도-생각이-안나고-내가-치매인가-아니면-브레인포그라는-건가,요세 단어도 생각이 안나고.. 내가 치매인가? 아니면 브레인포그라는 건가,cmtrxp5ke000404l6v4xfwewr
 PRESERVE,실회원 반응(댓글 1·공감 0·신고 0) — 사용자 활동이 붙어 있다,SHEET,MENOPAUSE,false,159,821,3,1,0,0,0,5,,,,false,2026-08-07,갱년기-호르몬제-산부인과-초기비용-어느정도-들까요,갱년기 호르몬제 산부인과 초기비용 어느정도 들까요?,cmsia1s3c0017414sdvkntrut
-PRESERVE,30일 비봇 실조회 3건 — 실제 열람 경로다,SHEET,LIFE2,false,37,269,3,0,0,0,0,2,,,,false,2026-08-12,50대에-국민연금-다시-들었어요,50대에 국민연금 다시 들었어요,cmsposh0p000k0x4s7qholyxi
+PRESERVE,30일 비봇 실조회 3건 — 실제 열람 경로다,SHEET,LIFE2,false,37,270,3,0,0,0,0,2,,,,false,2026-08-12,50대에-국민연금-다시-들었어요,50대에 국민연금 다시 들었어요,cmsposh0p000k0x4s7qholyxi
 PRESERVE,30일 비봇 실조회 3건 — 실제 열람 경로다,SHEET,STORY,false,26,390,3,0,0,0,0,2,,,,false,2026-08-14,며느리-보면-자식-뺏긴-기분이-드나요,며느리 보면 자식 뺏긴 기분이 드나요?,cmssb03ep000k5h4ss8tfwgw3
 PRESERVE,30일 비봇 실조회 2건 — 실제 열람 경로다,BOT,MAGAZINE,false,2760,1061,2,0,0,0,0,0,,,,false,2026-06-20,친구가-그리운데-왜-못-다가갈까,친구가 그리운데 왜 못 다가갈까,cmqlscwjt0004nq2yocee0k88
 PRESERVE,30일 비봇 실조회 2건 — 실제 열람 경로다,BOT,MAGAZINE,false,2400,1601,2,0,0,0,0,0,,,,false,2026-05-18,50대-이력서-이렇게-쓰세요,"50대 이력서, 이렇게 쓰세요",cmpama8rx0002qh2ygmohdrz2
@@ -33,9 +33,9 @@ PRESERVE,30일 비봇 실조회 1건 — 실제 열람 경로다,BOT,LIFE2,false
 PRESERVE,30일 비봇 실조회 1건 — 실제 열람 경로다,SHEET,STORY,false,388,676,1,0,0,1,0,7,,,,false,2026-07-10,집안일-부질없어-이제-안하려구요,집안일 부질없어 이제 안하려구요,cmreqcev4000hy02cmjizty16
 PRESERVE,30일 비봇 실조회 1건 — 실제 열람 경로다,BOT,LIFE2,false,368,1012,1,0,0,1,0,2,,,,false,2026-05-09,연금계좌와-ISA-50대-주부도-헷갈리더군요,"연금계좌와 ISA, 50대 주부도 헷갈리더군요",cmoyztqb300050w2yv30sp1s8
 PRESERVE,30일 비봇 실조회 1건 — 실제 열람 경로다,BOT,STORY,false,324,452,1,0,0,1,0,5,,,,false,2026-05-01,요리-수업-등록했어요-이제-시작이에요,"요리 수업 등록했어요, 이제 시작이에요",cmomh6bl60008sf3flf6tqtkx
-PRESERVE,30일 비봇 실조회 1건 — 실제 열람 경로다,SHEET,LIFE2,false,299,659,1,0,0,1,0,4,,,,false,2026-07-24,아들이-보험들어준다고-알아보래요,아들이 보험들어준다고 알아보래요,cmrym0712000q5m1mk7j4a85x
+PRESERVE,30일 비봇 실조회 1건 — 실제 열람 경로다,SHEET,LIFE2,false,299,660,1,0,0,1,0,4,,,,false,2026-07-24,아들이-보험들어준다고-알아보래요,아들이 보험들어준다고 알아보래요,cmrym0712000q5m1mk7j4a85x
 PRESERVE,30일 비봇 실조회 1건 — 실제 열람 경로다,SHEET,STORY,false,296,402,1,0,0,0,0,5,,,,false,2026-05-17,편의점에서-겪은-수상한-일,편의점에서 겪은 수상한 일,cmp9vl85o0005io4eio4ocuv5
-PRESERVE,실회원 반응(댓글 1·공감 0·신고 0) — 사용자 활동이 붙어 있다,SHEET,STORY,false,283,548,1,1,0,0,0,8,,,,false,2026-07-23,여자50대-성욕이-늘기도하나요싫으신분-패쓰,여자50대 성욕이 늘기도하나요?(싫으신분 패쓰),cmrx0xbox000f471mtzpmaaln
+PRESERVE,실회원 반응(댓글 1·공감 0·신고 0) — 사용자 활동이 붙어 있다,SHEET,STORY,false,283,550,1,1,0,0,0,8,,,,false,2026-07-23,여자50대-성욕이-늘기도하나요싫으신분-패쓰,여자50대 성욕이 늘기도하나요?(싫으신분 패쓰),cmrx0xbox000f471mtzpmaaln
 PRESERVE,30일 비봇 실조회 1건 — 실제 열람 경로다,SHEET,STORY,false,272,1538,1,0,0,0,0,1,,,,false,2026-05-16,취미로-그린-고양이-그림,취미로 그린 고양이 그림,cmp7xzssi0001ic4e3zg5z3ea
 PRESERVE,실회원 반응(댓글 1·공감 0·신고 0) — 사용자 활동이 붙어 있다,SHEET,STORY,false,266,568,1,1,0,0,0,8,,,,false,2026-07-20,52세-새벽-5시에-안-깨는-방법-아시는-분,52세. 새벽 5시에 안 깨는 방법 아시는 분?,cmrsx9lql000w3i1mcwxfi5r3
 PRESERVE,실회원 반응(댓글 0·공감 1·신고 0) — 사용자 활동이 붙어 있다,SHEET,LIFE2,false,258,355,1,0,1,0,0,0,,,,false,2026-07-14,무슨-깡으로-노후대비를-신경도-안쓰는지,무슨 깡으로 노후대비를 신경도 안쓰는지,cmrkctvok000p2z2c12meqpyv
@@ -47,11 +47,11 @@ PRESERVE,실회원 반응(댓글 1·공감 0·신고 0) — 사용자 활동이 
 PRESERVE,30일 비봇 실조회 1건 — 실제 열람 경로다,SHEET,STORY,false,154,614,1,0,0,0,0,5,,,,false,2026-07-14,남편이-종종-생각이-끊어지는-증상이,남편이 종종 생각이 끊어지는 증상이,cmrkjy902000p272cdieayzso
 PRESERVE,실회원 반응(댓글 1·공감 0·신고 0) — 사용자 활동이 붙어 있다,SHEET,STORY,false,147,273,1,1,0,0,0,1,,,,false,2026-08-07,한여름-등산복은-뭐-입나요,한여름 등산복은 뭐 입나요?,cmsiyjzxe00012u4s2n8bmay3
 PRESERVE,30일 비봇 실조회 1건 — 실제 열람 경로다,USER,STORY,false,139,1157,1,0,0,0,0,6,,,,false,2026-03-23,오늘-손주-돌잔치에-다녀왔어요,오늘 손주 돌잔치에 다녀왔어요 ㅎㅎ,cmn3617au000cey2u11lxlmx7
-PRESERVE,실회원 반응(댓글 1·공감 0·신고 0) — 사용자 활동이 붙어 있다,SHEET,LIFE2,false,124,543,1,1,0,0,0,7,,,,false,2026-08-07,일산은-집값-진짜-저렴하네요,일산은 집값 진짜 저렴하네요,cmsia1bhb000y414snl94qx33
+PRESERVE,실회원 반응(댓글 1·공감 0·신고 0) — 사용자 활동이 붙어 있다,SHEET,LIFE2,false,124,544,1,1,0,0,0,7,,,,false,2026-08-07,일산은-집값-진짜-저렴하네요,일산은 집값 진짜 저렴하네요,cmsia1bhb000y414snl94qx33
 PRESERVE,실회원 반응(댓글 1·공감 0·신고 0) — 사용자 활동이 붙어 있다,SHEET,STORY,false,109,525,1,1,0,1,0,8,,,,false,2026-07-14,남편-성욕,남편 성욕?,cmrkgtksy000hxp2ct96ccbs4
 PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,LIFE2,true,108,463,1,0,0,0,0,5,,,,false,2026-06-23,남편이-희망퇴직을-강요받네요,남편이 희망퇴직을 강요받네요,cmqpwsujd000004lehz7r6yvh
-PRESERVE,실회원 반응(댓글 1·공감 0·신고 0) — 사용자 활동이 붙어 있다,SHEET,STORY,false,100,546,1,1,0,0,0,10,노인,노인,노인,false,2026-08-06,미용실-70세이상-짠내노인들-자식자랑-지려요,미용실 70세이상 짠내노인들 자식자랑 지려요,cmsh3tc8n000dx74smaz9yukk
-PRESERVE,실회원 반응(댓글 1·공감 0·신고 0) — 사용자 활동이 붙어 있다,SHEET,LIFE2,false,83,506,1,1,0,0,0,6,,,,false,2026-07-28,국장-다시는-안하려고요,국장 다시는 안하려고요,cms45tjxd000e0d4s86lkagrv
+PRESERVE,실회원 반응(댓글 1·공감 0·신고 0) — 사용자 활동이 붙어 있다,SHEET,STORY,false,100,547,1,1,0,0,0,10,노인,노인,노인,false,2026-08-06,미용실-70세이상-짠내노인들-자식자랑-지려요,미용실 70세이상 짠내노인들 자식자랑 지려요,cmsh3tc8n000dx74smaz9yukk
+PRESERVE,실회원 반응(댓글 1·공감 0·신고 0) — 사용자 활동이 붙어 있다,SHEET,LIFE2,false,83,507,1,1,0,0,0,6,,,,false,2026-07-28,국장-다시는-안하려고요,국장 다시는 안하려고요,cms45tjxd000e0d4s86lkagrv
 PRESERVE,30일 비봇 실조회 1건 — 실제 열람 경로다,SHEET,MENOPAUSE,false,63,749,1,0,0,1,0,3,,,,false,2026-07-11,폐경-즘이면-성욕이-아예-사라지나요,폐경 즘이면 성욕이 아예 사라지나요?,cmrg8nngm000h3m2cvg00dt6g
 PRESERVE,30일 비봇 실조회 1건 — 실제 열람 경로다,SHEET,HUMOR,false,56,987,1,0,0,2,0,5,,,,false,2026-07-04,김부장-드라마-쓸데없이-잔인,김부장 드라마 쓸데없이 잔인,cmr70348r001e3p3g885po9oi
 PRESERVE,30일 비봇 실조회 1건 — 실제 열람 경로다,SHEET,STORY,false,47,602,1,0,0,0,0,2,,,,false,2026-07-18,눈밑꺼짐-필러-맞을까요,눈밑꺼짐 필러 맞을까요?,cmrqe62m600013v1m50t1ufhp
@@ -65,7 +65,7 @@ PRESERVE,30일 비봇 실조회 1건 — 실제 열람 경로다,SHEET,STORY,fal
 PRESERVE,30일 비봇 실조회 1건 — 실제 열람 경로다,SHEET,STORY,false,29,476,1,0,0,0,0,2,,,,false,2026-08-02,50-이후에도-성욕-왕성하신-분들은,50 이후에도 성욕 왕성하신 분들은,cmsbp34ho000v1v4ssoyyq7ag
 PRESERVE,30일 비봇 실조회 1건 — 실제 열람 경로다,SHEET,STORY,false,26,239,1,0,0,0,0,2,,,,false,2026-08-02,50대-초반-미혼녀,50대 초반 미혼녀,cmsbtzat4000ew64shlh55spy
 PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,STORY,true,13,226,1,0,0,0,0,5,,,,false,2026-08-16,나루님의-첫인사,나루님의 첫인사,cmsvpt0lv000004l2ah2kp0ss
-PRESERVE,30일 비봇 실조회 1건 — 실제 열람 경로다,SHEET,LIFE2,false,11,449,1,0,0,0,0,2,,,,false,2026-07-24,미국장-뭐죠-전쟁날때보다-더-최악이네요,미국장 뭐죠?.. 전쟁날때보다 더 최악이네요.,cmryj2bbc000w181myps5kkuh
+PRESERVE,30일 비봇 실조회 1건 — 실제 열람 경로다,SHEET,LIFE2,false,11,450,1,0,0,0,0,2,,,,false,2026-07-24,미국장-뭐죠-전쟁날때보다-더-최악이네요,미국장 뭐죠?.. 전쟁날때보다 더 최악이네요.,cmryj2bbc000w181myps5kkuh
 PRESERVE,30일 비봇 실조회 1건 — 실제 열람 경로다,SHEET,HUMOR,false,9,2819,1,0,0,0,0,2,,,,false,2026-05-15,남편이-장을-봐도-자꾸-비싼-물건을,남편이 장을 봐도 자꾸 비싼 물건을,cmp7jxgzx000pgb4etqxj8baq
 PRESERVE,30일 비봇 실조회 1건 — 실제 열람 경로다,SHEET,STORY,false,9,238,1,0,0,0,0,2,,,,false,2026-07-20,팔자주름-쥬베룩-괜찮아요,팔자주름 쥬베룩 괜찮아요?,cmrsr6t7f0006361mcvs518qf
 PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,STORY,true,747,710,0,2,1,0,0,3,,,,false,2026-04-10,엄마가-요즘-많이-힘들어하시는데-조심스럽게-여쭤봐요,엄마가 요즘 많이 힘들어하시는데… 조심스럽게 여쭤봐요,cmnsanubr000004jmc5divouu
@@ -73,13 +73,13 @@ PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER
 PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,STORY,true,614,377,0,0,0,0,0,5,,,,false,2026-07-13,복직하는거,복직하는거..,cmritf4zo000004lj1gusuloy
 PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,MENOPAUSE,true,583,149,0,0,1,0,0,0,,,,false,2026-09-08,,산부인과 다녀왔는데 완경 판정 받았네요.. 마음이 참 숭숭해요,cmtryadia000204l4wurrpjt7
 PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,MENOPAUSE,true,582,168,0,0,0,0,0,0,,,,false,2026-09-07,,갱년기 오니까 피부 장벽이고 머리숱이고 다 털리네요.. 저만 이런,cmtqkouku000004l52m2uxk1o
-PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,HUMOR,true,531,38,0,0,0,0,0,0,,,,false,2026-09-10,이동국-딸-뉴욕-명문대-휴학했다더니-결국-연예인-하려나-보네요,이동국 딸 뉴욕 명문대 휴학했다더니.. 결국 연예인 하려나 보네요 ㅋㅋㅋ,cmtuv4wcy000004l7cvsq8e03
+PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,HUMOR,true,531,40,0,0,0,0,0,0,,,,false,2026-09-10,이동국-딸-뉴욕-명문대-휴학했다더니-결국-연예인-하려나-보네요,이동국 딸 뉴욕 명문대 휴학했다더니.. 결국 연예인 하려나 보네요 ㅋㅋㅋ,cmtuv4wcy000004l7cvsq8e03
 PRESERVE,실회원 반응(댓글 0·공감 1·신고 0) — 사용자 활동이 붙어 있다,BOT,MENOPAUSE,false,528,788,0,0,1,0,0,7,,,,false,2026-04-25,혹시-저만-요즘-화끈거리고-우울한-건가요-갱년기-맞을까봐,혹시 저만 요즘 화끈거리고 우울한 건가요... 갱년기 맞을까봐,cmoebzhms0016yr3fnc2uegb8
 PRESERVE,실회원 반응(댓글 1·공감 0·신고 0) — 사용자 활동이 붙어 있다,SHEET,STORY,false,461,1003,0,1,0,0,0,11,,,,false,2026-08-11,초딩-입맛-가지신-50대-분들-있나요,초딩 입맛 가지신 50대 분들 있나요?,cmso07yo4000f244s4fcrldyc
 PRESERVE,실회원 반응(댓글 1·공감 1·신고 0) — 사용자 활동이 붙어 있다,SHEET,MENOPAUSE,false,419,2093,0,1,1,0,0,8,,,,false,2026-07-23,자꾸-눈물이-나는-갱년기,자꾸 눈물이 나는 갱년기,cmrwx39mt000n2r1m6i3gc4ut
 PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,MENOPAUSE,true,404,166,0,0,0,0,0,0,,,,false,2026-09-08,,갱년기 오고 다 부질없어져서 모임도 다 끊엇네요..,cmtrxjh0u000204l6h5karkfy
 PRESERVE,실회원 반응(댓글 0·공감 1·신고 0) — 사용자 활동이 붙어 있다,SHEET,STORY,false,370,474,0,0,1,0,0,7,,,,false,2026-07-16,친한-언니-차에-상처냈어요,친한 언니 차에 상처냈어요,cmrnnm4zy00065k1me87tcfxa
-PRESERVE,실회원 반응(댓글 1·공감 0·신고 0) — 사용자 활동이 붙어 있다,SHEET,STORY,false,356,579,0,1,0,0,0,10,,,,false,2026-08-06,70년대생은-아실라나-학교에서의-추행-경험,70년대생은 아실라나? 학교에서의 추행 경험,cmshdcs36000d3e4sulhphxd6
+PRESERVE,실회원 반응(댓글 1·공감 0·신고 0) — 사용자 활동이 붙어 있다,SHEET,STORY,false,356,581,0,1,0,0,0,10,,,,false,2026-08-06,70년대생은-아실라나-학교에서의-추행-경험,70년대생은 아실라나? 학교에서의 추행 경험,cmshdcs36000d3e4sulhphxd6
 PRESERVE,실회원 반응(댓글 1·공감 1·신고 0) — 사용자 활동이 붙어 있다,SHEET,STORY,false,347,1074,0,1,1,0,0,9,,,,false,2026-07-29,부정적인-생각부터-먼저-하는-습관,부정적인 생각부터 먼저 하는 습관..,cms5tpiiz000m234s5unc6473
 PRESERVE,실회원 반응(댓글 1·공감 1·신고 0) — 사용자 활동이 붙어 있다,BOT,STORY,false,326,427,0,1,1,0,0,1,,,,false,2026-05-10,돈-빌려달라는-친구-어떻게-거절했어요,"돈 빌려달라는 친구, 어떻게 거절했어요",cmozrmj2c0005083fumgmmwai
 PRESERVE,실회원 반응(댓글 1·공감 0·신고 0) — 사용자 활동이 붙어 있다,ADMIN,STORY,false,300,4,0,1,0,0,0,7,,,,false,2026-07-27,,🔥 복숭아 좋아세요?,cms2lenmr000004l5zgv2j856
@@ -96,7 +96,7 @@ PRESERVE,실회원 반응(댓글 1·공감 0·신고 0) — 사용자 활동이 
 PRESERVE,실회원 반응(댓글 1·공감 0·신고 0) — 사용자 활동이 붙어 있다,SHEET,HUMOR,false,184,2527,0,1,0,0,0,9,,,,false,2026-08-06,삶의-질-엄청-떨어지는-질병,삶의 질 엄청 떨어지는 질병,cmsh4ztsr0007hr2ylwcrkrhj
 PRESERVE,실회원 반응(댓글 0·공감 1·신고 0) — 사용자 활동이 붙어 있다,SHEET,STORY,false,161,571,0,0,1,0,0,7,,,,false,2026-07-17,우울증과-성욕,우울증과 성욕,cmroc7l1r000s3n1mag47hfwz
 PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,MENOPAUSE,true,161,481,0,1,0,0,0,7,,,,false,2026-08-13,,요즘 신체적 변화때문에 잠을 못자서 수면유도제를 먹어봤는데...,cmsqx9rui000104jmiz5fpt79
-PRESERVE,실회원 반응(댓글 0·공감 1·신고 0) — 사용자 활동이 붙어 있다,SHEET,STORY,false,152,644,0,0,1,0,0,7,,,,false,2026-07-20,혼자되면-왤케-소심해-질까요,혼자되면 왤케 소심해 질까요,cmrsua0x3000m3b1m24wngz5j
+PRESERVE,실회원 반응(댓글 0·공감 1·신고 0) — 사용자 활동이 붙어 있다,SHEET,STORY,false,152,646,0,0,1,0,0,7,,,,false,2026-07-20,혼자되면-왤케-소심해-질까요,혼자되면 왤케 소심해 질까요,cmrsua0x3000m3b1m24wngz5j
 PRESERVE,실회원 반응(댓글 0·공감 1·신고 0) — 사용자 활동이 붙어 있다,SHEET,STORY,false,142,414,0,0,1,0,0,7,,,,false,2026-07-14,요즘은-대학생들도-럭셔리여행,요즘은 대학생들도 럭셔리여행,cmrkgtvxx000nxp2c6yezp1io
 PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,STORY,true,128,404,0,0,0,0,0,5,,,,false,2026-06-14,사노라면,사노라면,cmqd6u9fn000004jsz2f8liyl
 PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,STORY,true,123,798,0,0,0,0,0,4,,,,false,2026-04-08,인삿밀,인삿밀,cmnq6393l000004jvu2cvx0ba
@@ -117,7 +117,7 @@ PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER
 PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,MENOPAUSE,true,44,564,0,0,0,0,0,5,,,,false,2026-07-28,,갱년기 때문 얼굴이 화끈,cms43q3au000404kzwk5wtpvh
 PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,STORY,true,41,276,0,0,0,0,0,5,,,,false,2026-07-28,달이-밝아요,달이 밝아요~~,cms4o9max000704laegbp11z8
 PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,STORY,true,41,1193,0,0,0,0,0,0,,,,false,2026-04-13,미국-이란-사태로-너무-힘듭니다,미국 이란 사태로 너무 힘듭니다...,cmnwxq1fo000004kyqoa18x31
-PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,LIFE2,true,37,436,0,1,0,0,0,6,,,,false,2026-07-29,가입인사,가입인사,cms5y8t4i000204jptluiw253
+PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,LIFE2,true,37,437,0,1,0,0,0,6,,,,false,2026-07-29,가입인사,가입인사,cms5y8t4i000204jptluiw253
 PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,STORY,true,37,747,0,0,0,0,0,5,,,,false,2026-06-06,자연과-사랑,자연과 사랑,cmq23sqkn000104jo4pv7qk39
 PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,MENOPAUSE,true,25,209,0,1,0,0,0,1,,,,false,2026-09-05,,갱년기.. 자고 싶다.,cmtog37qv000004l6ayu7muli
 PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,STORY,true,25,397,0,5,0,0,0,10,,,,false,2026-07-06,천상소리-인사,천상소리 인사,cmr9szb4v000004jukcvggn3u
@@ -127,7 +127,7 @@ PRESERVE,실회원 반응(댓글 1·공감 0·신고 0) — 사용자 활동이 
 PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,STORY,true,16,874,0,0,0,1,0,6,,,,false,2026-06-21,브이톡님의-첫인사,브이톡님의 첫인사,cmqny5mgt000004l2ysb6osys
 PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,STORY,true,13,868,0,0,0,2,0,5,,,,false,2026-06-17,하이요님의-첫인사,하이요님의 첫인사,cmqhvdjkz000004l2xgtbivia
 PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,STORY,true,13,620,0,1,0,1,0,7,,,,false,2026-06-23,들꽃향기님의-첫인사,들꽃향기님의 첫인사,cmqr5g4bx000004ilouhlwfzk
-PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,STORY,true,12,458,0,0,0,0,0,5,,,,false,2026-07-28,알라딘님의-첫인사,알라딘님의 첫인사,cms3zokys000004js91zl3ew8
+PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,STORY,true,12,461,0,0,0,0,0,5,,,,false,2026-07-28,알라딘님의-첫인사,알라딘님의 첫인사,cms3zokys000004js91zl3ew8
 PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,STORY,true,11,320,0,0,0,0,0,5,,,,false,2026-08-07,아프로디테님의-첫인사,아프로디테님의 첫인사,cmsi9pw3s000004l37lf31s51
 PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,STORY,true,11,460,0,1,0,0,0,6,,,,false,2026-07-07,커피향기님의-첫인사,커피향기님의 첫인사,cmr9zngop000004l5f983xz0f
 PRESERVE,실회원(providerId 숫자·비ADMIN) 작성 — 무조건 보존,USER,STORY,true,10,347,0,0,0,0,0,5,,,,false,2026-06-09,솔로-인생-나도살고싶다,솔로 인생 나도살고싶다,cmq5w5kkg000504k0b26dfy2b
@@ -152,7 +152,7 @@ REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 �
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,3179,1636,0,0,0,0,0,0,,,,false,2026-06-22,은퇴-첫-1년-보릿고개-넘기기,"은퇴 첫 1년, 보릿고개 넘기기",cmqon2bpa0005782y124m4cy8
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,3138,1132,0,0,0,0,0,0,,,,false,2026-06-19,50대-친구를-다시-만드는-법,"50대, 친구를 다시 만드는 법",cmqkh9bgh0004em2ygr6dqo9h
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,3134,1437,0,0,0,0,0,0,,,,false,2026-06-17,나이-드는-게-무섭다고요,나이 드는 게 무섭다고요?,cmqhi8exa00081u2y8unnq0is
-REVIEW,본문 금지 표현(노인) — SEO 노출면은 아니다. 문구 정정 후보,BOT,MAGAZINE,false,3126,998,0,0,0,0,0,0,,노인,,false,2026-07-17,내가-원하는-노후-돌봄-지금-설계하세요,"내가 원하는 노후 돌봄, 지금 설계하세요",cmrohjsec0007a62yjhuhfws7
+REVIEW,공개 본문·제목 금지 표현(노인) — SEO 노출면은 아니다. 문구 정정 후보,BOT,MAGAZINE,false,3126,998,0,0,0,0,0,0,,노인,,false,2026-07-17,내가-원하는-노후-돌봄-지금-설계하세요,"내가 원하는 노후 돌봄, 지금 설계하세요",cmrohjsec0007a62yjhuhfws7
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,3098,1420,0,0,0,0,0,0,,,,false,2026-08-20,2인-가구-생활비-이렇게-줄여요,"2인 가구 생활비, 이렇게 줄여요",cmt0xs7ac0004nv2y0b3dh77k
 REVIEW,실제 SEO 노출면(title/description) 금지 표현(실버) — 삭제가 아니라 문구 정정 대상,BOT,MAGAZINE,false,3094,3844,0,0,0,0,0,2,실버,실버,,false,2026-06-04,노후-주거-시나리오-3가지-비교,노후 주거 시나리오 3가지 비교,cmpyxhh950008ak2ywkhpx4cv
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,3087,1881,0,0,0,0,0,0,,,,false,2026-07-27,50대-여자-외모가-달라져도-괜찮아요,"50대 여자, 외모가 달라져도 괜찮아요",cms2nab7z0004mc2yeug6hhzv
@@ -162,16 +162,16 @@ REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 �
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,3043,1387,0,0,0,0,0,0,,,,false,2026-06-17,50대-몸의-반격-버틸까-치료받을까,"50대 몸의 반격, 버틸까 치료받을까",cmqhhxtxc00051u2ydgtcq8fg
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,3037,1024,0,0,0,0,0,0,,,,false,2026-07-15,퇴직-후-첫-한-달-뭐부터-해야-할까,"퇴직 후 첫 한 달, 뭐부터 해야 할까",cmrlmbvng0003t92yiixxj1tu
 REVIEW,실제 SEO 노출면(title/description) 금지 표현(노인) — 삭제가 아니라 문구 정정 대상,BOT,MAGAZINE,false,3020,2004,0,0,0,0,0,0,노인,노인|시니어,노인,false,2026-08-08,노인일자리-몇-살부터-신청할까,"노인일자리, 몇 살부터 신청할까",cmsjsn10g0004np2y057yieuj
-REVIEW,본문 금지 표현(실버) — SEO 노출면은 아니다. 문구 정정 후보,BOT,MAGAZINE,false,3013,1240,0,0,0,0,0,0,,실버,,false,2026-08-21,5060대-여행-할인-이렇게-찾으세요,"50·60대 여행 할인, 이렇게 찾으세요",cmt2dbxs50004mf2yaw2s39nt
+REVIEW,공개 본문·제목 금지 표현(실버) — SEO 노출면은 아니다. 문구 정정 후보,BOT,MAGAZINE,false,3013,1240,0,0,0,0,0,0,,실버,,false,2026-08-21,5060대-여행-할인-이렇게-찾으세요,"50·60대 여행 할인, 이렇게 찾으세요",cmt2dbxs50004mf2yaw2s39nt
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,3009,1106,0,0,0,0,0,0,,,,false,2026-07-15,퇴직-후-첫-한-달-이렇게-보내세요,"퇴직 후 첫 한 달, 이렇게 보내세요",cmrli21fn0003vd2yjw8tbvj7
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,3005,2315,0,0,0,0,0,0,,,,false,2026-06-13,귀촌-10년-진짜-시골-생활,"귀촌 10년, 진짜 시골 생활",cmqbs841j00052r2y0vfyava1
-REVIEW,본문 금지 표현(노인) — SEO 노출면은 아니다. 문구 정정 후보,BOT,MAGAZINE,false,2996,804,0,0,0,0,0,0,,노인,,false,2026-07-17,요양병원-말고-내가-원하는-노후,"요양병원 말고, 내가 원하는 노후",cmrod9mcx00088q2y65a1blst
+REVIEW,공개 본문·제목 금지 표현(노인) — SEO 노출면은 아니다. 문구 정정 후보,BOT,MAGAZINE,false,2996,804,0,0,0,0,0,0,,노인,,false,2026-07-17,요양병원-말고-내가-원하는-노후,"요양병원 말고, 내가 원하는 노후",cmrod9mcx00088q2y65a1blst
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2993,2055,0,0,0,0,0,0,,,,false,2026-07-22,50대-아침-컨디션-왜-이럴까요,"50대 아침 컨디션, 왜 이럴까요",cmrvmf3e90003dy2yv0k6xo0e
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2987,704,0,0,0,0,0,0,,,,false,2026-07-11,자녀방-이제-내-공간으로,"자녀방, 이제 내 공간으로",cmrfsbact0003cg2yirix2wb0
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2982,3022,0,0,0,0,0,0,,,,false,2026-06-05,환율-폭풍-50대-돈-지키기,"환율 폭풍, 50대 돈 지키기",cmq0cd56y0002pt2y5x6e0kvz
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2979,1882,0,0,0,0,0,0,,,,false,2026-06-11,은퇴-전-1년-체크리스트-총정리,"은퇴 전 1년, 체크리스트 총정리",cmq8x2nvh00025v2y7p8p8f28
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2974,1132,0,0,0,0,0,0,,,,false,2026-06-20,퇴직금-IRP-왕초보도-할-수-있어요,"퇴직금 IRP, 왕초보도 할 수 있어요",cmqls30d40002nq2yzweu0jfo
-REVIEW,본문 금지 표현(노인) — SEO 노출면은 아니다. 문구 정정 후보,BOT,MAGAZINE,false,2972,1350,0,0,0,0,0,0,,노인,,false,2026-06-17,부모님-간병-지금-준비하세요,"부모님 간병, 지금 준비하세요",cmqhhpz3100021u2yixjdr1hf
+REVIEW,공개 본문·제목 금지 표현(노인) — SEO 노출면은 아니다. 문구 정정 후보,BOT,MAGAZINE,false,2972,1350,0,0,0,0,0,0,,노인,,false,2026-06-17,부모님-간병-지금-준비하세요,"부모님 간병, 지금 준비하세요",cmqhhpz3100021u2yixjdr1hf
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2969,1132,0,0,0,0,0,0,,,,false,2026-06-18,연금-인출-순서-이렇게-꺼내세요,"연금 인출 순서, 이렇게 꺼내세요",cmqj1o10y0005il2y9wtz8ap5
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2961,1678,0,0,0,0,0,0,,,,false,2026-06-10,억울하게-늙지-않는-법,억울하게 늙지 않는 법,cmq7m5r1l0004u32yimkbgpsp
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2953,1150,0,0,0,0,0,0,,,,false,2026-05-23,50대-이-검진은-꼭-받으세요,"50대, 이 검진은 꼭 받으세요",cmphriw160002hl2y2vdceal5
@@ -179,7 +179,7 @@ REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 �
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2940,1116,0,0,0,0,0,0,,,,false,2026-06-20,50대-외로움-다가가지-못하는-이유,"50대 외로움, 다가가지 못하는 이유",cmqlwmtp40004t22yo9aqtvg1
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2932,2218,0,0,0,0,0,0,,,,false,2026-06-13,시골살이-로망과-현실-사이,"시골살이, 로망과 현실 사이",cmqbw7bn10002bi2y520ydeg6
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2906,791,0,0,0,0,0,2,,,,false,2026-05-15,은퇴-전-3년-자산-재편-실전법,"은퇴 전 3년, 자산 재편 실전법",cmp6owdvl0006a02yc1yh9j4t
-REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2903,919,0,0,0,0,0,0,,,,false,2026-06-19,노후-자금-진짜-충분한가요,"노후 자금, 진짜 충분한가요?",cmqkgzghg0002em2yol4av9lu
+REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2903,921,0,0,0,0,0,0,,,,false,2026-06-19,노후-자금-진짜-충분한가요,"노후 자금, 진짜 충분한가요?",cmqkgzghg0002em2yol4av9lu
 REVIEW,실제 SEO 노출면(title/description) 금지 표현(노인) — 삭제가 아니라 문구 정정 대상,BOT,MAGAZINE,false,2900,955,0,0,0,0,0,0,노인,노인,노인,false,2026-07-04,60대-여자-일자리-찾는-법-파트타임-노인일자리사업-완벽-정리,"60대 여자 일자리, 지금 찾는 법",cmr5whll30002te2yj218bb55
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2900,589,0,0,0,0,0,2,,,,false,2026-05-15,이-증상-병원-가야-할까요,"이 증상, 병원 가야 할까요?",cmp6oq02r0002a02ye3i334fq
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2895,2349,0,0,0,1,0,0,,,,false,2026-06-12,IRP연금저축ISA-내-돈-그릇-순서,"IRP·연금저축·ISA, 내 돈 그릇 순서",cmqahxpny00050x2yn8wph98k
@@ -202,10 +202,10 @@ REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 �
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2852,1478,0,0,0,0,0,0,,,,false,2026-07-01,50대-여성-밤에-식은땀-나는-이유-3가지와-골다공증-검사-주기,"50대 여성, 밤에 식은땀 나는 이유",cmr1i0oxi0002ak2ycsdb5aad
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2844,1836,0,0,0,0,0,0,,,,false,2026-07-29,돈-싸움-부부를-갈라놓나요,"돈 싸움, 부부를 갈라놓나요",cms5mfd0g0003qz2yiv7t18vl
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2840,651,0,0,0,0,0,0,,,,false,2026-07-16,폭락장-50대-돈-관리-핵심,"폭락장, 50대 돈 관리 핵심",cmrmxqf440008q22y3q9zzs66
-REVIEW,본문 금지 표현(어르신) — SEO 노출면은 아니다. 문구 정정 후보,BOT,MAGAZINE,false,2833,2227,0,0,0,0,0,0,,어르신,,false,2026-08-05,국민연금-늦게-받으면-얼마나-더-받나요,"국민연금, 늦게 받으면 얼마나 더 받나요",cmsfmiani00031m2ya40tztj9
+REVIEW,공개 본문·제목 금지 표현(어르신) — SEO 노출면은 아니다. 문구 정정 후보,BOT,MAGAZINE,false,2833,2227,0,0,0,0,0,0,,어르신,,false,2026-08-05,국민연금-늦게-받으면-얼마나-더-받나요,"국민연금, 늦게 받으면 얼마나 더 받나요",cmsfmiani00031m2ya40tztj9
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2830,1011,0,0,0,0,0,0,,,,false,2026-07-14,폭락장에서-내-돈-지키는-법,폭락장에서 내 돈 지키는 법,cmrk2w3x900051y2yc4b5eu0x
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2828,1021,0,0,0,0,0,0,,,,false,2026-06-18,갱년기-몸과-마음-사용설명서,갱년기 몸과 마음 사용설명서,cmqj1f9ul0002il2yn7utvefz
-REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2825,1954,0,0,0,0,0,0,,,,false,2026-06-11,퇴직-D100-설레야-하는데-왜-무서울까,"퇴직 D-100, 설레야 하는데 왜 무서울까?",cmq91c4jj00022p2yjnm9iz5n
+REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2825,1956,0,0,0,0,0,0,,,,false,2026-06-11,퇴직-D100-설레야-하는데-왜-무서울까,"퇴직 D-100, 설레야 하는데 왜 무서울까?",cmq91c4jj00022p2yjnm9iz5n
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2821,1613,0,0,0,0,0,0,,,,false,2026-06-10,은퇴-준비-1년으론-부족해요,"은퇴 준비, 1년으론 부족해요",cmq7lvi1x0002u32yj0hehhev
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2817,2011,0,0,0,0,0,0,,,,false,2026-07-17,하락장-50대-돈-지키는-법,"하락장, 50대 돈 지키는 법",cmrohavfd0004a62ylwvcnms5
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2815,1245,0,0,0,0,0,0,,,,false,2026-07-09,갱년기-나이-여자-증상-8가지와-대처법-완벽-정리,"갱년기 나이, 여자라면 꼭 알아야 할 것",cmrd1oyee0002r12yo4vc0xtm
@@ -228,7 +228,7 @@ REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 �
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2749,2238,0,0,0,0,0,0,,,,false,2026-08-11,관절에-좋은-콜라겐-음식-5가지,관절에 좋은 콜라겐 음식 5가지,cmso2tmsa0004ke2y50f0d3es
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2745,2760,0,0,0,0,0,4,,,,false,2026-06-02,계좌가-수익률을-바꾼다,계좌가 수익률을 바꾼다,cmpw1w9f300022q2yqjxthv8i
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2742,1981,0,0,0,0,0,0,,,,false,2026-07-28,연금저축-세액공제-안-받으면-얼마나-손해일까요,연금저축 세액공제 안 받으면 얼마나 손해일까요,cms42qba20004p62y6h93wh0t
-REVIEW,본문 금지 표현(노인) — SEO 노출면은 아니다. 문구 정정 후보,BOT,MAGAZINE,false,2739,1201,0,0,0,0,0,0,,노인,,false,2026-07-08,중장년-취업-자격증-추천-5가지-비용-지원-받는-법-완벽-정리,"중장년 자격증, 지금 따도 될까요",cmrbhyyxh0002302y2d75xdgz
+REVIEW,공개 본문·제목 금지 표현(노인) — SEO 노출면은 아니다. 문구 정정 후보,BOT,MAGAZINE,false,2739,1201,0,0,0,0,0,0,,노인,,false,2026-07-08,중장년-취업-자격증-추천-5가지-비용-지원-받는-법-완벽-정리,"중장년 자격증, 지금 따도 될까요",cmrbhyyxh0002302y2d75xdgz
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2738,2168,0,0,0,0,0,0,,,,false,2026-08-01,중년-혼자-등산-이렇게-시작해요,"중년 혼자 등산, 이렇게 시작해요",cms9sgtke0004k12ysxhvjis6
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2738,844,0,0,0,0,0,0,,,,false,2026-07-10,빈-둥지-증후군-증상-5가지와-자녀-독립-후-허전함-극복법,"빈 둥지 증후군, 증상과 극복법",cmrecvgqi0002c92y3mzyys54
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2720,2087,0,0,0,0,0,0,,,,false,2026-07-23,퇴직-후-건강보험-이렇게-하세요,"퇴직 후 건강보험, 이렇게 하세요",cmrwxj5c900042c2yip97n8d1
@@ -279,7 +279,7 @@ REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 �
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2385,758,0,0,0,0,0,0,,,,false,2026-04-01,,"그냥 피곤한 거 아니에요 — 턱관절·승모근·갱년기, 50대 몸의 신호 제대로 읽기",cmnfyt6vk0001yr38zzkapw1y
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2379,1099,0,0,0,0,0,0,,,,false,2026-05-21,혼자서도-잘-논다,혼자서도 잘 논다,cmpewoitl0004a82y9mjyl0sq
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2359,846,0,0,0,0,0,2,,,,false,2026-05-16,밤마다-깨는-건-갱년기-때문일까요,밤마다 깨는 건 갱년기 때문일까요?,cmp7vuhm80002eb2y1536uuel
-REVIEW,본문 금지 표현(노인) — SEO 노출면은 아니다. 문구 정정 후보,BOT,MAGAZINE,false,2346,544,0,0,0,0,0,2,,노인,,false,2026-04-02,,"""그냥 나이 드는 거겠지"" — 갱년기 몸의 신호, 절대 그냥 넘기지 마세요",cmngxcjvl0001yf38wptsgaes
+REVIEW,공개 본문·제목 금지 표현(노인) — SEO 노출면은 아니다. 문구 정정 후보,BOT,MAGAZINE,false,2346,544,0,0,0,0,0,2,,노인,,false,2026-04-02,,"""그냥 나이 드는 거겠지"" — 갱년기 몸의 신호, 절대 그냥 넘기지 마세요",cmngxcjvl0001yf38wptsgaes
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2342,1142,0,0,0,0,0,0,,,,false,2026-07-09,50대-남자-패션-스타일링-5가지-지금-바로-적용-가능,"50대 남편 패션, 이렇게 챙겨요",cmrcxe9vm0002v52y8g8ytizw
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2333,971,0,0,0,0,0,0,,,,false,2026-05-18,황혼-동거-각자의-공간이-필요해요,"황혼 동거, 각자의 공간이 필요해요",cmpamchyn0004qh2ydlk1zpn0
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2331,1205,0,0,0,0,0,0,,,,false,2026-05-19,내-뼈가-무너지고-있다,내 뼈가 무너지고 있다,cmpc1q61700029s2yj6h74h3f
@@ -304,13 +304,13 @@ REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 �
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2039,1223,0,0,0,0,0,0,,,,false,2026-07-12,국민연금-추납수령액-완전정리,국민연금 추납·수령액 완전정리,cmrh843640008q52yqbwegv8t
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2034,2201,0,0,0,0,0,0,,,,false,2026-07-26,갱년기-극복-오늘부터-이렇게,"갱년기 극복, 오늘부터 이렇게",cms1c5u840003rh2y6kd53ptn
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,2013,873,0,0,0,0,0,0,,,,false,2026-05-11,나만-뒤처진-느낌-정상이에요,"나만 뒤처진 느낌, 정상이에요",cmp1ufx4l0005f22yfyzb8y21
-REVIEW,본문 금지 표현(노인) — SEO 노출면은 아니다. 문구 정정 후보,BOT,MAGAZINE,false,2013,1559,0,0,0,0,0,0,,노인,,false,2026-07-19,부모님-요양원-죄책감-없이,"부모님 요양원, 죄책감 없이",cmrr83fgp000b462ypjeo23cm
+REVIEW,공개 본문·제목 금지 표현(노인) — SEO 노출면은 아니다. 문구 정정 후보,BOT,MAGAZINE,false,2013,1559,0,0,0,0,0,0,,노인,,false,2026-07-19,부모님-요양원-죄책감-없이,"부모님 요양원, 죄책감 없이",cmrr83fgp000b462ypjeo23cm
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,1988,958,0,0,0,0,0,0,,,,false,2026-07-12,60대-근육-걷기론-부족해요,"60대 근육, 걷기론 부족해요",cmrh7wlge0005q52y04lh5k60
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,1987,1565,0,0,0,0,0,0,,,,false,2026-07-26,부부-나이-차이-중년의-온도차,"부부 나이 차이, 중년의 온도차",cms17uims0004a32y4ssluuzf
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,1980,1529,0,0,0,0,0,0,,,,false,2026-06-21,연금-있는데-왜-빠듯할까,연금 있는데 왜 빠듯할까,cmqn7vy8b0007yo2yg1breqx7
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,1964,657,0,0,0,0,0,2,,,,false,2026-05-04,금융소득-2천만-원의-함정,금융소득 2천만 원의 함정,cmorqx77n0007j42u1sajigqg
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,1950,874,0,0,0,0,0,2,,,,false,2026-05-11,내-몸이-왜-이러지,내 몸이 왜 이러지?,cmp1u9dkq0002f22y3o93hg4u
-REVIEW,본문 금지 표현(어르신) — SEO 노출면은 아니다. 문구 정정 후보,BOT,MAGAZINE,false,1942,1334,0,0,0,0,0,3,,어르신,,false,2026-05-11,바다로-간-사람들의-솔직-후기,바다로 간 사람들의 솔직 후기,cmp1uo31f0008f22yfpof679u
+REVIEW,공개 본문·제목 금지 표현(어르신) — SEO 노출면은 아니다. 문구 정정 후보,BOT,MAGAZINE,false,1942,1334,0,0,0,0,0,3,,어르신,,false,2026-05-11,바다로-간-사람들의-솔직-후기,바다로 간 사람들의 솔직 후기,cmp1uo31f0008f22yfpof679u
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,1934,2322,0,0,0,0,0,0,,,,false,2026-06-14,혼자-시간이-왜-이렇게-힘들까,혼자 시간이 왜 이렇게 힘들까,cmqd7lc9q0004w22yw8dku8fs
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,1919,1583,0,0,0,0,0,2,,,,false,2026-05-31,은퇴-후-첫-1년-돈-흐름-설계,은퇴 후 첫 1년 돈 흐름 설계,cmptbc4on00056d2yxj7v7kry
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,1898,2335,0,0,0,0,0,0,,,,false,2026-08-02,베란다-정원-이렇게-시작해요,"베란다 정원, 이렇게 시작해요",cmsb7ws2e0004cn2yf1xuczu9
@@ -323,21 +323,21 @@ REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 �
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,1816,865,0,0,0,0,0,0,,,,false,2026-05-10,혼자라도-괜찮아,혼자라도 괜찮아,cmozqadee0007lu2y710bplnn
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,1789,1524,0,0,0,0,0,2,,,,false,2026-05-24,혼자도-잘-노는-50대,혼자도 잘 노는 50대,cmpjbab8o00074w2yyz711015
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,1781,1278,0,0,0,0,0,0,,,,false,2026-07-05,갱년기-다이어트-식단-5가지-원칙과-실천법,"갱년기 다이어트 식단, 이렇게",cmr7bxd5w0002m22yanpxwh6z
-REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,1780,1259,0,0,0,0,0,0,,,,false,2026-07-19,폭락장-흔들리는-마음-다스리기,"폭락장, 흔들리는 마음 다스리기",cmrr7wqkv0008462y8ifw5kjt
-REVIEW,본문 금지 표현(시니어) — SEO 노출면은 아니다. 문구 정정 후보,BOT,MAGAZINE,false,1747,1052,0,0,0,0,0,0,,시니어,,false,2026-07-19,무릎-아파도-편한-국내-여행지,무릎 아파도 편한 국내 여행지,cmrr7qlr20004462yypuu9821
-REVIEW,본문 금지 표현(실버) — SEO 노출면은 아니다. 문구 정정 후보,BOT,MAGAZINE,false,1742,1193,0,0,0,0,0,0,,실버,,false,2026-07-05,흰머리-염색-안-하기-자연스럽게-전환하는-5가지-방법,"흰머리 염색 안 하기, 괜찮아요",cmr77meqw0002rf2ylqznq01e
+REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,1780,1261,0,0,0,0,0,0,,,,false,2026-07-19,폭락장-흔들리는-마음-다스리기,"폭락장, 흔들리는 마음 다스리기",cmrr7wqkv0008462y8ifw5kjt
+REVIEW,공개 본문·제목 금지 표현(시니어) — SEO 노출면은 아니다. 문구 정정 후보,BOT,MAGAZINE,false,1747,1052,0,0,0,0,0,0,,시니어,,false,2026-07-19,무릎-아파도-편한-국내-여행지,무릎 아파도 편한 국내 여행지,cmrr7qlr20004462yypuu9821
+REVIEW,공개 본문·제목 금지 표현(실버) — SEO 노출면은 아니다. 문구 정정 후보,BOT,MAGAZINE,false,1742,1193,0,0,0,0,0,0,,실버,,false,2026-07-05,흰머리-염색-안-하기-자연스럽게-전환하는-5가지-방법,"흰머리 염색 안 하기, 괜찮아요",cmr77meqw0002rf2ylqznq01e
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,1740,1304,0,0,0,0,0,2,,,,false,2026-04-28,퇴직-후-외로움-정상이에요,"퇴직 후 외로움, 정상이에요",cmoif2uob0002oo2uhyphxbom
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,1734,927,0,0,0,0,0,0,,,,false,2026-07-12,흰머리-자연스럽게-가리는-법,흰머리 자연스럽게 가리는 법,cmrh7pq570003q52yuupojp3j
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,1732,1795,0,0,0,0,0,0,,,,false,2026-06-28,남자-갱년기-나이-언제부터-증상과-대처법,"남자도 갱년기, 50대부터",cmqx7k4bu0002882ynad17y5p
-REVIEW,본문 금지 표현(노인) — SEO 노출면은 아니다. 문구 정정 후보,BOT,MAGAZINE,false,1731,1684,0,0,0,0,0,2,,노인,,false,2026-05-31,내가-나를-돌보는-50대,내가 나를 돌보는 50대,cmptbasgn00026d2yp18dfggc
-REVIEW,본문 금지 표현(시니어) — SEO 노출면은 아니다. 문구 정정 후보,BOT,MAGAZINE,false,1729,822,0,0,0,0,0,0,,시니어,,false,2026-05-04,나이-무관-채용-어디서-찾나요,"나이 무관 채용, 어디서 찾나요",cmora4eo90004hx2uhisodlry
+REVIEW,공개 본문·제목 금지 표현(노인) — SEO 노출면은 아니다. 문구 정정 후보,BOT,MAGAZINE,false,1731,1684,0,0,0,0,0,2,,노인,,false,2026-05-31,내가-나를-돌보는-50대,내가 나를 돌보는 50대,cmptbasgn00026d2yp18dfggc
+REVIEW,공개 본문·제목 금지 표현(시니어) — SEO 노출면은 아니다. 문구 정정 후보,BOT,MAGAZINE,false,1729,822,0,0,0,0,0,0,,시니어,,false,2026-05-04,나이-무관-채용-어디서-찾나요,"나이 무관 채용, 어디서 찾나요",cmora4eo90004hx2uhisodlry
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,1714,1304,0,0,0,0,0,2,,,,false,2026-04-24,무릎아-조금만-기다려,"무릎아, 조금만 기다려",cmocopdk00002gi3fjhdeh470
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,1668,859,0,0,0,0,0,2,,,,false,2026-04-21,감정-폭풍-혼자-삼키지-마세요,"감정 폭풍, 혼자 삼키지 마세요",cmo8e2so30004i63foacwa12y
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,1652,1096,0,0,0,0,0,2,,,,false,2026-05-24,갱년기-이렇게-다스려요,"갱년기, 이렇게 다스려요",cmpj6ytko0002412y3ebj98g8
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,1640,658,0,0,0,0,0,0,,,,false,2026-05-04,퇴직-후-6개월-이제-진짜-시작이에요,"퇴직 후 6개월, 이제 진짜 시작이에요",cmor9yfx80002hx2uls9hmccs
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,1620,1946,0,0,0,0,0,2,,,,false,2026-05-31,관계도-미니멀하게-정리할-용기,"관계도 미니멀하게, 정리할 용기",cmptbdamo00076d2ycszdreni
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,1618,3839,0,0,0,0,0,0,,,,false,2026-06-07,당뇨-전단계-지금이-골든타임,"당뇨 전단계, 지금이 골든타임",cmq379ptl0002yy2yq3upe2g0
-REVIEW,본문 금지 표현(노인) — SEO 노출면은 아니다. 문구 정정 후보,BOT,MAGAZINE,false,1617,1356,0,0,0,0,0,0,,노인,,false,2026-06-21,진짜-친구-가려내는-법,진짜 친구 가려내는 법,cmqn7p4zt0005yo2ykznwq9w5
+REVIEW,공개 본문·제목 금지 표현(노인) — SEO 노출면은 아니다. 문구 정정 후보,BOT,MAGAZINE,false,1617,1358,0,0,0,0,0,0,,노인,,false,2026-06-21,진짜-친구-가려내는-법,진짜 친구 가려내는 법,cmqn7p4zt0005yo2ykznwq9w5
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,1587,1211,0,0,0,0,0,2,,,,false,2026-04-22,잠-못-드는-밤-혼자가-아니에요,"잠 못 드는 밤, 혼자가 아니에요",cmo9td40v0004g93frz8b32xh
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,1586,876,0,0,0,0,0,2,,,,false,2026-04-21,갱년기-내-몸에-무슨-일이,"갱년기, 내 몸에 무슨 일이",cmo8e1ali0001i63fim2f5n02
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,1530,787,0,0,0,0,0,0,,,,false,2026-05-17,동료에서-다시-연인으로,동료에서 다시 연인으로,cmp96ucth00025u2yfje9pgd1
@@ -355,7 +355,7 @@ REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 �
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,1315,1071,0,0,0,0,0,0,,,,false,2026-03-28,,"부모님이 쓰러지던 날 — 간병하는 우리, 우리 마음도 괜찮아야 해요",cmna0qz3e0002wn389x1a9ac2
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,1313,545,0,0,0,0,0,0,,,,false,2026-05-09,베란다-상추-한-줌의-위로,베란다 상추 한 줌의 위로,cmoy077lc0008n42yr6x7vukc
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,1307,1495,0,0,0,0,0,2,,,,false,2026-04-12,이-감정-나만-그런-게-아니에요-bdcn2j,"이 감정, 나만 그런 게 아니에요",cmnvh1d5t0001i30j8xv74hmv
-REVIEW,본문 금지 표현(노인) — SEO 노출면은 아니다. 문구 정정 후보,BOT,MAGAZINE,false,1297,594,0,0,0,0,0,1,,노인,,false,2026-05-09,어버이날-기대를-내려놓는-법,"어버이날, 기대를 내려놓는 법",cmoy0f2jm00051r2yzhghrnng
+REVIEW,공개 본문·제목 금지 표현(노인) — SEO 노출면은 아니다. 문구 정정 후보,BOT,MAGAZINE,false,1297,594,0,0,0,0,0,1,,노인,,false,2026-05-09,어버이날-기대를-내려놓는-법,"어버이날, 기대를 내려놓는 법",cmoy0f2jm00051r2yzhghrnng
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,1284,549,0,0,0,0,0,2,,,,false,2026-04-08,명함-없어도-나는-여기-있어요-wgbok3,"명함 없어도, 나는 여기 있어요",cmnpyvhh10001iizf8098c0gu
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,1283,542,0,0,0,0,0,3,,,,false,2026-04-12,거울-속-낯선-나-괜찮아요-3m2wmi,"거울 속 낯선 나, 괜찮아요",cmnv8g35c0001j20je31hq6cx
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,1282,703,0,0,0,0,0,2,,,,false,2026-04-06,,"매달 따박따박, 커버드콜 ETF",cmnmnn0d40003igzfmdmh5s28
@@ -395,7 +395,7 @@ REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 �
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,976,997,0,0,0,0,0,0,,,,false,2026-03-27,,"자녀가 떠난 그 자리, 이제는 내 차례예요 — 빈 둥지 이후 나를 다시 찾는 법",cmn8k992u0003yp38txqdhtfr
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,966,664,0,0,0,0,0,2,,,,false,2026-04-09,갱년기-감정도-흔들려요-vn34xr,"갱년기, 감정도 흔들려요",cmnred9w80003hjzf92qw36dk
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,940,437,0,0,0,0,0,2,,,,false,2026-04-11,내-머리카락-포기하지-마세요-xqt0bx,"내 머리카락, 포기하지 마세요",cmnu12dw10001ie0jwfr6vedu
-REVIEW,본문 금지 표현(어르신) — SEO 노출면은 아니다. 문구 정정 후보,ADMIN,STORY,false,931,58,0,0,0,0,0,0,,어르신,,false,2026-09-10,당근-무료나눔-보냈다가-강제-노역-당하고-왔네요-미쳐-진짜,당근 무료나눔 보냈다가 강제 노역 당하고 왔네요 ㅋㅋㅋ 미쳐 진짜,cmtv0ad7s000004l5glmurdw3
+REVIEW,공개 본문·제목 금지 표현(어르신) — SEO 노출면은 아니다. 문구 정정 후보,ADMIN,STORY,false,931,58,0,0,0,0,0,0,,어르신,,false,2026-09-10,당근-무료나눔-보냈다가-강제-노역-당하고-왔네요-미쳐-진짜,당근 무료나눔 보냈다가 강제 노역 당하고 왔네요 ㅋㅋㅋ 미쳐 진짜,cmtv0ad7s000004l5glmurdw3
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,929,611,0,0,0,0,0,2,,,,false,2026-04-18,폐경-후-몸-솔직하게-말해요-1zny01,"폐경 후 몸, 솔직하게 말해요",cmo41s5sk0001by3fzaj2gwf7
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,923,546,0,0,0,0,0,2,,,,false,2026-04-11,나만-억울한-건-아니었어요-18aid0,나만 억울한 건 아니었어요,cmnu136w10004ie0jxyzpg9xr
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,MAGAZINE,false,917,502,0,0,0,0,0,2,,,,false,2026-04-06,,오늘 밤부터 달라지는 숙면 루틴,cmnmnlwtd0001igzfoo2plsdi
@@ -469,7 +469,7 @@ REVIEW,실제 SEO 노출면(title/description) 금지 표현(시니어·어르�
 REVIEW,실제 SEO 노출면(title/description) 금지 표현(노인·시니어) — 삭제가 아니라 문구 정정 대상,BOT,JOB,false,337,8,0,0,0,0,0,0,노인|시니어,노인|시니어,,false,2026-08-08,,[서울 중랑구] 노인요양 돌봄 직원,cmskazag60004la4sqmbyi71r
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,JOB,false,337,7,0,0,0,0,0,0,,,,false,2026-06-14,,[대구 수성구] 방문 요양보호사,cmqdnc9hw0000jf0iftvxm66u
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,JOB,false,337,6,0,0,0,0,0,0,,,,false,2026-07-01,,[서울 동작구] 데이케어센터 야간 운전원,cmr1yejzn0000le5n5stygh7t
-REVIEW,본문 금지 표현(실버) — SEO 노출면은 아니다. 문구 정정 후보,BOT,JOB,false,337,177,0,0,0,0,0,3,,실버,,false,2026-04-19,,[전남 순천시] 간호조무사,cmo5bz9ew0000ga3fqjfe3bzr
+REVIEW,공개 본문·제목 금지 표현(실버) — SEO 노출면은 아니다. 문구 정정 후보,BOT,JOB,false,337,177,0,0,0,0,0,3,,실버,,false,2026-04-19,,[전남 순천시] 간호조무사,cmo5bz9ew0000ga3fqjfe3bzr
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,JOB,false,337,6,0,0,0,0,0,0,,,,false,2026-07-28,,[서울 서대문구] 조리 외래 강사,cms4h269f0004jb4sr1x7t0em
 REVIEW,실제 SEO 노출면(title/description) 금지 표현(어르신·노인) — 삭제가 아니라 문구 정정 대상,BOT,JOB,false,336,432,0,0,0,0,0,2,어르신|노인,어르신|노인,,false,2026-04-24,,[인천 연수구] 요양보호사,cmocutg680000ij3fwtp7qgab
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,JOB,false,336,10,0,0,0,0,0,0,,,,false,2026-06-16,,[강원 원주시] 병원 직원식당 조리원,cmqgeoxd30000mx0ic4rmkjte
@@ -482,7 +482,7 @@ REVIEW,실제 SEO 노출면(title/description) 금지 표현(어르신) — 삭�
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,JOB,false,336,5,0,0,0,0,0,0,,,,false,2026-08-21,,[서울 강서구] 공동생활가정 사회복지사,cmt2vmicq0004gvyyiymx8ms0
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,JOB,false,335,109,0,0,0,0,0,2,,,,false,2026-05-07,,[경기 수원시] 병원 급식실 배식·세척,cmov2lyov0000k33fvsj64tq4
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,JOB,false,335,7,0,0,0,0,0,0,,,,false,2026-07-23,,[경기 수원시] 아파트 외곽 청소원,cmrxbg0rf0004j34sbw8j9tcm
-REVIEW,실제 SEO 노출면(title/description) 금지 표현(어르신·노인) — 삭제가 아니라 문구 정정 대상,BOT,JOB,false,335,7,0,0,0,0,0,0,어르신|노인,어르신|노인,,false,2026-06-16,,[울산 남구] 재가요양보호사,cmqgm48ux0000op0i0exhpa6c
+REVIEW,실제 SEO 노출면(title/description) 금지 표현(어르신·노인) — 삭제가 아니라 문구 정정 대상,BOT,JOB,false,335,9,0,0,0,0,0,0,어르신|노인,어르신|노인,,false,2026-06-16,,[울산 남구] 재가요양보호사,cmqgm48ux0000op0i0exhpa6c
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,JOB,false,335,227,0,0,0,0,0,3,,,,false,2026-04-21,,[경기 평택시] 요양원 사회복지사,cmo86som40000h03fhqug7mro
 REVIEW,실제 SEO 노출면(title/description) 금지 표현(어르신) — 삭제가 아니라 문구 정정 대상,BOT,JOB,false,335,6,0,0,0,0,0,0,어르신,어르신,,false,2026-07-08,,[서울 양천구] 병원동행 매니저,cmrbvub300000k12cltcfyevl
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,JOB,false,335,375,0,0,0,0,0,3,,,,false,2026-04-22,,[경기 연천군] 간호조무사,cmo9sdl620000in3fw3ehndsq
@@ -582,7 +582,7 @@ REVIEW,실제 SEO 노출면(title/description) 금지 표현(노인) — 삭제�
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,JOB,false,320,6,0,0,0,0,0,0,,,,false,2026-06-16,,[인천 남동구] 기술영업 직원 모집,cmqgu0srv0000ly0imlkfef33
 REVIEW,실제 SEO 노출면(title/description) 금지 표현(어르신) — 삭제가 아니라 문구 정정 대상,BOT,JOB,false,320,20,0,0,0,0,0,0,어르신,어르신,,false,2026-06-09,,[대구 동구] 3등급 남성어르신께 방문요양,cmq6ie4r40000l628jdw6f15n
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,JOB,false,320,5,0,0,0,0,0,0,,,,false,2026-08-20,,[인천 미추홀구] 두손컴퍼니 _세명한방병원 미,cmt1g7kvx0004j66hygc4f4py
-REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,JOB,false,318,199,0,0,0,0,0,2,,,,false,2026-04-28,,[서울 노원구] 아파트 미화원,cmoif4aw10000gr3fa5qandsc
+REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,JOB,false,318,201,0,0,0,0,0,2,,,,false,2026-04-28,,[서울 노원구] 아파트 미화원,cmoif4aw10000gr3fa5qandsc
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,JOB,false,318,8,0,0,0,0,0,0,,,,false,2026-06-12,,[인천 중구] 롯데마트 영종도점 미화원 모,cmqan0zg70000k10itf4582if
 REVIEW,실제 SEO 노출면(title/description) 금지 표현(시니어) — 삭제가 아니라 문구 정정 대상,BOT,JOB,false,317,477,0,0,0,0,0,0,시니어,시니어,,false,2026-03-28,,[경기 수원시] 에서 사회복지사 및 사무..,cmna8zmi00000ib38gsz1y5ip
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,JOB,false,313,179,0,0,0,0,0,3,,,,false,2026-05-02,,[경기 안성시] 경리 및 사무 보조원,cmonwkb2k0000j43f0sddbb1y
@@ -608,7 +608,7 @@ REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,206,1053,0,0,0,0,0,4,,,,false,2026-06-21,아파트-단지에-요즘-은근히-많이-오는-푸드트럭-괜찮은-거,아파트 단지에 요즘 은근히 많이 오는 푸드트럭 괜찮은 거,cmqn4e8hp000dyj2ydv8rog5l
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,205,461,0,0,0,0,0,2,,,,false,2026-05-13,야-출퇴근-미친짓-아니냐-재택근무가-왜-보편화-안되는걸까,야 출퇴근 미친짓 아니냐 재택근무가 왜 보편화 안되는걸까?,cmp3lsjx10001lb3f8szr7sz2
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,STORY,false,202,396,0,0,0,0,0,6,,,,false,2026-07-13,,[오늘의 투표] 우리 집 남편은 어느 쪽인가요? 잔소리형 vs 무뚝뚝형,cmritt0za0000d32yq540lrch
-REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,187,867,0,0,0,1,0,7,,,,false,2026-07-01,갱년기는-열이-뻗쳐서-힘들다는데-저는-왜-안-더울까요,갱년기는 열이 뻗쳐서 힘들다는데 저는 왜 안 더울까요,cmr1vs2dz000jy25n3qvyo3v8
+REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,187,868,0,0,0,1,0,7,,,,false,2026-07-01,갱년기는-열이-뻗쳐서-힘들다는데-저는-왜-안-더울까요,갱년기는 열이 뻗쳐서 힘들다는데 저는 왜 안 더울까요,cmr1vs2dz000jy25n3qvyo3v8
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,186,724,0,0,0,1,0,4,,,,false,2026-06-25,세입자가-돌아가셨는데요-보증금-어쩌나요,세입자가 돌아가셨는데요 보증금 어쩌나요,cmqsylewq000p3p0jlz5gba4i
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,186,709,0,0,0,1,0,4,,,,false,2026-06-30,52세에-청소부-무기공무직-지원해봅니다,52세에 청소부 무기공무직 지원해봅니다,cmr1aqncw0005xx3g3oop06hw
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,172,701,0,0,0,0,0,7,,,,false,2026-07-06,생-돼지고기를-먹는-의외의-나라-독일jpg,생 돼지고기를 먹는 의외의 나라 독일.jpg,cmr8k0v57000qk62yww8t77xh
@@ -620,32 +620,32 @@ REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,137,4744,0,0,0,0,0,7,,,,false,2026-07-30,사자도-탈모에-걸린다,사자도 ... 탈모에 걸린다?,cms74wxrb0007ru2yxm6vhcw9
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,133,968,0,0,0,0,0,4,,,,false,2026-06-22,고대-그리스의-엄마와-아들-아프로디테가-에로스-혼내는-장면,고대 그리스의 엄마와 아들 - 아프로디테가 에로스 혼내는 장면,cmqou891q000mqm2ynjyxus7l
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,133,375,0,0,0,0,0,4,,,,false,2026-07-07,집근처에-있으면-삶의-질-상승하는-것-시장,집근처에 있으면 삶의 질 상승하는 것 시장,cmra4gc1v000iwi2ybehoq7ql
-REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인이 선행이다,USER,STORY,false,131,1080,0,0,0,0,0,0,,,,false,2026-03-22,무릎-관절에-좋은-운동-추천해요,무릎 관절에 좋은 운동 추천해요,cmn3617f5000dey2u1ghbq08i
+REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인 대상,USER,STORY,false,131,1080,0,0,0,0,0,0,,,,false,2026-03-22,무릎-관절에-좋은-운동-추천해요,무릎 관절에 좋은 운동 추천해요,cmn3617f5000dey2u1ghbq08i
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,131,616,0,0,0,0,0,4,,,,false,2026-06-24,이-사람-되게-과학처럼-생겼다,이 사람 되게 과학처럼 생겼다,cmqs55iak000dk32yo19av8eg
-REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,130,800,0,0,0,0,0,4,,,,false,2026-06-03,챗짚티-열라-웃김,챗짚티 열라 웃김ㅋㅋㅋㅋㅋ,cmpyb0fku0009zg28covtprx7
-REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인이 선행이다,USER,STORY,false,129,2145,0,0,0,0,0,0,,,,false,2026-03-20,60대-마라톤-완주한-썰,60대 마라톤 완주한 썰,cmn3617vp000hey2ul9lrxra9
+REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,130,802,0,0,0,0,0,4,,,,false,2026-06-03,챗짚티-열라-웃김,챗짚티 열라 웃김ㅋㅋㅋㅋㅋ,cmpyb0fku0009zg28covtprx7
+REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인 대상,USER,STORY,false,129,2145,0,0,0,0,0,0,,,,false,2026-03-20,60대-마라톤-완주한-썰,60대 마라톤 완주한 썰,cmn3617vp000hey2ul9lrxra9
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,127,669,0,0,0,0,0,4,,,,false,2026-06-25,국산-디저트-goat-인절미,국산 디저트 goat 인절미,cmqsu5km0000epw2y4drk3tdh
 REVIEW,non-USER(BOT)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),BOT,STORY,false,123,622,0,0,0,1,0,1,,,,false,2026-04-04,새벽-4시-또-눈이-떠지는-밤이에요,"새벽 4시, 또 눈이 떠지는 밤이에요",cmnkc6bxb0001wozfb8uu0pow
-REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인이 선행이다,USER,STORY,false,120,921,0,0,0,0,0,0,,,,false,2026-03-19,퇴직-후-텃밭-가꾸기-시작했어요,퇴직 후 텃밭 가꾸기 시작했어요,cmn36183x000jey2uyk2ivccy
+REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인 대상,USER,STORY,false,120,921,0,0,0,0,0,0,,,,false,2026-03-19,퇴직-후-텃밭-가꾸기-시작했어요,퇴직 후 텃밭 가꾸기 시작했어요,cmn36183x000jey2uyk2ivccy
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,120,657,0,0,0,0,0,5,,,,false,2026-06-24,과일집-딸이-알려주는-맛있는-과일-고르는-법,과일집 딸이 알려주는 맛있는 과일 고르는 법,cmqrp3i5w000qu22ylkgy21xi
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,119,507,0,0,0,0,0,4,,,,false,2026-06-24,일주일동안-매일-3끼-식사가-이렇게-나온다면,일주일동안 매일 3끼 식사가 이렇게 나온다면,cmqrp4350000yu22y469yp8ra
-REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인이 선행이다,USER,STORY,false,116,1257,0,0,0,0,0,0,,,,false,2026-03-22,퇴직-후-처음으로-요리를-해봤어요,퇴직 후 처음으로 요리를 해봤어요,cmn3617j9000eey2ulqdkww36
+REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인 대상,USER,STORY,false,116,1257,0,0,0,0,0,0,,,,false,2026-03-22,퇴직-후-처음으로-요리를-해봤어요,퇴직 후 처음으로 요리를 해봤어요,cmn3617j9000eey2ulqdkww36
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,116,582,0,0,0,1,0,4,,,,false,2026-06-25,남편이-리스로-사는-이유가,남편이 리스로 사는 이유가,cmqsyjxyd00013p0jx2burtri
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,110,802,0,0,0,0,0,5,,,,false,2026-07-03,법인카드로-500만원-넘게-쓴-신입사원jpg,법인카드로 500만원 넘게 쓴 신입사원.jpg,cmr4eperr000ux02y7z0b7ce8
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,110,362,0,0,0,0,0,4,,,,false,2026-08-13,유재석-도발하고-결국-유퀴즈-출연한-정일영-교수,유재석 도발하고 결국 유퀴즈 출연한 정일영 교수 ㅋㅋㅋ,cmsr7r32t0001v02ymlug447c
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,105,897,0,0,0,0,0,2,,,,false,2026-06-29,공복-러닝-20분-뛰고-나서야-알았다jpg,공복 러닝 20분 뛰고 나서야 알았다.jpg,cmqyua7y7000d2z2yllfhrnl5
-REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인이 선행이다,USER,HUMOR,false,104,908,0,0,0,0,0,0,,,,false,2026-03-21,병원에서-생긴-웃긴-일,병원에서 생긴 웃긴 일 ㅋㅋ,cmn3618kh000ney2uabukvzf8
+REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인 대상,USER,HUMOR,false,104,908,0,0,0,0,0,0,,,,false,2026-03-21,병원에서-생긴-웃긴-일,병원에서 생긴 웃긴 일 ㅋㅋ,cmn3618kh000ney2uabukvzf8
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,104,1329,0,0,0,0,0,4,,,,false,2026-06-06,쇼핑백-중에-이거보다-튼튼한-거-없었음jpg,쇼핑백 중에 이거보다 튼튼한 거 없었음.jpg,cmq2f7j3q00057u2yyhhm0x9m
-REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인이 선행이다,USER,WEEKLY,false,103,613,0,0,0,0,0,0,,,,false,2026-03-22,,은퇴 후 부부 여행 다녀온 후기 (제주도 3박4일),cmn3618sv000pey2ug1c5q4cy
+REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인 대상,USER,WEEKLY,false,103,613,0,0,0,0,0,0,,,,false,2026-03-22,,은퇴 후 부부 여행 다녀온 후기 (제주도 3박4일),cmn3618sv000pey2ug1c5q4cy
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,103,5675,0,0,0,0,0,7,,,,false,2026-07-15,경상도-사람만-맞출-수-있다는-문제,경상도 사람만 맞출 수 있다는 문제,cmrlez9lj000u872yvb3xkahz
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,103,946,0,0,0,0,0,4,,,,false,2026-06-05,식당에서-은근히-많이-겪는-일,식당에서 은근히 많이 겪는 일,cmq0zrxmv000aqy2ysj9jtcqq
-REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,102,767,0,0,0,1,0,6,,,,false,2026-07-11,애들-대학생인-전업주부,애들 대학생인 전업주부,cmrge83zk00051o2cth5hylsu
+REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,102,769,0,0,0,1,0,6,,,,false,2026-07-11,애들-대학생인-전업주부,애들 대학생인 전업주부,cmrge83zk00051o2cth5hylsu
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,102,515,0,0,0,0,0,5,,,,false,2026-07-08,오른쪽-손을-확인해-보세요,오른쪽 손을 확인해 보세요 ✋,cmrbjwat7000nld2ye21y7imv
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,102,731,0,0,0,0,0,4,,,,false,2026-06-05,반지하-살면-생기는-일jpg,반지하 살면 생기는 일.jpg,cmq0edzwp0016622yubjh2llk
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,102,1245,0,0,0,0,0,4,,,,false,2026-06-05,다이어트는-동물도-힘든가-봄,다이어트는 동물도 힘든가 봄ㅠ,cmq0edsed0012622ymnmgbxft
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,102,410,0,0,0,0,0,4,,,,false,2026-08-08,평양냉면-먹을줄-모르는-사람의-맛-표현,평양냉면 먹을줄 모르는 사람의 맛 표현 ㅋㅋㅋ,cmsjpijsr0001rk2ywfvhsmty
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,99,1228,0,0,0,0,0,4,,,,false,2026-06-07,강아지랑-다퉜는데-침대-분위기-어색하다,강아지랑 다퉜는데 침대 분위기 어색하다,cmq3ekjiw0001c42yufnwt1dp
-REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인이 선행이다,USER,HUMOR,false,99,1803,0,0,0,0,0,0,,,,false,2026-03-23,아들이-보낸-카톡-현웃-터졌어요,아들이 보낸 카톡 ㅋㅋㅋ 현웃 터졌어요,cmn361883000key2ure8fg8p1
+REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인 대상,USER,HUMOR,false,99,1803,0,0,0,0,0,0,,,,false,2026-03-23,아들이-보낸-카톡-현웃-터졌어요,아들이 보낸 카톡 ㅋㅋㅋ 현웃 터졌어요,cmn361883000key2ure8fg8p1
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,98,2808,0,0,0,0,0,7,,,,false,2026-08-03,외국인들이-실헝하는-한국의-인테리어-스타일,외국인들이 실헝하는 한국의 인테리어 스타일,cmsckbczv0007ho2y04wnl1tm
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,98,1380,0,0,0,0,0,7,,,,false,2026-08-01,시끄러운-중국인-관광객을-조용하게-맞는-가이드의-지혜,시끄러운 중국인 관광객을 조용하게 맞는 가이드의 지혜,cms9pfvzx000e2m2yy0zucelb
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,98,2554,0,0,0,0,0,6,,,,false,2026-07-14,널부러진-울냥이,널부러진 울냥이 😂,cmrjzkk84000zxb2yi3zmlhp8
@@ -657,20 +657,20 @@ REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,96,1140,0,0,0,0,0,4,,,,false,2026-06-16,진짜-호불호-갈리는-국수콩국수jpg,진짜 호불호 갈리는 국수...콩국수.jpg,cmqgpn82h000mov2y54ksaygg
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,95,1357,0,0,0,0,0,4,,,,false,2026-06-09,생수-배송업체-소름돋는-배송-속도,생수 배송업체 소름돋는 배송 속도,cmq5z5sy2000pnl2ygcfrdbs7
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,95,388,0,0,0,0,0,4,,,,false,2026-05-31,남편티에-묻은게-멀로-보이시나요,남편티에 묻은게 멀로 보이시나요??,cmpufb2x3000d0t28u02b1me4
-REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인이 선행이다,USER,STORY,false,95,1695,0,0,0,0,0,0,,,,false,2026-03-20,손주가-처음-할머니-불렀어요,"손주가 처음 ""할머니"" 불렀어요",cmn3617zs000iey2utnd8ma5o
-REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인이 선행이다,USER,MAGAZINE,false,94,1193,0,0,0,0,0,0,어르신|시니어,어르신|시니어,,false,2026-03-16,,"스마트폰 사기 피하는 법, 어르신 필독",cmn36199c000tey2udfrw03vo
+REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인 대상,USER,STORY,false,95,1695,0,0,0,0,0,0,,,,false,2026-03-20,손주가-처음-할머니-불렀어요,"손주가 처음 ""할머니"" 불렀어요",cmn3617zs000iey2utnd8ma5o
+REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인 대상,USER,MAGAZINE,false,94,1193,0,0,0,0,0,0,어르신|시니어,어르신|시니어,,false,2026-03-16,,"스마트폰 사기 피하는 법, 어르신 필독",cmn36199c000tey2udfrw03vo
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,93,511,0,0,0,0,0,4,,,,false,2026-07-07,손가락-길이로-식성을-알-수-있음jpg,손가락 길이로 식성을 알 수 있음.jpg,cmra9tqg9000nye2y6gja2z2i
-REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,LIFE2,false,93,362,0,0,0,1,0,0,,,,false,2026-07-21,국민연금-추납-이천만원-하면-30만원-더-나온다는데-어떻게-하면-좋을까요,국민연금 추납 이천만원 하면 30만원 더 나온다는데 어떻게 하면 좋을까요?,cmruhw2nv000g3r1mo3b1q36a
+REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,LIFE2,false,93,363,0,0,0,1,0,0,,,,false,2026-07-21,국민연금-추납-이천만원-하면-30만원-더-나온다는데-어떻게-하면-좋을까요,국민연금 추납 이천만원 하면 30만원 더 나온다는데 어떻게 하면 좋을까요?,cmruhw2nv000g3r1mo3b1q36a
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,93,387,0,0,0,0,0,4,,,,false,2026-07-06,둘중에-절대-포기-못하는-것은-콜라-vs-커피,둘중에 절대 포기 못하는 것은? 콜라 vs 커피,cmr8ozuig0009f72ym760rtkv
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,89,630,0,0,0,0,0,4,,,,false,2026-07-05,한국에서-다시는-느끼기-힘들다는-분위기,한국에서 다시는 느끼기 힘들다는 분위기,cmr7ex75o000ffk2yu2pwlm71
-REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인이 선행이다,USER,MAGAZINE,false,87,1554,0,0,0,0,0,0,,,,false,2026-03-22,,"60대 건강검진, 꼭 챙겨야 할 5가지",cmn3618x2000qey2uz547i9ag
+REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인 대상,USER,MAGAZINE,false,87,1554,0,0,0,0,0,0,,,,false,2026-03-22,,"60대 건강검진, 꼭 챙겨야 할 5가지",cmn3618x2000qey2uz547i9ag
 REVIEW,non-USER(ADMIN)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),ADMIN,STORY,false,87,716,0,0,0,1,0,8,,,,false,2026-07-14,,"갱년기, 더 힘든 건 어느 쪽인가요?",cmrjzvek8000104ji53jqczzj
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,83,1226,0,0,0,0,0,7,,,,false,2026-07-13,의외로-갈린다는-것,의외로 갈린다는 것,cmrip32ks000e0j2ynokvid4b
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,83,669,0,0,0,0,0,4,,,,false,2026-06-05,그-시절-우리들이-환장했던-통닭,그 시절 우리들이 환장했던 통닭,cmq0edhv9000y622yqivmytyf
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,80,678,0,0,0,0,0,7,,,,false,2026-07-07,꽃말이-틀림없이-행복해집니다인-꽃,꽃말이 '틀림없이 행복해집니다'인 꽃,cmraixmg4000ww42ygl5w70ps
-REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인이 선행이다,USER,STORY,false,79,820,0,0,0,0,0,0,,,,false,2026-03-21,자녀에게-용돈-얼마까지-주시나요,자녀에게 용돈 얼마까지 주시나요?,cmn3617ne000fey2uqhgsdexo
-REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인이 선행이다,USER,HUMOR,false,78,937,0,0,0,0,0,0,,,,false,2026-03-21,요즘-웃긴-동영상-하나-공유할게요,요즘 웃긴 동영상 하나 공유할게요,cmn3618gf000mey2u2jmz43cr
-REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인이 선행이다,USER,WEEKLY,false,78,1072,0,0,0,0,0,0,,,,false,2026-03-23,,요즘 젊은 사람들 예의 어떻게 생각하세요?,cmn3618on000oey2umia522pm
+REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인 대상,USER,STORY,false,79,820,0,0,0,0,0,0,,,,false,2026-03-21,자녀에게-용돈-얼마까지-주시나요,자녀에게 용돈 얼마까지 주시나요?,cmn3617ne000fey2uqhgsdexo
+REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인 대상,USER,HUMOR,false,78,937,0,0,0,0,0,0,,,,false,2026-03-21,요즘-웃긴-동영상-하나-공유할게요,요즘 웃긴 동영상 하나 공유할게요,cmn3618gf000mey2u2jmz43cr
+REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인 대상,USER,WEEKLY,false,78,1072,0,0,0,0,0,0,,,,false,2026-03-23,,요즘 젊은 사람들 예의 어떻게 생각하세요?,cmn3618on000oey2umia522pm
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,76,959,0,0,0,0,0,7,,,,false,2026-07-08,전-세계-나라들의-대표-샐러드salad,전 세계 나라들의 대표 샐러드.salad,cmrbp9chp000rnp2yhxgzoctv
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,76,894,0,0,0,0,0,4,,,,false,2026-08-08,무던한-사람들의-특징,무던한 사람들의 특징,cmsk2k94a0009jr2ybn71ydnh
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,75,962,0,0,0,0,0,6,,,,false,2026-08-03,가난이-대물림-되는-이유,가난이 대물림 되는 이유,cmscuog9r0007zz2yyq1pumm9
@@ -717,21 +717,21 @@ REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,37,189,0,0,0,0,0,2,,,,false,2026-07-17,수국-어떤-색이-예쁜가요,수국 어떤 색이 예쁜가요?,cmroc6jql00053n1mxap06zmj
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,37,226,0,0,0,0,0,2,,,,false,2026-07-30,폐경되면-기미-없어진다더니,폐경되면 기미 없어진다더니,cms6wdk9h00090q11lp9ecbuf
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,37,414,0,0,0,0,0,4,,,,false,2026-06-01,방에서-누어있으먄-달이-보이는데,방에서 누어있으먄 달이 보이는데,cmpvhwq1c00050z28w4boag39
-REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인이 선행이다,USER,JOB,false,37,406,0,0,0,0,0,0,,,,false,2026-03-20,,카페 주방 보조,cmn3619u2000yey2uwsd4adtl
+REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인 대상,USER,JOB,false,37,406,0,0,0,0,0,0,,,,false,2026-03-20,,카페 주방 보조,cmn3619u2000yey2uwsd4adtl
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,36,307,0,0,0,0,0,2,,,,false,2026-08-07,조카가-지-부모-모르게-내용-펑,조카가 지 부모 모르게 내용 펑,cmsicekwd000n5k4seablyskm
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,36,621,0,0,0,0,0,2,,,,false,2026-07-25,50넘어-이쁘려면,50넘어 이쁘려면,cmrzy8qq6000f2m4s2y09gj9x
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,36,249,0,0,0,0,0,1,,,,false,2026-07-04,청소기-매일-돌리세요-일주일에-한번은,청소기 매일 돌리세요? 일주일에 한번은,cmr63p9it00013k3go6ba8fv6
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,36,189,0,0,0,0,0,2,,,,false,2026-07-19,50-넘어-다이어트-안힘드나요,50 넘어 다이어트 안힘드나요?,cmrr79ifh00050b1m2tjbe84p
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,35,523,0,0,0,0,0,2,,,,false,2026-07-11,나트랑-자유여행-난이도-상중하,나트랑 자유여행 난이도 상중하,cmrge8atd000c1o2cikc23x53
-REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인이 선행이다,USER,JOB,false,34,562,0,0,0,0,0,0,,,,false,2026-03-23,,도서관 사서 보조,cmn3619dk000uey2u7wkw773v
+REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인 대상,USER,JOB,false,34,562,0,0,0,0,0,0,,,,false,2026-03-23,,도서관 사서 보조,cmn3619dk000uey2u7wkw773v
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,34,319,0,0,0,0,0,2,,,,false,2026-07-17,요즘-매일-팥빙수-먹어요,요즘 매일 팥빙수 먹어요.,cmroc70t5000i3n1matzqp6tm
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,32,353,0,0,0,0,0,2,,,,false,2026-07-30,여름에-꼭-듣는-좋아하는-노래-있으세요,여름에 꼭 듣는 좋아하는 노래 있으세요?,cms70gubn000h0o4sdjk3dty9
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,31,628,0,0,0,0,0,2,,,,false,2026-08-07,요즘-오디세이-영화-재밌다던데-꼭-아이맥스에서-봐야하는-건가요,요즘 오디세이 영화 재밌다던데 꼭 아이맥스에서 봐야하는 건가요?,cmsicebdv000i5k4sxayqwviv
-REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인이 선행이다,USER,JOB,false,30,510,0,0,0,0,0,0,,,,false,2026-03-21,,아파트 경비원,cmn3619lv000wey2ujce99f1i
+REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인 대상,USER,JOB,false,30,510,0,0,0,0,0,0,,,,false,2026-03-21,,아파트 경비원,cmn3619lv000wey2ujce99f1i
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,30,173,0,0,0,0,0,2,,,,false,2026-08-04,떡볶이-밀키트-추천해주세요,떡볶이 밀키트 추천해주세요,cmse5zld700012g4sh3qdx2ki
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,30,229,0,0,0,0,0,2,,,,false,2026-07-06,핸드폰-몇-년마다-새-핸드폰으로-바꾸세요,핸드폰 몇 년마다 새 핸드폰으로 바꾸세요?,cmr91yq830005483go7x91pgq
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,30,313,0,0,0,0,0,4,,,,false,2026-05-21,배부분이-누런-굴비,배부분이 누런 굴비?,cmpfgppc90005ii0b9uk5gl2j
-REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,LIFE2,false,30,455,0,0,0,0,0,2,,,,false,2026-08-10,상류층의-기준이-뭔가요,상류층의 기준이 뭔가요?,cmsmky4sp000i274s9lhc769j
+REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,LIFE2,false,30,456,0,0,0,0,0,2,,,,false,2026-08-10,상류층의-기준이-뭔가요,상류층의 기준이 뭔가요?,cmsmky4sp000i274s9lhc769j
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,LIFE2,false,30,427,0,0,0,0,0,2,,,,false,2026-07-01,동탄도-이제-규제지역이네요,동탄도 이제 규제지역이네요,cmr1vttbg001ny25nhkqgk8ip
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,29,645,0,0,0,0,0,2,,,,false,2026-07-04,더운데-가을-잠옷-입고-자는-사람-어떻게-생각하세요,더운데 가을 잠옷 입고 자는 사람 어떻게 생각하세요,cmr701bmx00053p3gj75l90h2
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,28,189,0,0,0,0,0,2,,,,false,2026-08-03,요즘-카레를-자주-만드는-이유,요즘 카레를 자주 만드는 이유,cmsdveave00015c4stv42xj5b
@@ -739,7 +739,7 @@ REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,27,182,0,0,0,0,0,2,,,,false,2026-08-12,인테리어동의서-받는-거-알바-고용하려고-하는데요,인테리어동의서 받는 거 알바 고용하려고 하는데요,cmspm61i80001244sgldhfki8
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,27,262,0,0,0,0,0,1,,,,false,2026-07-27,남자는-몇살-전후로-확-늙나요,남자는 몇살 전후로 확 늙나요?,cms2y2yqw0009234sm01ah143
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,26,267,0,0,0,0,0,2,,,,false,2026-08-04,남편이-의지가-되세요,남편이 의지가 되세요?,cmse60wd9000s2g4sva0vkmbj
-REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인이 선행이다,USER,JOB,false,26,358,0,0,0,0,0,0,,,,false,2026-03-17,,주차장 관리원,cmn361aam0012ey2u5615cvtm
+REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인 대상,USER,JOB,false,26,358,0,0,0,0,0,0,,,,false,2026-03-17,,주차장 관리원,cmn361aam0012ey2u5615cvtm
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,26,463,0,0,0,0,0,4,,,,false,2026-06-01,부모자식-실력-역전-세계,부모자식 실력 역전 세계,cmpvv5qxv0005zk28ktl3xp9c
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,26,203,0,0,0,0,0,2,,,,false,2026-07-21,50대인데-집이-없으면-한심한가요,50대인데 집이 없으면 한심한가요?,cmru8rdbx00050s1mp6yhzaeg
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,26,422,0,0,0,0,0,2,,,,false,2026-07-05,올-여름-덜-더우려나요,올 여름 덜 더우려나요?,cmr7fiw4b0001423gj3eu7jk2
@@ -748,7 +748,7 @@ REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,23,162,0,0,0,0,0,2,,,,false,2026-08-10,아니-당근을-보는데-왜-매미-허물을-왜-파는거에요,아니 당근을 보는데 왜 매미 허물을 왜 파는거에요?,cmsmkxn2e0009274slgx8cocd
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,22,230,0,0,0,0,0,2,,,,false,2026-07-25,김밥에-참치마요네즈-단무지-계란-당근만-넣어도-맛있을까요,김밥에 참치마요네즈 단무지 계란 당근만 넣어도 맛있을까요?,cmrzy8bqr00052m4sc0xivq02
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,22,169,0,0,0,0,0,2,,,,false,2026-08-11,수영도-살안빠지네요,수영도 살안빠지네요,cmso07gds0006244sqk1jl3fk
-REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인이 선행이다,USER,JOB,false,22,406,0,0,0,0,0,0,,,,false,2026-03-18,,학교 급식 보조,cmn361a2d0010ey2uk4y0f1c3
+REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인 대상,USER,JOB,false,22,406,0,0,0,0,0,0,,,,false,2026-03-18,,학교 급식 보조,cmn361a2d0010ey2uk4y0f1c3
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,21,484,0,0,0,0,0,2,,,,false,2026-07-22,개사료-고양이-줘도-돼요,개사료 고양이 줘도 돼요?,cmrvldqv30001201mdft2rrs3
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,20,150,0,0,0,0,0,2,,,,false,2026-08-07,사춘기-아들방-냄새잡는법-알려주세요,사춘기 아들방 냄새잡는법 알려주세요,cmsia00nt0005414suv1r6490
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,20,207,0,0,0,0,0,2,,,,false,2026-08-11,인천공항이-지금-노숙자들의-천국이-되었다는데-걱정이네요,인천공항이 지금 노숙자들의 천국이 되었다는데 걱정이네요.,cmso5r38t0005584sqfzxh1vd
@@ -760,8 +760,8 @@ REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,17,186,0,0,0,0,0,2,,,,false,2026-08-13,평영-힘빼야되나요,평영 힘빼야되나요,cmsqvlsna00016l4s17wkn708
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,16,217,0,0,0,0,0,2,,,,false,2026-08-13,센스있는-집들이-선물-뭐가-좋을까요,센스있는 집들이 선물 뭐가 좋을까요,cmsr1rmd600013j4sgdtvcq2f
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,14,461,0,0,0,0,0,3,,,,false,2026-05-19,당근-알바-시급-차이에-웃음,"당근 알바, 시급 차이에 웃음",cmpc3al3u000bid4ezvis1658
-REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인이 선행이다,USER,STORY,false,13,952,0,0,0,1,0,11,,,,false,2026-06-20,서희맘78님의-첫인사,서희맘78님의 첫인사,cmqm4nwuf000004ibuh1vhu56
-REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,LIFE2,false,12,390,0,0,0,0,0,2,,,,false,2026-07-28,미국-주식도-와르르-내려가고-제-마음도-내려가고,미국 주식도 와르르 내려가고 제 마음도 내려가고,cms41ufkb00113t4s8ekknzjv
+REVIEW,source=USER 이나 실회원 기준 미충족 — 계정 정체 확인 대상,USER,STORY,false,13,952,0,0,0,1,0,11,,,,false,2026-06-20,서희맘78님의-첫인사,서희맘78님의 첫인사,cmqm4nwuf000004ibuh1vhu56
+REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,LIFE2,false,12,391,0,0,0,0,0,2,,,,false,2026-07-28,미국-주식도-와르르-내려가고-제-마음도-내려가고,미국 주식도 와르르 내려가고 제 마음도 내려가고,cms41ufkb00113t4s8ekknzjv
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,STORY,false,10,183,0,0,0,0,0,2,,,,false,2026-08-13,오늘밤-다들-에어컨-켜고-주무시나요,오늘밤 다들 에어컨 켜고 주무시나요?,cmsr6rqln0005yc6h4oue3pzx
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,10,593,0,0,0,0,0,2,,,,false,2026-07-09,파스-제대로-붙이는-법,파스 제대로 붙이는 법,cmrcy5x9c000l1x3gw0anmwki
 REVIEW,non-USER(SHEET)·실반응 0·실조회 0 — 정책 결정 필요(자동 판정 불가),SHEET,HUMOR,false,9,965,0,0,0,0,0,15,,,,false,2026-05-17,의사-추천-천연-위고비-사용후기,의사 추천 천연 위고비 사용후기,cmp9vm91o000hio4e0bgv7eb1
@@ -806,7 +806,7 @@ HIDE,저품질(본문 37자·댓글 0·공감 0·실조회 0) — 삭제가 아�
 HIDE,저품질(본문 37자·댓글 0·공감 0·실조회 0) — 삭제가 아닌 비공개로 색인면에서 내린다,SHEET,STORY,false,37,171,0,0,0,0,0,0,,,,false,2026-08-04,이상하게-청정원은-맛이-없어요,이상하게 청정원은 맛이 없어요,cmseiihso000d2g4sx6ch30et
 HIDE,저품질(본문 37자·댓글 0·공감 0·실조회 0) — 삭제가 아닌 비공개로 색인면에서 내린다,SHEET,STORY,false,37,253,0,0,0,0,0,0,,,,false,2026-07-08,싱거운-된장찌개는,싱거운 된장찌개는,cmrbwuwlq0001223gvyaash8a
 HIDE,저품질(본문 37자·댓글 0·공감 0·실조회 0) — 삭제가 아닌 비공개로 색인면에서 내린다,SHEET,STORY,false,37,339,0,0,0,0,0,0,,,,false,2026-08-14,해외여행이-필요가-없네요,해외여행이 필요가 없네요~,cmssyr015000u446h8xved4fp
-HIDE,저품질(본문 36자·댓글 0·공감 0·실조회 0) — 삭제가 아닌 비공개로 색인면에서 내린다,SHEET,LIFE2,false,36,329,0,0,0,0,0,0,,,,false,2026-08-07,자영업자는-지역건강보험료-내나요,자영업자는 지역건강보험료 내나요?,cmsiylg0o000t2u4sk02wbbop
+HIDE,저품질(본문 36자·댓글 0·공감 0·실조회 0) — 삭제가 아닌 비공개로 색인면에서 내린다,SHEET,LIFE2,false,36,330,0,0,0,0,0,0,,,,false,2026-08-07,자영업자는-지역건강보험료-내나요,자영업자는 지역건강보험료 내나요?,cmsiylg0o000t2u4sk02wbbop
 HIDE,저품질(본문 35자·댓글 0·공감 0·실조회 0) — 삭제가 아닌 비공개로 색인면에서 내린다,SHEET,STORY,false,35,339,0,0,0,0,0,0,,,,false,2026-07-07,도쿄는-호텔을-어디에-잡나요-안가봐서-모릅니다,도쿄는 호텔을 어디에 잡나요? 안가봐서 모릅니다.,cmrag96nu000l423gikkxvujc
 HIDE,저품질(본문 35자·댓글 0·공감 0·실조회 0) — 삭제가 아닌 비공개로 색인면에서 내린다,SHEET,STORY,false,35,301,0,0,0,0,0,0,,,,false,2026-07-09,효과보신-영양제-추천해주세요,효과보신 영양제 추천해주세요,cmrddwcvl00013j2cy1jc9lz2
 HIDE,저품질(본문 35자·댓글 0·공감 0·실조회 0) — 삭제가 아닌 비공개로 색인면에서 내린다,SHEET,STORY,false,35,218,0,0,0,0,0,0,,,,false,2026-07-26,가자미-요리,가자미 요리,cms1mb8tq000d2n4sh5h71hiz
@@ -814,7 +814,7 @@ HIDE,저품질(본문 35자·댓글 0·공감 0·실조회 0) — 삭제가 아�
 HIDE,저품질(본문 35자·댓글 0·공감 0·실조회 0) — 삭제가 아닌 비공개로 색인면에서 내린다,SHEET,HUMOR,false,35,349,0,0,0,0,0,0,,,,false,2026-05-11,시어머니를-독살하려고-하는-한국인-며느리,시어머니를 독살하려고 하는 한국인 며느리,cmp16utef000fks2ykkbwvcjj
 HIDE,저품질(본문 34자·댓글 0·공감 0·실조회 0) — 삭제가 아닌 비공개로 색인면에서 내린다,SHEET,LIFE2,false,34,320,0,0,0,0,0,0,,,,false,2026-07-09,이버-주식으로-완전-빚더미,이버 주식으로 완전 빚더미,cmrdb6jgr000l402ca21tz0a8
 HIDE,저품질(본문 34자·댓글 0·공감 0·실조회 0) — 삭제가 아닌 비공개로 색인면에서 내린다,SHEET,STORY,false,34,344,0,0,0,0,0,0,,,,false,2026-07-13,엊그제-런지해서-엉덩이-많이-아파요,엊그제 런지해서 엉덩이 많이 아파요,cmriznlf200094b2cbtbukk7c
-HIDE,저품질(본문 33자·댓글 0·공감 0·실조회 0) — 삭제가 아닌 비공개로 색인면에서 내린다,SHEET,LIFE2,false,33,365,0,0,0,0,0,0,,,,false,2026-08-03,일을-시작했는데-학교-관사에서-혼자-주무실수-있겠어요,일을 시작했는데 학교 관사에서 혼자 주무실수 있겠어요?,cmscups03000r274s4dav8w8b
+HIDE,저품질(본문 33자·댓글 0·공감 0·실조회 0) — 삭제가 아닌 비공개로 색인면에서 내린다,SHEET,LIFE2,false,33,366,0,0,0,0,0,0,,,,false,2026-08-03,일을-시작했는데-학교-관사에서-혼자-주무실수-있겠어요,일을 시작했는데 학교 관사에서 혼자 주무실수 있겠어요?,cmscups03000r274s4dav8w8b
 HIDE,저품질(본문 30자·댓글 0·공감 0·실조회 0) — 삭제가 아닌 비공개로 색인면에서 내린다,SHEET,STORY,false,30,159,0,0,0,0,0,0,,,,false,2026-07-27,참외-왔는데-맛없어요,참외 왔는데 맛없어요ㅜ,cms2y36yu000e234spunw9lvc
 HIDE,저품질(본문 24자·댓글 0·공감 0·실조회 0) — 삭제가 아닌 비공개로 색인면에서 내린다,SHEET,HUMOR,false,24,500,0,0,0,0,0,0,,,,false,2026-06-01,새벽에-승무원이-혼자서-울고-있네요,새벽에 승무원이 혼자서 울고 있네요.,cmpup6fcz000lz528asq2vvnz
 HIDE,저품질(본문 23자·댓글 0·공감 0·실조회 0) — 삭제가 아닌 비공개로 색인면에서 내린다,SHEET,STORY,false,23,154,0,0,0,0,0,0,,,,false,2026-08-03,이쁜-원피스-많이-파는-보세-사이트좀-가르쳐주세요,이쁜 원피스 많이 파는 보세 사이트좀 가르쳐주세요,cmsdc6ifs00014e4sesh6hu7b

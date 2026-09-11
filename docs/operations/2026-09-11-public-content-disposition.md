@@ -8,7 +8,7 @@
 >
 > 측정 2026-09-11 · main `325ff74e` · production `2026.09.11-325ff74`
 > 데이터 경로: Supabase REST **GET only**(로컬 Prisma/`pg` 경로는 인증 실패 — 운영 정본 §8과 일치)
-> 전건 표: [`data/2026-09-11-public-content-disposition.csv`](./data/2026-09-11-public-content-disposition.csv) (846행 · 21열)
+> 전건 표: [`data/2026-09-11-public-content-disposition.csv`](./data/2026-09-11-public-content-disposition.csv) (846행 · 21열 — 금지 표현 3축은 `bannedSeo`·`bannedPublicText`·`bannedSlug`)
 
 ---
 
@@ -46,12 +46,15 @@
 | 실회원 댓글·공감·신고가 붙음 | 44 | | 저품질(300자 미만·무반응·무조회) | 58 |
 | 30일 비봇 실조회가 있음 | 38 | | **전건 `source=SHEET`** | 60 |
 
-| REVIEW 주요 사유 | 건수 |
-|---|---:|
-| `source=USER` 인데 실회원 아님 | 19 |
-| 실제 SEO 노출면에 금지 표현 | 60 |
-| 동일 제목 중복 | 5 |
-| 그 외 non-USER(반응 0·실조회 0) | 566 |
+**REVIEW 650건은 두 갈래로 나뉜다. 둘은 병렬로 진행할 수 있다.**
+
+| 갈래 | 건수 | 다음 작업 |
+|---|---:|---|
+| **A. `source=USER` 비실회원** | **19** | 계정 정체 확인 |
+| **B. 나머지 non-USER** | **631** | 세분화(축: SEO 문구·중복·반응·분량) |
+
+B 631건 내부 사유 분해: 실제 SEO 노출면 금지 표현 **60** · 동일 제목 중복 **5** ·
+공개 본문·제목에만 금지 표현 **17** · 그 외(반응 0·실조회 0) **549**.
 
 ---
 
@@ -81,7 +84,7 @@
 | 6 | **실제 SEO 노출면**(title/description)에 금지 표현 | **REVIEW** | **삭제가 아니라 문구 정정** 대상이다 |
 | 7 | 동일 제목 중복 | **REVIEW** | 정본 1건을 고르는 것은 사람 판단이다 |
 | 8 | 본문 300자 미만 **AND** 댓글 0 **AND** 게스트공감 0 (실조회 0은 규칙 3에서 이미 걸러짐) | **HIDE** | 삭제하지 않는다. 색인면에서만 내린다 |
-| 9 | 본문·제목에만 금지 표현 | **REVIEW** | SEO 노출면은 아니다. 문구 정정 후보 |
+| 9 | 공개 본문·제목에만 금지 표현(`bannedPublicText`) | **REVIEW** | SEO 노출면은 아니다. 문구 정정 후보 |
 | 10 | 그 외 non-USER | **REVIEW** | 반응·분량만으로는 판정할 수 없다 |
 
 ### 🔴 hard delete 를 권고하지 않는 이유
@@ -104,8 +107,8 @@
 
 - 22건 중 3건은 실회원 반응·실조회가 있어 규칙 1~3에서 먼저 **PRESERVE** 로 확정됐다.
   CSV 기준 `source=USER` 이면서 `verdict=REVIEW` 인 행은 **19건**이다.
-- 🔴 **이 22건의 정체가 확인되기 전에는 REVIEW 650건 세분화도 신뢰할 수 없다.**
-  "회원 글"의 경계가 불분명하면 non-USER 판정의 기준선도 흔들린다. **이것이 1순위 선행 과제다.**
+- **이 19건 정체 확인과 나머지 631건 세분화는 병렬로 진행할 수 있다.**
+  631건은 전부 `source ≠ USER` 라 회원 글 경계 판정과 독립적이다 — 서로 기다리지 않는다.
 - 🔴 "가짜 회원 글"로 단정하지 않는다. 과거 마이그레이션·시드·페르소나 등 여러 경로가 섞여 있을 수 있고
   **현재 데이터만으로는 구분되지 않는다.**
 
@@ -120,15 +123,28 @@
 
 | 축 | 정의 (production `generateMetadata` 규칙 그대로) | 실측 |
 |---|---|---:|
-| **A. 실제 SEO title/description** | 커뮤니티: `seoTitle ?? title` / `seoDescription ?? (summary ‖ buildFallbackDescription(title, boardType))`<br>매거진: `seoTitle ?? title` / `seoDescription ?? (본문 첫 150자 ‖ summary ‖ 고정문구)` | **62** |
-| **B. 공개 본문·제목 전체** | `title` + 본문 plain text | **80** |
+| **A. 실제 SEO title/description** | **커뮤니티**: `seoTitle ?? title` / `seoDescription ?? (summary ‖ buildFallbackDescription(title, boardType))`<br>**매거진**: `seoTitle ?? title` / `seoDescription ?? (본문 첫 150자 ‖ summary ‖ 고정문구)`<br>**JOB**: `seoTitle ?? ` \`${title} — ${company} 채용\` / `seoDescription ?? (본문 첫 100자 · location 근무 · formatSalary(salary))` | **62** |
+| **B. 공개 본문·제목 전체**(CSV `bannedPublicText`) | `title` + 본문 plain text | **80** |
 | **C. slug 문자열** | `slug` | **4** |
 
-축 A 세부: SEO **title** 에 포함 16 · SEO **description** 에 포함 60(합집합 62) ·
-그중 fallback description 경유 **0**(전부 `seoDescription` 또는 `summary` 에서 온다).
-참고: `seoTitle`/`seoDescription` 이 설정된 글 각 388 · `summary` 있는 글 795.
+**축 A 62건의 boardType 분해**
+
+| boardType | 건수 | 비고 |
+|---|---:|---|
+| **JOB** | **55** | `/jobs/{id}` — 채용 공고. 공식 직함이 대부분 |
+| **MAGAZINE** | **5** | |
+| **STORY** | **2** | |
+| **합계** | **62** | |
+
+source 분해: BOT 59 · SHEET 2 · USER 1.
+축 A 는 JOB 규칙을 반드시 포함해야 한다 — `boardType=JOB` 191건은 **`Job` 모델이 아니라
+`Post` + `JobDetail` 관계**로 `/jobs/{id}` 를 렌더한다(`getJobDetailPublic(postId)`).
+JOB 을 커뮤니티 규칙으로 계산하면 `company` 가 빠져 축 A 가 틀어진다.
+
+참고: `seoTitle`/`seoDescription` 이 설정된 글 각 388 · `summary` 있는 글 795 · `JobDetail` 행 340.
 
 단어별(축 B 기준): 노인 35 · 시니어 30 · 어르신 25 · 실버 8 (중복 포함).
+축 B 의 boardType 분해: JOB 56 · MAGAZINE 20 · STORY 4.
 sitemap.xml URL 문자열 기준은 **4**(축 C와 동일 — slug 가 URL 이기 때문이다).
 
 > 이전 판(a6361ec9)은 축 A를 측정하지 않고 `title`+`slug` 를 "URL 노출면 15"로 적었다. **오류이며 이 판에서 교정했다.**
@@ -144,7 +160,7 @@ sitemap.xml URL 문자열 기준은 **4**(축 C와 동일 — slug 가 URL 이�
 
 ### 6-C. SEO 노출면 금지 표현 62건의 성격
 
-채용 공고(`boardType=JOB`, 191건)가 상당수를 차지하며 표현이 `노인요양`·`노인주간보호`·
+**62건 중 55건(89%)이 `boardType=JOB` 채용 공고**이며 표현이 `노인요양`·`노인주간보호`·
 `여자어르신 재가방문` 같은 **외부 공고 원문의 공식 직함**이다. 브랜드 카피 위반과 성격이 다르다.
 **원문 보존 vs 표기 정정은 정책 결정 사항**이다(§7-4).
 
@@ -154,8 +170,8 @@ sitemap.xml URL 문자열 기준은 **4**(축 C와 동일 — slug 가 URL 이�
 
 | # | 항목 | 선택지 |
 |---|---|---|
-| **1** | **`source=USER` 22건 계정 정체 확인** — **선행 1순위** | 확인 주체·기준 |
-| **2** | **REVIEW 650건 세분화 기준** — 선행 2순위 | 축(반응/분량/중복/SEO문구) 우선순위 |
+| **1a** | **`source=USER` 비실회원 19건 계정 정체 확인** (REVIEW 갈래 A) | 확인 주체·기준 |
+| **1b** | **나머지 631건 세분화 기준** (REVIEW 갈래 B) — **1a 와 병렬 가능** | 축(반응/분량/중복/SEO문구) 우선순위 |
 | 3 | HIDE 60건 실행 여부 | 실행 / 보류 — 되돌릴 수 있다 |
 | 4 | SEO 노출면 금지 표현 62건 정정 범위 | 채용 공고 직함 원문 보존 / 전면 치환 |
 | 5 | hard delete 를 검토할지 여부 | 검토 시 **dependency closure 전수 대조가 선행** |
@@ -172,8 +188,9 @@ CSV 는 아래 read-only 절차로 재생성된다. **write 경로가 없다.**
 2. `GET /rest/v1/User` — 실회원 판정(`providerId` 숫자 · `role≠ADMIN`)
 3. `GET /rest/v1/Comment|Like|GuestLike|Report` — 글별 반응 집계
 4. `GET /rest/v1/EventLog?eventName=eq.post_view&isBot=eq.false&createdAt=gte.{30일 전}` — 실조회
-5. production `generateMetadata` 규칙으로 SEO title/description 재구성 → 축 A 판정
-6. §4 규칙을 순서대로 적용
+5. `GET /rest/v1/JobDetail` — JOB 글의 `company`·`location`·`salary`
+6. production `generateMetadata` 규칙(커뮤니티·매거진·**JOB** 3분기)으로 SEO title/description 재구성 → 축 A 판정
+7. §4 규칙을 순서대로 적용
 
 ⚠️ REST 는 `select` 컬럼이 실제 PK/컬럼과 다르면 **HTTP 400** 을 돌려준다.
 테이블 부재로 오인하지 말 것(`NaverBlogQueue` 는 PK 가 `queueId` 다 — 운영 정본 §8).
