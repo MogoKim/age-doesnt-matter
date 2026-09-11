@@ -13,6 +13,48 @@
  * 문서: `docs/operations/2026-09-11-seo-brand-copy-rewrite.md` §7
  */
 
+import { createHash } from 'node:crypto'
+
+/**
+ * 확정 CSV 의 SHA-256 **전체값**.
+ *
+ * 앞 12자만 보면 우연한 충돌은 막아도 의도적 조작은 못 막는다. write 직전에
+ * 전체값을 다시 계산해 대조하고, 다르면 **아무것도 쓰지 않는다.**
+ * CSV 를 고칠 일이 생기면 이 상수도 같이 고쳐야 한다 — 그게 의도다.
+ */
+export const CSV_SHA256 =
+  '17f44bb785ac12464f425c6c5f432ca288ce26de8726c7aa70a0eff303887280'
+
+/**
+ * Prisma 인터랙티브 트랜잭션 옵션.
+ *
+ * 기본값(maxWait 2s / timeout 5s)에 기대면 안 된다. 이 작업은 `updateMany` 를
+ * **50회 순차** 실행하므로, 왕복 지연이 조금만 늘어도 5초를 넘겨 트랜잭션이
+ * 중단된다. 중단 자체는 rollback 이라 안전하지만, 운영자는 "왜 실패했는지"
+ * 모른 채 재시도하게 된다. 근거와 값은 운영 문서 §4-F 에 적었다.
+ */
+export const TRANSACTION_OPTIONS = { maxWait: 10_000, timeout: 60_000 } as const
+
+export function sha256(text: string): string {
+  return createHash('sha256').update(text, 'utf8').digest('hex')
+}
+
+/**
+ * CSV 파일 전체 무결성 — write 전에 반드시 통과해야 한다.
+ *
+ * 한 글자만 달라도 던진다. 출력만 하고 넘어가면 검증이 아니라 장식이다.
+ */
+export function assertCsvIntegrity(raw: string): void {
+  const actual = sha256(raw)
+  if (actual !== CSV_SHA256) {
+    throw new Error(
+      `CSV SHA-256 불일치 — 확정본이 아니다.\n` +
+      `  기대: ${CSV_SHA256}\n  실제: ${actual}\n` +
+      `  CSV 가 바뀌었다면 정정안을 다시 검토해야 한다. 이 도구로 쓰지 마라.`,
+    )
+  }
+}
+
 /** CSV 한 행 중 이 도구가 쓰는 열만. 나머지 열은 읽되 판단에 쓰지 않는다. */
 export interface RewriteRow {
   id: string
@@ -40,9 +82,22 @@ export interface ApplyTarget {
 /** production 에서 읽어온 현재 값. */
 export interface LiveRow {
   id: string
+  /** 공개 면 전제 — JOB 이 아니면 이 정정안의 대상이 아니다 */
+  boardType: string
+  /** 공개 면 전제 — 숨겨졌거나 삭제된 글에 SEO 문구를 쓰지 않는다 */
+  status: string
   seoTitle: string | null
   seoDescription: string | null
 }
+
+/**
+ * 적용 대상이 만족해야 하는 공개 상태.
+ *
+ * `as const` 로 리터럴 타입을 유지한다 — Prisma 의 `boardType`·`status` 는 enum 이라
+ * 넓은 `string` 을 주면 `where` 타입이 맞지 않는다.
+ */
+export const REQUIRED_BOARD_TYPE = 'JOB' as const
+export const REQUIRED_STATUS = 'PUBLISHED' as const
 
 export type Mode = 'apply' | 'rollback'
 
@@ -196,6 +251,13 @@ export function buildPlan(rows: RewriteRow[], mode: Mode): Plan {
     if (r.proposedSeoDescription === r.currentSeoDescription) {
       push('NO_OP', `현재 값과 제안 값이 같다: ${r.id}`)
     }
+    // 행별 해시를 **다시 계산**한다. CSV 열을 손대면 여기서 걸린다.
+    if (sha256(r.currentSeoTitle).slice(0, 12) !== r.currentSeoTitleSha256_12) {
+      push('HASH_MISMATCH', `currentSeoTitle 해시가 맞지 않는다: ${r.id}`)
+    }
+    if (sha256(r.currentSeoDescription).slice(0, 12) !== r.currentSeoDescriptionSha256_12) {
+      push('HASH_MISMATCH', `currentSeoDescription 해시가 맞지 않는다: ${r.id}`)
+    }
   }
 
   const targets: ApplyTarget[] = eligible.map((r) => {
@@ -255,6 +317,12 @@ export function detectDrift(targets: ApplyTarget[], live: LiveRow[], mode: Mode 
   for (const t of targets) {
     const row = byId.get(t.id)
     if (!row) { push('MISSING', `production 에 없는 id: ${t.id}`); continue }
+    if (row.boardType !== REQUIRED_BOARD_TYPE) {
+      push('DRIFT_BOARD_TYPE', `boardType 이 ${REQUIRED_BOARD_TYPE} 가 아니다: ${t.id}`)
+    }
+    if (row.status !== REQUIRED_STATUS) {
+      push('DRIFT_STATUS', `status 가 ${REQUIRED_STATUS} 가 아니다: ${t.id}`)
+    }
     if (!exactEquals(row.seoTitle, t.expectedSeoTitle)) {
       push('DRIFT_TITLE', `seoTitle 이 CSV current 값과 다르다: ${t.id}`)
     }
@@ -280,7 +348,12 @@ export function detectDrift(targets: ApplyTarget[], live: LiveRow[], mode: Mode 
   return { ok: issues.length === 0, issues, alreadyApplied }
 }
 
-/** 로그용 — 본문·SEO 문구를 출력하지 않기 위해 id 를 짧은 지문으로 줄인다. */
-export function fingerprint(sha12: string): string {
-  return sha12.slice(0, 8)
+/**
+ * 로그용 지문.
+ *
+ * post id 도 그대로 찍지 않는다 — 로그가 공유될 때 어떤 글인지 바로 드러나지 않게 한다.
+ * 대조가 필요하면 CSV 와 같은 방식으로 다시 계산하면 된다.
+ */
+export function fingerprint(value: string): string {
+  return sha256(value).slice(0, 10)
 }

@@ -35,15 +35,18 @@ loadEnv({ path: '.env.local' })
 loadEnv()
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { createHash } from 'node:crypto'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '../src/generated/prisma/client'
 import {
   parseCsv, toRewriteRows, buildPlan, detectDrift, fingerprint,
+  assertCsvIntegrity, CSV_SHA256, TRANSACTION_OPTIONS,
+  REQUIRED_BOARD_TYPE, REQUIRED_STATUS,
   CONFIRM_TOKEN, EXPECTED_APPLY_ROWS,
   type Mode, type LiveRow, type PlanIssue,
 } from '../src/lib/seo/desc-apply-plan'
-import { executeInTransaction, ApplyAbortError } from '../src/lib/seo/desc-apply-exec'
+import {
+  executeInTransaction, ApplyAbortError, type TransactionRunner,
+} from '../src/lib/seo/desc-apply-exec'
 
 const CSV_PATH = 'docs/operations/data/2026-09-11-seo-brand-copy-rewrite.csv'
 
@@ -95,7 +98,7 @@ async function readViaRest(ids: string[]): Promise<LiveRow[]> {
   const out: LiveRow[] = []
   for (let i = 0; i < ids.length; i += 25) {
     const chunk = ids.slice(i, i + 25).map((id) => `"${id}"`).join(',')
-    const url = `${base}/rest/v1/Post?select=id,seoTitle,seoDescription&id=in.(${chunk})`
+    const url = `${base}/rest/v1/Post?select=id,boardType,status,seoTitle,seoDescription&id=in.(${chunk})`
     const res = await fetch(url, { headers: { apikey: key, Authorization: `Bearer ${key}` } })
     if (!res.ok) fail('REST_HTTP', `Supabase REST ${res.status}`)
     const j: unknown = await res.json()
@@ -122,10 +125,16 @@ async function main() {
   // ── 1. CSV 파싱 + 계획 검증 ────────────────────────────────
   const csvPath = resolve(process.cwd(), CSV_PATH)
   const raw = readFileSync(csvPath, 'utf8')
-  const csvSha = createHash('sha256').update(raw, 'utf8').digest('hex').slice(0, 12)
-  const rows = toRewriteRows(parseCsv(raw))
   log(`\n[1] CSV   ${CSV_PATH}`)
-  log(`    sha256(12)=${csvSha} · 전체 ${rows.length}행`)
+  // 출력만 하지 않는다 — 전체 SHA-256 이 다르면 여기서 끝난다
+  try {
+    assertCsvIntegrity(raw)
+  } catch (e) {
+    fail('CSV_SHA256', e instanceof Error ? e.message : String(e))
+  }
+  log(`    sha256=${CSV_SHA256.slice(0, 16)}… ✅ 확정본 일치`)
+  const rows = toRewriteRows(parseCsv(raw))
+  log(`    전체 ${rows.length}행`)
 
   const plan = buildPlan(rows, mode)
   log(`    분류: ${Object.entries(plan.decisionCounts).map(([k, v]) => `${k}=${v}`).join(' · ')}`)
@@ -135,7 +144,7 @@ async function main() {
     printIssues(plan.issues)
     fail('PLAN', `CSV 검증에 실패했다 (${plan.issues.length}건)`)
   }
-  log('    ✅ 행수·분류 합계·고유 ID·보류 제외 검증 통과')
+  log('    ✅ 행수·분류 합계·고유 ID·보류 제외·행별 해시 재계산 검증 통과')
 
   // ── 2. production 현재값 조회 ──────────────────────────────
   if (execute && readVia === 'rest') {
@@ -149,7 +158,11 @@ async function main() {
       ? await readViaRest(ids)
       : await prisma.post.findMany({
           where: { id: { in: ids } },
-          select: { id: true, seoTitle: true, seoDescription: true },
+          // 공개 상태도 읽는다 — 숨겨졌거나 게시판이 바뀐 글에 쓰지 않기 위해
+          select: {
+            id: true, boardType: true, status: true,
+            seoTitle: true, seoDescription: true,
+          },
         })
     log(`\n[2] production 조회 (${readVia})  요청 ${ids.length} · 응답 ${live.length}`)
 
@@ -162,7 +175,7 @@ async function main() {
         `production 값이 CSV current 값과 일치하지 않는다 (${drift.issues.length}건). ` +
         '값이 달라졌다면 이 정정안의 전제가 깨진 것이다 — 덮어쓰지 말고 다시 측정해라.')
     }
-    log('[3] ✅ 누락 0 · 중복 0 · drift 0 (null-safe exact match)')
+    log(`[3] ✅ 누락 0 · 중복 0 · drift 0 · 전건 ${REQUIRED_BOARD_TYPE}/${REQUIRED_STATUS} (null-safe exact match)`)
 
     // ── 4. dry-run 이면 여기서 끝 ─────────────────────────────
     if (!execute) {
@@ -170,36 +183,44 @@ async function main() {
       log(`    대상 ${plan.targets.length} · drift 0 · mutation 0`)
       log(`    적용하려면: --execute --confirm=${CONFIRM_TOKEN[mode]}`)
       if (readVia === 'rest') log('    ⚠️ REST 로 읽었다. 실제 적용은 Prisma 연결이 되는 환경에서 해야 한다.')
-      log('\n샘플(해시 지문만, 문구는 출력하지 않는다):')
+      log('\n샘플(전부 해시 지문 — post id 도 문구도 그대로 찍지 않는다):')
       for (const t of plan.targets.slice(0, 3)) {
-        const before = createHash('sha256').update(t.expectedSeoDescription ?? '', 'utf8').digest('hex').slice(0, 12)
-        const after = createHash('sha256').update(t.nextSeoDescription ?? '', 'utf8').digest('hex').slice(0, 12)
-        log(`    ${t.id}  ${fingerprint(before)} → ${fingerprint(after)}`)
+        log(`    post#${fingerprint(t.id)}  ` +
+            `${fingerprint(t.expectedSeoDescription ?? '')} → ${fingerprint(t.nextSeoDescription ?? '')}`)
       }
       return
     }
 
     // ── 5. 단일 트랜잭션 write ────────────────────────────────
-    log(`\n[5] 트랜잭션 시작 — ${plan.targets.length}건`)
+    log(`\n[5] 트랜잭션 시작 — ${plan.targets.length}건 · maxWait ${TRANSACTION_OPTIONS.maxWait}ms · timeout ${TRANSACTION_OPTIONS.timeout}ms`)
     const started = Date.now()
-    const res = await executeInTransaction(prisma, plan.targets, EXPECTED_APPLY_ROWS)
+    // Prisma 의 $transaction 은 배열/콜백 두 오버로드를 갖는다. 콜백 쪽을 명시적으로
+    // 집어 넘긴다 — 인터페이스에 직접 넣으면 TS 가 배열 오버로드를 먼저 잡아 실패한다.
+    const runner: TransactionRunner = {
+      $transaction: (fn, options) => prisma.$transaction(fn, options),
+    }
+    const res = await executeInTransaction(runner, plan.targets, EXPECTED_APPLY_ROWS)
     log(`    ✅ commit — 영향 행 ${res.affected}/${res.attempted} · ${Date.now() - started}ms`)
 
     // ── 6. 사후 검증 ──────────────────────────────────────────
     const after: LiveRow[] = await prisma.post.findMany({
       where: { id: { in: ids } },
-      select: { id: true, seoTitle: true, seoDescription: true },
+      select: {
+        id: true, boardType: true, status: true,
+        seoTitle: true, seoDescription: true,
+      },
     })
     const afterMap = new Map(after.map((r) => [r.id, r]))
     let okDesc = 0, okTitle = 0
     const bad: string[] = []
     for (const t of plan.targets) {
       const row = afterMap.get(t.id)
-      if (!row) { bad.push(`${t.id}: 조회 실패`); continue }
+      const fp = `post#${fingerprint(t.id)}`
+      if (!row) { bad.push(`${fp}: 조회 실패`); continue }
       if ((row.seoDescription ?? null) === (t.nextSeoDescription ?? null)) okDesc++
-      else bad.push(`${t.id}: seoDescription 이 목표값과 다르다`)
+      else bad.push(`${fp}: seoDescription 이 목표값과 다르다`)
       if ((row.seoTitle ?? null) === (t.expectedSeoTitle ?? null)) okTitle++
-      else bad.push(`${t.id}: seoTitle 이 변경됐다(있어서는 안 되는 일)`)
+      else bad.push(`${fp}: seoTitle 이 변경됐다(있어서는 안 되는 일)`)
     }
     log(`\n[6] 사후 검증  seoDescription 일치 ${okDesc}/${plan.targets.length} · seoTitle 무변경 ${okTitle}/${plan.targets.length}`)
     if (bad.length) {
@@ -213,19 +234,28 @@ async function main() {
 
     // ── 7. 캐시 무효화 안내 (이 도구는 캐시를 건드리지 않는다) ──
     log('\n[7] 캐시 — 이 CLI 는 Next 런타임 밖이라 revalidate 를 호출할 수 없다.')
-    log('    /jobs/[id] 는 데이터 캐시 300s + 라우트 ISR 300s 라 최대 5분 뒤 자동 반영된다.')
-    log('    즉시 반영이 필요하면 어드민 로그인 상태에서 기존 인증 경로를 호출한다:')
-    log('      POST /api/admin/revalidate-deleted   (JOB_DETAIL_TAG 등 전역 태그 무효화)')
-    log('    그 뒤 production 전수 검증:')
-    log('      npx tsx scripts/seo-desc-verify-production.ts')
+    log('    /jobs/[id] 는 라우트 ISR(revalidate 300)로 HTML 이 캐시되고,')
+    log('    ISR 은 만료 후 첫 요청에 stale 을 주고 뒤에서 다시 만든다 —')
+    log('    그래서 "몇 분이면 반영된다"고 단정할 수 없다. 확인해야 한다:')
+    log('      npx tsx scripts/seo-desc-verify-production.ts        (제한시간 동안 반복 확인)')
+    log('    HTML 이 아직 옛 문구여도 DB 는 이미 맞다([6] 확인 완료). 롤백 사유가 아니다.')
   } finally {
     await prisma.$disconnect()
   }
 }
 
-main().catch((e) => {
-  if (e instanceof ApplyAbortError) fail(e.code, e.message)
-  console.error('\n❌ 예기치 못한 오류:', e instanceof Error ? e.message : String(e))
-  console.error('   트랜잭션 안에서 발생했다면 rollback 됐다 (mutation 0).')
-  process.exit(1)
-})
+/**
+ * **direct-run 계약** — import 만으로는 DB 에 붙지도, 아무것도 쓰지도 않는다.
+ * 테스트가 이 파일을 읽어도 부작용이 없어야 한다.
+ */
+export const isDirectRun = (): boolean =>
+  Boolean(process.argv[1]?.includes('seo-desc-apply'))
+
+if (isDirectRun()) {
+  main().catch((e) => {
+    if (e instanceof ApplyAbortError) fail(e.code, e.message)
+    console.error('\n❌ 예기치 못한 오류:', e instanceof Error ? e.message : String(e))
+    console.error('   트랜잭션 안에서 발생했다면 rollback 됐다 (mutation 0).')
+    process.exit(1)
+  })
+}

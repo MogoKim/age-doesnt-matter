@@ -12,21 +12,41 @@
  *   - raw SQL 을 쓰지 않는다(프로젝트 규칙).
  *   - `seoDescription` 외의 어떤 필드도 `data` 에 넣지 않는다.
  */
-import type { ApplyTarget } from './desc-apply-plan'
+import {
+  TRANSACTION_OPTIONS, REQUIRED_BOARD_TYPE, REQUIRED_STATUS,
+  type ApplyTarget,
+} from './desc-apply-plan'
 
 /** `prisma.post.updateMany` 의 우리가 쓰는 부분만. */
 export interface PostUpdater {
   post: {
     updateMany(args: {
-      where: { id: string; seoTitle: string | null; seoDescription: string | null }
+      where: {
+        id: string
+        // Prisma enum 과 맞추기 위해 리터럴 타입을 쓴다 (string 으로 넓히면 타입이 깨진다)
+        boardType: typeof REQUIRED_BOARD_TYPE
+        status: typeof REQUIRED_STATUS
+        seoTitle: string | null
+        seoDescription: string | null
+      }
       data: { seoDescription: string | null }
     }): Promise<{ count: number }>
   }
 }
 
 /** `prisma.$transaction(fn)` 의 우리가 쓰는 부분만. */
+/**
+ * 필드를 optional 로 둔 이유: Prisma 의 `$transaction` 옵션 타입이 optional 이라
+ * required 로 선언하면 반공변 위치에서 할당이 깨진다(PrismaClient 를 이 인터페이스에
+ * 넣을 수 없게 된다). 값 자체는 `TRANSACTION_OPTIONS` 가 항상 둘 다 채운다.
+ */
+export interface TransactionOptions { maxWait?: number; timeout?: number }
+
 export interface TransactionRunner {
-  $transaction<T>(fn: (tx: PostUpdater) => Promise<T>): Promise<T>
+  $transaction<T>(
+    fn: (tx: PostUpdater) => Promise<T>,
+    options?: TransactionOptions,
+  ): Promise<T>
 }
 
 export class ApplyAbortError extends Error {
@@ -59,6 +79,7 @@ export async function executeInTransaction(
     )
   }
 
+  // 기본 5초 제한에 기대지 않는다 — 50회 순차 update 는 그 안에 못 끝날 수 있다
   return db.$transaction(async (tx) => {
     let affected = 0
     let attempted = 0
@@ -68,6 +89,9 @@ export async function executeInTransaction(
         // 낙관적 잠금 — 사전 조회와 write 사이에 값이 바뀌면 0행이 된다
         where: {
           id: t.id,
+          // 공개 상태도 함께 잠근다 — 그 사이 숨겨졌거나 게시판이 바뀐 글에는 쓰지 않는다
+          boardType: REQUIRED_BOARD_TYPE,
+          status: REQUIRED_STATUS,
           seoTitle: t.expectedSeoTitle,
           seoDescription: t.expectedSeoDescription,
         },
@@ -88,5 +112,5 @@ export async function executeInTransaction(
       )
     }
     return { affected, attempted }
-  })
+  }, { ...TRANSACTION_OPTIONS })
 }

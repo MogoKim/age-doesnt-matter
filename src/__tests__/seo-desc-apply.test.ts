@@ -9,57 +9,13 @@ import { describe, it, expect } from 'vitest'
 import {
   parseCsv, toRewriteRows, buildPlan, detectDrift, exactEquals, csvToDbValue,
   EXPECTED_APPLY_ROWS, CONFIRM_TOKEN,
-  type RewriteRow, type LiveRow,
 } from '@/lib/seo/desc-apply-plan'
 import {
   executeInTransaction, ApplyAbortError,
   type TransactionRunner, type PostUpdater,
 } from '@/lib/seo/desc-apply-exec'
 import { extractMetaDescription, unapprovedBanned } from '@/lib/seo/desc-verify'
-
-// ── 가짜 CSV 생성 ────────────────────────────────────────────
-const COLS = [
-  'id', 'boardType', 'source', 'rewriteDecision', 'applyEligible', 'targetField',
-  'bannedTerms', 'termProvenance', 'provenanceDetail',
-  'currentSeoTitle', 'proposedSeoTitle', 'currentSeoDescription', 'proposedSeoDescription',
-  'currentSeoTitleSha256_12', 'currentSeoDescriptionSha256_12', 'liveValueVerifiedAt',
-  'sourceTitleUnchanged', 'rewriteRationale', 'factCheckPassed', 'factAxesVerified',
-  'properNounOverlapToken', 'residualBrandCopy', 'needsHumanReview', 'reviewReason',
-]
-
-function row(over: Partial<RewriteRow> & { id: string }): RewriteRow {
-  const base: Record<string, string> = Object.fromEntries(COLS.map((c) => [c, '']))
-  return {
-    ...base,
-    boardType: 'JOB',
-    source: 'SHEET',
-    rewriteDecision: 'REWRITE_BRAND_COPY',
-    applyEligible: 'true',
-    currentSeoTitle: `제목 ${over.id}`,
-    currentSeoDescription: `옛 문구 ${over.id}`,
-    proposedSeoDescription: `새 문구 ${over.id}`,
-    ...over,
-  } as RewriteRow
-}
-
-/** 정상 59행 — 적용 50 + 보류 9 */
-function validRows(): RewriteRow[] {
-  const rows: RewriteRow[] = []
-  for (let i = 0; i < 50; i++) rows.push(row({ id: `ok${i}` }))
-  for (let i = 0; i < 4; i++) rows.push(row({ id: `hold${i}`, rewriteDecision: 'BRAND_COPY_HOLD_REVIEW', applyEligible: 'false', proposedSeoDescription: '' }))
-  rows.push(row({ id: 'partial0', rewriteDecision: 'BRAND_COPY_PARTIAL_HOLD_REVIEW', applyEligible: 'false' }))
-  for (let i = 0; i < 3; i++) rows.push(row({ id: `official${i}`, rewriteDecision: 'OFFICIAL_NAME_ONLY_REVIEW', applyEligible: 'false', proposedSeoDescription: '' }))
-  rows.push(row({ id: 'srctitle0', rewriteDecision: 'SOURCE_TITLE_ONLY_REVIEW', applyEligible: 'false', proposedSeoDescription: '' }))
-  return rows
-}
-
-function liveFrom(rows: RewriteRow[]): LiveRow[] {
-  return rows.filter((r) => r.applyEligible === 'true').map((r) => ({
-    id: r.id,
-    seoTitle: csvToDbValue(r.currentSeoTitle),
-    seoDescription: csvToDbValue(r.currentSeoDescription),
-  }))
-}
+import { row, validRows, liveFrom } from './helpers/seo-desc-fixture'
 
 // ── 가짜 Prisma ──────────────────────────────────────────────
 interface FakeOpts {
@@ -311,7 +267,7 @@ describe('트랜잭션 실행', () => {
     expect(new Set(seen.flat())).toEqual(new Set(['seoDescription']))
   })
 
-  it('낙관적 잠금 조건에 id·seoTitle·seoDescription 을 모두 건다', async () => {
+  it('낙관적 잠금 조건에 id·boardType·status·seoTitle·seoDescription 을 모두 건다', async () => {
     const seen: string[][] = []
     const db: TransactionRunner = {
       async $transaction(fn) {
@@ -319,7 +275,8 @@ describe('트랜잭션 실행', () => {
       },
     }
     await executeInTransaction(db, plan.targets, EXPECTED_APPLY_ROWS)
-    expect(new Set(seen[0])).toEqual(new Set(['id', 'seoTitle', 'seoDescription']))
+    expect(new Set(seen[0])).toEqual(
+      new Set(['id', 'boardType', 'status', 'seoTitle', 'seoDescription']))
   })
 
   it('영향 행 0이 하나라도 나오면 전체 rollback 한다 (부분 반영 금지)', async () => {
@@ -390,7 +347,8 @@ describe('롤백', () => {
   it('롤백 후 재롤백도 막힌다', () => {
     const back = buildPlan(rows, 'rollback')
     const live = back.targets.map((t) => ({
-      id: t.id, seoTitle: t.expectedSeoTitle, seoDescription: t.nextSeoDescription,
+      id: t.id, boardType: 'JOB', status: 'PUBLISHED',
+      seoTitle: t.expectedSeoTitle, seoDescription: t.nextSeoDescription,
     }))
     expect(detectDrift(back.targets, live).ok).toBe(false)
   })
