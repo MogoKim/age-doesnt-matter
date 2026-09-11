@@ -32,6 +32,10 @@ import {
   type AndroidConversionVariant,
 } from '@/lib/experiments/android-conversion'
 import {
+  buildSignupBannerTelemetry,
+  resolveSignupBannerCta,
+} from '@/lib/telemetry/signup-banner-cta'
+import {
   INAPP_REDIRECT_EVENTS,
   arrivalRedirectMethod,
   buildInappRedirectProps,
@@ -49,6 +53,26 @@ function isInappEnv(env: string): env is InappEnv {
 
 function isIOSUserAgent(userAgent: string): boolean {
   return /iPhone|iPad|iPod/i.test(userAgent)
+}
+
+/**
+ * 노출·클릭 공통 계측 payload (r8-v2).
+ *
+ * 🔴 노출과 클릭이 **같은 입력으로 같은 CTA 값**을 싣게 하는 것이 이 함수의 존재 이유다.
+ *    분기를 두 곳에 따로 두면 "본 것"과 "누른 것"의 기준이 어긋나 분모·분자가 맞지 않는다.
+ *    CTA 문구·디자인·노출 조건은 이 함수가 바꾸지 않는다 — 이름만 붙인다.
+ */
+function bannerTelemetryProps(input: {
+  variant: AndroidConversionVariant | ''
+  isIOS: boolean
+  env: string
+}) {
+  return buildSignupBannerTelemetry({
+    ctaType: resolveSignupBannerCta(input),
+    env: input.env,
+    browserEnv: getBrowserEnv(),
+    variant: input.variant,
+  })
 }
 
 // ──────────────────────────────────────────────
@@ -200,6 +224,16 @@ export function SignupPromptBanner() {
   const inappRef = useRef(false)
   useEffect(() => { inappRef.current = isInappEnv(currentEnv) }, [currentEnv])
 
+  // 🔴 노출 시점 CTA 판정도 **ref** 로 읽는다.
+  //   `tryFire` 는 [pathname, isLoggedIn, status, isTWA, isCapacitor] effect 안에서 만들어지고
+  //   `currentEnv`·`isIOS` state 변경으로는 재생성되지 않는다(재생성하면 60초 백스톱 타이머가 리셋된다).
+  //   state 를 그대로 읽으면 **마운트 첫 렌더의 초기값**(`android-chrome` / `false`)에 고정돼
+  //   iOS·인앱 사용자의 노출이 전부 `kakao_oauth` 로 잘못 기록된다.
+  const envRef = useRef('android-chrome')
+  useEffect(() => { envRef.current = currentEnv }, [currentEnv])
+  const isIOSRef = useRef(false)
+  useEffect(() => { isIOSRef.current = isIOS }, [isIOS])
+
   // ── ?signup=1 auto-trigger: 인앱→외부브라우저 도착 시 카운트다운 배너 ──
   useEffect(() => {
     if (status === 'loading') return
@@ -321,10 +355,22 @@ export function SignupPromptBanner() {
       // 노출 측정 (EventLog, _anon_sid 자동) — 발동 시점 정독률
       const scrollableNow = document.documentElement.scrollHeight - window.innerHeight
       const scrollAt = scrollableNow <= 0 ? 100 : Math.min(100, Math.max(0, Math.round((window.scrollY / scrollableNow) * 100)))
-      // EventLog에도 GA4와 동일하게 기록 — EventLog 단독 배너 퍼널 재구성 가능하게 (eligible=분모)
+      // EventLog에도 GA4와 동일하게 기록 — EventLog 단독 배너 퍼널 재구성 가능하게.
       //  ⚠️ app_card variant도 이 배너의 노출 1회로 계산한다(기존 횟수 정책 공유).
+      // ⚠️ `signup_banner_eligible` 은 v2 퍼널의 분모가 아니다 —
+      //   `signup_banner_shown` 과 같은 tryFire 에서 연속 전송되는 fire-and-forget POST 라
+      //   서버 기록 순서가 경쟁 조건이다. 노출 SSoT 는 `signup_banner_shown` 하나이고,
+      //   eligible 은 전송 유실을 보는 **과거 품질 신호**로만 남긴다(숫자를 맞추려 재전송하지 않는다).
       trackEvent('signup_banner_eligible', { show_count: count + 1 })
-      trackEvent('signup_banner_shown', { scroll_at_show: scrollAt })
+      trackEvent('signup_banner_shown', {
+        scroll_at_show: scrollAt,
+        // r8-v2 — **무엇을 보여줬는지**. 이 값이 있어야 CTA별 노출 분모가 생긴다.
+        ...bannerTelemetryProps({
+          variant: variantRef.current,
+          isIOS: isIOSRef.current,
+          env: envRef.current,
+        }),
+      })
 
       // 실험 노출 — 기존 signup_banner_* 와 **병행**. app_card는 가입 배너가 아니므로
       // signup 전용 이벤트만으로 해석하면 안 된다(그래서 별도 계열을 둔다).
@@ -519,8 +565,8 @@ export function SignupPromptBanner() {
   const handleAppCardClick = () => {
     trackEvent(ANDROID_CONVERSION_EVENTS.clicked, experimentProps('app_card'))
     gtmPlayStoreClick(APP_CARD_PLAY_MEDIUM)
-    // 기존 signup_banner_clicked 계열도 유지하되 cta_type으로 구분 가능하게 남긴다
-    trackEvent('signup_banner_clicked', { cta_type: 'app_install', env: currentEnv })
+    // 기존 signup_banner_clicked 계열도 유지한다. cta_type 은 노출과 **같은 빌더**로 만든다.
+    trackEvent('signup_banner_clicked', { ...bannerTelemetryProps({ variant, isIOS, env: currentEnv }) })
     window.setTimeout(() => {
       window.location.href = buildPlayStoreUrl(ANDROID_CONVERSION_SURFACE, { medium: APP_CARD_PLAY_MEDIUM })
     }, 0)
@@ -528,7 +574,7 @@ export function SignupPromptBanner() {
 
   const startSignupWithKakao = () => {
     gtmSignupBannerClicked(pathname, 'kakao_oauth')
-    trackEvent('signup_banner_clicked', { cta_type: 'kakao_oauth', env: currentEnv })
+    trackEvent('signup_banner_clicked', { ...bannerTelemetryProps({ variant, isIOS, env: currentEnv }) })
     setIsStarting(true)
     startKakaoLogin(pathname)
   }
@@ -546,7 +592,7 @@ export function SignupPromptBanner() {
     if (inapp) {
       // 인앱 환경: 외부브라우저로 현재 페이지 열기 + signup=1 파라미터
       gtmSignupBannerClicked(pathname, 'external_browser')
-      trackEvent('signup_banner_clicked', { cta_type: 'external_browser', env: currentEnv })
+      trackEvent('signup_banner_clicked', { ...bannerTelemetryProps({ variant, isIOS, env: currentEnv }) })
       const targetUrl = new URL(window.location.href)
       targetUrl.searchParams.set('signup', '1')
       targetUrl.searchParams.set('utm_source', currentEnv)

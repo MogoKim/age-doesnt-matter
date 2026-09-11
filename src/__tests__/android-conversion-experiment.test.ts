@@ -203,18 +203,17 @@ describe('이벤트 계약', () => {
 
   // 실패 모드가 조용하다: rate-limit(event:ip, max 30)에 걸리면 200을 받고도 EventLog에 안 남아
   // 분모만 깎인다. 이름을 바꾸거나 면제 목록에서 빠지면 여기서 잡는다.
-  it('세 이벤트가 /api/events rate-limit 면제 목록에 있다', () => {
-    const route = readFileSync(
-      resolve(__dirname, '../app/api/events/route.ts'),
-      'utf-8',
-    )
-    const line = route.split('\n').find((l) => l.includes('const CONVERSION_EVENTS')) ?? ''
+  it('세 이벤트가 /api/events rate-limit 면제 목록에 있다', async () => {
+    // r8-v2 부터 면제 목록은 `@/lib/telemetry/event-rate-limit` 단일 출처다(라우트는 이 함수를 부른다).
+    const { isRateLimitExemptEvent } = await import('@/lib/telemetry/event-rate-limit')
+    const route = readFileSync(resolve(__dirname, '../app/api/events/route.ts'), 'utf-8')
+    expect(route).toContain('isRateLimitExemptEvent')
     for (const name of Object.values(ANDROID_CONVERSION_EVENTS)) {
-      expect(line).toContain(`'${name}'`)
+      expect(isRateLimitExemptEvent(name)).toBe(true)
     }
     // 기존 배너 계열도 함께 유지되는지 (병행 계측이 깨지지 않게)
     for (const legacy of ['signup_banner_eligible', 'signup_banner_shown', 'signup_banner_clicked', 'signup_banner_dismissed']) {
-      expect(line).toContain(`'${legacy}'`)
+      expect(isRateLimitExemptEvent(legacy)).toBe(true)
     }
   })
 })

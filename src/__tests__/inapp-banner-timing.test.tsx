@@ -253,7 +253,12 @@ describe('CTA 문구·클릭 경로 회귀 0 (PR #320/#321 정책 유지)', () =
     expect(mock.startKakaoLogin).toHaveBeenCalledWith('/community/stories/test-post')
     expect(mock.trackEvent).toHaveBeenCalledWith(
       'signup_banner_clicked',
-      { cta_type: 'kakao_oauth', env: 'naver-inapp' },
+      expect.objectContaining({
+        cta_type: 'kakao_oauth',
+        env: 'naver-inapp',
+        measurement_version: 'r8-v2',
+        surface: 'signup_prompt_banner',
+      }),
     )
   })
 

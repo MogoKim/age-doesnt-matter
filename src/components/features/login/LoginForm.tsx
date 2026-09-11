@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { sendGtmEvent, getStoredUtm, getBrowserEnv } from '@/lib/gtm'
 import { trackEvent } from '@/lib/track'
 import { startKakaoLogin } from '@/lib/kakao-start'
+import { normalizeKakaoClickSource } from '@/lib/telemetry/kakao-click-source'
 import GateOnboardingSlides from '@/components/common/GateOnboardingSlides'
 
 export default function LoginForm() {
@@ -15,8 +16,10 @@ export default function LoginForm() {
 
   function handleKakaoClick() {
     setIsStarting(true)
-    sendGtmEvent('kakao_button_click', { from: 'login_page', browser_env: getBrowserEnv(), ...getStoredUtm() })
-    trackEvent('kakao_button_click', { from: 'login_page', browser_env: getBrowserEnv() })
+    // 사이트 전체 카카오 로그인 시작 — 배너 CTA 클릭과 별도 지표다(귀속하지 않는다).
+    const from = normalizeKakaoClickSource('login_page')
+    sendGtmEvent('kakao_button_click', { from, browser_env: getBrowserEnv(), ...getStoredUtm() })
+    trackEvent('kakao_button_click', { from, browser_env: getBrowserEnv() })
     window.setTimeout(() => startKakaoLogin(callbackUrl), 0)
   }
 

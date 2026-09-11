@@ -48,6 +48,8 @@ interface EventWhere {
   userId?: null | { in?: string[]; not?: null }
   eventName?: string | { in: string[] }
   properties?: { path?: string[]; equals?: unknown }
+  /** r8-v2 계측은 `measurement_version` + `cta_type` 두 JSON 조건을 함께 건다 */
+  AND?: { properties?: { path?: string[]; equals?: unknown } }[]
   OR?: { path?: { startsWith?: string }; botType?: string | null }[]
 }
 interface CommentWhere {
@@ -77,6 +79,14 @@ vi.mock('@/lib/prisma', () => ({
           if (where.properties?.path) {
             const [key] = where.properties.path
             if ((e.properties?.[key] ?? null) !== where.properties.equals) return false
+          }
+          if (where.AND) {
+            for (const cond of where.AND) {
+              const pth = cond.properties?.path
+              if (!pth) continue
+              const [key] = pth
+              if ((e.properties?.[key] ?? null) !== cond.properties?.equals) return false
+            }
           }
           return true
         })
@@ -363,10 +373,13 @@ describe('[R8-6] 4단계 — 기존 리텐션 지표를 재사용하고 비회�
 })
 
 describe('[R8-7] 데이터 품질 — 미수집을 0 으로 읽지 못하게 막는다', () => {
-  it('로그인 시작 유실 가능성을 항상 경고로 남긴다', async () => {
+  it('로그인 시작 계측의 단절 시점을 항상 경고로 남긴다', async () => {
+    // r8-v2 에서 kakao_button_click 이 rate limit 면제로 바뀌었다 —
+    // 면제 **이전** 값은 하한값이므로 이후 구간과 합산하면 안 된다. 그 경고는 사라지지 않는다.
     seedUsers()
     const d = await run()
-    expect(d.dataQuality.find((q) => q.key === 'login_start_rate_limit')?.level).toBe('WARN')
+    expect(d.dataQuality.find((q) => q.key === 'kakao_click_rate_limit_exempt')?.level).toBe('WARN')
+    expect(d.dataQuality.map((q) => q.key)).not.toContain('login_start_rate_limit')
   })
 
   it('제외한 내부 방문자·어드민 수를 밝힌다', async () => {
@@ -814,5 +827,171 @@ describe('[R8-P3-4] 잔존 문구', () => {
     const doc = read('docs/operations/2026-09-10-r8-member-recovery-measurement.md')
     expect(doc).not.toMatch(/병목 확정|병목이다/)
     expect(doc).toMatch(/직접 로그인 기록이 낮은 후보/)
+  })
+})
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * R8 후속 계측 v2 (2026-09-11) — 과거 계측과 신규 계측을 섞지 않는다.
+ *
+ * 배너 노출 135명 · 클릭 0건일 때 판정이 불가능했던 이유는 **노출에 CTA 종류가 없어서**다.
+ * v2 부터 `signup_banner_shown` 과 `signup_banner_clicked` 에 `cta_type` +
+ * `measurement_version: 'r8-v2'` 가 함께 실린다. 그래서 CTA별 분모·분자가 생긴다.
+ *
+ * 🔴 절대 규칙: **과거 미버전 노출은 v2 분모가 아니다.** 섞으면 "CTA를 봤는데 안 눌렀다"가
+ *    실제로는 "CTA 종류를 모르는 노출"인 경우까지 분모에 들어가 전환율이 구조적으로 낮아진다.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+const V2 = { measurement_version: 'r8-v2' as const }
+
+describe('[R8-V2-1] CTA별 분모·분자는 r8-v2 끼리만 만든다', () => {
+  it('v2 노출과 v2 클릭이 CTA 종류별로 이어진다', async () => {
+    seedUsers()
+    db.events = [
+      { eventName: 'signup_banner_shown', sessionId: 'k1', isBot: false, createdAt: ago(3 * DAY), properties: { ...V2, cta_type: 'kakao_oauth' } },
+      { eventName: 'signup_banner_shown', sessionId: 'k2', isBot: false, createdAt: ago(3 * DAY), properties: { ...V2, cta_type: 'kakao_oauth' } },
+      { eventName: 'signup_banner_clicked', sessionId: 'k1', isBot: false, createdAt: ago(2 * DAY), properties: { ...V2, cta_type: 'kakao_oauth' } },
+      { eventName: 'signup_banner_shown', sessionId: 'e1', isBot: false, createdAt: ago(3 * DAY), properties: { ...V2, cta_type: 'external_browser' } },
+      { eventName: 'signup_banner_clicked', sessionId: 'e1', isBot: false, createdAt: ago(2 * DAY), properties: { ...V2, cta_type: 'external_browser' } },
+    ]
+    const d = await run(30)
+    const kakao = d.bannerCtaV2.rows.find((r) => r.ctaType === 'kakao_oauth')!
+    expect(kakao.shownVisitors).toBe(2)
+    expect(kakao.clickedVisitors).toBe(1)
+    expect(kakao.rate).toBe(50)
+    const ext = d.bannerCtaV2.rows.find((r) => r.ctaType === 'external_browser')!
+    expect(ext).toMatchObject({ shownVisitors: 1, clickedVisitors: 1, rate: 100 })
+    // 노출이 없는 CTA 는 0% 가 아니라 판정 불가다
+    const app = d.bannerCtaV2.rows.find((r) => r.ctaType === 'app_install')!
+    expect(app.shownVisitors).toBe(0)
+    expect(app.rate).toBeNull()
+    expect(app.status).toBe('NO_DENOM')
+  })
+
+  it('🔴 과거 미버전 노출은 v2 분모에 들어가지 않는다', async () => {
+    seedUsers()
+    db.events = [
+      // 과거 계측 — cta_type 도 measurement_version 도 없다
+      { eventName: 'signup_banner_shown', sessionId: 'old1', isBot: false, createdAt: ago(6 * DAY) },
+      { eventName: 'signup_banner_shown', sessionId: 'old2', isBot: false, createdAt: ago(6 * DAY) },
+      // v2 노출 1명뿐
+      { eventName: 'signup_banner_shown', sessionId: 'new1', isBot: false, createdAt: ago(2 * DAY), properties: { ...V2, cta_type: 'kakao_oauth' } },
+    ]
+    const d = await run(30)
+    const kakao = d.bannerCtaV2.rows.find((r) => r.ctaType === 'kakao_oauth')!
+    expect(kakao.shownVisitors).toBe(1) // 🔴 3 이면 과거 노출이 섞인 것이다
+    expect(d.bannerCtaHistorical.shownVisitors).toBe(2)
+  })
+
+  it('🔴 과거 미버전 노출과 v2 클릭을 결합하지 않는다', async () => {
+    seedUsers()
+    db.events = [
+      // 이 방문자는 배포 전에 배너를 봤고(버전 없음), 배포 후에 눌렀다(v2)
+      { eventName: 'signup_banner_shown', sessionId: 'straddle', isBot: false, createdAt: ago(6 * DAY) },
+      { eventName: 'signup_banner_clicked', sessionId: 'straddle', isBot: false, createdAt: ago(2 * DAY), properties: { ...V2, cta_type: 'kakao_oauth' } },
+    ]
+    const d = await run(30)
+    const kakao = d.bannerCtaV2.rows.find((r) => r.ctaType === 'kakao_oauth')!
+    // 분모에 없으니 분자에도 없어야 한다 — 있으면 100% 라는 거짓 전환율이 만들어진다
+    expect(kakao.shownVisitors).toBe(0)
+    expect(kakao.clickedVisitors).toBe(0)
+    expect(kakao.rate).toBeNull()
+    // 버려지지 않고 별도로 센다 — 경계를 걸친 클릭이 몇 건인지는 알아야 한다
+    expect(d.bannerCtaV2.clickedWithoutV2Shown).toBe(1)
+  })
+
+  it('v2 클릭이 v2 노출보다 **먼저** 기록됐으면 전환으로 세지 않는다', async () => {
+    seedUsers()
+    db.events = [
+      { eventName: 'signup_banner_clicked', sessionId: 'rev', isBot: false, createdAt: ago(5 * DAY), properties: { ...V2, cta_type: 'kakao_oauth' } },
+      { eventName: 'signup_banner_shown', sessionId: 'rev', isBot: false, createdAt: ago(2 * DAY), properties: { ...V2, cta_type: 'kakao_oauth' } },
+    ]
+    const d = await run(30)
+    const kakao = d.bannerCtaV2.rows.find((r) => r.ctaType === 'kakao_oauth')!
+    expect(kakao.shownVisitors).toBe(1)
+    expect(kakao.clickedVisitors).toBe(0)
+  })
+})
+
+describe('[R8-V2-2] 배포 전에는 0% 가 아니라 미수집이다', () => {
+  it('v2 이벤트가 하나도 없으면 NOT_COLLECTED 이고 비율은 전부 null 이다', async () => {
+    seedUsers()
+    db.events = [
+      { eventName: 'signup_banner_shown', sessionId: 'old1', isBot: false, createdAt: ago(3 * DAY) },
+      { eventName: 'signup_banner_clicked', sessionId: 'old1', isBot: false, createdAt: ago(2 * DAY), properties: { cta_type: 'kakao_oauth' } },
+    ]
+    const d = await run(30)
+    expect(d.bannerCtaV2.status).toBe('NOT_COLLECTED')
+    expect(d.bannerCtaV2.firstSeenInWindowAt).toBeNull()
+    for (const r of d.bannerCtaV2.rows) expect(r.rate).toBeNull()
+    // 과거 데이터는 합계로만 남는다
+    expect(d.bannerCtaHistorical.shownVisitors).toBe(1)
+    expect(d.bannerCtaHistorical.clickedVisitors).toBe(1)
+  })
+
+  it('v2 가 도착하면 관측 최초 시각을 기록한다', async () => {
+    seedUsers()
+    db.events = [
+      { eventName: 'signup_banner_shown', sessionId: 'n1', isBot: false, createdAt: ago(3 * DAY), properties: { ...V2, cta_type: 'kakao_oauth' } },
+    ]
+    const d = await run(30)
+    expect(d.bannerCtaV2.status).toBe('COLLECTED')
+    expect(d.bannerCtaV2.firstSeenInWindowAt).toBe(new Date(NOW - 3 * DAY).toISOString())
+  })
+
+  it('cta_type 없이 도착한 v2 노출은 계측 결함으로 따로 센다', async () => {
+    seedUsers()
+    db.events = [
+      { eventName: 'signup_banner_shown', sessionId: 'bad', isBot: false, createdAt: ago(3 * DAY), properties: { ...V2 } },
+      { eventName: 'signup_banner_shown', sessionId: 'good', isBot: false, createdAt: ago(3 * DAY), properties: { ...V2, cta_type: 'kakao_oauth' } },
+    ]
+    const d = await run(30)
+    expect(d.bannerCtaV2.shownWithoutCtaType).toBe(1)
+  })
+})
+
+describe('[R8-V2-3] 노출 SSoT 는 shown 이다 — eligible 은 과거 품질 신호로만 남긴다', () => {
+  it('v2 분모는 eligible 이 아니라 shown 으로 만든다', async () => {
+    seedUsers()
+    db.events = [
+      // eligible 만 있고 shown 이 유실된 방문자 — v2 분모에 넣으면 도착 순서를 전환으로 오독한다
+      { eventName: 'signup_banner_eligible', sessionId: 'onlyE', isBot: false, createdAt: ago(3 * DAY), properties: { ...V2, cta_type: 'kakao_oauth' } },
+      { eventName: 'signup_banner_shown', sessionId: 'both', isBot: false, createdAt: ago(3 * DAY), properties: { ...V2, cta_type: 'kakao_oauth' } },
+      { eventName: 'signup_banner_eligible', sessionId: 'both', isBot: false, createdAt: ago(3 * DAY), properties: { ...V2, cta_type: 'kakao_oauth' } },
+    ]
+    const d = await run(30)
+    const kakao = d.bannerCtaV2.rows.find((r) => r.ctaType === 'kakao_oauth')!
+    expect(kakao.shownVisitors).toBe(1) // 🔴 2 면 eligible 이 섞인 것이다
+    // eligible 은 계측 일관성 지표에만 남는다
+    expect(d.bannerConsistency.eligibleVisitors).toBe(2)
+  })
+
+  it('createdAt 도착 순서로 eligible→shown 전환을 만들지 않는다', async () => {
+    seedUsers()
+    const d = await run()
+    expect(d.signupFunnel.conversions.map((c) => c.key)).not.toContain('eligible_to_exposure')
+    expect(d.dataQuality.some((q) => q.key === 'eligible_is_quality_signal')).toBe(true)
+  })
+})
+
+describe('[R8-V2-4] 사이트 전체 카카오 클릭은 v2 배너 전환에 귀속되지 않는다', () => {
+  it('kakao_button_click 은 v2 CTA 분자에 들어가지 않는다', async () => {
+    seedUsers()
+    db.events = [
+      { eventName: 'signup_banner_shown', sessionId: 'v1', isBot: false, createdAt: ago(3 * DAY), properties: { ...V2, cta_type: 'kakao_oauth' } },
+      // 🔴 로그인 화면의 카카오 버튼이다. 배너 CTA 가 아니다.
+      { eventName: 'kakao_button_click', sessionId: 'v1', isBot: false, createdAt: ago(2 * DAY), properties: { from: 'login_page' } },
+    ]
+    const d = await run(30)
+    const kakao = d.bannerCtaV2.rows.find((r) => r.ctaType === 'kakao_oauth')!
+    expect(kakao.clickedVisitors).toBe(0)
+    expect(d.siteWideKakaoClick.visitors).toBe(1)
+  })
+
+  it('rate limit 면제 이후 사이트 전체 카카오 클릭의 계측 단절 시점을 알린다', async () => {
+    seedUsers()
+    const d = await run()
+    const note = d.dataQuality.find((q) => q.key === 'kakao_click_rate_limit_exempt')
+    expect(note).toBeTruthy()
+    expect(note!.message).toMatch(/면제/)
   })
 })
