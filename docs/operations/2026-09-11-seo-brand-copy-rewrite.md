@@ -3,7 +3,7 @@
 > ✅ **2026-09-11 적용 완료.** `applyEligible = true` **50건**의 `seoDescription` 을
 > production 에 반영했다(영향 행 50/50). `seoTitle`·`title`·`content`·`JobDetail` 은 변경 0.
 > **적용 제외 9건은 그대로다**(무변경 확인 9/9).
-> 실행 절차·기록: [적용 도구 문서](./2026-09-11-seo-desc-apply-tool.md) §8-A2 ·
+> 실행 절차·기록: [적용 도구 문서](./2026-09-11-seo-desc-apply-tool.md) §8-B ·
 > 로그: [`logs/2026-09-11-seo-desc-apply.log`](./logs/2026-09-11-seo-desc-apply.log)
 >
 > 아래 표의 `currentSeoDescription` 은 **적용 전 값**이다(롤백 기준값으로 보존).
