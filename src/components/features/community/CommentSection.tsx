@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo, useOptimistic, useCallback, useRef } from 'react'
+import { useEffect, useState, useMemo, useOptimistic, useCallback, useRef, useSyncExternalStore } from 'react'
 import { useAppSession } from '@/components/common/AppSessionProvider'
 import type { CommentItem as CommentItemType } from '@/types/api'
 import type { Grade } from '@/generated/prisma/client'
@@ -86,6 +86,21 @@ interface VoteBadges {
   byUserId: Record<string, 'A' | 'B'>
 }
 
+/**
+ * 하이드레이션이 끝났는가 — `useSyncExternalStore` 의 **server snapshot 보장**을 쓴다.
+ *
+ * React 는 SSR 과 **하이드레이션 렌더** 모두에서 `getServerSnapshot`(여기서는 `false`)을 쓰고,
+ * 하이드레이션이 끝난 뒤에야 `getSnapshot`(`true`)으로 전환해 한 번 더 렌더한다.
+ * 즉 "서버와 클라이언트 첫 렌더가 같은 기준을 쓴다"가 **런타임 타이밍과 무관하게** 보장된다 —
+ * effect 로 setState 하는 방식과 달리 경계가 늦게 하이드레이트돼도 어긋나지 않는다.
+ */
+const subscribeNoop = () => () => {}
+const getHydratedSnapshot = () => true
+const getServerSnapshot = () => false
+function useIsHydrated(): boolean {
+  return useSyncExternalStore(subscribeNoop, getHydratedSnapshot, getServerSnapshot)
+}
+
 export default function CommentSection({ postId, comments, isLoggedIn, currentUser, isGreeting, variant = 'default', readOnly = false }: CommentSectionProps) {
   const isFeedback = variant === 'feedback'
   const L = isFeedback
@@ -94,7 +109,23 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
   // [B안] 하단 작성 패널 헤더. 기존 '댓글→의견' 문구 정책을 그대로 따른다.
   const composeHeading = isGreeting ? '환영 인사 쓰는 중' : isFeedback ? '의견 쓰는 중' : '댓글 쓰는 중'
   const { user, status } = useAppSession()
-  const authKnown = typeof isLoggedIn === 'boolean' || status !== 'loading'
+
+  /**
+   * 🔴 하이드레이션 렌더는 **서버 렌더와 같은 입력**을 써야 한다.
+   *
+   * 이 섹션은 글상세에서 `<Suspense>` 안에 있어 **늦게 하이드레이트**된다.
+   * 그 사이 `AppSessionProvider` 는 세션 힌트가 없는 비회원에 대해 네트워크 없이 즉시
+   * `status='unauthenticated'` 로 확정한다. 그래서 서버는 `status='loading'`(스켈레톤)으로
+   * 그렸는데 하이드레이션 렌더는 입력 UI를 그려 **구조가 어긋났다**(React #418).
+   * 결과: React 가 이 섹션 전체를 버리고 클라이언트에서 다시 그렸다(깜빡임·DOM 폐기).
+   *
+   * 그래서 `status` 를 하이드레이션 렌더에서 읽지 않는다. 마운트가 끝난 뒤에만 반영한다.
+   * ⚠️ 텍스트가 아니라 **구조** mismatch 라 `suppressHydrationWarning` 으로 덮으면 안 된다.
+   *    그건 경고만 끄고 실제 불일치는 남긴다.
+   * ⚠️ `isLoggedIn` 을 명시로 받는 호출부는 서버·클라이언트가 같은 값을 쓰므로 지연 없이 그대로 둔다.
+   */
+  const hydrated = useIsHydrated()
+  const authKnown = typeof isLoggedIn === 'boolean' || (hydrated && status !== 'loading')
   const resolvedIsLoggedIn = isLoggedIn ?? status === 'authenticated'
   const resolvedCurrentUser = currentUser ?? (status === 'authenticated' ? user ?? undefined : undefined)
   const [personalizedComments, setPersonalizedComments] = useState(comments)
