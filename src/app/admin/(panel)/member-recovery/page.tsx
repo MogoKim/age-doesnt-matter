@@ -126,7 +126,7 @@ export default async function MemberRecoveryPage({ searchParams }: Props) {
   const params = await searchParams
   const windowDays = parseWindowDays(params.window)
   const data: MemberRecoveryData = await getMemberRecovery(windowDays)
-  const { activation, replyLoop, retention, signupEventCoverage: cov, bannerConsistency: bc, bannerCta, siteWideKakaoClick } = data
+  const { activation, replyLoop, retention, signupEventCoverage: cov, bannerConsistency: bc, bannerCta, siteWideKakaoClick, bannerCtaV2: v2, bannerCtaHistorical: hist } = data
 
   return (
     <div className="space-y-4">
@@ -176,7 +176,7 @@ export default async function MemberRecoveryPage({ searchParams }: Props) {
 
       <Section
         title="1단계 · 비회원 방문 → 가입 유도 노출 → 배너 CTA 반응 → 가입 완료"
-        lead={`방문자 기준(식별자 _anon_sid = 30일 쿠키). 분모·분자를 함께 적는다. ≥ 표시는 이벤트 유실 가능성이 있어 실제 값이 그 이상이라는 뜻이다. 노출 분모에는 CTA 종류 정보가 없어 CTA별 전환율은 만들 수 없다.`}
+        lead={`방문자 기준(식별자 _anon_sid = 30일 쿠키). 분모·분자를 함께 적는다. ≥ 표시는 이벤트 유실 가능성이 있어 실제 값이 그 이상이라는 뜻이다. 이 표는 측정 버전 혼합 합계다 — CTA별 전환율은 아래 r8-v2 표에서만 본다.`}
       >
         <FunnelTable steps={data.signupFunnel.steps} conversions={data.signupFunnel.conversions} />
 
@@ -209,11 +209,21 @@ export default async function MemberRecoveryPage({ searchParams }: Props) {
                   <td className="py-1.5 pr-3 pl-4 text-zinc-600">↳ 기타·미상</td>
                   <td className="py-1.5 text-right tabular-nums text-zinc-500">{num(bannerCta.byType.other)}명</td>
                 </tr>
-                <tr>
+                <tr className="border-b border-zinc-100">
                   <td className="py-1.5 pr-3 text-zinc-600">
-                    참고 — 사이트 전체 <code>kakao_button_click</code>
+                    참고 — 사이트 전체 <code>kakao_button_click</code> (r8-v2)
                   </td>
-                  <td className="py-1.5 text-right tabular-nums text-zinc-500">{num(siteWideKakaoClick.visitors)}명</td>
+                  <td className="py-1.5 text-right tabular-nums text-zinc-500">
+                    {siteWideKakaoClick.status === 'NOT_COLLECTED'
+                      ? <span className="text-zinc-400">미수집</span>
+                      : `${num(siteWideKakaoClick.v2Visitors)}명`}
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-1.5 pr-3 pl-4 text-zinc-500">
+                    ↳ 미버전(합산 금지 · 하한값)
+                  </td>
+                  <td className="py-1.5 text-right tabular-nums text-zinc-400">{num(siteWideKakaoClick.historicalVisitors)}명</td>
                 </tr>
               </tbody>
             </table>
@@ -254,6 +264,76 @@ export default async function MemberRecoveryPage({ searchParams }: Props) {
               한쪽만 있는 방문자는 <strong>전환 실패가 아니라 전송 유실</strong> 신호다.
             </p>
           </div>
+        </div>
+
+        <div className="mt-4 rounded border border-zinc-300 bg-zinc-50 p-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-sm font-bold text-zinc-900">
+              CTA별 전환 — <code>{v2.measurementVersion}</code> 계측끼리만
+            </h3>
+            <StatusChip status={v2.status} />
+          </div>
+          <p className="mt-1 text-xs leading-5 text-zinc-600">
+            분모(<strong>이 CTA 를 실제로 본 방문자</strong>)와 분자(그 뒤에 누른 방문자)를 <strong>둘 다 r8-v2</strong> 이벤트로만 만든다.
+            배포 이전 노출에는 CTA 종류가 없어 <strong>섞으면 전환율이 구조적으로 낮아진다</strong>.
+          </p>
+          {v2.status === 'NOT_COLLECTED' ? (
+            <p className="mt-2 rounded border border-zinc-200 bg-white p-2 text-xs leading-5 text-zinc-600">
+              이 창 안에 r8-v2 이벤트가 아직 없다. <strong>0% 가 아니라 &apos;모른다&apos;</strong>다 —
+              배포 이후 노출이 쌓이면 채워진다.
+            </p>
+          ) : (
+            <div className="mt-2 overflow-x-auto">
+              <table className="w-full min-w-[420px] text-sm">
+                <thead>
+                  <tr className="border-b border-zinc-300 text-left text-xs text-zinc-500">
+                    <th className="py-1.5 pr-3">CTA 종류</th>
+                    <th className="py-1.5 pr-3 text-right">눌렀다 / 봤다</th>
+                    <th className="py-1.5 text-right">전환율</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {v2.rows.map((r) => (
+                    <tr key={r.ctaType} className="border-b border-zinc-200">
+                      <td className="py-1.5 pr-3 text-zinc-800"><code>{r.ctaType}</code></td>
+                      <td className="py-1.5 pr-3 text-right tabular-nums">
+                        {num(r.clickedVisitors)} / {num(r.shownVisitors)}
+                      </td>
+                      <td className="py-1.5 text-right"><Rate rate={r.rate} status={r.status} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <dl className="mt-2 grid gap-1 text-xs leading-5 text-zinc-600 sm:grid-cols-2">
+            <div>
+              <dt className="inline text-zinc-500">v2 최초 관측(창 내) — </dt>
+              <dd className="inline tabular-nums">
+                {v2.firstSeenInWindowAt
+                  ? new Date(v2.firstSeenInWindowAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })
+                  : '없음'}
+              </dd>
+            </div>
+            <div>
+              <dt className="inline text-zinc-500">cta_type 없는 v2 노출 — </dt>
+              <dd className={`inline tabular-nums ${v2.shownWithoutCtaType > 0 ? 'text-red-700' : ''}`}>
+                {num(v2.shownWithoutCtaType)}명
+              </dd>
+            </div>
+            <div>
+              <dt className="inline text-zinc-500">v2 노출 없는 v2 클릭(경계) — </dt>
+              <dd className="inline tabular-nums text-amber-700">{num(v2.clickedWithoutV2Shown)}명</dd>
+            </div>
+          </dl>
+          <div className="mt-2 rounded border border-zinc-200 bg-white p-2">
+            <p className="text-xs font-semibold text-zinc-700">배포 이전(미버전) 합계 — 비율을 만들지 않는다</p>
+            <p className="mt-1 text-xs leading-5 text-zinc-600">
+              노출 <span className="tabular-nums font-medium">{num(hist.shownVisitors)}</span>명 ·
+              클릭 <span className="tabular-nums font-medium">{num(hist.clickedVisitors)}</span>명. {hist.note}
+            </p>
+          </div>
+          <p className="mt-2 text-xs leading-5 text-zinc-500">{v2.note}</p>
         </div>
 
         <div className="mt-4 rounded border border-amber-200 bg-amber-50 p-3">

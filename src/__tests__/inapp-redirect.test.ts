@@ -55,24 +55,24 @@ describe('이벤트명 — /api/events rate-limit 면제 목록과 반드시 일
 
   // 실패 모드가 조용하다: rate-limit(event:ip, max 30)에 걸리면 200을 받고도 EventLog에 안 남는다.
   // attempted만 유실되고 opened만 남으면 퍼널이 거꾸로 보인다 → 여기서 잡는다.
-  it('세 이벤트가 /api/events rate-limit 면제 목록에 실제로 등록돼 있다', () => {
+  // r8-v2 부터 면제 목록은 `@/lib/telemetry/event-rate-limit` 단일 출처다(라우트는 이 함수를 부른다).
+  it('세 이벤트가 /api/events rate-limit 면제 목록에 실제로 등록돼 있다', async () => {
+    const { isRateLimitExemptEvent } = await import('@/lib/telemetry/event-rate-limit')
     const route = readFileSync(resolve(__dirname, '../app/api/events/route.ts'), 'utf-8')
-    const line = route.split('\n').find((l) => l.includes('const CONVERSION_EVENTS')) ?? ''
-    expect(line).not.toBe('')
+    expect(route).toContain('isRateLimitExemptEvent')
     for (const name of Object.values(INAPP_REDIRECT_EVENTS)) {
-      expect(line).toContain(`'${name}'`)
+      expect(isRateLimitExemptEvent(name)).toBe(true)
     }
   })
 
-  it('기존 면제 대상이 하나도 빠지지 않았다 — 병행 계측 보존', () => {
-    const route = readFileSync(resolve(__dirname, '../app/api/events/route.ts'), 'utf-8')
-    const line = route.split('\n').find((l) => l.includes('const CONVERSION_EVENTS')) ?? ''
+  it('기존 면제 대상이 하나도 빠지지 않았다 — 병행 계측 보존', async () => {
+    const { isRateLimitExemptEvent } = await import('@/lib/telemetry/event-rate-limit')
     for (const legacy of [
       'signup_banner_eligible', 'signup_banner_shown', 'signup_banner_clicked', 'signup_banner_dismissed',
       'android_conversion_prompt_exposed', 'android_conversion_prompt_clicked', 'android_conversion_prompt_dismissed',
       'related_recommend_view', 'sign_up', 'signup_step',
     ]) {
-      expect(line).toContain(`'${legacy}'`)
+      expect(isRateLimitExemptEvent(legacy)).toBe(true)
     }
   })
 })
@@ -110,7 +110,7 @@ describe('기존 GTM 계측이 사라지지 않았다 (두 파이프 병행)', (
   })
 
   it('일반 외부 브라우저 경로(kakao_oauth)는 건드리지 않았다 — 회귀 0', () => {
-    expect(banner).toContain("trackEvent('signup_banner_clicked', { cta_type: 'kakao_oauth', env: currentEnv })")
+    expect(banner).toContain("trackEvent('signup_banner_clicked', { ...bannerTelemetryProps({ variant, isIOS, env: currentEnv }) })")
     expect(banner).toContain('startKakaoLogin(pathname)')
   })
 

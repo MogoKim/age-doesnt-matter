@@ -121,9 +121,15 @@ describe('iOS SignupPromptBanner hotfix — 모든 iOS는 카카오 OAuth 직행
     fireEvent.click(cta)
 
     expect(mock.startKakaoLogin).toHaveBeenCalledWith('/community/stories/test-post')
+    // r8-v2: 노출과 같은 빌더가 만든 payload 다 — cta_type 외에 계측 버전·노출면이 함께 실린다
     expect(mock.trackEvent).toHaveBeenCalledWith(
       'signup_banner_clicked',
-      { cta_type: 'kakao_oauth', env },
+      expect.objectContaining({
+        cta_type: 'kakao_oauth',
+        env,
+        measurement_version: 'r8-v2',
+        surface: 'signup_prompt_banner',
+      }),
     )
     expect(mock.trackEvent).not.toHaveBeenCalledWith(
       INAPP_REDIRECT_EVENTS.attempted,

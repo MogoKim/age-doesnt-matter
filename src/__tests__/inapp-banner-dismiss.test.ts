@@ -88,7 +88,7 @@ describe('A. 실험 UI·비인앱은 건드리지 않았다 (회귀 0)', () => {
   })
 
   it('비인앱 CTA 경로(kakao_oauth)는 무변경', () => {
-    expect(banner).toContain("trackEvent('signup_banner_clicked', { cta_type: 'kakao_oauth', env: currentEnv })")
+    expect(banner).toContain("trackEvent('signup_banner_clicked', { ...bannerTelemetryProps({ variant, isIOS, env: currentEnv }) })")
     expect(banner).toContain('startKakaoLogin(pathname)')
   })
 })
@@ -112,7 +112,7 @@ describe('P0. iOS 가입 CTA hotfix', () => {
     const idx = banner.indexOf('const startSignupWithKakao')
     const chunk = banner.slice(idx, idx + 500)
     expect(chunk).toContain("gtmSignupBannerClicked(pathname, 'kakao_oauth')")
-    expect(chunk).toContain("trackEvent('signup_banner_clicked', { cta_type: 'kakao_oauth', env: currentEnv })")
+    expect(chunk).toContain("trackEvent('signup_banner_clicked', { ...bannerTelemetryProps({ variant, isIOS, env: currentEnv }) })")
     expect(chunk).toContain('startKakaoLogin(pathname)')
   })
 
@@ -163,10 +163,12 @@ describe('PR-N2 계측 유지', () => {
     expect(banner).toContain('arrivalRedirectMethod(arrivedFrom)')
   })
 
-  it('이벤트명은 rate-limit 면제 목록과 계속 일치한다', () => {
+  it('이벤트명은 rate-limit 면제 목록과 계속 일치한다', async () => {
+    // r8-v2 부터 면제 목록은 `@/lib/telemetry/event-rate-limit` 단일 출처다(라우트는 이 함수를 부른다).
+    const { isRateLimitExemptEvent } = await import('@/lib/telemetry/event-rate-limit')
     const route = readFileSync(resolve(__dirname, '../app/api/events/route.ts'), 'utf-8')
-    const line = route.split('\n').find(l => l.includes('const CONVERSION_EVENTS')) ?? ''
-    for (const name of Object.values(INAPP_REDIRECT_EVENTS)) expect(line).toContain(`'${name}'`)
+    expect(route).toContain('isRateLimitExemptEvent')
+    for (const name of Object.values(INAPP_REDIRECT_EVENTS)) expect(isRateLimitExemptEvent(name)).toBe(true)
   })
 })
 

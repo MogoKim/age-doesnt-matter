@@ -218,10 +218,12 @@ describe('회원 입력창 (CommentInput)', () => {
 })
 
 describe('rate limit 면제 — 퍼널이 429로 조용히 깨지지 않게', () => {
-  it('클라가 보내는 댓글 이벤트가 전부 CONVERSION_EVENTS에 있다', async () => {
+  it('클라가 보내는 댓글 이벤트가 전부 rate limit 면제 목록에 있다', async () => {
     const { readFileSync } = await import('node:fs')
+    // r8-v2 부터 면제 목록은 `@/lib/telemetry/event-rate-limit` 단일 출처다(라우트는 이 함수를 부른다).
+    const { isRateLimitExemptEvent } = await import('@/lib/telemetry/event-rate-limit')
     const route = readFileSync('src/app/api/events/route.ts', 'utf8')
-    const list = route.match(/const CONVERSION_EVENTS = \[([^\]]+)\]/)?.[1] ?? ''
+    expect(route).toContain('isRateLimitExemptEvent')
 
     // 실제로 발화하는 이벤트만 대상. signupPromptClicked는 이번 PR에서 발화하지 않는다
     // (기존 kakao_button_click{from:'guest_comment_success'}가 그 역할).
@@ -230,10 +232,10 @@ describe('rate limit 면제 — 퍼널이 429로 조용히 깨지지 않게', ()
       .map(([, name]) => name)
 
     for (const name of emitted) {
-      expect(list, `${name}이(가) rate limit 면제 목록에 없다 — 429로 유실될 수 있다`).toContain(`'${name}'`)
+      expect(isRateLimitExemptEvent(name), `${name}이(가) rate limit 면제 목록에 없다 — 429로 유실될 수 있다`).toBe(true)
     }
     // 기존 성공 이벤트도 같이 보호한다: comment_input_view가 버킷 소진을 가속하기 때문
-    expect(list).toContain("'comment_create'")
+    expect(isRateLimitExemptEvent('comment_create')).toBe(true)
   })
 })
 

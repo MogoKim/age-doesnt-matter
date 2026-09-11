@@ -2,6 +2,12 @@ import { prisma } from '@/lib/prisma'
 import { unstable_cache } from 'next/cache'
 import { getInternalSessionIds, getAdminUserIds } from './internal-sessions'
 import { getRetentionQuadrants, type QuadrantRetention } from './admin.retention'
+import {
+  SIGNUP_BANNER_CTA_TYPES,
+  SIGNUP_BANNER_MEASUREMENT_VERSION,
+  type SignupBannerCtaType,
+} from '@/lib/telemetry/signup-banner-cta'
+import { KAKAO_CLICK_EXEMPTION } from '@/lib/telemetry/event-rate-limit'
 
 /**
  * R8 회원 소생 — **실회원이 어느 단계에서 끊기는지** 하나의 화면에서 본다.
@@ -181,12 +187,67 @@ export interface BannerCtaBreakdown {
   }
 }
 
+/** r8-v2 CTA별 한 줄 — 분모(노출)와 분자(클릭)가 **같은 계측 버전**에서만 나온다. */
+export interface BannerCtaTypeRow {
+  ctaType: SignupBannerCtaType
+  /** 이 CTA 를 **실제로 본** 방문자 (`signup_banner_shown` + `measurement_version=r8-v2`) */
+  shownVisitors: number
+  /** 그 노출 **이후에** 같은 CTA 를 누른 방문자 */
+  clickedVisitors: number
+  rate: number | null
+  status: RateStatus
+}
+
+/**
+ * r8-v2 CTA 퍼널 — **과거 계측과 절대 섞지 않는다.**
+ *
+ * 과거 `signup_banner_shown` 에는 CTA 종류가 없었다. 그 노출을 분모에 넣으면
+ * "CTA 를 봤는데 안 눌렀다"와 "무엇을 봤는지 모른다"가 한 칸에 섞여 전환율이 구조적으로 낮아진다.
+ * 그래서 v2 분모·분자는 **둘 다 `measurement_version=r8-v2`** 인 이벤트로만 만든다.
+ */
+export interface BannerCtaV2Funnel {
+  measurementVersion: string
+  /** 이 관측 창 안에서 v2 이벤트가 처음 보인 시각(ISO). `null` = 창 안에 v2 이벤트가 없다 */
+  firstSeenInWindowAt: string | null
+  /** v2 이벤트가 아직 없으면 `NOT_COLLECTED` — **0% 가 아니라 '모른다'** 다 */
+  status: CollectionStatus
+  rows: BannerCtaTypeRow[]
+  /** v2 인데 `cta_type` 이 없는 노출 — 계측 결함이다 */
+  shownWithoutCtaType: number
+  /** v2 클릭인데 대응하는 v2 노출이 없는 방문자(배포 경계를 걸친 사람). **분자로 쓰지 않는다** */
+  clickedWithoutV2Shown: number
+  note: string
+}
+
+/**
+ * 배포 이전 계측 — **합계로만** 본다.
+ * CTA 종류가 없으므로 CTA별 분모를 복원할 수 없다. 비율을 만들지 않는다.
+ */
+export interface BannerCtaHistorical {
+  shownVisitors: number
+  clickedVisitors: number
+  note: string
+}
+
 /**
  * 사이트 전체의 `kakao_button_click` — **배너 클릭이 아니다.**
  * 로그인 화면·게스트 댓글 카드 등 여러 표면에서 발생하므로 배너 전환에 귀속하지 않고 참고값으로만 둔다.
+ *
+ * 🔴 v2 와 미버전을 **하나의 7일/30일 숫자로 합치지 않는다.**
+ *    이 이벤트는 r8-v2 부터 rate limit 면제라 그 이전 값은 429 로 유실된 **하한값**이다.
+ *    배포 직후에도 캐시된 구버전 클라이언트가 미버전 이벤트를 계속 보내므로
+ *    달력 시각이 아니라 **이벤트에 실린 `measurement_version`** 으로 가른다(보수적 분리).
+ *    그래서 합계 필드를 아예 두지 않는다 — 두면 누군가 반드시 더한다.
  */
 export interface SiteWideKakaoClick {
-  visitors: number
+  /** `measurement_version=r8-v2` 를 달고 온 클릭 방문자 — rate limit 면제가 적용된 구간 */
+  v2Visitors: number
+  /** 미버전 클릭 방문자(배포 이전 + 캐시된 구버전 클라이언트). **하한값**이다 */
+  historicalVisitors: number
+  /** v2 가 아직 하나도 없으면 `NOT_COLLECTED` — 0 이 아니라 '모른다' */
+  status: CollectionStatus
+  /** 이 관측 창 안에서 v2 가 처음 보인 시각(ISO). 배포 시각 상수 대신 쓰는 정본 */
+  firstSeenInWindowAt: string | null
   note: string
 }
 
@@ -222,8 +283,12 @@ export interface MemberRecoveryData {
   signupEventCoverage: SignupEventCoverage
   /** 적격·노출은 전환이 아니라 계측 일관성으로 본다 */
   bannerConsistency: BannerConsistency
-  /** 배너 반응은 CTA 전체가 먼저, 카카오는 하위 분해 */
+  /** 배너 반응은 CTA 전체가 먼저, 카카오는 하위 분해 (**전 기간 혼합 합계**) */
   bannerCta: BannerCtaBreakdown
+  /** r8-v2 전용 CTA 퍼널 — CTA별 분모·분자는 여기서만 만든다 */
+  bannerCtaV2: BannerCtaV2Funnel
+  /** 배포 이전(미버전) 계측 — 합계로만 */
+  bannerCtaHistorical: BannerCtaHistorical
   /** 배너와 무관한 사이트 전체 카카오 클릭 — 참고값 */
   siteWideKakaoClick: SiteWideKakaoClick
   activation: ActivationCohort
@@ -365,6 +430,88 @@ async function computeMemberRecovery(windowDays: number): Promise<MemberRecovery
   let ctaOther = 0
   for (const id of bannerClickAny.keys()) if (!knownCta.has(id)) ctaOther++
 
+  // ───────── r8-v2 CTA 퍼널 — 과거 계측과 분리해서 계산한다 ─────────
+  //
+  // 🔴 분모도 분자도 **둘 다 r8-v2** 인 이벤트로만 만든다.
+  //    과거 `signup_banner_shown` 에는 `cta_type` 이 없어 "무엇을 봤는지" 를 모른다.
+  //    그 노출을 분모에 넣으면 모르는 것을 '안 눌렀다'로 세게 된다.
+  const v2Where = (eventName: string, ctaType?: string) => {
+    const AND: Record<string, unknown>[] = [
+      { properties: { path: ['measurement_version'], equals: SIGNUP_BANNER_MEASUREMENT_VERSION } },
+    ]
+    if (ctaType) AND.push({ properties: { path: ['cta_type'], equals: ctaType } })
+    return { ...base, eventName, AND }
+  }
+
+  const [v2ShownAll, v2ClickedAll, ...v2ByTypeFlat] = await Promise.all([
+    visitorSpans(v2Where('signup_banner_shown'), internal),
+    visitorSpans(v2Where('signup_banner_clicked'), internal),
+    ...SIGNUP_BANNER_CTA_TYPES.flatMap((t) => [
+      visitorSpans(v2Where('signup_banner_shown', t), internal),
+      visitorSpans(v2Where('signup_banner_clicked', t), internal),
+    ]),
+  ])
+
+  const v2Rows: BannerCtaTypeRow[] = SIGNUP_BANNER_CTA_TYPES.map((ctaType, i) => {
+    const shown = v2ByTypeFlat[i * 2]
+    const clicked = v2ByTypeFlat[i * 2 + 1]
+    // 🔴 `advancedAfter` — 노출 **이후**의 클릭만 전환이다. 집합 교집합이 아니다.
+    const numer = advancedAfter(shown, clicked)
+    return {
+      ctaType,
+      shownVisitors: shown.size,
+      clickedVisitors: numer,
+      rate: rateOf(numer, shown.size),
+      status: shown.size > 0 ? 'OK' : 'NO_DENOM',
+    }
+  })
+
+  // v2 노출인데 cta_type 이 없는 것 — 계측 결함(빌더를 안 거친 경로가 남아 있다는 신호)
+  const v2ShownTyped = new Set<string>()
+  for (let i = 0; i < SIGNUP_BANNER_CTA_TYPES.length; i++) {
+    for (const id of v2ByTypeFlat[i * 2].keys()) v2ShownTyped.add(id)
+  }
+  let v2ShownWithoutCtaType = 0
+  for (const id of v2ShownAll.keys()) if (!v2ShownTyped.has(id)) v2ShownWithoutCtaType++
+
+  // 배포 경계를 걸친 방문자 — 노출은 과거(미버전), 클릭은 v2.
+  // 🔴 분자로 쓰지 않는다. 쓰면 분모 없는 전환이 만들어진다.
+  let v2ClickedWithoutV2Shown = 0
+  for (const id of v2ClickedAll.keys()) if (!v2ShownAll.has(id)) v2ClickedWithoutV2Shown++
+
+  // 사이트 전체 카카오 클릭도 같은 방식으로 버전 분리한다 — **합산하지 않는다.**
+  const kakaoBtnV2 = await visitorSpans(v2Where('kakao_button_click'), internal)
+
+  const v2FirstMs = Math.min(
+    ...[...v2ShownAll.values(), ...v2ClickedAll.values()].map((sp) => sp.first),
+  )
+  const v2Collected = v2ShownAll.size > 0 || v2ClickedAll.size > 0
+
+  const kakaoFirstMs = Math.min(...[...kakaoBtnV2.values()].map((sp) => sp.first))
+  const kakaoFirstAt = Number.isFinite(kakaoFirstMs) ? new Date(kakaoFirstMs).toISOString() : null
+
+  const bannerCtaV2: BannerCtaV2Funnel = {
+    measurementVersion: SIGNUP_BANNER_MEASUREMENT_VERSION,
+    firstSeenInWindowAt: Number.isFinite(v2FirstMs) ? new Date(v2FirstMs).toISOString() : null,
+    status: v2Collected ? 'COLLECTED' : 'NOT_COLLECTED',
+    rows: v2Rows,
+    shownWithoutCtaType: v2ShownWithoutCtaType,
+    clickedWithoutV2Shown: v2ClickedWithoutV2Shown,
+    note:
+      '분모·분자 **양쪽 다** `measurement_version=r8-v2` 인 이벤트로만 만든다. ' +
+      '배포 이전 노출에는 `cta_type` 이 없어 CTA별 분모를 복원할 수 없으므로 섞지 않는다 — ' +
+      '섞으면 "무엇을 봤는지 모르는 노출"이 미전환으로 세어져 전환율이 구조적으로 낮아진다. ' +
+      'v2 이벤트가 아직 없으면 **0% 가 아니라 미수집**이다.',
+  }
+
+  const bannerCtaHistorical: BannerCtaHistorical = {
+    shownVisitors: exposure.size - v2ShownAll.size,
+    clickedVisitors: bannerClickAny.size - v2ClickedAll.size,
+    note:
+      '배포 이전(미버전) 계측 — **합계로만** 읽는다. 노출에 CTA 종류가 없어 CTA별 분모를 만들 수 없다. ' +
+      '배포 경계를 걸친 방문자(과거 노출 + v2 클릭)는 v2 쪽으로 세므로 이 합계에서는 빠진다.',
+  }
+
   const joinedAt = new Map(allUsers.map((u) => [u.id, u.createdAt.getTime()]))
   const preSignupVisit: SpanMap = new Map()
   let excludedMemberVisitors = 0
@@ -492,9 +639,9 @@ async function computeMemberRecovery(windowDays: number): Promise<MemberRecovery
     step('visit_to_exposure', '비회원 방문 → 가입 유도 노출', visit, '비회원 방문자', exposure, '이후 배너가 노출된 방문자', 'OK',
       '배너는 로그인·온보딩·어드민 경로에서 뜨지 않는다 — 100% 가 목표가 아니다'),
     step('exposure_to_banner_cta', '가입 유도 노출 → 배너 CTA 반응(전체)', exposure, '노출 방문자', bannerCtaAny, '이후 배너 CTA 를 누른 방문자', 'PARTIAL',
-      '모든 `cta_type` 을 센다. 분모(`signup_banner_shown`)에는 CTA 종류 정보가 없어 **CTA별 노출 분모는 복원할 수 없다**'),
+      '모든 `cta_type` 을 센다. **측정 버전 혼합 합계**다 — 배포 이전 분모에는 CTA 종류 정보가 없다. CTA별 분모·분자는 아래 r8-v2 표에서만 본다'),
     step('banner_kakao_to_signup', '배너 카카오 CTA → 가입 완료(이벤트)', ctaKakao, '카카오 CTA 를 누른 방문자', signup, '이후 가입 이벤트 발생', 'PARTIAL',
-      '이벤트 기준이다. 카카오 OAuth 왕복으로 식별자가 갈리거나 이벤트가 유실되면 낮게 나온다 — **가입 실패로 읽지 마라**'),
+      '이벤트 기준이고 **측정 버전 혼합**이다. 카카오 OAuth 왕복으로 식별자가 갈리거나 이벤트가 유실되면 낮게 나온다 — **가입 실패로 읽지 마라**'),
   ]
 
   // ───────── 2단계: 가입 → 첫 글 또는 첫 댓글 ─────────
@@ -659,20 +806,34 @@ async function computeMemberRecovery(windowDays: number): Promise<MemberRecovery
   // ───────── 데이터 품질 ─────────
   const dataQuality: DataQualityNote[] = [
     {
-      key: 'login_start_rate_limit',
+      key: 'kakao_click_rate_limit_exempt',
       level: 'WARN',
       message:
-        '사이트 전체 `kakao_button_click` 이 `api/events` 의 rate limit 면제 목록(CONVERSION_EVENTS)에 없다. ' +
-        '`page_view` 와 같은 버킷(event:ip, max 30)을 써서 429 로 조용히 유실될 수 있다 → 그 참고값은 **하한값**이다. ' +
-        '배너 클릭(`signup_banner_clicked`)은 면제 목록에 있어 이 영향을 받지 않는다.',
+        '사이트 전체 `kakao_button_click` 은 r8-v2 부터 `api/events` rate limit **면제** 대상이다. ' +
+        `사유: ${KAKAO_CLICK_EXEMPTION.reason} ` +
+        `🔴 **단절 기준은 달력 시각이 아니라 ${KAKAO_CLICK_EXEMPTION.separatedBy}** 다 — ` +
+        '배포 직후에도 캐시된 구버전 클라이언트가 미버전 이벤트를 계속 보내므로 시각으로 자르면 섞인다. ' +
+        '미버전 구간은 429 로 유실된 **하한값**이라 v2 와 하나의 숫자로 합산하지 않는다. ' +
+        '배너 클릭(`signup_banner_clicked`)은 원래 면제라 영향이 없고, 여기에 귀속하지도 않는다.',
     },
     {
       key: 'exposure_cta_unknown',
       level: 'WARN',
       message:
-        '노출 분모(`signup_banner_shown`)에는 **어떤 CTA 를 보여줬는지 정보가 없다.** ' +
-        '그래서 "카카오 CTA 를 본 사람 중 몇 %가 눌렀나" 같은 **CTA별 전환율은 과거 데이터로 복원할 수 없다.** ' +
-        '지금 표시하는 것은 전체 노출 대비 전체 CTA 반응이며, `cta_type` 분해는 **클릭 쪽에만** 있다.',
+        '**배포 이전** 노출(`signup_banner_shown`)에는 어떤 CTA 를 보여줬는지 정보가 없다. ' +
+        '그래서 CTA별 전환율은 **과거 데이터로 복원할 수 없다** — backfill 하지 않는다. ' +
+        'r8-v2 부터 노출에도 `cta_type` 이 실리며, CTA별 분모·분자는 **r8-v2 표에서만** 만든다. ' +
+        '위 퍼널의 `exposure_to_banner_cta`·`banner_kakao_to_signup` 은 **측정 버전 혼합 합계**다.',
+    },
+    {
+      key: 'eligible_is_quality_signal',
+      level: 'OK',
+      message:
+        'v2 퍼널의 **노출 SSoT 는 `signup_banner_shown` 하나**다. `signup_banner_eligible` 은 같은 `tryFire` 에서 ' +
+        '연속 전송되는 fire-and-forget POST 라 `createdAt` 도착 순서를 전환 순서로 읽을 수 없다 — ' +
+        '그래서 **전 단계로 쓰지 않고** 전송 유실을 보는 과거 품질 신호로만 남긴다. ' +
+        '유실 숫자를 맞추려고 재전송·중복 전송하지 않는다(같은 방문자를 두 번 세게 된다). ' +
+        `현재 적격만 ${bannerConsistency.eligibleOnly}명 · 노출만 ${bannerConsistency.shownOnly}명.`,
     },
     {
       key: 'banner_vs_sitewide_click',
@@ -738,9 +899,18 @@ async function computeMemberRecovery(windowDays: number): Promise<MemberRecovery
         other: ctaOther,
       },
     },
+    bannerCtaV2,
+    bannerCtaHistorical,
     siteWideKakaoClick: {
-      visitors: kakaoBtn.size,
-      note: '배너 클릭이 아니다 — 로그인 화면·게스트 댓글 카드 등 사이트 전체의 카카오 버튼. 배너 전환에 귀속하지 않는다.',
+      v2Visitors: kakaoBtnV2.size,
+      // 🔴 집합 차 — 같은 방문자가 두 버전을 다 냈으면 v2 쪽으로만 센다(중복 계상 방지).
+      historicalVisitors: kakaoBtn.size - kakaoBtnV2.size,
+      status: kakaoBtnV2.size > 0 ? 'COLLECTED' : 'NOT_COLLECTED',
+      firstSeenInWindowAt: kakaoFirstAt,
+      note:
+        '배너 클릭이 아니다 — 로그인 화면·게스트 댓글 카드 등 사이트 전체의 카카오 버튼. 배너 전환에 귀속하지 않는다. ' +
+        'r8-v2 와 미버전은 **합산하지 않는다** — 미버전 구간은 rate limit 면제 이전이라 429 로 유실된 하한값이고, ' +
+        '배포 뒤에도 캐시된 구버전 클라이언트가 미버전 이벤트를 보내므로 시각이 아니라 이벤트 버전으로 가른다.',
     },
     signupEventCoverage: {
       events: signup.size,
@@ -761,7 +931,7 @@ async function computeMemberRecovery(windowDays: number): Promise<MemberRecovery
 /** 화면용 — 어드민 1인 트래픽이라 짧게 캐시한다. 인자는 캐시 키에 포함된다. */
 export const getMemberRecovery = unstable_cache(
   (windowDays: number) => computeMemberRecovery(windowDays),
-  ['admin-member-recovery-v1'],
+  ['admin-member-recovery-v2'],
   { revalidate: 300 },
 )
 

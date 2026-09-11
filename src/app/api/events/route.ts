@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth'
 import { checkApiRateLimit } from '@/lib/api-rate-limit'
 import { BOT_UA_PATTERN } from '@/lib/bot-patterns'
 import { resolveEventSessionId } from '@/lib/anon-cid'
+import { isRateLimitExemptEvent } from '@/lib/telemetry/event-rate-limit'
 
 interface EventPayload {
   eventName: string
@@ -34,22 +35,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid eventName' }, { status: 400 })
   }
 
-  // 전환 이벤트(가입 funnel)는 rate limit 면제 — page_view 등과 버킷(event:ip) 공유로 인한 429 유실 방지
-  // 전환 + 측정 필수 이벤트는 rate limit 면제 — page_view와 버킷(event:ip) 공유로 인한 429 유실 방지
-  // (identity_banner_view·related_post_click: 락인 효과 측정용, 비회원 글뷰마다 발생 → 면제 필요)
-  // (exp1_exposure: A/B 실험 노출=분모. 글뷰마다 발생, 429 유실 시 3화면/D1 비율 왜곡 → 면제 필수)
-  // (signup_banner_*: 가입 배너 퍼널. 세션당 소수 발생이나 page_view와 버킷 공유 시 429 유실 → EventLog 단독 퍼널 보존 위해 면제)
-  // (related_recommend_view: 추천 v2 노출=분모. 글뷰마다 발생, 유실 시 추천 효과 측정 왜곡 → 면제 필수)
-  // (top_promo_*: 최상단 띠배너 퍼널. 랜딩마다 shown 발생 → page_view 버킷 공유 시 429 유실 방지. signup_banner_* 와 별개 계열)
-  // (android_conversion_prompt_*: Android 외부 브라우저 비회원 A/B 실험의 노출=분모·클릭·닫기.
-  //  signup_banner_* 와 같은 시점에 발생하므로 같이 면제하지 않으면 429로 조용히 유실돼 실험 분모가 오염된다)
-  // (inapp_redirect_*: 인앱→외부브라우저 유도 퍼널. signup_banner_clicked와 같은 클릭에서 함께 발생하므로
-  //  같이 면제하지 않으면 page_view 버킷 공유로 429 유실 → attempted만 빠지고 opened만 남는 식으로 퍼널이 깨진다)
-  // comment_input_view는 댓글 입력 영역이 viewport에 진입할 때
-  // IntersectionObserver로 컴포넌트당 1회 발생하며 page_view와 1:1이 아니다.
-  // 퍼널 일부만 rate limit으로 유실되면 단계 비율이 왜곡되므로 comment_* 전체를 면제한다.
-  const CONVERSION_EVENTS = ['post_cta_clicked', 'sign_up', 'signup_step', 'identity_banner_view', 'related_post_click', 'exp1_exposure', 'signup_banner_eligible', 'signup_banner_shown', 'signup_banner_clicked', 'signup_banner_dismissed', 'related_recommend_view', 'top_promo_shown', 'top_promo_clicked', 'top_promo_dismissed', 'android_conversion_prompt_exposed', 'android_conversion_prompt_clicked', 'android_conversion_prompt_dismissed', 'inapp_redirect_attempted', 'inapp_redirect_opened', 'inapp_redirect_failed', 'comment_input_view', 'comment_input_focus', 'comment_text_started', 'comment_identity_started', 'comment_submit_attempted', 'comment_submit_failed', 'comment_signup_prompt_shown', 'comment_create']
-  if (!CONVERSION_EVENTS.includes(body.eventName)) {
+  // 전환·측정 필수 이벤트는 rate limit 면제 — page_view 와 버킷(event:ip) 공유로 인한 429 유실 방지.
+  // 🔴 목록과 면제 사유는 `@/lib/telemetry/event-rate-limit` 단일 출처에 둔다.
+  //    라우트와 어드민 판정(admin.member-recovery.ts)이 같은 목록을 봐야
+  //    "면제됐다고 표시되는데 실제로는 안 된" 상태가 생기지 않는다.
+  if (!isRateLimitExemptEvent(body.eventName)) {
     const rl = await checkApiRateLimit(request, 'event', { max: 30 })
     if (rl) return rl
   }
