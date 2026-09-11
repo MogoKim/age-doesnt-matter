@@ -221,7 +221,7 @@ A-3 폐기에서 FK 사각으로 `GuestLike` 82건이 cascade 손실됐고 `Like
 
   | 축 | 정의 (production `generateMetadata` 3분기) | 실측 |
   |---|---|---:|
-  | **A. 실제 SEO title/description** | 커뮤니티 `seoTitle ?? title` · `seoDescription ?? (summary ‖ fallback)`<br>매거진 `seoDescription ?? (본문 첫 150자 ‖ summary ‖ 고정문구)`<br>**JOB** `seoTitle ?? `\`${title} — ${company} 채용\`` · `seoDescription ?? (본문 첫 100자 · location 근무 · formatSalary)` | **62** |
+  | **A. 실제 SEO title/description** | 커뮤니티 `seoTitle ?? title` · `seoDescription ?? (summary ‖ fallback)`<br>매거진 `seoDescription ?? (본문 첫 150자 ‖ summary ‖ 고정문구)`<br>**JOB** `seoTitle ?? "${title} — ${company} 채용"` · `seoDescription ?? (본문 첫 100자 · location 근무 · formatSalary)` | **62** |
   | **B. 공개 본문·제목 전체**(CSV `bannedPublicText`) | `title` + 본문 plain text | **80** |
   | **C. slug 문자열** | `slug` (= sitemap URL) | **4** |
 

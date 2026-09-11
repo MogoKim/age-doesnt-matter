@@ -123,7 +123,7 @@ B 631건 내부 사유 분해: 실제 SEO 노출면 금지 표현 **60** · 동�
 
 | 축 | 정의 (production `generateMetadata` 규칙 그대로) | 실측 |
 |---|---|---:|
-| **A. 실제 SEO title/description** | **커뮤니티**: `seoTitle ?? title` / `seoDescription ?? (summary ‖ buildFallbackDescription(title, boardType))`<br>**매거진**: `seoTitle ?? title` / `seoDescription ?? (본문 첫 150자 ‖ summary ‖ 고정문구)`<br>**JOB**: `seoTitle ?? ` \`${title} — ${company} 채용\` / `seoDescription ?? (본문 첫 100자 · location 근무 · formatSalary(salary))` | **62** |
+| **A. 실제 SEO title/description** | **커뮤니티**: `seoTitle ?? title` / `seoDescription ?? (summary ‖ buildFallbackDescription(title, boardType))`<br>**매거진**: `seoTitle ?? title` / `seoDescription ?? (본문 첫 150자 ‖ summary ‖ 고정문구)`<br>**JOB**: `seoTitle ?? "${title} — ${company} 채용"` / `seoDescription ?? (본문 첫 100자 · location 근무 · formatSalary(salary))` | **62** |
 | **B. 공개 본문·제목 전체**(CSV `bannedPublicText`) | `title` + 본문 plain text | **80** |
 | **C. slug 문자열** | `slug` | **4** |
 
