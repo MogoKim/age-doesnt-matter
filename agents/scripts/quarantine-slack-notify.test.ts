@@ -42,7 +42,7 @@ function deps(over: Partial<Parameters<typeof run>[0]> = {}) {
     calls: f.calls,
     args: {
       today: '2026-09-11',
-      env: { SLACK_BOT_TOKEN: 'xoxb-TEST-TOKEN', SLACK_CHANNEL_LOG: 'C123' },
+      env: { SLACK_BOT_TOKEN: 'dummy-token-for-test', SLACK_CHANNEL_LOG: 'C123' },
       fetchImpl: f.impl,
       scan: scanFrom({}),
       root: '_quarantine',
@@ -146,7 +146,7 @@ describe('검증 3 — token/channel 없으면 실패', () => {
   })
 
   it('channel 만 없어도 실패', async () => {
-    const d = deps({ scan: scanFrom({ old: manifest('2026-08-01') }), env: { SLACK_BOT_TOKEN: 'xoxb-T' } })
+    const d = deps({ scan: scanFrom({ old: manifest('2026-08-01') }), env: { SLACK_BOT_TOKEN: 'dummy-t' } })
     expect(await run(d.args)).toBe(1)
   })
 
@@ -265,7 +265,8 @@ describe('검증 6 — 따옴표·개행이 JSON 을 깨지 않는다', () => {
 
 // ── 검증 7 ──────────────────────────────────────────────────
 describe('검증 7 — 로그에 secret 값도 메시지 원문도 없다', () => {
-  const TOKEN = 'xoxb-SUPER-SECRET-VALUE'
+  // secretlint 오탐을 피하려고 실제 토큰 접두사(xoxb-)를 쓰지 않는다 — 값 자체는 무의미하다
+  const TOKEN = 'dummy-secret-value-for-leak-test'
   const CHANNEL = 'C-SECRET-CHANNEL'
 
   it('성공 경로', async () => {
