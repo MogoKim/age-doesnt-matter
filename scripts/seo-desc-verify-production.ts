@@ -11,6 +11,11 @@
  *
  * 종료 코드: 0 = 전건 일치 / 3 = 캐시 대기·요청 실패(재확인 필요) / 2 = 내용 위반(롤백 검토)
  *
+ * 🔴 **옛 문구가 보이는 것은 위반이 아니다.** 확정 CSV 실측으로 적용 대상 50건 중
+ *    48건의 `currentSeoDescription` 에 미승인 금지 표현이 있다. 캐시가 안 내려간
+ *    상태에서 그걸 보고 롤백하면 멀쩡한 정정을 되돌리게 된다.
+ *    **내용 검사는 기대값과 정확히 일치할 때만** 한다.
+ *
  * 읽기 전용이다. DB 도 캐시도 건드리지 않는다.
  *
  * ⚠️ 자사 사이트 요청에는 `x-bot-type` 헤더가 필수다(CLAUDE.md).
@@ -29,7 +34,8 @@ import {
   parseCsv, toRewriteRows, buildPlan, csvToDbValue, assertCsvIntegrity, fingerprint,
 } from '../src/lib/seo/desc-apply-plan'
 import {
-  extractMetaDescription, unapprovedBanned, classifyVerifyOutcome,
+  extractMetaDescription, classifyVerifyOutcome, observeUrl, createTracker,
+  type UrlObservation,
 } from '../src/lib/seo/desc-verify'
 
 const CSV_PATH = 'docs/operations/data/2026-09-11-seo-brand-copy-rewrite.csv'
@@ -80,76 +86,68 @@ async function main() {
 
   const byId = new Map(rows.map((r) => [r.id, r]))
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-  console.log(`  production meta description 전수 검증 — 기대: ${expect === 'after' ? '적용 후(제안값)' : '적용 전(현재값)'}`)
+  console.log(`  production meta description 전수 검증 — 기대: ${expect === 'after' ? '적용 후(제안값)' : '적용 전/롤백 후(현재값)'}`)
   console.log(`  ${BASE}/jobs/{id} × ${plan.targets.length} · 제한시간 ${DEADLINE_MS / 1000}s · 간격 ${INTERVAL_MS / 1000}s`)
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
 
-  /** 아직 기대값이 아닌 대상. 라운드를 돌며 줄여 나간다. */
-  let pending = plan.targets.map((t) => t.id)
-  const banned: string[] = []
-  const failed: string[] = []
+  // URL 별 terminal 상태를 라운드 너머로 유지한다 —
+  // 라운드마다 초기화하면 앞 라운드의 진짜 위반이 사라진다.
+  const tracker = createTracker(plan.targets.map((t) => t.id))
   let round = 0
   const started = Date.now()
 
-  while (pending.length && Date.now() - started < DEADLINE_MS) {
+  for (;;) {
+    const todo = tracker.pending()
+    if (!todo.length) break
     round++
-    const stillPending: string[] = []
-    banned.length = 0
-    failed.length = 0
 
-    const queue = [...pending]
+    const queue = [...todo]
+    const observed: UrlObservation[] = []
     async function worker() {
       for (;;) {
         const id = queue.shift()
         if (!id) return
         const r = byId.get(id)!
-        const want = expect === 'after'
-          ? csvToDbValue(r.proposedSeoDescription)
-          : csvToDbValue(r.currentSeoDescription)
         try {
           const { status, desc } = await fetchMeta(id)
-          if (status !== 200 || desc === null) {
-            failed.push(`post#${fingerprint(id)}: HTTP ${status}${desc === null ? ' · meta 없음' : ''}`)
-            stillPending.push(id)
-            continue
-          }
-          const hit = unapprovedBanned(desc)
-          if (hit.length) banned.push(`post#${fingerprint(id)}: ${hit.join(',')}`)
-          if (desc !== want) stillPending.push(id)
-        } catch (e) {
-          failed.push(`post#${fingerprint(id)}: ${e instanceof Error ? e.message : String(e)}`)
-          stillPending.push(id)
+          observed.push(observeUrl({
+            id, mode: expect, html: desc, status,
+            currentValue: csvToDbValue(r.currentSeoDescription),
+            proposedValue: csvToDbValue(r.proposedSeoDescription),
+          }))
+        } catch {
+          observed.push({ id, state: 'FETCH_FAILED', banned: [] })
         }
       }
     }
     await Promise.all(Array.from({ length: CONCURRENCY }, worker))
+    tracker.record(observed)
 
-    const matched = plan.targets.length - stillPending.length
+    const snap = tracker.snapshot()
     const elapsed = Math.round((Date.now() - started) / 1000)
-    console.log(`  [round ${round}] 일치 ${matched}/${plan.targets.length} · 대기 ${stillPending.length} · 실패 ${failed.length} · +${elapsed}s`)
-    pending = stillPending
-    if (!pending.length) break
+    console.log(
+      `  [round ${round}] 일치 ${snap.matched}/${snap.total} · 대기 ${snap.pending} · ` +
+      `예상 밖 ${snap.unexpected} · 실패 ${snap.fetchFailed} · 위반 ${snap.violation} · +${elapsed}s`,
+    )
+
+    if (!tracker.pending().length) break
     if (Date.now() - started + INTERVAL_MS >= DEADLINE_MS) break
     // ISR 은 만료 후 첫 요청에 stale 을 주고 뒤에서 다시 만든다 —
     // 같은 URL 을 한 번 더 요청해야 새 값이 나오므로, 기다렸다 다시 친다.
     await new Promise((r) => setTimeout(r, INTERVAL_MS))
   }
 
-  const counts = {
-    total: plan.targets.length,
-    match: plan.targets.length - pending.length,
-    mismatched: pending.length - failed.length > 0 ? pending.length - failed.length : 0,
-    failed: failed.length,
-    banned: banned.length,
-  }
-  const verdict = classifyVerifyOutcome(counts)
+  const counts = tracker.snapshot()
+  const verdict = classifyVerifyOutcome(counts, expect)
 
-  console.log(`\n일치            ${counts.match}/${counts.total}`)
-  console.log(`아직 옛 문구    ${counts.mismatched}`)
-  console.log(`요청 실패       ${counts.failed}`)
-  console.log(`미승인 금지표현 ${counts.banned}`)
-  for (const f of failed.slice(0, 12)) console.log(`  ! ${f}`)
-  for (const b of banned.slice(0, 12)) console.log(`  🚫 ${b}`)
+  console.log(`\n일치            ${counts.matched}/${counts.total}`)
+  console.log(`아직 반대쪽 값  ${counts.pending}`)
+  console.log(`예상 밖 값      ${counts.unexpected}`)
+  console.log(`요청 실패       ${counts.fetchFailed}`)
+  console.log(`내용 위반       ${counts.violation}`)
+  for (const v of tracker.violations().slice(0, 12)) {
+    console.log(`  🚫 post#${fingerprint(v.id)}: ${v.banned.join(',')}`)
+  }
 
   console.log(`\n판정: ${verdict.outcome}`)
   if (verdict.hint) console.log(`  ${verdict.hint}`)

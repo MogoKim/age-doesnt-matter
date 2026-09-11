@@ -137,31 +137,44 @@ describe('finding 3 — Prisma 기본 5초 제한에 기대지 않는다', () =>
 
 // ── 4. 캐시 판정 분리 ─────────────────────────────────────────
 describe('finding 4 — HTML 불일치는 DB 롤백 사유가 아니다', () => {
+  const zero = { total: 50, matched: 0, pending: 0, unexpected: 0, fetchFailed: 0, violation: 0 }
+
   it('전건 일치면 OK', () => {
-    expect(classifyVerifyOutcome({ total: 50, match: 50, mismatched: 0, failed: 0, banned: 0 }))
-      .toMatchObject({ outcome: 'OK' })
+    expect(classifyVerifyOutcome({ ...zero, matched: 50 })).toMatchObject({ outcome: 'OK' })
   })
 
-  it('불일치가 있으면 CACHE_PENDING 이고 롤백을 권고하지 않는다', () => {
-    const r = classifyVerifyOutcome({ total: 50, match: 30, mismatched: 20, failed: 0, banned: 0 })
+  it('아직 반영 안 된 건이 있으면 CACHE_PENDING 이고 롤백을 권고하지 않는다', () => {
+    const r = classifyVerifyOutcome({ ...zero, matched: 30, pending: 20 }, 'after')
     expect(r.outcome).toBe('CACHE_PENDING')
     expect(r.shouldRollback).toBe(false)
     expect(r.hint).toMatch(/캐시/)
   })
 
-  it('미승인 금지 표현이 남으면 그것은 내용 문제다', () => {
-    const r = classifyVerifyOutcome({ total: 50, match: 50, mismatched: 0, failed: 0, banned: 3 })
+  it('예상 밖 값도 롤백 사유가 아니지만 따로 알려준다', () => {
+    const r = classifyVerifyOutcome({ ...zero, matched: 49, unexpected: 1 }, 'after')
+    expect(r.outcome).toBe('CACHE_PENDING')
+    expect(r.shouldRollback).toBe(false)
+    expect(r.hint).toMatch(/예상 밖|다른 값/)
+  })
+
+  it('기대값과 일치하는데 금지 표현이 있으면 내용 문제다', () => {
+    const r = classifyVerifyOutcome({ ...zero, matched: 47, violation: 3 })
     expect(r.outcome).toBe('CONTENT_VIOLATION')
+    expect(r.shouldRollback).toBe(true)
   })
 
   it('요청 실패는 캐시 문제와 구분한다', () => {
-    expect(classifyVerifyOutcome({ total: 50, match: 40, mismatched: 0, failed: 10, banned: 0 }).outcome)
+    expect(classifyVerifyOutcome({ ...zero, matched: 40, fetchFailed: 10 }).outcome)
       .toBe('FETCH_FAILED')
   })
 
-  it('불일치가 있을 때 캐시 안내가 반드시 나온다 (이전 조건문 버그)', () => {
-    const r = classifyVerifyOutcome({ total: 50, match: 49, mismatched: 1, failed: 0, banned: 0 })
-    expect(r.hint).toBeTruthy()
+  it('대기 건이 있을 때 안내가 반드시 나온다 (이전 조건문 버그)', () => {
+    expect(classifyVerifyOutcome({ ...zero, matched: 49, pending: 1 }, 'after').hint).toBeTruthy()
+  })
+
+  it('진짜 위반이 있으면 대기 건이 있어도 위반이 우선한다', () => {
+    const r = classifyVerifyOutcome({ ...zero, matched: 40, pending: 9, violation: 1 })
+    expect(r.outcome).toBe('CONTENT_VIOLATION')
   })
 })
 

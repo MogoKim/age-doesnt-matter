@@ -48,65 +48,198 @@ export function unapprovedBanned(text: string): string[] {
 
 // ── 검증 결과 판정 ───────────────────────────────────────────
 
-export interface VerifyCounts {
-  total: number
-  match: number
-  mismatched: number
-  failed: number
-  banned: number
+/**
+ * 한 URL 의 관측 상태.
+ *
+ * `MATCHED` 와 `VIOLATION` 은 **terminal** 이다 — 한 번 그렇게 판정되면 다시 조회하지
+ * 않고, 뒤 라운드가 덮어쓰지도 못한다. 라운드마다 위반을 초기화하면 앞 라운드에서
+ * 발견한 진짜 위반이 조용히 사라진다.
+ */
+export type UrlState =
+  /** 이 모드의 기대값과 정확히 같다 */
+  | 'MATCHED'
+  /** 아직 반대쪽 값이다 — 캐시가 안 내려갔다. **DB 문제가 아니다** */
+  | 'PENDING'
+  /** current 도 proposed 도 아니다 — 그 사이 누가 다른 값을 썼다 */
+  | 'UNEXPECTED'
+  /** 요청 자체가 실패했다 */
+  | 'FETCH_FAILED'
+  /** 기대값과 일치하는데 그 안에 미승인 금지 표현이 있다 — 진짜 내용 문제 */
+  | 'VIOLATION'
+
+export interface UrlObservation {
+  id: string
+  state: UrlState
+  /** `VIOLATION` 일 때만 채워진다 */
+  banned: string[]
 }
 
-export type VerifyOutcome =
-  /** 전건 일치 — 끝 */
-  | 'OK'
-  /** HTML 이 아직 옛 문구다. **DB 문제가 아니다** — 캐시가 안 내려갔을 뿐 */
-  | 'CACHE_PENDING'
-  /** 요청 자체가 실패했다 — 네트워크·배포 문제 */
-  | 'FETCH_FAILED'
-  /** 승인되지 않은 금지 표현이 공개 면에 있다 — 내용 문제 */
-  | 'CONTENT_VIOLATION'
+export interface ObserveInput {
+  id: string
+  mode: 'after' | 'before'
+  currentValue: string | null
+  proposedValue: string | null
+  /** 파싱된 meta description. `null` 이면 요청 실패 */
+  html: string | null
+  status: number
+}
+
+/**
+ * 한 URL 을 판정한다.
+ *
+ * 핵심 규칙: **내용 검사는 기대값과 정확히 일치할 때만 한다.**
+ *
+ * 확정 CSV 실측으로 적용 대상 50건 중 **48건의 `currentSeoDescription` 에
+ * 미승인 금지 표현이 있다.** 적용 직후 캐시가 안 내려간 상태에서 HTML 을 읽으면
+ * 그 48건에서 금지어가 그대로 나온다 — 그것은 **정상적인 중간 상태**다.
+ * 여기서 위반으로 판정하면 멀쩡한 정정을 롤백하게 된다.
+ *
+ * 롤백 검증(`--expect=before`)도 마찬가지다. 옛 문구로 정확히 복원된 것이
+ * 목표이므로, 그 안의 금지 표현을 다시 위반으로 세지 않는다.
+ */
+export function observeUrl(input: ObserveInput): UrlObservation {
+  const { id, mode, currentValue, proposedValue, html, status } = input
+  if (html === null || status !== 200) return { id, state: 'FETCH_FAILED', banned: [] }
+
+  const want = mode === 'after' ? proposedValue : currentValue
+  const other = mode === 'after' ? currentValue : proposedValue
+
+  if (html !== want) {
+    // 반대쪽 값이면 캐시가 안 내려간 것이고, 둘 다 아니면 누가 다른 값을 쓴 것이다.
+    // 어느 쪽이든 **내용 검사를 하지 않는다** — 기대값이 아닌 문자열이기 때문이다.
+    return { id, state: html === other ? 'PENDING' : 'UNEXPECTED', banned: [] }
+  }
+
+  // 여기부터는 기대값과 정확히 같다.
+  if (mode === 'before') {
+    // 롤백 완료. 옛 문구의 금지 표현은 되돌리기로 한 그 상태다 — 위반이 아니다.
+    return { id, state: 'MATCHED', banned: [] }
+  }
+
+  // `after` 이고 제안값과 정확히 같다 → 이때만 내용을 본다.
+  // 확정 CSV 의 proposed 는 전건 깨끗하므로(0/50) 여기서 걸리면 CSV 가 오염된 것이다.
+  const banned = unapprovedBanned(html)
+  return banned.length ? { id, state: 'VIOLATION', banned } : { id, state: 'MATCHED', banned: [] }
+}
+
+export interface VerifyCounts {
+  total: number
+  matched: number
+  pending: number
+  unexpected: number
+  fetchFailed: number
+  violation: number
+}
+
+export function aggregate(obs: UrlObservation[]): VerifyCounts {
+  const c: VerifyCounts = {
+    total: obs.length, matched: 0, pending: 0, unexpected: 0, fetchFailed: 0, violation: 0,
+  }
+  for (const o of obs) {
+    if (o.state === 'MATCHED') c.matched++
+    else if (o.state === 'PENDING') c.pending++
+    else if (o.state === 'UNEXPECTED') c.unexpected++
+    else if (o.state === 'FETCH_FAILED') c.fetchFailed++
+    else c.violation++
+  }
+  return c
+}
+
+export type VerifyOutcome = 'OK' | 'CACHE_PENDING' | 'FETCH_FAILED' | 'CONTENT_VIOLATION'
 
 export interface VerifyVerdict {
   outcome: VerifyOutcome
-  /** DB 롤백을 권고하는가 — 캐시 지연은 **롤백 사유가 아니다** */
+  /** DB 롤백을 권고하는가 — **캐시 지연은 롤백 사유가 아니다** */
   shouldRollback: boolean
   hint: string
 }
 
 /**
- * HTML 검증 결과를 판정한다.
+ * 전체 판정.
  *
- * 핵심은 **HTML 불일치와 DB 오류를 섞지 않는 것**이다.
- * `/jobs/[id]` 는 라우트 ISR 로 캐시되므로, DB 가 올바르게 바뀐 뒤에도
- * 한동안 옛 HTML 이 나온다. 그걸 보고 롤백하면 멀쩡한 정정을 되돌리게 된다.
- *
- * DB 가 맞는지는 적용 CLI 의 사후 검증([6]단계)이 이미 확인했다.
- * 여기서 보는 것은 **공개 면에 반영됐는가** 하나뿐이다.
+ * 우선순위: 진짜 내용 위반 > 요청 실패 > 아직 반영 안 됨 > OK.
+ * `CONTENT_VIOLATION` 만 롤백을 권고한다.
  */
-export function classifyVerifyOutcome(c: VerifyCounts): VerifyVerdict {
-  if (c.banned > 0) {
+export function classifyVerifyOutcome(c: VerifyCounts, mode: 'after' | 'before' = 'after'): VerifyVerdict {
+  if (c.violation > 0) {
     return {
       outcome: 'CONTENT_VIOLATION',
       shouldRollback: true,
-      hint: `공개 면에 미승인 금지 표현이 ${c.banned}건 있다. 제안 문구를 다시 검토해야 한다.`,
+      hint:
+        `${c.violation}건이 **기대값과 정확히 일치하는데** 그 안에 미승인 금지 표현이 있다. ` +
+        `캐시 지연이 아니라 제안 문구 자체의 문제다 — 확정 CSV 를 다시 검토해야 한다.`,
     }
   }
-  if (c.failed > 0) {
+  if (c.fetchFailed > 0) {
     return {
       outcome: 'FETCH_FAILED',
       shouldRollback: false,
-      hint: `요청 ${c.failed}건이 실패했다. 배포·네트워크 상태를 먼저 확인해라. DB 문제가 아니다.`,
+      hint: `요청 ${c.fetchFailed}건이 실패했다. 배포·네트워크 상태를 먼저 확인해라. DB 문제가 아니다.`,
     }
   }
-  if (c.mismatched > 0) {
-    return {
-      outcome: 'CACHE_PENDING',
-      shouldRollback: false,
-      hint:
-        `${c.mismatched}건이 아직 옛 문구다. **라우트 ISR 캐시가 내려가지 않은 것이고 DB 문제가 아니다.** ` +
-        `ISR 은 만료 후 첫 요청에 stale 을 주고 뒤에서 다시 만든다 — 같은 URL 을 한 번 더 요청해야 새 값이 나온다. ` +
-        `롤백하지 말고 기다렸다가 재확인해라.`,
+  if (c.pending > 0 || c.unexpected > 0) {
+    const parts: string[] = []
+    if (c.pending > 0) {
+      parts.push(
+        mode === 'after'
+          ? `${c.pending}건이 아직 옛 문구다 — **라우트 ISR 캐시가 안 내려간 것이고 DB 문제가 아니다.** ` +
+            `ISR 은 만료 후 첫 요청에 stale 을 주고 뒤에서 다시 만든다(같은 URL 을 한 번 더 쳐야 새 값이 나온다). ` +
+            `옛 문구에 금지 표현이 있는 것은 정상이다 — 그래서 위반으로 세지 않았다.`
+          : `${c.pending}건이 아직 새 문구다 — 롤백이 공개 면에 반영되지 않았다. 캐시가 내려가길 기다려라.`,
+      )
     }
+    if (c.unexpected > 0) {
+      parts.push(
+        `${c.unexpected}건은 current 도 proposed 도 아닌 값이다 — ` +
+        `그 사이 누가 다른 값을 썼을 수 있다. 캐시 지연과 구분해서 확인해라.`,
+      )
+    }
+    parts.push('롤백하지 말고 기다렸다 재확인해라.')
+    return { outcome: 'CACHE_PENDING', shouldRollback: false, hint: parts.join(' ') }
   }
   return { outcome: 'OK', shouldRollback: false, hint: '' }
+}
+
+/**
+ * URL 별 **terminal 상태**를 들고 라운드를 넘긴다.
+ *
+ * 라운드마다 카운터를 초기화하면, 앞 라운드에서 발견한 진짜 위반이 뒤 라운드에서
+ * 사라진다. 그래서 상태를 URL 단위로 유지하고, terminal(`MATCHED`·`VIOLATION`)에
+ * 도달한 URL 은 다시 조회하지도, 덮어쓰지도 않는다.
+ */
+export interface Tracker {
+  /** 이번 라운드 관측을 반영한다 */
+  record(obs: UrlObservation[]): void
+  /** 아직 terminal 이 아닌 URL — 다음 라운드에 다시 친다 */
+  pending(): string[]
+  snapshot(): VerifyCounts
+  /** 위반으로 확정된 URL 들 */
+  violations(): UrlObservation[]
+}
+
+const TERMINAL: ReadonlySet<UrlState> = new Set<UrlState>(['MATCHED', 'VIOLATION'])
+
+export function createTracker(ids: string[]): Tracker {
+  const state = new Map<string, UrlObservation>(
+    ids.map((id) => [id, { id, state: 'PENDING' as UrlState, banned: [] }]),
+  )
+  return {
+    record(obs) {
+      for (const o of obs) {
+        const prev = state.get(o.id)
+        // terminal 은 덮지 않는다 — 특히 VIOLATION 이 조용히 사라지면 안 된다
+        if (prev && TERMINAL.has(prev.state)) continue
+        state.set(o.id, o)
+      }
+    },
+    pending() {
+      return [...state.values()].filter((o) => !TERMINAL.has(o.state)).map((o) => o.id)
+    },
+    snapshot() {
+      return aggregate([...state.values()])
+    },
+    violations() {
+      return [...state.values()].filter((o) => o.state === 'VIOLATION')
+    },
+  }
 }

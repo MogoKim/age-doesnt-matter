@@ -191,6 +191,16 @@ export function csvToDbValue(v: string): string | null {
 
 export interface PlanIssue { code: string; detail: string }
 
+/**
+ * 오류 메시지에 쓰는 **비식별 표기**.
+ *
+ * 실패 경로의 로그가 가장 널리 공유된다(캡처해서 붙여넣게 된다).
+ * 그래서 정상 경로뿐 아니라 **오류 경로에서도** 원본 post id 를 찍지 않는다.
+ */
+function tag(id: string): string {
+  return `post#${fingerprint(id)}`
+}
+
 export interface Plan {
   ok: boolean
   issues: PlanIssue[]
@@ -232,7 +242,7 @@ export function buildPlan(rows: RewriteRow[], mode: Mode): Plan {
   for (const r of rows) {
     const shouldBeEligible = r.rewriteDecision === ELIGIBLE_DECISION
     if ((r.applyEligible === 'true') !== shouldBeEligible) {
-      push('ELIGIBLE_MISMATCH', `applyEligible 과 rewriteDecision 이 어긋난다: ${r.id}`)
+      push('ELIGIBLE_MISMATCH', `applyEligible 과 rewriteDecision 이 어긋난다: ${tag(r.id)}`)
     }
   }
 
@@ -244,19 +254,19 @@ export function buildPlan(rows: RewriteRow[], mode: Mode): Plan {
   if (ids.some((id) => !id)) push('EMPTY_ID', '적용 대상에 빈 id 가 있다')
 
   for (const r of eligible) {
-    if (r.boardType !== 'JOB') push('BOARD_TYPE', `적용 대상에 JOB 이 아닌 행이 있다: ${r.id}`)
-    if (r.proposedSeoDescription === '') push('EMPTY_PROPOSAL', `제안 문구가 비어 있다: ${r.id}`)
+    if (r.boardType !== 'JOB') push('BOARD_TYPE', `적용 대상에 JOB 이 아닌 행이 있다: ${tag(r.id)}`)
+    if (r.proposedSeoDescription === '') push('EMPTY_PROPOSAL', `제안 문구가 비어 있다: ${tag(r.id)}`)
     // seoTitle 은 어떤 경우에도 write 대상이 아니다 — 제안값이 있으면 CSV 가 바뀐 것이다
-    if (r.proposedSeoTitle !== '') push('TITLE_PROPOSAL', `seoTitle 제안값이 있다(write 금지): ${r.id}`)
+    if (r.proposedSeoTitle !== '') push('TITLE_PROPOSAL', `seoTitle 제안값이 있다(write 금지): ${tag(r.id)}`)
     if (r.proposedSeoDescription === r.currentSeoDescription) {
-      push('NO_OP', `현재 값과 제안 값이 같다: ${r.id}`)
+      push('NO_OP', `현재 값과 제안 값이 같다: ${tag(r.id)}`)
     }
     // 행별 해시를 **다시 계산**한다. CSV 열을 손대면 여기서 걸린다.
     if (sha256(r.currentSeoTitle).slice(0, 12) !== r.currentSeoTitleSha256_12) {
-      push('HASH_MISMATCH', `currentSeoTitle 해시가 맞지 않는다: ${r.id}`)
+      push('HASH_MISMATCH', `currentSeoTitle 해시가 맞지 않는다: ${tag(r.id)}`)
     }
     if (sha256(r.currentSeoDescription).slice(0, 12) !== r.currentSeoDescriptionSha256_12) {
-      push('HASH_MISMATCH', `currentSeoDescription 해시가 맞지 않는다: ${r.id}`)
+      push('HASH_MISMATCH', `currentSeoDescription 해시가 맞지 않는다: ${tag(r.id)}`)
     }
   }
 
@@ -309,32 +319,32 @@ export function detectDrift(targets: ApplyTarget[], live: LiveRow[], mode: Mode 
 
   const byId = new Map<string, LiveRow>()
   for (const row of live) {
-    if (byId.has(row.id)) push('LIVE_DUPLICATE', `조회 결과에 중복 id 가 있다: ${row.id}`)
+    if (byId.has(row.id)) push('LIVE_DUPLICATE', `조회 결과에 중복 id 가 있다: ${tag(row.id)}`)
     byId.set(row.id, row)
   }
 
   let alreadyApplied = 0
   for (const t of targets) {
     const row = byId.get(t.id)
-    if (!row) { push('MISSING', `production 에 없는 id: ${t.id}`); continue }
+    if (!row) { push('MISSING', `production 에 없는 id: ${tag(t.id)}`); continue }
     if (row.boardType !== REQUIRED_BOARD_TYPE) {
-      push('DRIFT_BOARD_TYPE', `boardType 이 ${REQUIRED_BOARD_TYPE} 가 아니다: ${t.id}`)
+      push('DRIFT_BOARD_TYPE', `boardType 이 ${REQUIRED_BOARD_TYPE} 가 아니다: ${tag(t.id)}`)
     }
     if (row.status !== REQUIRED_STATUS) {
-      push('DRIFT_STATUS', `status 가 ${REQUIRED_STATUS} 가 아니다: ${t.id}`)
+      push('DRIFT_STATUS', `status 가 ${REQUIRED_STATUS} 가 아니다: ${tag(t.id)}`)
     }
     if (!exactEquals(row.seoTitle, t.expectedSeoTitle)) {
-      push('DRIFT_TITLE', `seoTitle 이 CSV current 값과 다르다: ${t.id}`)
+      push('DRIFT_TITLE', `seoTitle 이 CSV current 값과 다르다: ${tag(t.id)}`)
     }
     if (!exactEquals(row.seoDescription, t.expectedSeoDescription)) {
       // 이미 목표값이면 "재실행"이다 — 그래도 전제가 깨진 것이므로 막는다
       if (exactEquals(row.seoDescription, t.nextSeoDescription)) {
         alreadyApplied++
         push('ALREADY_APPLIED', mode === 'apply'
-          ? `이미 정정안이 적용돼 있다(재실행 추정): ${t.id}`
-          : `되돌릴 것이 없다 — 아직 적용 전이거나 이미 롤백됐다: ${t.id}`)
+          ? `이미 정정안이 적용돼 있다(재실행 추정): ${tag(t.id)}`
+          : `되돌릴 것이 없다 — 아직 적용 전이거나 이미 롤백됐다: ${tag(t.id)}`)
       } else {
-        push('DRIFT_DESCRIPTION', `seoDescription 이 CSV current 값과 다르다: ${t.id}`)
+        push('DRIFT_DESCRIPTION', `seoDescription 이 CSV current 값과 다르다: ${tag(t.id)}`)
       }
     }
   }
@@ -342,7 +352,7 @@ export function detectDrift(targets: ApplyTarget[], live: LiveRow[], mode: Mode 
   // 대상에 없는 id 가 조회 결과에 섞였는지
   const targetIds = new Set(targets.map((t) => t.id))
   for (const row of live) {
-    if (!targetIds.has(row.id)) push('LIVE_EXTRA', `대상 밖 id 가 조회됐다: ${row.id}`)
+    if (!targetIds.has(row.id)) push('LIVE_EXTRA', `대상 밖 id 가 조회됐다: ${tag(row.id)}`)
   }
 
   return { ok: issues.length === 0, issues, alreadyApplied }

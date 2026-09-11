@@ -32,7 +32,8 @@
 | `scripts/seo-desc-verify-production.ts` | production 전수 검증 CLI (읽기 전용) |
 | `src/__tests__/seo-desc-apply.test.ts` | 실패 주입 테스트 |
 | `src/__tests__/seo-desc-apply-csv-contract.test.ts` | 확정 CSV 계약 테스트 |
-| `src/__tests__/seo-desc-apply-review.test.ts` | 리뷰 findings 회귀 테스트 |
+| `src/__tests__/seo-desc-apply-review.test.ts` | 1차 리뷰 findings 회귀 테스트 |
+| `src/__tests__/seo-desc-verify-outcome.test.ts` | 검증 판정 회귀 테스트(실제 CSV 기반) |
 | `src/__tests__/helpers/seo-desc-fixture.ts` | 테스트 fixture (해시 열 자동 계산) |
 
 판정과 실행을 갈라 둔 이유는 테스트다. "부분 반영", "영향 행 0", "트랜잭션 도중 예외" 는
@@ -153,6 +154,8 @@ tx.post.updateMany({
 본문·SEO 문구·개인정보를 출력하지 않는다. **건수와 해시 지문만** 남긴다.
 **post id 도 그대로 찍지 않는다** — `post#<sha256 앞 10자>` 로만 나온다. 로그가 공유될 때
 어떤 글인지 바로 드러나지 않게 하기 위해서다. 대조가 필요하면 같은 방식으로 다시 계산하면 된다.
+**오류 경로도 마찬가지다** — `buildPlan`·`detectDrift` 가 내는 모든 issue detail 에 원본 id 가
+들어가지 않는다. 실패 로그가 가장 널리 공유되기 때문에 거기서 새면 의미가 없다.
 CSV 파일 자체의 해시도 찍어 어떤 입력으로 돌렸는지 나중에 대조할 수 있다.
 
 ### 4-G. import 만으로는 아무 일도 일어나지 않는다 (direct-run 계약)
@@ -224,18 +227,63 @@ npx tsx scripts/seo-desc-verify-production.ts --expect=before    # 롤백 후
 - 자사 요청이므로 `x-bot-type: ops-verify` 를 붙인다. **없으면 GA4·EventLog 가 오염된다**
 - 승인된 공식 직함(`노인돌봄`·`노인주간보호센터`·`노인요양원`)은 금지 표현으로 세지 않는다
 - 출력은 건수와 해시 지문뿐. **post id 도 문구도 그대로 찍지 않는다**
+- **내용 검사는 기대값과 정확히 일치할 때만** 한다 — §6-A
 
-### 6-A. 판정 — HTML 불일치는 DB 롤백 사유가 아니다
+### 6-A. 판정 — **기대값과 일치할 때만 내용을 본다**
+
+> 🔴 이 규칙이 이 도구에서 가장 중요하다.
+> 확정 CSV 실측: 적용 대상 50건 중 **`currentSeoDescription` 에 미승인 금지 표현이 있는 행이 48**,
+> **`proposedSeoDescription` 에 있는 행은 0** 이다.
+> 적용 직후 캐시가 안 내려간 상태에서 HTML 을 읽으면 48건에서 금지어가 그대로 나온다.
+> 그것은 **정상적인 중간 상태**다. 여기서 위반으로 판정하면 **멀쩡한 정정을 롤백하게 된다.**
+
+URL 마다 먼저 상태를 정한다.
+
+| 상태 | 조건 | 내용 검사 | terminal |
+|---|---|---|---|
+| `MATCHED` | HTML 이 **이 모드의 기대값과 정확히 같다** | 한다(`after` 만) | ○ |
+| `PENDING` | HTML 이 반대쪽 값이다 — 캐시가 안 내려갔다 | **안 한다** | |
+| `UNEXPECTED` | current 도 proposed 도 아니다 — 누가 다른 값을 썼다 | **안 한다** | |
+| `FETCH_FAILED` | 요청 실패 | 안 한다 | |
+| `VIOLATION` | 기대값과 일치**하는데** 그 안에 미승인 금지 표현이 있다 | — | ○ |
+
+모드별로 기대값이 다르다.
+
+| 모드 | 기대값 | 일치하면 |
+|---|---|---|
+| `--expect=after` | `proposedSeoDescription` | 반영 완료 → **이때만** 금지 표현을 검사한다 |
+| `--expect=before` | `currentSeoDescription` | **롤백 완료 → OK.** 옛 문구의 금지 표현은 되돌리기로 한 그 상태다. 다시 위반으로 세지 않는다 |
+
+전체 판정은 상태 집계로 낸다. 우선순위는 **위반 > 요청 실패 > 미반영 > OK**.
 
 | 판정 | 뜻 | 롤백? | 종료 코드 |
 |---|---|---|---|
-| `OK` | 전건 일치 | — | 0 |
-| `CACHE_PENDING` | HTML 이 아직 옛 문구다. **DB 는 이미 맞다**(적용 CLI [6]단계가 확인) | **아니다** | 3 |
-| `FETCH_FAILED` | 요청 자체가 실패했다 — 배포·네트워크 문제 | 아니다 | 3 |
-| `CONTENT_VIOLATION` | 공개 면에 **미승인 금지 표현**이 있다 — 내용 문제 | 검토한다 | 2 |
+| `OK` | 전건 `MATCHED` | — | 0 |
+| `CACHE_PENDING` | `PENDING`·`UNEXPECTED` 가 남았다. **DB 는 이미 맞다**(적용 CLI [6]단계가 확인) | **아니다** | 3 |
+| `FETCH_FAILED` | 요청 자체가 실패했다 | 아니다 | 3 |
+| `CONTENT_VIOLATION` | 기대값과 일치하는데 금지 표현이 있다 — **제안 문구 자체의 문제** | 검토한다 | 2 |
 
-`CACHE_PENDING` 을 보고 롤백하면 **멀쩡한 정정을 되돌리게 된다.** 기다렸다 다시 확인한다.
-제한시간을 늘려도 계속 `CACHE_PENDING` 이면 그때 배포·CDN 쪽을 본다.
+`CONTENT_VIOLATION` 은 확정 CSV 가 오염됐을 때만 난다(정상 CSV 의 proposed 는 0/50).
+방어적으로 남겨 둔 경로이며, 나면 롤백이 아니라 **CSV 를 다시 검토**하는 것이 먼저다.
+
+### 6-B. 라운드를 넘겨도 위반이 사라지지 않는다
+
+`MATCHED` 와 `VIOLATION` 은 **terminal** 이다. 한 번 그렇게 판정된 URL 은
+다시 조회하지 않고, 뒤 라운드가 덮어쓰지도 못한다.
+
+라운드마다 카운터를 초기화하면 앞 라운드에서 발견한 진짜 위반이 조용히 사라진다.
+그래서 상태를 URL 단위로 유지한다(`createTracker`).
+
+### 6-C. 롤백 검증
+
+```bash
+npx tsx scripts/seo-desc-verify-production.ts --expect=before
+```
+
+옛 문구로 **정확히 복원**됐는지 본다. 48건에 금지 표현이 있는 것이 **정상이고 기대되는 결과**다 —
+그 상태로 되돌리는 것이 롤백이기 때문이다. 이 모드에서는 금지 표현을 검사하지 않는다.
+
+---
 
 ---
 
@@ -309,7 +357,9 @@ npx tsx scripts/seo-desc-apply.ts --read=rest
 [ ] 사후 검증 [6] 에서 seoDescription 50/50 · seoTitle 무변경 50/50
 [ ] production 전수 검증 (§6) — 판정이 OK 가 될 때까지 반복 확인
       · CACHE_PENDING 이면 **롤백하지 말고** 제한시간을 늘려 재확인
-      · CONTENT_VIOLATION 이면 롤백 검토
+        (옛 문구의 금지 표현은 정상이다 — 위반으로 세지 않는다)
+      · CONTENT_VIOLATION 이면 롤백이 아니라 **CSV 를 먼저 다시 검토**
+[ ] 롤백했다면 --expect=before 로 옛 문구 정확 복원 확인 (48건 금지 표현은 정상)
 [ ] 실행 기록을 MASTER 정본에 남겼는가
 ```
 
