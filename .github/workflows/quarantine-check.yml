@@ -6,6 +6,12 @@ on:
     - cron: "6 0 * * 1"
   workflow_dispatch:
 
+# 알림 경로는 agents/core/notifier.ts 와 **같은 계약**을 쓴다.
+# 이전에는 존재하지 않는 SLACK_WEBHOOK_LOG 를 참조했다 — 이 workflow 만 고립돼 있었다.
+env:
+  SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+  SLACK_CHANNEL_LOG: ${{ secrets.SLACK_CHANNEL_LOG }}
+
 concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: false
@@ -15,45 +21,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: npm }
+      - run: npm ci
 
-      - name: Check quarantine deadlines
-        id: check
-        run: |
-          TODAY=$(date +%Y-%m-%d)
-          OVERDUE=0
-          OVERDUE_LIST=""
-
-          for manifest in _quarantine/*/quarantine_manifest.md; do
-            if [ -f "$manifest" ]; then
-              folder=$(dirname "$manifest" | sed 's|_quarantine/||')
-              deadline=$(grep -m1 "삭제 예정일" "$manifest" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' | head -1)
-              if [ -n "$deadline" ] && [[ "$TODAY" > "$deadline" || "$TODAY" == "$deadline" ]]; then
-                OVERDUE=$((OVERDUE + 1))
-                OVERDUE_LIST="${OVERDUE_LIST}\n• ${folder} (기한: ${deadline})"
-              fi
-            fi
-          done
-
-          echo "overdue=$OVERDUE" >> "$GITHUB_OUTPUT"
-          # 개행 문자를 이스케이프해서 저장
-          echo "overdue_list<<EOF" >> "$GITHUB_OUTPUT"
-          printf "%b" "$OVERDUE_LIST" >> "$GITHUB_OUTPUT"
-          echo "" >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
-
-      - name: Notify Slack if overdue
-        if: steps.check.outputs.overdue != '0'
-        env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_LOG }}
-        run: |
-          COUNT="${{ steps.check.outputs.overdue }}"
-          LIST="${{ steps.check.outputs.overdue_list }}"
-          curl -s -X POST "$SLACK_WEBHOOK" \
-            -H "Content-Type: application/json" \
-            -d "{
-              \"text\": \"🗑️ *[격리 삭제 기한 초과]* ${COUNT}개 항목\n\`\`\`${LIST}\`\`\`\n→ \`bash scripts/clean_quarantine.sh\` 실행 후 git commit 하세요.\"
-            }" || echo "⚠️ Slack 알림 실패 (SLACK_WEBHOOK_LOG 시크릿 확인 필요)"
-
-      - name: No overdue items
-        if: steps.check.outputs.overdue == '0'
-        run: echo "✅ 삭제 기한 초과 항목 없음."
+      # 스캔·판정·전송이 한 스크립트 안에 있다.
+      #   초과 0건            → Slack 호출 없이 성공
+      #   secret 누락·HTTP 실패·Slack ok:false → 전부 exit 1 → workflow 실패
+      # 이전의 `curl ... || echo` 성공 위장을 제거했다.
+      # 기한 목록은 셸 보간이 아니라 JSON.stringify 로 조립한다.
+      - name: Check quarantine deadlines and notify
+        run: npx tsx agents/scripts/quarantine-slack-notify.ts
