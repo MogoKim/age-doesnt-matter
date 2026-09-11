@@ -1,0 +1,203 @@
+# 공개 콘텐츠 인벤토리 및 1차 분류 — 846건 전수
+
+> **read-only 판정표다. 이 배치에서 콘텐츠 상태를 바꾸지 않았다.**
+> DB write·삭제·숨김·migration **0건**.
+>
+> 🔴 **최종 처분 정책은 미완료다.** 846건 중 **650건(77%)이 REVIEW** 로 남아 있다.
+> 이 문서는 **인벤토리와 1차 분류**이며 "처분표 확정"이 아니다.
+>
+> 측정 2026-09-11 · main `325ff74e` · production `2026.09.11-325ff74`
+> 데이터 경로: Supabase REST **GET only**(로컬 Prisma/`pg` 경로는 인증 실패 — 운영 정본 §8과 일치)
+> 전건 표: [`data/2026-09-11-public-content-disposition.csv`](./data/2026-09-11-public-content-disposition.csv) (846행 · 21열 — 금지 표현 3축은 `bannedSeo`·`bannedPublicText`·`bannedSlug`)
+
+---
+
+## 1. 모수
+
+`Post.status = PUBLISHED` **846건** (전체 Post 4,595 · HIDDEN 3,542 · DELETED 197 · DRAFT 10 · SEO_ONLY 0).
+
+| source | 건수 | | boardType | 건수 |
+|---|---:|---|---|---:|
+| BOT | 464 | | MAGAZINE | 265 |
+| SHEET | 299 | | STORY | 202 |
+| USER | 76 | | JOB | 191 |
+| ADMIN | 7 | | HUMOR | 149 |
+| **합계** | **846** | | LIFE2 23 · MENOPAUSE 14 · WEEKLY 2 | 39 |
+
+**실회원 판정 SSoT**: `User.providerId` 가 순수 숫자(카카오 ID) **AND** `role ≠ ADMIN`.
+실회원 계정 **188명** / 전체 User 508명. (현재 `role=ADMIN` 계정은 **0명**이다.)
+
+---
+
+## 2. 1차 분류 결과
+
+| 판정 | 건수 | 뜻 |
+|---|---:|---|
+| **PRESERVE** | **136** | 건드리지 않는다 |
+| **REVIEW** | **650** | **자동 판정 불가 — 정책 결정이 선행이다** |
+| **HIDE** | **60** | 비공개 권고(삭제 아님) — 색인면에서만 내린다 |
+| **DELETE** | **0** | 🔴 **이 표는 hard delete 를 권고하지 않는다**(§4) |
+
+판정은 **위에서부터 첫 매치로 확정**한다(§4 규칙 순서).
+
+| PRESERVE 근거 | 건수 | | HIDE 근거 | 건수 |
+|---|---:|---|---|---:|
+| 실회원이 직접 쓴 글 | **54** | | 본문 0자 | 2 |
+| 실회원 댓글·공감·신고가 붙음 | 44 | | 저품질(300자 미만·무반응·무조회) | 58 |
+| 30일 비봇 실조회가 있음 | 38 | | **전건 `source=SHEET`** | 60 |
+
+**REVIEW 650건은 두 갈래로 나뉜다. 둘은 병렬로 진행할 수 있다.**
+
+| 갈래 | 건수 | 다음 작업 |
+|---|---:|---|
+| **A. `source=USER` 비실회원** | **19** | 계정 정체 확인 |
+| **B. 나머지 non-USER** | **631** | 세분화(축: SEO 문구·중복·반응·분량) |
+
+B 631건 내부 사유 분해: 실제 SEO 노출면 금지 표현 **60** · 동일 제목 중복 **5** ·
+공개 본문·제목에만 금지 표현 **17** · 그 외(반응 0·실조회 0) **549**.
+
+---
+
+## 3. 요구된 분류축별 실측
+
+| 축 | 실측 | 비고 |
+|---|---:|---|
+| 실제 실회원 작성 | **54** | **무조건 보존** |
+| `source=USER` 인데 실회원 기준 미충족 | **22** | §5 — **정체 확인이 모든 처분의 선행 조건** |
+| non-USER | **770** | BOT 464 + SHEET 299 + ADMIN 7 |
+| 금지 브랜드 표현 | **62 / 80 / 4** | 축을 분리했다 — §6-A |
+| 저품질·짧은 콘텐츠 후보 | 본문 300자 미만 **355** · 본문 0자 **2** | HIDE 권고는 그중 60건 |
+| 실회원 댓글·공감·신고가 있는 글 | **63** | 댓글 48 · 공감 22 · 신고 0 (중복 포함) |
+| 검색 유입이 있는 글 | **측정 불가 → 대리지표** | §6-B |
+
+---
+
+## 4. 판정 규칙 (순서대로 첫 매치)
+
+| # | 조건 | 판정 | 왜 |
+|---|---|---|---|
+| 1 | 작성자가 실회원 | **PRESERVE** | 커뮤니티 신뢰의 본체다. 예외 없다 |
+| 2 | 실회원 댓글·공감·신고가 있음 | **PRESERVE** | 사용자 활동이 붙은 글을 내리면 그 활동도 함께 사라진다 |
+| 3 | 30일 비봇 실조회 > 0 | **PRESERVE** | 실제 열람 경로다 |
+| 4 | `source=USER` (실회원 아님) | **REVIEW** | 계정 정체가 확인되기 전에는 처분하지 않는다 |
+| 5 | 본문 0자 | **HIDE** | 색인 가치가 없다. **기본 권고는 비공개다** |
+| 6 | **실제 SEO 노출면**(title/description)에 금지 표현 | **REVIEW** | **삭제가 아니라 문구 정정** 대상이다 |
+| 7 | 동일 제목 중복 | **REVIEW** | 정본 1건을 고르는 것은 사람 판단이다 |
+| 8 | 본문 300자 미만 **AND** 댓글 0 **AND** 게스트공감 0 (실조회 0은 규칙 3에서 이미 걸러짐) | **HIDE** | 삭제하지 않는다. 색인면에서만 내린다 |
+| 9 | 공개 본문·제목에만 금지 표현(`bannedPublicText`) | **REVIEW** | SEO 노출면은 아니다. 문구 정정 후보 |
+| 10 | 그 외 non-USER | **REVIEW** | 반응·분량만으로는 판정할 수 없다 |
+
+### 🔴 hard delete 를 권고하지 않는 이유
+
+이 표의 **DELETE 는 0건**이다. 본문 0자 2건도 **HIDE** 로 둔다.
+
+- 운영 정본의 불변 금지선: "네이버 신뢰가 걸린 콘텐츠를 **근거 없이 대량 삭제하지 않는다**"
+- 2026-09-10 A-3 폐기에서 **FK 사각으로 `GuestLike` 82건이 cascade 손실**됐고, `Like` 댓글 경로 손실은
+  사전 분해 계측이 없어 **지금도 알 수 없다**(운영 정본 §8 🔴).
+- 따라서 hard delete 는 **① 대상별 dependency closure 전수 대조(자식 FK 를 함께 지우는 모든 테이블까지)
+  ② 창업자 명시 승인** 둘 다 있을 때만 가능하다. **이 표는 그 근거가 되지 못한다.**
+- HIDE 는 되돌릴 수 있고 색인면에서만 내려간다 — 그래서 기본 권고다.
+
+---
+
+## 5. `source=USER` 22건 — 모든 처분의 선행 조건
+
+`source` 는 `USER` 인데 작성자 계정의 `providerId` 가 순수 숫자가 아니다.
+즉 **카카오 실회원 계정이 아닌 주체가 "일반 회원 글"로 발행된 것**이다.
+
+- 22건 중 3건은 실회원 반응·실조회가 있어 규칙 1~3에서 먼저 **PRESERVE** 로 확정됐다.
+  CSV 기준 `source=USER` 이면서 `verdict=REVIEW` 인 행은 **19건**이다.
+- **이 19건 정체 확인과 나머지 631건 세분화는 병렬로 진행할 수 있다.**
+  631건은 전부 `source ≠ USER` 라 회원 글 경계 판정과 독립적이다 — 서로 기다리지 않는다.
+- 🔴 "가짜 회원 글"로 단정하지 않는다. 과거 마이그레이션·시드·페르소나 등 여러 경로가 섞여 있을 수 있고
+  **현재 데이터만으로는 구분되지 않는다.**
+
+---
+
+## 6. 실측 주의
+
+### 6-A. 브랜드 금지 표현 — 축을 분리했다
+
+**`title`·`slug` 를 "URL 노출면"이라 부르면 안 된다.** production 이 실제로 내보내는 SEO 값은
+`seoTitle`/`seoDescription` 과 board별 fallback 체인으로 결정된다.
+
+| 축 | 정의 (production `generateMetadata` 규칙 그대로) | 실측 |
+|---|---|---:|
+| **A. 실제 SEO title/description** | **커뮤니티**: `seoTitle ?? title` / `seoDescription ?? (summary ‖ buildFallbackDescription(title, boardType))`<br>**매거진**: `seoTitle ?? title` / `seoDescription ?? (본문 첫 150자 ‖ summary ‖ 고정문구)`<br>**JOB**: `seoTitle ?? "${title} — ${company} 채용"` / `seoDescription ?? (본문 첫 100자 · location 근무 · formatSalary(salary))` | **62** |
+| **B. 공개 본문·제목 전체**(CSV `bannedPublicText`) | `title` + 본문 plain text | **80** |
+| **C. slug 문자열** | `slug` | **4** |
+
+**축 A 62건의 boardType 분해**
+
+| boardType | 건수 | 비고 |
+|---|---:|---|
+| **JOB** | **55** | `/jobs/{id}` — 채용 공고. 공식 직함이 대부분 |
+| **MAGAZINE** | **5** | |
+| **STORY** | **2** | |
+| **합계** | **62** | |
+
+source 분해: BOT 59 · SHEET 2 · USER 1.
+축 A 는 JOB 규칙을 반드시 포함해야 한다 — `boardType=JOB` 191건은 **`Job` 모델이 아니라
+`Post` + `JobDetail` 관계**로 `/jobs/{id}` 를 렌더한다(`getJobDetailPublic(postId)`).
+JOB 을 커뮤니티 규칙으로 계산하면 `company` 가 빠져 축 A 가 틀어진다.
+
+참고: `seoTitle`/`seoDescription` 이 설정된 글 각 388 · `summary` 있는 글 795 · `JobDetail` 행 340.
+
+단어별(축 B 기준): 노인 35 · 시니어 30 · 어르신 25 · 실버 8 (중복 포함).
+축 B 의 boardType 분해: JOB 56 · MAGAZINE 20 · STORY 4.
+sitemap.xml URL 문자열 기준은 **4**(축 C와 동일 — slug 가 URL 이기 때문이다).
+
+> 이전 판(a6361ec9)은 축 A를 측정하지 않고 `title`+`slug` 를 "URL 노출면 15"로 적었다. **오류이며 이 판에서 교정했다.**
+
+### 6-B. "검색 유입"은 직접 측정하지 못했다
+
+- `Post.viewCount` 는 **봇 시대에 누적된 비정규화 카운터**다. 846건 중 **690건이 100 이상**인데
+  같은 기간 사이트 전체 30일 비봇 `page_view` 는 **3,201건**뿐이다. 유입 지표로 쓸 수 없다.
+- 네이버/구글 **검색 유입 자체**는 Search Console 데이터가 필요하고 이 배치의 read-only 경로에 없다.
+- 대리지표로 **`EventLog` 의 30일 비봇 `post_view`** 를 썼다(총 888건 · 고유 경로 468).
+  이 기준으로 실조회가 있는 공개 글은 **69건**, 나머지 **777건은 30일간 비봇 조회 0**이다.
+- ⚠️ 이것은 "검색 유입"이 아니라 **"실제 사람의 글 열람"** 이다. 검색 경로 분해는 후속 과제다.
+
+### 6-C. SEO 노출면 금지 표현 62건의 성격
+
+**62건 중 55건(89%)이 `boardType=JOB` 채용 공고**이며 표현이 `노인요양`·`노인주간보호`·
+`여자어르신 재가방문` 같은 **외부 공고 원문의 공식 직함**이다. 브랜드 카피 위반과 성격이 다르다.
+**원문 보존 vs 표기 정정은 정책 결정 사항**이다(§7-4).
+
+---
+
+## 7. 창업자 결정이 필요한 항목
+
+| # | 항목 | 선택지 |
+|---|---|---|
+| **1a** | **`source=USER` 비실회원 19건 계정 정체 확인** (REVIEW 갈래 A) | 확인 주체·기준 |
+| **1b** | **나머지 631건 세분화 기준** (REVIEW 갈래 B) — **1a 와 병렬 가능** | 축(반응/분량/중복/SEO문구) 우선순위 |
+| 3 | HIDE 60건 실행 여부 | 실행 / 보류 — 되돌릴 수 있다 |
+| 4 | SEO 노출면 금지 표현 62건 정정 범위 | 채용 공고 직함 원문 보존 / 전면 치환 |
+| 5 | hard delete 를 검토할지 여부 | 검토 시 **dependency closure 전수 대조가 선행** |
+
+**결정 전까지 실행하지 않는다.** 이 문서는 인벤토리·1차 분류이고 실행 계획이 아니다.
+
+---
+
+## 8. 재현 방법
+
+CSV 는 아래 read-only 절차로 재생성된다. **write 경로가 없다.**
+
+1. `GET /rest/v1/Post?status=eq.PUBLISHED` — 846건 (`summary`·`seoTitle`·`seoDescription` 포함)
+2. `GET /rest/v1/User` — 실회원 판정(`providerId` 숫자 · `role≠ADMIN`)
+3. `GET /rest/v1/Comment|Like|GuestLike|Report` — 글별 반응 집계
+4. `GET /rest/v1/EventLog?eventName=eq.post_view&isBot=eq.false&createdAt=gte.{30일 전}` — 실조회
+5. `GET /rest/v1/JobDetail` — JOB 글의 `company`·`location`·`salary`
+6. production `generateMetadata` 규칙(커뮤니티·매거진·**JOB** 3분기)으로 SEO title/description 재구성 → 축 A 판정
+7. §4 규칙을 순서대로 적용
+
+⚠️ REST 는 `select` 컬럼이 실제 PK/컬럼과 다르면 **HTTP 400** 을 돌려준다.
+테이블 부재로 오인하지 말 것(`NaverBlogQueue` 는 PK 가 `queueId` 다 — 운영 정본 §8).
+
+---
+
+## 9. 이 배치에서 하지 않은 것
+
+- production DB write · 콘텐츠 상태 변경 · 삭제 · migration — **0건**
+- env · workflow · launchd 변경 — **0건**
