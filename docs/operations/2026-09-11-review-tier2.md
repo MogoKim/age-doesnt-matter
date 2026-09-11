@@ -25,71 +25,81 @@
 
 ---
 
-## 1. 축을 둘로 나눈다 — 보호축과 조치축
+## 1. 축을 셋으로 나눈다
 
-이 표의 핵심 구조다. **"보호할 것인가"와 "무엇을 고칠 것인가"는 다른 질문이다.**
+**"보호할 것인가" · "무엇을 고칠 것인가" · "지금 구글 색인 상태가 어떤가"는 서로 다른 질문이다.**
 
 | 축 | 컬럼 | 뜻 |
 |---|---|---|
-| **보호축** | `humanTrace` | 사람이 남긴 흔적이 있는가. **true 면 HIDE/DELETE 대상이 아니다** |
-| **조치축** | `recommendedAction` | 이 글에 필요한 조치가 무엇인가 |
+| **보호축** | `protectedFromHideDelete` | **HIDE/DELETE 대상에서 제외**한다 |
+| **조치축** | `recommendedAction` | 이 글에 필요한 조치 |
+| **상태축** | `currentlyGoogleNoindex` | **현재** Google 색인 제외 상태인가(조치가 아니라 사실) |
 
-**둘은 양립한다.** 사람 흔적이 있는 글이라도 SEO 문구는 고쳐야 할 수 있다 —
-실제로 `humanTrace=true` 이면서 `REWRITE_BRAND_COPY` 인 글이 **1건** 있다.
-보호받는다고 해서 고칠 게 없다는 뜻이 아니고, 고칠 게 있다고 해서 내려도 된다는 뜻이 아니다.
+**셋은 양립한다.** 보호받는 글이라도 SEO 문구는 고쳐야 할 수 있다 —
+실제로 `protectedFromHideDelete=true` 이면서 `REWRITE` 인 글이 **1건** 있다.
+보호는 **공개 상태**를 지키는 것이고, REWRITE 는 **문구**를 고치는 것이다. 둘은 충돌하지 않는다.
 
----
+## 2. 보호축 — `protectedFromHideDelete` 32건
 
-## 2. 보호축 — `humanTrace` 32건
+### 2-1. 🔴 `GuestLike` 는 사람 흔적이 아니다
 
-### 2-1. 게스트 댓글 계약으로 재판정했다
+`GuestLike` 가 가진 것은 `ipHash`(SHA-256, 역산 불가)와 `cookieId`(nanoid) **뿐**이다
+(`prisma/schema.prisma` `model GuestLike`). **챌린지도 인증도 없다.**
+따라서 **행위 주체가 사람인지 자동화인지 판별할 수 없다.**
 
-🔴 **`Comment.authorId = NULL` 을 전부 비인간으로 취급하면 안 된다.**
-현재 게스트 댓글 계약은 `guestNickname` **AND** `guestPasswordHash` 가 함께 있는 것이다
-(`prisma/schema.prisma` `model Comment`). 이 계약으로 갈래 B 의 살아있는 댓글 **911건**을 다시 갈랐다.
+> 이 판정은 기존 정본과 어긋나지 않는다. `MASTER-OPERATING-SYSTEM.md` §8 과
+> `2026-09-10-naver-cafe-purge-facts.md` 도 `GuestLike` 를 "게스트 공감"으로만 적고
+> **"실회원 공감 포함 여부는 알 수 없다"** 고 명시한다. 이 문서는 그 유보를 그대로 잇는다.
 
-| 구분 | 건수 | 판정 |
-|---|---:|---|
-| 계정 작성 — 봇/시드(`bot-*` 886 · `curator-*` 15) | **901** | 비인간 |
-| **정상 게스트**(`guestNickname` + `guestPasswordHash`) | **10** | **사람** |
-| `authorId=NULL` 인데 게스트 계약 미충족 | **0** | — |
+**그럼에도 보호 신호에는 포함한다.** 판별할 수 없다는 것은 "사람이 아니다"가 아니다.
+지우면 되돌릴 수 없으므로 **보수적으로 보호**한다.
 
-정상 게스트 댓글이 달린 글은 **10건**이다.
+### 2-2. 세 축을 분리한다
 
-### 2-2. 사람 흔적 합집합
+| 축 | 컬럼 | 글 수 | 뜻 |
+|---|---|---:|---|
+| **a. 보호 대상** | `protectedFromHideDelete` | **32** | HIDE/DELETE 대상에서 제외 |
+| **b. 검증된 사람** | `verifiedHumanContentOrComment` | **11** | Turnstile 게스트 댓글 글 **10** + 익명화된 탈퇴 실회원 글 **1** |
+| **c. 익명 반응** | `anonymousGuestLike` | **26** | `GuestLike` 존재. **행위 주체 판별 불가** |
 
-| 축 | 글 수 |
-|---|---:|
-| 비회원 공감(`guestLikeCount` > 0) | 25 |
-| 정상 게스트 댓글(`guestCommentCount` > 0) | 10 |
-| **합집합 (갈래 B)** | **31** |
-| 갈래 A 중 사람 흔적 | 1 |
-| **`humanTrace=true` 총계** | **32** |
+b 와 c 의 교집합 5건, 합집합이 a 32건이다.
 
-내역: 공감만 22 · 댓글만 6 · 둘 다 4 (갈래 B 기준 31).
-
-**`humanTrace=true` 32건은 HIDE/DELETE 대상으로 분류하지 않았다.**
-검증: `humanTrace=true` 이면서 `KEEP_NOINDEX`/`PROPOSE_NOINDEX` 인 행 **0건**.
+**b 만 "사람"이라고 말할 수 있다.** 게스트 댓글은 Turnstile 챌린지를 통과해야 작성되고
+(`GuestCommentInput`), 익명화 탈퇴 회원은 카카오 가입 이력이 있다.
+**c 26건은 "익명 반응이 있었다"까지만 말한다.**
 
 ### 2-3. 이 재판정이 실제로 바꾼 것
 
-1차 분류에서 `NOINDEX_OR_HIDE` 로 묶였던 **ADMIN/STORY 232자 글**은
-**정상 게스트 댓글 1건**이 달려 있었다. 이 배치에서 `humanTrace=true` → `PRESERVE` 로 보호됐다.
+1차에서 `NOINDEX_OR_HIDE` 로 묶였던 **ADMIN/STORY 232자 글**에는
+**Turnstile 게스트 댓글 1건**이 달려 있었다 → `verifiedHumanContentOrComment=true` → 보호.
 계약 기반으로 다시 보지 않았다면 색인면에서 내릴 후보로 남았을 글이다.
-
----
 
 ## 3. 조치축 — `recommendedAction`
 
 | 조치 | 건수 | 뜻 |
 |---|---:|---|
-| **PRESERVE** | **278** | 보존. 사람 흔적 또는 검색 자산 |
+| **PRESERVE** | **31** | 보호 대상이면서 문구 수정도 불필요 |
+| **PRESERVE_CANDIDATE** | **247** | BOT 매거진 장문 — **확정 보존이 아니다**(§3-4) |
 | **KEEP_NOINDEX** | **153** | 🔴 **이미 Google noindex 다. 신규 실행 작업이 아니다** |
-| **MANUAL_REVIEW** | **159** | 사람 판단 필요 |
+| **MANUAL_REVIEW** | **159** | 사람 판단 필요 (그중 JOB **136** — §5) |
 | **REWRITE_BRAND_COPY** | **59** | 우나어가 쓴 SEO 카피의 금지 표현 정정 |
 | **REWRITE_AUTO_COMPOSED** | **1** | 자동 조합 description |
-| **PROPOSE_NOINDEX** | **0** | 아래 §3-2 |
+| **PROPOSE_NOINDEX** | **0** | §3-2 |
+| **HIDE / DELETE** | **0** | **이 표는 어떤 행에도 권고하지 않는다**(§3-1) |
 | **합계** | **650** ✅ | |
+
+**보호축 × 조치축 교차** — 모순 0:
+
+| 조치 | protected | 비보호 |
+|---|---:|---:|
+| PRESERVE | **31** | 0 |
+| REWRITE_AUTO_COMPOSED | **1** | 0 |
+| PRESERVE_CANDIDATE | 0 | 247 |
+| KEEP_NOINDEX | 0 | 153 |
+| MANUAL_REVIEW | 0 | 159 |
+| REWRITE_BRAND_COPY | 0 | 59 |
+
+보호 32 = PRESERVE 31 + REWRITE_AUTO_COMPOSED 1. **보호와 문구 수정이 양립하는 1건**이 여기 있다.
 
 ### 3-1. 🔴 HIDE 는 이 표가 권고하지 않는다
 
@@ -125,6 +135,39 @@ HIDE 는 **별도 고위험 결정**이며, 그 결정을 할 때 `humanTrace=tr
 
 ⚠️ **이미 noindex 인 153건을 "할 일"로 보고하지 않는다.** 이미 적용된 상태다.
 
+### 3-2-b. `currentlyGoogleNoindex=true` 180건 × 조치 교차표
+
+**조치축은 색인 상태를 바꾸지 않는다.** `PRESERVE`·`REWRITE` 는 **콘텐츠 공개 상태와 문구**에 관한 것이고,
+**기존 Google noindex 를 자동 해제한다는 뜻이 아니다.** 오독을 막기 위해 교차표를 남긴다.
+
+| 조치 | noindex=true 중 |
+|---|---:|
+| KEEP_NOINDEX | **153** |
+| PRESERVE | **22** |
+| MANUAL_REVIEW | **4** |
+| REWRITE_AUTO_COMPOSED | **1** |
+| **소계** | **180** |
+
+즉 **보호 대상 22건과 판단 대기 4건도 이미 noindex 상태다.** 보호한다고 색인이 켜지지 않는다.
+색인 상태를 바꾸려면 `shouldGoogleNoindexCommunityPost` 의 입력(본문 분량·주제·source)이 바뀌어야 한다.
+
+### 3-4. 🔴 `PRESERVE_CANDIDATE` 247건 — 확정 보존이 아니다
+
+이전 판은 이 247건을 `PRESERVE` 로 묶고 "검색 자산"이라 적었다. **과대 확정이었다.**
+
+이 247건이 가진 근거는 **`source=BOT` · `boardType=MAGAZINE` · 본문 1,000자 이상** 뿐이다.
+
+| 축 | 247건 값 |
+|---|---:|
+| 30일 비봇 실조회 | **0** |
+| 실회원 댓글·공감·신고 | **0** |
+| 익명 공감(`GuestLike`) | **0** |
+| 검색 유입 | **미측정**(§6) |
+
+**분량은 가치의 증거가 아니다.** 자동 생성 장문일 수 있고, 그것을 구분할 데이터가 지금 없다.
+그래서 `PRESERVE_CANDIDATE` 로 되돌렸다 — **보존 후보이지 보존 확정이 아니다.**
+확정하려면 검색 유입 측정이 선행돼야 한다.
+
 ### 3-3. REWRITE 60건 — 금지 표현의 출처
 
 | 출처 | 건수 |
@@ -142,13 +185,30 @@ production 표본에서 확인된 실제 문구는 `어르신 모시는 보람 �
 
 ---
 
-## 4. 갈래 A — `source=USER` 비실회원 19건 (고유 계정 8개)
+## 4. `source=USER` 비실회원 **22건 전체** — 정체 종결
 
-| 분류 | 건수 | 근거 | 조치 |
-|---|---:|---|---|
-| **SEED_BOT** | **18** | `seed-` 접두어 · email 없음 · 2026-03 생성. 시드봇(A05, **ARCHIVED 2026-09-09**)의 가상 페르소나 | MANUAL_REVIEW |
-| **WITHDRAWN_REAL_MEMBER** | **1** | 아래 §4-1 | **PRESERVE** |
-| FOUNDER_PERSONA / UNKNOWN | 0 / 0 | 증거로 전부 설명됨 | — |
+이전 판은 REVIEW 에 포함된 **19건**만 봤다. 1차에서 `PRESERVE` 로 확정된 **3건**까지 합쳐
+**22건 전체**를 작성자 계정과 다시 대조했다.
+
+| | 건수 |
+|---|---:|
+| **시드 계정 글** | **21** |
+| **익명화된 탈퇴 실회원 글** | **1** |
+| **합계** | **22** ✅ |
+
+- 시드 계정은 **고유 7개**다(22건을 7개 계정이 나눠 썼다).
+- 1차에서 빠져 있던 **3건의 작성자는 전부 기존 19건의 시드 계정 집합과 동일**하다 — 신규 계정 없음.
+  그 3건은 `PRESERVE`(사람 흔적 또는 실조회)로 확정돼 있었고 **콘텐츠 보호 상태를 그대로 유지**한다.
+- 🔴 다만 **`source` 정합성 문제는 남는다**: 시드봇 가상 페르소나 글 21건이 `source=USER` 로 남아
+  공개 면에서 **회원 글처럼 보인다.** 이것은 보호 여부와 별개 축이며 §7-5 결정 사항이다.
+- boardType 분해(22건): STORY 9 · JOB **5** · HUMOR 4 · WEEKLY 2 · MAGAZINE 2
+
+이 문서의 2차 분류 모수(650)에는 그중 **19건**만 들어온다 — 나머지 3건은 1차에서 이미 확정됐기 때문이다.
+
+| 2차 모수 내 분류(19건) | 건수 | 조치 |
+|---|---:|---|
+| **SEED_BOT** | **18** | MANUAL_REVIEW |
+| **WITHDRAWN_REAL_MEMBER** | **1** | **PRESERVE** |
 
 ### 4-1. 탈퇴 회원 SSoT — 활성 지표와 콘텐츠 출처 판정을 분리한다
 
@@ -177,9 +237,24 @@ F-12 **30일 경과 탈퇴자 PII 익명화**가 `providerId` 를 덮어쓴다.
 
 ---
 
-## 5. JOB 채용 공고 — 만료 판정이 왜 자동화되지 않는가
+## 5. JOB 채용 공고 — 수치와 만료 판정
 
-🔴 **"만료 필드가 없다"는 이전 서술은 틀렸다.** `JobDetail.expiresAt` 은 **존재한다.**
+### 5-1. JOB 총계 구분
+
+| | 건수 |
+|---|---:|
+| 공개 JOB 글 전체 | **191** |
+| 이 문서 모수(650) 안의 JOB | **191** |
+| └ 갈래 B JOB | 186 |
+| └ 갈래 A(시드 계정) JOB | **5** |
+| **`MANUAL_REVIEW` 인 JOB** | **136** = 갈래 B **131** + 갈래 A **5** |
+| `REWRITE_BRAND_COPY` 인 JOB | 55 |
+
+⚠️ **"MANUAL_REVIEW 159건(JOB 131 포함)" 은 틀린 표기다.** MANUAL_REVIEW 안의 JOB 은 **136**이다.
+
+### 5-2. 만료 판정이 자동화되지 않는 이유
+
+🔴 **"만료 필드가 없다"는 서술은 틀렸다.** `JobDetail.expiresAt` 은 **존재한다.**
 
 ```
 prisma/schema.prisma  model JobDetail
@@ -191,21 +266,17 @@ prisma/schema.prisma  model JobDetail
 
 | | 건수 |
 |---|---:|
-| 공개 JOB 글 | **191** |
-| 그 `JobDetail` 매칭 | **191** |
+| 공개 JOB 글 / `JobDetail` 매칭 | 191 / **191** |
 | `expiresAt` **NULL** | **191 (전건)** |
 | `expiresAt` NOT NULL | **0** |
-| 전체 `JobDetail` 중 `expiresAt` NULL | 340 / 340 |
+| 전체 `JobDetail` 중 NULL | 340 / 340 |
 
 그리고 **공개 조회가 이 필드를 적용하지 않는다.**
 `getJobDetailPublic`(`src/lib/queries/posts/posts.jobs.ts:249`)의 where 는
-`{ id, status: 'PUBLISHED', boardType: 'JOB' }` 뿐이고 `expiresAt` 을 읽지도 거르지도 않는다
-(`select` 에도 없다).
+`{ id, status: 'PUBLISHED', boardType: 'JOB' }` 뿐이고 `expiresAt` 을 읽지도 거르지도 않는다.
 
-→ **필드는 있으나 채워진 적이 없고 소비되지도 않는다.** 그래서 만료 여부를 데이터로 판정할 수 없다.
-발행 경과는 중앙값 **80일** · 90일 초과 **67건**이다. 이것만 사실로 남긴다.
-
----
+→ **필드는 있으나 채워진 적이 없고 소비되지도 않는다.** 그래서 만료를 데이터로 판정할 수 없다.
+발행 경과 중앙값 **80일** · 90일 초과 **67건** — 이것만 사실로 남긴다.
 
 ## 6. 측정하지 못한 것 (추정하지 않았다)
 
@@ -234,11 +305,11 @@ prisma/schema.prisma  model JobDetail
 | # | 항목 | 선택지 |
 |---|---|---|
 | **1** | **REWRITE_BRAND_COPY 59건 정정 범위** — 브랜드 규칙 직접 위반 | 전면 정정 / 단계적 |
-| **2** | REWRITE 중 원문 공식 직함 부분(title 10건) | 원문 보존 / 치환 |
-| **3** | MANUAL_REVIEW 159건(JOB 131 포함) 기준 수립 | 공고 만료 기준 · `expiresAt` 운영 시작 여부 |
-| **4** | PRESERVE 278건 확정 여부 | 보존 확정 / 추가 관찰 |
-| **5** | **SEED_BOT 18건** — `source=USER` 로 남아 회원 글처럼 보인다 | 그대로 / source 표기 정정 / 비공개 |
-| **6** | **HIDE 를 검토할지 여부** — 별도 고위험 결정 | 검토 시 `humanTrace=true` 32건 제외가 전제 |
+| **2** | REWRITE 중 원문 공식 직함(title 10건) | 원문 보존 / 치환 |
+| **3** | **PRESERVE_CANDIDATE 247건 확정 여부** — 지금은 분량 외 근거가 없다 | 검색 유입 측정 후 재판정 / 현행 유지 |
+| **4** | **MANUAL_REVIEW 159건**(그중 **JOB 136**) 기준 수립 | `expiresAt` 운영 시작 여부 · 공고 만료 기준 |
+| **5** | **시드 계정 글 21건의 `source` 정합성** — `source=USER` 로 회원 글처럼 보인다 | 그대로 / source 표기 정정 / 비공개 |
+| **6** | **HIDE 를 검토할지 여부** — 별도 고위험 결정 | 검토 시 `protectedFromHideDelete=true` **32건 제외**가 전제 |
 | 7 | `slug` NULL 236건 영향 확인 착수 | canonical·sitemap 대조 |
 
 **결정 전까지 실행하지 않는다.**
