@@ -18,10 +18,18 @@
 
 | 단계 | 이벤트 | 상태 |
 |---|---|---|
-| 방문 | `page_view` | ✅ 수집 |
+| 비회원 방문 | `page_view` (가입 전 방문만 — §2) | ✅ 수집 |
 | 가입 유도 노출 | `signup_banner_shown` | ✅ 수집 |
-| 카카오 로그인 시작 | `kakao_button_click`(공용 CTA 버튼·로그인 화면) ∪ `signup_banner_clicked{cta_type:'kakao_oauth'}` | ⚠️ **부분** — 아래 §3 |
-| 가입 완료 | `sign_up` + `User.createdAt` | ✅ 수집(교차 검증) |
+| **배너 CTA 반응** | `signup_banner_clicked` **전체 `cta_type`** (`kakao_oauth` · `app_install` · `external_browser`) | ✅ 수집 · `cta_type` 별 분해 가능 |
+| 가입 완료 | `sign_up` (이벤트) / `User.createdAt` (사실) | ⚠️ 두 값은 다르다 — 완전성은 ID 대조로만 판정(§3) |
+
+🔴 **사이트 전체 `kakao_button_click` 은 배너 반응이 아니다.** 로그인 화면·게스트 댓글 카드 등
+여러 표면에서 발생하므로 **배너 전환에 귀속하지 않고 별도 참고값**으로만 둔다.
+과거에 `kakao_button_click ∪ signup_banner_clicked{cta_type:'kakao_oauth'}` 를 "카카오 로그인 시작"
+한 단계로 묶었던 정의는 **철회했다** — 배너가 하지 않은 일을 배너 전환율로 읽게 만들었다.
+
+⚠️ 노출 이벤트(`signup_banner_shown`)에는 **어떤 CTA 를 보여줬는지 정보가 없다.**
+그래서 `cta_type` 별 **노출 분모는 복원할 수 없고**, 분해는 **클릭 쪽에만** 있다.
 
 ## 2. 판정 기준 (전 구간 공통)
 
@@ -39,10 +47,22 @@
 |---|---|---|
 | `login_start_rate_limit` | WARN | `kakao_button_click` 이 `api/events` 의 rate limit 면제 목록(`CONVERSION_EVENTS`)에 **없다**. `page_view` 와 같은 버킷(`event:ip`, max 30)이라 429 로 조용히 유실될 수 있다 → **로그인 시작은 하한값**이다. 화면에 `≥` 로 표시한다. |
 | `oauth_session_split` | WARN | 카카오 OAuth 는 외부 도메인을 왕복한다. 복귀 시 세션 식별자가 바뀌면 "로그인 시작 → 가입 완료"가 같은 세션으로 안 이어져 전환율이 **실제보다 낮게** 나온다. |
-| `signup_cross_check` | OK/GAP | 창 안 `sign_up` 이벤트 세션 수와 `User.createdAt` 기준 신규 실회원 수를 나란히 둔다. 이벤트가 0인데 실제 가입자가 있으면 **GAP** 으로 올리고 "0% 로 읽지 마라"라고 적는다. |
+| `exposure_cta_unknown` | WARN | 노출 분모(`signup_banner_shown`)에 CTA 종류 정보가 없다 → **CTA별 전환율은 과거 데이터로 복원 불가**. `cta_type` 분해는 클릭 쪽에만 있다. |
+| `banner_vs_sitewide_click` | OK | 배너 반응은 `signup_banner_clicked` 로만 센다. 사이트 전체 `kakao_button_click` 은 **배너 전환에 귀속하지 않고** 참고값으로 둔다. |
+
+### 가입 수집 완전성의 판정 — **ID 대조 하나뿐이다**
+
+**유일한 판정 기준은 `sign_up` 이벤트의 `userId` 와 신규 실회원 코호트 ID 의 대조**다.
+`matchedMembers / actualNewMembers` 로 계산하고, `missingMembers`(연결 안 된 회원)와
+`unlinkableEvents`(`userId` 가 없거나 코호트 밖인 이벤트)를 분리해 함께 적는다.
+
+건수 비교(`sign_up` 이벤트 수 vs 신규 회원 수)는 **판정 근거가 아니다** —
+서로 다른 사람의 "3건 · 3명"이 100% 로 보이기 때문이다.
+그래서 건수 기반 `signup_cross_check` 항목은 **제거했다**(코드·화면·문서 모두).
 
 이 한계는 **이번 배치에서 고치지 않았다.** 계측 코드를 바꾸면 측정 대상 자체가 바뀌어 이전 데이터와 비교가 끊긴다.
-`CONVERSION_EVENTS` 에 `kakao_button_click` 을 넣는 것은 별도 판단 대상이다(§6).
+`CONVERSION_EVENTS` 에 `kakao_button_click` 을 넣는 것, 노출 이벤트에 `cta_type` 을 동봉하는 것은
+**후속 판단 대상**이다(§7-A).
 
 ## 4. 4단계를 다시 계산하지 않은 이유
 
