@@ -82,7 +82,10 @@ b 와 c 의 교집합 5건, 합집합이 a 32건이다.
 | **PRESERVE_CANDIDATE** | **247** | BOT 매거진 장문 — **확정 보존이 아니다**(§3-4) |
 | **KEEP_NOINDEX** | **153** | 🔴 **이미 Google noindex 다. 신규 실행 작업이 아니다** |
 | **MANUAL_REVIEW** | **159** | 사람 판단 필요 (그중 JOB **136** — §5) |
-| **REWRITE_BRAND_COPY** | **59** | 우나어가 쓴 SEO 카피의 금지 표현 정정 |
+| **REWRITE_BRAND_COPY** | **51** | 우나어가 쓴 SEO 카피의 금지 표현 정정 (2026-09-11 출처 분리로 59 → 51) |
+| **BRAND_COPY_HOLD_REVIEW** | **4** | 우나어 카피지만 **대체어 확정 불가** → 치환 보류, 사람 검토 |
+| **OFFICIAL_NAME_ONLY_REVIEW** | **3** | 금지 표현이 **정부 공식 제도명**(`노인일자리사업`)뿐 → 전건 보존 |
+| **SOURCE_TITLE_ONLY_REVIEW** | **1** | 금지 표현이 **원문 공고 제목 복사 구간**에만 → 수정 필드 없음 |
 | **REWRITE_AUTO_COMPOSED** | **1** | 자동 조합 description |
 | **PROPOSE_NOINDEX** | **0** | §3-2 |
 | **HIDE / DELETE** | **0** | **이 표는 어떤 행에도 권고하지 않는다**(§3-1) |
@@ -97,7 +100,10 @@ b 와 c 의 교집합 5건, 합집합이 a 32건이다.
 | PRESERVE_CANDIDATE | 0 | 247 |
 | KEEP_NOINDEX | 0 | 153 |
 | MANUAL_REVIEW | 0 | 159 |
-| REWRITE_BRAND_COPY | 0 | 59 |
+| REWRITE_BRAND_COPY | 0 | 51 |
+| BRAND_COPY_HOLD_REVIEW | 0 | 4 |
+| OFFICIAL_NAME_ONLY_REVIEW | 0 | 3 |
+| SOURCE_TITLE_ONLY_REVIEW | 0 | 1 |
 
 보호 32 = PRESERVE 31 + REWRITE_AUTO_COMPOSED 1. **보호와 문구 수정이 양립하는 1건**이 여기 있다.
 
@@ -176,6 +182,13 @@ HIDE 는 **별도 고위험 결정**이며, 그 결정을 할 때 `humanTrace=tr
 | SOURCE_TITLE 전용 (원문 제목만) | **0** |
 | AUTO_COMPOSED | **1** |
 
+> 🔄 **2026-09-11 재분해.** 위 59건을 **출현 위치 단위**로 다시 판정한 결과
+> 실제 정정 대상은 **51건**이고 나머지 8건은 보존 또는 판단 보류다.
+> `REWRITE_BRAND_COPY 51` · `BRAND_COPY_HOLD_REVIEW 4` · `OFFICIAL_NAME_ONLY_REVIEW 3` ·
+> `SOURCE_TITLE_ONLY_REVIEW 1`. 근거·전건 표:
+> [`2026-09-11-seo-brand-copy-rewrite.md`](./2026-09-11-seo-brand-copy-rewrite.md)
+> (`PROPER_NOUN_EXACT` 는 **0** — 상호에 금지어가 있는 24건과 상호를 인용한 9건의 **교집합이 0**이다).
+
 JOB 55건 분해: 원문 title 직함 10 · description 에만 45 · 둘 다 9 ·
 그 description 이 `seoDescription` 필드 유래 **54/55**.
 
@@ -248,7 +261,7 @@ F-12 **30일 경과 탈퇴자 PII 익명화**가 `providerId` 를 덮어쓴다.
 | └ 갈래 B JOB | 186 |
 | └ 갈래 A(시드 계정) JOB | **5** |
 | **`MANUAL_REVIEW` 인 JOB** | **136** = 갈래 B **131** + 갈래 A **5** |
-| `REWRITE_BRAND_COPY` 인 JOB | 55 |
+| `REWRITE_BRAND_COPY` 계열 JOB | 55 = 정정 대상 **51** · 치환 보류 **3** · 원문 제목 전용 **1** |
 
 ⚠️ **"MANUAL_REVIEW 159건(JOB 131 포함)" 은 틀린 표기다.** MANUAL_REVIEW 안의 JOB 은 **136**이다.
 
@@ -304,8 +317,9 @@ prisma/schema.prisma  model JobDetail
 
 | # | 항목 | 선택지 |
 |---|---|---|
-| **1** | **REWRITE_BRAND_COPY 59건 정정 범위** — 브랜드 규칙 직접 위반 | 전면 정정 / 단계적 |
+| **1** | **REWRITE_BRAND_COPY 51건 정정 적용 여부** — 정정안 작성 완료(DB write 미실행) | 적용 / 단계적 / 보류 |
 | **2** | REWRITE 중 원문 공식 직함(title 10건) | 원문 보존 / 치환 |
+| **2-b** | **치환 보류 5건** — `실버타운` 1(대체어 부재) + 상호 부분 일치 4 | 현행 유지 / 개별 판단 |
 | **3** | **PRESERVE_CANDIDATE 247건 확정 여부** — 지금은 분량 외 근거가 없다 | 검색 유입 측정 후 재판정 / 현행 유지 |
 | **4** | **MANUAL_REVIEW 159건**(그중 **JOB 136**) 기준 수립 | `expiresAt` 운영 시작 여부 · 공고 만료 기준 |
 | **5** | **시드 계정 글 21건의 `source` 정합성** — `source=USER` 로 회원 글처럼 보인다 | 그대로 / source 표기 정정 / 비공개 |
