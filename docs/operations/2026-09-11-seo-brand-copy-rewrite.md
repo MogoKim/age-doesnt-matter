@@ -4,7 +4,7 @@
 > production write · Post 변경 · 배포 · merge **0건**.
 >
 > 기준 main `137cb0a5` · 대상 재조회 **2026-09-11** (59/59 최신 production 값 대조, 불일치 **0**)
-> 선행: [2차 분류](./2026-09-11-review-tier2.md) · 전건 표: [`data/2026-09-11-seo-brand-copy-rewrite.csv`](./data/2026-09-11-seo-brand-copy-rewrite.csv) (**59행 · 23열**)
+> 선행: [2차 분류](./2026-09-11-review-tier2.md) · 전건 표: [`data/2026-09-11-seo-brand-copy-rewrite.csv`](./data/2026-09-11-seo-brand-copy-rewrite.csv) (**59행 · 24열**)
 
 ---
 
@@ -29,26 +29,31 @@
 | | 건수 |
 |---|---:|
 | 대상 행 | **59** |
-| **수정 대상** — `seoDescription` | **51행 · 51필드** (전부 JOB) |
-| 수정 대상 없음 — 보존만 | **8행** |
+| **적용 대상**(`applyEligible = true`) — `seoDescription` | **50행 · 50필드** (전부 JOB) |
+| 적용 대상 아님(`applyEligible = false`) | **9행** |
 | 금지 표현 출현 총계 | **93** |
 | 그중 **BRAND_COPY** (정정 대상) | **74** |
 | 그중 **보존**(SOURCE_TITLE_COPY·OFFICIAL_*) | **19** |
-| 정정 후 **BRAND_COPY 잔존** | **6 출현 / 5행** — 전건 사람 검토 대기 |
-| 사실 보존 검증 불일치 | **0** (51필드 × 10축) |
+| 정정 후 **BRAND_COPY 잔존** | **6 출현 / 5행** — 사람 검토 대기, **전건 적용 대상에서 제외** |
+| 사실 보존 검증 불일치 | **0** (제안 51필드 × 10축) |
 
 **`seoTitle` 수정은 0건이다.** 59건 전부 `seoTitle` 의 금지 표현이 원문 공고 제목 복사 구간 안에
 있거나(SOURCE_TITLE_COPY) 공식 제도명이었다. 원문을 바꾸지 않는다는 원칙상 손대지 않았다.
 
-### `rewriteDecision` 4분류 (CSV 열)
+### `rewriteDecision` 5분류 × `applyEligible` (CSV 열)
 
-| 값 | 건수 | 뜻 |
-|---|---:|---|
-| `REWRITE_BRAND_COPY` | **51** | 우나어 카피 → 정정안 있음 |
-| `BRAND_COPY_HOLD_REVIEW` | **4** | 우나어 카피지만 **대체어 확정 불가** → 보류(§4) |
-| `OFFICIAL_NAME_ONLY_REVIEW` | **3** | 정부 공식 제도명만 등장 → 전건 보존 |
-| `SOURCE_TITLE_ONLY_REVIEW` | **1** | 원문 제목 복사 구간에만 등장 → 수정 필드 없음 |
-| **합계** | **59** | |
+| 값 | `applyEligible` | 건수 | 뜻 |
+|---|---|---:|---|
+| `REWRITE_BRAND_COPY` | **true** | **50** | 정정안이 있고 **BRAND_COPY 잔존 0** → 적용 대상 |
+| `BRAND_COPY_PARTIAL_HOLD_REVIEW` | false | **1** | 정정안은 있으나 **미승인 금지 표현이 남는다** → 제외(§4) |
+| `BRAND_COPY_HOLD_REVIEW` | false | **4** | 대체어 확정 불가 → 치환 보류(§4) |
+| `OFFICIAL_NAME_ONLY_REVIEW` | false | **3** | 정부 공식 제도명만 등장 → 전건 보존 |
+| `SOURCE_TITLE_ONLY_REVIEW` | false | **1** | 원문 제목 복사 구간에만 등장 → 수정 필드 없음 |
+| **합계** | | **59** | `true` **50** / `false` **9** · HOLD 계열 **5** |
+
+> 🔴 **제안 문구가 있다는 것과 적용해도 된다는 것은 다르다.** `BRAND_COPY_PARTIAL_HOLD_REVIEW` 1행은
+> 다른 구절의 정정안이 나와 있지만 `시니어케어` 가 남는다. 그대로 쓰면 **승인되지 않은 금지 표현을
+> DB 에 기록**하게 되므로 **실행 입력에 넣지 않는다.** CSV 의 제안 열은 **참고용으로만** 남겼다.
 
 ---
 
@@ -132,6 +137,13 @@
 | `50대 여성 시니어 일자리` → `50대 여성 중장년 일자리` 로 중복 (1건) | `50대 여성 일자리` |
 | 같은 문구가 두 번 반복 (2건) | `1인 가구 이용자 돌봄` / `1인 가구 방문 돌봄` 으로 분리 |
 | `노인 케어 → 재가 돌봄` 이 앞 구절과 중복 (1건) | `방문 돌봄` |
+| 금지어를 뗀 뒤 **문법·의미가 어색**해짐 — `경기 복지 요양보호사` · `효목동 복지 일자리` · `서울 복지 일자리` · `복지 방문요양 일자리` (4건) | 새 일반명을 만들지 않고 **`노인복지` 구절을 삭제** → `경기 요양보호사` · `효목동 일자리` · `서울 일자리` · `방문요양 일자리` |
+| `경기도 화성 어르신 채용 → 돌봄 채용` 이 어색 (1건) | 구절 삭제 → `경기도 화성 채용` |
+| `어르신 복지 취업 → 복지 분야 취업` — `분야` 는 새로 만든 말 (1건) | `복지 취업` |
+| 같은 문장에 **`중장년` 이 두 번** (2건) | 원문에 이미 `중장년` 이 있으면 **접두를 새로 만들지 않는다** → `경기 고양 골프장 구인` · `위생용품 생산직 모집` |
+
+> 원칙: **금지어를 뗀 자리에 새 일반명을 채워 넣기보다, 불필요한 SEO 키워드 구절을 지운다.**
+> 회사·지역·급여·직무·시설·서비스 사실은 그대로 두고 키워드만 덜어낸다(§5 에서 10축 전수 검증).
 
 ---
 
@@ -139,13 +151,15 @@
 
 **가짜 일반명을 만들지 않기 위해 고치지 않았다.** CSV `residualBrandCopy` · `reviewReason` 열로 식별된다.
 
-| # | 보드 | 잔존 토큰 | 보류 사유 |
-|---|---|---|---|
-| 1 | MAGAZINE | `실버타운` | 금지어 없는 **일반 명칭이 실재하지 않는다**. 법정 용어는 `노인복지주택` 이라 `노인` 이 다시 들어간다. `노후 전용 주거단지` 같은 조어는 만들지 않았다 |
-| 2 | JOB | `실버케어` | 상호 `삼성재활실버케어` 의 부분 문자열 |
-| 3 | JOB | `실버케어` | 상호 `포그니 재활실버케어` 의 부분 문자열 |
-| 4 | JOB | `실버마을` | 상호 `사회복지법인삼농복지재단삼농실버마을` 의 부분 문자열 |
-| 5 | JOB | `시니어케어` | 상호 `브라보 시니어케어 강남센터` 의 부분 문자열 |
+| # | 보드 | `rewriteDecision` | 잔존 토큰 | 보류 사유 |
+|---|---|---|---|---|
+| 1 | MAGAZINE | `BRAND_COPY_HOLD_REVIEW` | `실버타운` | 금지어 없는 **일반 명칭이 실재하지 않는다**. 법정 용어는 `노인복지주택` 이라 `노인` 이 다시 들어간다. `노후 전용 주거단지` 같은 조어는 만들지 않았다 |
+| 2 | JOB | `BRAND_COPY_HOLD_REVIEW` | `실버케어` | 상호 `삼성재활실버케어` 의 부분 문자열 |
+| 3 | JOB | `BRAND_COPY_HOLD_REVIEW` | `실버케어` | 상호 `포그니 재활실버케어` 의 부분 문자열 |
+| 4 | JOB | `BRAND_COPY_HOLD_REVIEW` | `실버마을` | 상호 `사회복지법인삼농복지재단삼농실버마을` 의 부분 문자열 |
+| 5 | JOB | **`BRAND_COPY_PARTIAL_HOLD_REVIEW`** | `시니어케어` | 상호 `브라보 시니어케어 강남센터` 의 부분 문자열. **다른 구절(`독거 어르신 돌봄`·`독거노인 돌봄`)의 정정안은 있으나** 이 토큰이 남아 **적용 대상에서 제외**한다 |
+
+5번은 제안 문구가 **참고용으로만** CSV 에 남아 있다. `applyEligible = false` 이므로 실행 입력에 넣지 않는다.
 
 2~5번은 **상호를 가리키는 축약인지 일반 SEO 키워드인지 문서만으로 확정할 수 없다.**
 확정하려면 각 업체가 실제로 그 표현을 자기 이름으로 쓰는지 확인해야 한다 — 창업자 판단 영역이다.
@@ -193,27 +207,88 @@ JOB description = `seoDescription ?? 본문 첫 100자 + location + salary`)으�
 
 ---
 
-## 7. 🔒 적용 사전조건 — 불일치 행은 자동 중단
+## 7. 🔒 적용 사전조건 — fail-closed (전부 아니면 전무)
 
-이 CSV 를 실제 DB 에 적용할 때 **행 단위로 다음을 반드시 먼저 확인한다.**
+> **이 문서는 적용 절차의 명세다. 이 배치에서 적용 도구를 만들지도, 실행하지도 않았다.**
+
+**행별로 건너뛰고 나머지를 계속 쓰는 설계를 금지한다.** 일부만 반영된 중간 상태는
+어느 행이 옛 문구고 어느 행이 새 문구인지 알 수 없게 만들고, 재실행도 안전하지 않다.
+하나라도 전제가 깨지면 **아무것도 쓰지 않는다.**
+
+### 7-A. 실행 순서
 
 ```
-전제: rewriteDecision == 'REWRITE_BRAND_COPY' 인 행만 적용 대상이다.
+1. 입력 고정
+   대상 = CSV 에서 applyEligible == 'true' 인 행. 정확히 50행이어야 한다.
+   50 이 아니면 즉시 ABORT (mutation 0).
 
-행마다:
-  live = SELECT "seoTitle","seoDescription" FROM "Post" WHERE id = <csv.id>
-  IF live."seoTitle"       <> csv.currentSeoTitle        → 이 행 SKIP, 중단 로그
-  IF live."seoDescription" <> csv.currentSeoDescription  → 이 행 SKIP, 중단 로그
-  ELSE UPDATE "Post" SET "seoDescription" = csv.proposedSeoDescription WHERE id = <csv.id>
+2. 사전 조회 (write 전에 50건 전부 다시 읽는다)
+   live = prisma.post.findMany({
+     where:  { id: { in: targetIds } },
+     select: { id: true, seoTitle: true, seoDescription: true },
+   })
+
+3. 대조 — 하나라도 어긋나면 전체 ABORT (mutation 0)
+   a. live.length === 50                         (누락 0)
+   b. new Set(live.map(r => r.id)).size === 50   (중복 0)
+   c. 모든 id 가 targetIds 에 정확히 1:1 대응
+   d. 행마다 null-safe exact comparison:
+        (live.seoTitle       ?? null) === (csv.currentSeoTitle       || null)
+        (live.seoDescription ?? null) === (csv.currentSeoDescription || null)
+      - 정확 일치다. 공백·개행·유니코드 정규화를 하지 않는다.
+      - null 과 빈 문자열을 같다고 보지 않는다.
+
+4. 쓰기 — 위를 전부 통과한 뒤에만, 단일 트랜잭션 안에서
+   await prisma.$transaction(async (tx) => {
+     let affected = 0
+     for (const row of targets) {
+       const res = await tx.post.updateMany({
+         where: {                       // 조건을 한 번 더 건다 (낙관적 잠금)
+           id: row.id,
+           seoTitle: row.currentSeoTitle,
+           seoDescription: row.currentSeoDescription,
+         },
+         data: { seoDescription: row.proposedSeoDescription },
+       })
+       affected += res.count
+     }
+     if (affected !== 50) throw new Error(`ABORT: affected=${affected}, expected 50`)
+   })
+   - throw 하면 트랜잭션 전체가 rollback 된다 → mutation 0.
+   - raw SQL 을 쓰지 않는다 (프로젝트 규칙: Raw SQL 금지).
+   - seoTitle 은 어떤 경우에도 write 대상이 아니다.
+
+5. 사후 검증 (실행 후 반드시)
+   a. 50건을 다시 조회해 seoDescription 이 proposedSeoDescription 과 정확히 일치
+   b. seoTitle 이 실행 전과 동일 (변경 0)
+   c. generateMetadata 규칙으로 50건의 SEO title/description 을 재구성해
+      미승인 금지 표현 잔존 0 확인
+   d. 어느 하나라도 어긋나면 즉시 보고하고 후속 write 를 중단한다
 ```
 
-- 비교는 **정확 일치**다. 공백·개행 정규화 없이 문자열 그대로 비교한다.
-- `currentSeoTitleSha256_12` · `currentSeoDescriptionSha256_12` 열로 눈으로도 대조할 수 있다
-  (SHA-256 앞 12자, 측정 시각 `liveValueVerifiedAt = 2026-09-11`).
-- **불일치 행은 건너뛰고 중단 로그에 남긴다.** 값이 달라졌다는 것은 그 사이 누군가 고쳤거나
-  재수집이 덮어썼다는 뜻이므로, 이 정정안의 전제가 깨진 것이다. 덮어쓰면 안 된다.
-- `needsHumanReview = true` 5행과 `rewriteDecision != REWRITE_BRAND_COPY` 8행은 **적용 대상이 아니다.**
-- 적용은 **DB write 이므로 COO 에이전트 경로 + 창업자 승인**이 있어야 한다. 이 문서는 승인 요청이 아니다.
+### 7-B. ABORT 조건 (전부 mutation 0)
+
+| # | 조건 |
+|---|---|
+| 1 | 입력 행이 50이 아니다 |
+| 2 | 사전 조회 결과가 50건이 아니다 (**누락**) |
+| 3 | 조회 결과에 같은 `id` 가 둘 이상이다 (**중복**) |
+| 4 | `seoTitle` 이 `currentSeoTitle` 과 정확히 일치하지 않는 행이 하나라도 있다 |
+| 5 | `seoDescription` 이 `currentSeoDescription` 과 정확히 일치하지 않는 행이 하나라도 있다 |
+| 6 | 트랜잭션 안 실제 영향 행 합계가 50이 아니다 → **rollback** |
+
+값이 달라졌다는 것은 그 사이 누군가 고쳤거나 재수집이 덮어썼다는 뜻이다.
+**이 정정안의 전제가 깨진 것이므로 덮어쓰면 안 된다.** 다시 측정해 CSV 를 새로 만드는 것이 옳다.
+
+### 7-C. 대조 기준값
+
+- `currentSeoTitle` · `currentSeoDescription` 열이 비교 기준이다.
+- `currentSeoTitleSha256_12` · `currentSeoDescriptionSha256_12` 로 눈으로도 대조할 수 있다
+  (SHA-256 앞 12자, 측정 시각 `liveValueVerifiedAt = 2026-09-11`, 재대조 결과 drift **0**).
+- **`applyEligible = false` 9행은 어떤 경우에도 실행 입력에 넣지 않는다.**
+  그중 1행(`BRAND_COPY_PARTIAL_HOLD_REVIEW`)은 제안 열이 채워져 있으나 **참고용이다.**
+- 적용은 **DB write 이므로 COO 에이전트 경로 + 창업자 승인**이 있어야 한다.
+  이 문서는 승인 요청이 아니라 승인 시 따를 절차의 명세다.
 
 ---
 

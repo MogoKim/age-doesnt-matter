@@ -124,7 +124,7 @@ DAU·MAU·PV·SEO 클릭·색인 수는 **생존/유입 참고지표이지 목�
 | **완료** | R0 싱크 고정 · R1 로그인 소생 · R4 자동화 단순화 · R5 문서 단순화 · Next 16/React 19 전환 · 이미지 `q=80` 복구(#461) · 보안 업데이트(critical 0) · ops 타입 0 · **병렬 E 목록 SSR 복구**(2026-09-10 production 검증) · **R7 발행 도구**(구현 완료·종결) · **R3 콘텐츠 오염 폐기 실행**(2026-09-10 완료·불가역) · **R8 측정 체계 ⓐ**(#463·#464 배포 완료) · **글상세 #418 수정**(#465 production 검증) · **공개 콘텐츠 인벤토리·1차 분류**(846건, 2026-09-11) · **REVIEW 650 2차 분류**(2026-09-11) |
 | **부분 완료** | R2 네이버 신뢰(기술 PASS / 색인 0) · R6 코드·연동(패키지 의존성 감사 미착수) · **R8**(ⓐ 측정 완료 / ⓑ 성과 관찰 중) · **공개 콘텐츠 분류**(1차·2차 분류 완료 / 처분 실행 미착수) |
 | **실행 대기** | 없음 |
-| **미착수** | 브랜드 금지 표현 정정 **적용**(**실제 SEO 노출면 62건** — 우나어 자체 카피 59 중 **정정안 확정 51**, 보류 5, 정정안은 PR #468 작성 완료·DB write 0, §6-C) · Prisma schema ↔ DB FK 불일치 정정 · 공개 콘텐츠 처분 **실행** |
+| **미착수** | 브랜드 금지 표현 정정 **적용**(**실제 SEO 노출면 62건** — 우나어 자체 카피 59 중 **적용 대상 50**, 적용 제외 9, PR #468 merge 완료·DB write 0, §6-C) · Prisma schema ↔ DB FK 불일치 정정 · 공개 콘텐츠 처분 **실행** |
 | **종결** | **R7 발행 도구** — PR #455 merge 완료. **이후 콘텐츠 운영은 창업자 독자 영역**이라 Rescue 작업 목록에서 뺀다 |
 
 ---
@@ -146,9 +146,11 @@ DAU·MAU·PV·SEO 클릭·색인 수는 **생존/유입 참고지표이지 목�
 
 ### 남은 우선순위 (이 순서로 한다)
 
-1. **REWRITE_BRAND_COPY 51건 문구 정정 적용** — 브랜드 규칙 **직접 위반**이다.
+1. **REWRITE_BRAND_COPY 50건 문구 정정 적용** — 브랜드 규칙 **직접 위반**이다.
    **정정안 작성은 완료**(2026-09-11, PR #468 · DB write 0). 남은 것은 **적용 결정과 실행**이다.
-   대상은 59 → **51**로 줄었다(출처 분리: 공식 제도명 3 · 원문 제목 전용 1 · 치환 보류 4 제외)
+   적용 대상은 59 → **50**(`applyEligible=true`). 제외 9 = HOLD 계열 **5** · 공식 제도명 전용 **3** ·
+   원문 제목 전용 **1**. 적용 절차는 **fail-closed**(전건 재조회 → 정확 일치 → 단일 트랜잭션,
+   하나라도 어긋나면 mutation 0)로 문서에 명세돼 있다
 2. **공개 콘텐츠 처분 실행 결정** — 2차 분류 완료. `PRESERVE_CANDIDATE` 247 확정 여부와
    `MANUAL_REVIEW` 159(JOB **136**) 기준이 창업자 결정이다(§11-3)
 3. 🔴 **Quarantine 알림 경로 복구** — `SLACK_WEBHOOK_LOG` 부재(§7)
@@ -223,9 +225,10 @@ A-3 폐기에서 FK 사각으로 `GuestLike` 82건이 cascade 손실됐고 `Like
   🔴 시드 글 21건이 `source=USER` 로 남아 **회원 글처럼 보이는 정합성 문제**는 별도로 남는다.
 - **REVIEW 650 2차 분류 완료**(2026-09-11) — 보호축 `protectedFromHideDelete` **32** ·
   조치축 PRESERVE **31** · PRESERVE_CANDIDATE **247** · KEEP_NOINDEX **153** · MANUAL_REVIEW **159** ·
-  REWRITE_BRAND_COPY **51** · BRAND_COPY_HOLD_REVIEW **4** · OFFICIAL_NAME_ONLY_REVIEW **3** ·
-  SOURCE_TITLE_ONLY_REVIEW **1** · REWRITE_AUTO_COMPOSED **1** · 상태축 `currentlyGoogleNoindex` **180**.
-  (REWRITE_BRAND_COPY 는 2026-09-11 **출처 분리로 59 → 51**. 합계는 650 그대로다)
+  REWRITE_BRAND_COPY **50** · BRAND_COPY_PARTIAL_HOLD_REVIEW **1** · BRAND_COPY_HOLD_REVIEW **4** ·
+  OFFICIAL_NAME_ONLY_REVIEW **3** · SOURCE_TITLE_ONLY_REVIEW **1** · REWRITE_AUTO_COMPOSED **1** ·
+  상태축 `currentlyGoogleNoindex` **180**.
+  (기존 REWRITE_BRAND_COPY 59 → 출처 분리·적용 가능성 분리로 **적용 대상 50**. 합계는 650 그대로다)
   **HIDE·DELETE 권고 0건.** 상세: [`2026-09-11-review-tier2.md`](./2026-09-11-review-tier2.md)
   🔴 1차 분류의 **HIDE 60건 권고는 철회**됐다 — 대상 152건 중 **151건이 이미 Google noindex** 였고,
   HIDE 는 색인면만이 아니라 **네이버 포함 전 채널**에서 내리는 별개 고위험 조치다.
@@ -480,7 +483,7 @@ PR #466 을 포함하면 열린 PR 은 1건이다.
 
 | 순위 | 배치 | 성격 | 상태 |
 |---|---|---|---|
-| **1** | **REWRITE_BRAND_COPY 51건 문구 정정 적용** | 정정안 작성 완료(PR #468 · DB write 0). 적용은 창업자 결정 | ⏳ 승인 대기 |
+| **1** | **REWRITE_BRAND_COPY 50건 문구 정정 적용** | 정정안·fail-closed 절차 완료(PR #468 merge · DB write 0). 적용은 창업자 결정 | ⏳ 승인 대기 |
 | **2** | 공개 콘텐츠 처분 **실행**(B-2) | 2차 분류 완료. 창업자 결정 대기 | 대기 |
 | **4** | 🔴 **Quarantine 알림 경로 복구** | `SLACK_WEBHOOK_LOG` 부재로 초과 알림이 사라진다 | 신규 발견 |
 | **5** | R8 성과 관찰(ⓑ) | 측정은 끝났다. v2 누적 후 CTA별 전환 해석 | 관찰 |
@@ -610,9 +613,9 @@ page=2 가 12건 미만인 곳은 **글 자체가 그만큼뿐**이다(life2 23�
 |---|---|---|---|
 | ~~1~~ | ~~PR #454 폐기 **실행 지시**~~ | **2026-09-10 완료** — 창업자 최종 승인 후 실행·검증 종결 | 없음 |
 | **2** | Supabase **백업 만료 시점 콘솔 재확인** — 보존 기간 **7일**(창업자 확인). 삭제 전 백업의 실제 만료는 **약 2026-09-17**로 추정된다. 🔴 Claude 는 콘솔 접근 권한이 없어 **검증하지 못했다** | 콘솔 접근 권한 | ① **"백업에서도 소멸"을 말할 수 없음** — 폐기는 라이브 DB 기준이고 daily backup 은 남아 있다 ② 보존 기간이 확정되기 전까지 **폐기 도구를 제거할 수 없다**(복원 시 필수 재실행 게이트). ※ **전체 복원 자체는 하지 않기로 결정**됐다(2026-09-10, facts §9-H) — 이 항목은 "언제 소멸하나"와 "도구 제거 시점"만 막고 있다 |
-| **3** | **공개 콘텐츠 처분 실행** — 1차 846건 + **REVIEW 650 2차 분류 완료**(2026-09-11). 조치축 `PRESERVE 31 · PRESERVE_CANDIDATE 247 · KEEP_NOINDEX 153 · MANUAL_REVIEW 159 · REWRITE_BRAND_COPY 51 · BRAND_COPY_HOLD_REVIEW 4 · OFFICIAL_NAME_ONLY_REVIEW 3 · SOURCE_TITLE_ONLY_REVIEW 1 · REWRITE_AUTO_COMPOSED 1` = **650** · **HIDE/DELETE 권고 0** | 콘텐츠 정책 판단 | B-2 실행 전체 |
-| **3-b** | **SEO 노출면 금지 표현 62건** 정정 적용 — 우나어 자체 SEO 카피 59건 중 **정정안이 나온 것은 51건**. 원문 공식 직함은 title 10건뿐이고 원문은 건드리지 않았다. 정정안: PR #468(DB write 0) | 적용 여부·속도 | A-2 |
-| **3-b2** | **치환 보류 5건** — `실버타운` 1(금지어 없는 일반 명칭 부재) + 상호 부분 일치 4(`실버케어`·`실버마을`·`시니어케어`). 가짜 일반명을 만들지 않기로 해 보류했다 | 개별 문구 판단 | A-2 |
+| **3** | **공개 콘텐츠 처분 실행** — 1차 846건 + **REVIEW 650 2차 분류 완료**(2026-09-11). 조치축 `PRESERVE 31 · PRESERVE_CANDIDATE 247 · KEEP_NOINDEX 153 · MANUAL_REVIEW 159 · REWRITE_BRAND_COPY 50 · BRAND_COPY_PARTIAL_HOLD_REVIEW 1 · BRAND_COPY_HOLD_REVIEW 4 · OFFICIAL_NAME_ONLY_REVIEW 3 · SOURCE_TITLE_ONLY_REVIEW 1 · REWRITE_AUTO_COMPOSED 1` = **650** · **HIDE/DELETE 권고 0** | 콘텐츠 정책 판단 | B-2 실행 전체 |
+| **3-b** | **SEO 노출면 금지 표현 62건** 정정 적용 — 우나어 자체 SEO 카피 59건 중 **적용 대상은 50건**(`applyEligible=true`). 원문 공식 직함은 title 10건뿐이고 원문은 건드리지 않았다. 정정안: PR #468(DB write 0) | 적용 여부·속도 | A-2 |
+| **3-b2** | **보류 5건**(HOLD 계열) — `실버타운` 1(금지어 없는 일반 명칭 부재) + 상호 부분 일치 4(`실버케어`×2·`실버마을`·`시니어케어`). 가짜 일반명을 만들지 않기로 해 보류했다. 그중 1건은 제안문이 있으나 미승인 금지 표현이 남아 **적용 제외** | 개별 문구 판단 | A-2 |
 | **3-c** | **시드 계정 글 21건의 `source` 정합성** — 정체는 종결됐다(시드 21 + 익명화 탈퇴 실회원 1). `source=USER` 로 회원 글처럼 보이는 것을 고칠지 | 데이터 표기 판단 | 공개 면 신뢰 |
 | **3-d** | **hard delete 검토 여부** — 검토 시 **대상별 dependency closure 전수 대조가 선행**(A-3 FK 사각 재발 방지) | 불가역 · 데이터 손실 위험 | 삭제 경로 전체 |
 | **4** | `DIRECT_URL` 인증 정정 | 운영 자격증명 | Prisma 경로 DB 작업 전부 |
