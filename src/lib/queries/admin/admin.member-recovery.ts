@@ -5,7 +5,6 @@ import { getRetentionQuadrants, type QuadrantRetention } from './admin.retention
 import {
   SIGNUP_BANNER_CTA_TYPES,
   SIGNUP_BANNER_MEASUREMENT_VERSION,
-  R8_V2_DEPLOYED_AT,
   type SignupBannerCtaType,
 } from '@/lib/telemetry/signup-banner-cta'
 import { KAKAO_CLICK_EXEMPTION } from '@/lib/telemetry/event-rate-limit'
@@ -210,8 +209,6 @@ export interface BannerCtaV2Funnel {
   measurementVersion: string
   /** 이 관측 창 안에서 v2 이벤트가 처음 보인 시각(ISO). `null` = 창 안에 v2 이벤트가 없다 */
   firstSeenInWindowAt: string | null
-  /** 코드에 기록된 production 배포 시각. merge·배포 후 채워 넣는다. `null` = 아직 기록 안 됨 */
-  recordedDeployedAt: string | null
   /** v2 이벤트가 아직 없으면 `NOT_COLLECTED` — **0% 가 아니라 '모른다'** 다 */
   status: CollectionStatus
   rows: BannerCtaTypeRow[]
@@ -235,9 +232,22 @@ export interface BannerCtaHistorical {
 /**
  * 사이트 전체의 `kakao_button_click` — **배너 클릭이 아니다.**
  * 로그인 화면·게스트 댓글 카드 등 여러 표면에서 발생하므로 배너 전환에 귀속하지 않고 참고값으로만 둔다.
+ *
+ * 🔴 v2 와 미버전을 **하나의 7일/30일 숫자로 합치지 않는다.**
+ *    이 이벤트는 r8-v2 부터 rate limit 면제라 그 이전 값은 429 로 유실된 **하한값**이다.
+ *    배포 직후에도 캐시된 구버전 클라이언트가 미버전 이벤트를 계속 보내므로
+ *    달력 시각이 아니라 **이벤트에 실린 `measurement_version`** 으로 가른다(보수적 분리).
+ *    그래서 합계 필드를 아예 두지 않는다 — 두면 누군가 반드시 더한다.
  */
 export interface SiteWideKakaoClick {
-  visitors: number
+  /** `measurement_version=r8-v2` 를 달고 온 클릭 방문자 — rate limit 면제가 적용된 구간 */
+  v2Visitors: number
+  /** 미버전 클릭 방문자(배포 이전 + 캐시된 구버전 클라이언트). **하한값**이다 */
+  historicalVisitors: number
+  /** v2 가 아직 하나도 없으면 `NOT_COLLECTED` — 0 이 아니라 '모른다' */
+  status: CollectionStatus
+  /** 이 관측 창 안에서 v2 가 처음 보인 시각(ISO). 배포 시각 상수 대신 쓰는 정본 */
+  firstSeenInWindowAt: string | null
   note: string
 }
 
@@ -469,15 +479,20 @@ async function computeMemberRecovery(windowDays: number): Promise<MemberRecovery
   let v2ClickedWithoutV2Shown = 0
   for (const id of v2ClickedAll.keys()) if (!v2ShownAll.has(id)) v2ClickedWithoutV2Shown++
 
+  // 사이트 전체 카카오 클릭도 같은 방식으로 버전 분리한다 — **합산하지 않는다.**
+  const kakaoBtnV2 = await visitorSpans(v2Where('kakao_button_click'), internal)
+
   const v2FirstMs = Math.min(
     ...[...v2ShownAll.values(), ...v2ClickedAll.values()].map((sp) => sp.first),
   )
   const v2Collected = v2ShownAll.size > 0 || v2ClickedAll.size > 0
 
+  const kakaoFirstMs = Math.min(...[...kakaoBtnV2.values()].map((sp) => sp.first))
+  const kakaoFirstAt = Number.isFinite(kakaoFirstMs) ? new Date(kakaoFirstMs).toISOString() : null
+
   const bannerCtaV2: BannerCtaV2Funnel = {
     measurementVersion: SIGNUP_BANNER_MEASUREMENT_VERSION,
     firstSeenInWindowAt: Number.isFinite(v2FirstMs) ? new Date(v2FirstMs).toISOString() : null,
-    recordedDeployedAt: R8_V2_DEPLOYED_AT,
     status: v2Collected ? 'COLLECTED' : 'NOT_COLLECTED',
     rows: v2Rows,
     shownWithoutCtaType: v2ShownWithoutCtaType,
@@ -796,9 +811,10 @@ async function computeMemberRecovery(windowDays: number): Promise<MemberRecovery
       message:
         '사이트 전체 `kakao_button_click` 은 r8-v2 부터 `api/events` rate limit **면제** 대상이다. ' +
         `사유: ${KAKAO_CLICK_EXEMPTION.reason} ` +
-        '🔴 **계측 단절 시점**: 면제 반영 배포 ' +
-        `${KAKAO_CLICK_EXEMPTION.effectiveFrom ?? '(배포 후 기록 예정 — 아직 미기록)'} 이전 값은 하한값이므로 ` +
-        '이후 구간과 같은 계열로 합산하지 마라. 배너 클릭(`signup_banner_clicked`)은 원래 면제라 영향이 없다.',
+        `🔴 **단절 기준은 달력 시각이 아니라 ${KAKAO_CLICK_EXEMPTION.separatedBy}** 다 — ` +
+        '배포 직후에도 캐시된 구버전 클라이언트가 미버전 이벤트를 계속 보내므로 시각으로 자르면 섞인다. ' +
+        '미버전 구간은 429 로 유실된 **하한값**이라 v2 와 하나의 숫자로 합산하지 않는다. ' +
+        '배너 클릭(`signup_banner_clicked`)은 원래 면제라 영향이 없고, 여기에 귀속하지도 않는다.',
     },
     {
       key: 'exposure_cta_unknown',
@@ -886,8 +902,15 @@ async function computeMemberRecovery(windowDays: number): Promise<MemberRecovery
     bannerCtaV2,
     bannerCtaHistorical,
     siteWideKakaoClick: {
-      visitors: kakaoBtn.size,
-      note: '배너 클릭이 아니다 — 로그인 화면·게스트 댓글 카드 등 사이트 전체의 카카오 버튼. 배너 전환에 귀속하지 않는다.',
+      v2Visitors: kakaoBtnV2.size,
+      // 🔴 집합 차 — 같은 방문자가 두 버전을 다 냈으면 v2 쪽으로만 센다(중복 계상 방지).
+      historicalVisitors: kakaoBtn.size - kakaoBtnV2.size,
+      status: kakaoBtnV2.size > 0 ? 'COLLECTED' : 'NOT_COLLECTED',
+      firstSeenInWindowAt: kakaoFirstAt,
+      note:
+        '배너 클릭이 아니다 — 로그인 화면·게스트 댓글 카드 등 사이트 전체의 카카오 버튼. 배너 전환에 귀속하지 않는다. ' +
+        'r8-v2 와 미버전은 **합산하지 않는다** — 미버전 구간은 rate limit 면제 이전이라 429 로 유실된 하한값이고, ' +
+        '배포 뒤에도 캐시된 구버전 클라이언트가 미버전 이벤트를 보내므로 시각이 아니라 이벤트 버전으로 가른다.',
     },
     signupEventCoverage: {
       events: signup.size,

@@ -39,15 +39,23 @@
 5. **rate limit 면제** — 아래 §4.
 6. **`signup_banner_eligible` 판정** — 아래 §5.
 
-## 3. 노출 시점 CTA 판정의 함정 (ref 를 쓴 이유)
+## 3. 노출 시점 CTA 판정의 함정 (ref 를 **판정 effect 안에서** 갱신하는 이유)
 
-`tryFire` 는 `[pathname, isLoggedIn, status, isTWA, isCapacitor]` effect 안에서 만들어진다.
-`currentEnv`·`isIOS` 는 마운트 후 별도 effect 에서 확정되는 **state** 이고, 그 변경으로는
-타이머 effect 가 재실행되지 않는다(재실행하면 60초 백스톱이 리셋돼 노출 타이밍이 밀린다).
+`tryFire` 는 `[pathname, isLoggedIn, status, isTWA, isCapacitor]` effect 안에서 만들어지고,
+`currentEnv`·`isIOS`·`variant` 변경으로는 재생성되지 않는다(재생성하면 60초 백스톱이 리셋돼 노출 타이밍이 밀린다).
+그래서 `tryFire` 는 state 가 아니라 ref 를 읽어야 한다.
 
-따라서 `tryFire` 가 state 를 그대로 읽으면 **마운트 첫 렌더의 초기값**(`android-chrome` / `false`)에 고정돼
-iOS·인앱 사용자의 노출이 전부 `kakao_oauth` 로 잘못 기록된다.
-기존 `inappRef` 와 같은 이유로 `envRef` · `isIOSRef` 를 두었다.
+**그런데 "state 를 별도 effect 에서 ref 로 복사"하면 그것만으로는 부족하다.**
+React 는 한 flush 의 passive effect 를 **전부 실행한 뒤에** setState 재렌더를 처리한다.
+따라서 마운트 flush 안의 복사 effect 는 **초기값**(`android-chrome` / `false` / `''`)을 복사한다.
+그 사이에 `tryFire` 가 불리면 — 뒤로가기 스크롤 복원으로 브라우저가 같은 태스크에서 `scroll` 을 전달하거나,
+페이지가 짧아 스크롤 임계치가 곧바로 충족되면 —
+**iOS·인앱·app_card 노출이 전부 `kakao_oauth` 로 오기록된다.**
+
+→ `detectEnv()`·`isIOSUserAgent()`·variant 를 **판정하는 그 effect 안에서 ref 를 먼저 동기 갱신**하고
+state 는 그 뒤에 갱신한다(state 는 렌더용). 타이머·노출 조건·CTA UX 는 그대로다.
+회귀 방지는 소스 문자열이 아니라 **행동 테스트**(`src/__tests__/signup-banner-mount-race.test.tsx`)로 잠근다 —
+스크롤 리스너가 등록되는 순간 핸들러를 동기 호출해 경합 창을 그대로 재현한다.
 
 ## 4. `kakao_button_click` rate limit 면제 — 이유와 계측 단절 시점
 
@@ -55,12 +63,18 @@ iOS·인앱 사용자의 노출이 전부 `kakao_oauth` 로 잘못 기록된다.
 `/api/events` 면제 목록에 없었다. `page_view` 와 같은 버킷(`event:ip`, max 30)을 써서
 같은 IP 에서 글을 여럿 보고 로그인을 누른 방문자의 클릭이 **429 로 조용히 사라졌다.**
 
-**단절 시점.** 면제가 반영된 배포 시각 **이전 구간의 값은 하한값**이다.
-이후 구간과 **같은 계열로 합산하면 안 된다.**
+**단절 기준 — 달력 시각이 아니라 이벤트 버전.** 면제 이전 구간의 값은 429 로 유실된 **하한값**이라
+이후 구간과 **같은 숫자로 합산하면 안 된다.** 그런데 배포 시각으로 자르면 틀린다 —
+배포 직후에도 **캐시된 구버전 클라이언트**가 한동안 미버전 이벤트를 계속 보내기 때문이다.
 
-- 코드 기록 위치: `KAKAO_CLICK_EXEMPTION.effectiveFrom` (`src/lib/telemetry/event-rate-limit.ts`)
-- 현재 값: `null` = **아직 기록되지 않음**(배포 전이라는 뜻이 아니다)
-- 🔔 merge·production 배포 후 실제 배포 시각을 채워 넣는다
+- 분리 기준: 이벤트에 `measurement_version=r8-v2` 가 실렸는지 **하나뿐**(보수적 분리)
+- `kakao_button_click` 도 공용 빌더 `buildKakaoClickTelemetry` 를 통해 이 버전을 싣는다
+- 어드민 `siteWideKakaoClick` 은 `v2Visitors` / `historicalVisitors` 로 **갈라서** 보여주고
+  **합계 필드를 두지 않는다**(두면 누군가 반드시 더한다)
+- v2 가 0 이면 `status = NOT_COLLECTED` — 0% 가 아니라 '모른다'
+- "언제부터 v2 가 들어왔나"의 정본은 **실제 최초 관측 시각**(`firstSeenInWindowAt`)이다
+- 🚫 **배포 시각을 코드 상수로 되기록하지 않는다** — 계측 배포 뒤 또 한 번의 PR·재배포를 요구하게 된다.
+  운영 기록이 필요하면 이 문서에만 남긴다
 - 어드민은 `dataQuality.kakao_click_rate_limit_exempt` 로 이 경고를 항상 표시한다
 
 **일반 반복 이벤트(`page_view` 등)의 rate limit 은 그대로 유지한다.**
@@ -83,9 +97,16 @@ fire-and-forget POST 다. `trackEvent` 는 `sendBeacon` 기반이므로 **DB `cr
 
 ## 6. 배포 후 확인 순서
 
-1. `KAKAO_CLICK_EXEMPTION.effectiveFrom` 과 `R8_V2_DEPLOYED_AT` 에 실제 배포 시각 기록
-2. `/admin/member-recovery` → "CTA별 전환 — r8-v2" 카드
+**코드에 기록할 것은 없다.** 배포 후 별도 PR·재배포가 필요한 후속 작업은 이 PR 로 제거했다.
+
+1. `/admin/member-recovery` → "CTA별 전환 — r8-v2" 카드
    - `status` 가 `NOT_COLLECTED` → 아직 v2 노출이 없다. **0% 가 아니라 '모른다'** 다
+   - `v2 최초 관측(창 내)` 이 곧 계측 경계의 정본이다
    - `cta_type 없는 v2 노출` 이 0 이 아니면 → 빌더를 안 거친 경로가 남아 있다(계측 결함)
-   - `v2 노출 없는 v2 클릭(경계)` 은 배포 경계를 걸친 방문자다. 분자로 쓰지 않는다
+   - `v2 노출 없는 v2 클릭(경계)` 은 버전 경계를 걸친 방문자다. 분자로 쓰지 않는다
+2. 사이트 전체 `kakao_button_click` 은 `r8-v2` 와 `미버전` 두 줄로 본다. **더하지 않는다.**
+   미버전 줄은 캐시된 구버전 클라이언트가 남아 있는 동안 계속 늘어날 수 있다(정상).
 3. v2 노출이 충분히 쌓인 뒤에야 CTA별 전환율을 해석한다. 그 전에는 판정하지 않는다
+
+> 운영 기록용으로 실제 production 배포 시각이 필요하면 **이 문서에만** 적는다(코드 상수로 되돌리지 않는다).
+> - production 배포 시각: _(merge 후 기입)_

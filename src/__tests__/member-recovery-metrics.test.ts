@@ -254,7 +254,9 @@ describe('[R8-2] 1단계 퍼널 — 내부 세션과 봇을 분모에서 뺀다'
     // s2(kakao_oauth) + s3(app_install) = 배너 클릭 2명. s1 의 kakao_button_click 은 배너가 아니다.
     expect(d.signupFunnel.steps.find((s) => s.key === 'banner_cta')?.visitors).toBe(2)
     expect(d.bannerCta.byType).toMatchObject({ kakao_oauth: 1, app_install: 1 })
-    expect(d.siteWideKakaoClick.visitors).toBe(1)
+    // 미버전 이벤트라 historical 쪽에 잡힌다 — v2 와 합산하지 않는다
+    expect(d.siteWideKakaoClick.historicalVisitors).toBe(1)
+    expect(d.siteWideKakaoClick.v2Visitors).toBe(0)
   })
 
   it('전환마다 분모·분자를 함께 돌려준다', async () => {
@@ -770,7 +772,7 @@ describe('[R8-P3-2] 배너 반응은 CTA 전체가 먼저다', () => {
     const d = await run(30)
     const c = d.signupFunnel.conversions.find((x) => x.key === 'exposure_to_banner_cta')!
     expect(c.numer).toBe(0)
-    expect(d.siteWideKakaoClick.visitors).toBe(1) // 참고값으로만 남는다
+    expect(d.siteWideKakaoClick.historicalVisitors).toBe(1) // 참고값으로만 남는다
   })
 
   it('과거 signup_banner_shown 에 cta_type 이 없다는 한계를 명시한다', async () => {
@@ -984,7 +986,7 @@ describe('[R8-V2-4] 사이트 전체 카카오 클릭은 v2 배너 전환에 귀
     const d = await run(30)
     const kakao = d.bannerCtaV2.rows.find((r) => r.ctaType === 'kakao_oauth')!
     expect(kakao.clickedVisitors).toBe(0)
-    expect(d.siteWideKakaoClick.visitors).toBe(1)
+    expect(d.siteWideKakaoClick.historicalVisitors).toBe(1)
   })
 
   it('rate limit 면제 이후 사이트 전체 카카오 클릭의 계측 단절 시점을 알린다', async () => {
@@ -993,5 +995,70 @@ describe('[R8-V2-4] 사이트 전체 카카오 클릭은 v2 배너 전환에 귀
     const note = d.dataQuality.find((q) => q.key === 'kakao_click_rate_limit_exempt')
     expect(note).toBeTruthy()
     expect(note!.message).toMatch(/면제/)
+  })
+})
+
+describe('[R8-V2-5] 사이트 전체 카카오 클릭 — v2 와 미버전을 하나의 숫자로 합치지 않는다', () => {
+  it('버전별로 갈라서 센다 — 합계 필드는 존재하지 않는다', async () => {
+    seedUsers()
+    db.events = [
+      { eventName: 'kakao_button_click', sessionId: 'new1', isBot: false, createdAt: ago(2 * DAY), properties: { ...V2, from: 'login_page' } },
+      { eventName: 'kakao_button_click', sessionId: 'new2', isBot: false, createdAt: ago(2 * DAY), properties: { ...V2, from: 'home_signup_card' } },
+      // 🔴 배포 뒤에도 캐시된 구버전 클라이언트가 보내는 미버전 이벤트
+      { eventName: 'kakao_button_click', sessionId: 'old1', isBot: false, createdAt: ago(1 * DAY), properties: { from: 'login_page' } },
+      { eventName: 'kakao_button_click', sessionId: 'old2', isBot: false, createdAt: ago(6 * DAY) },
+    ]
+    const d = await run(30)
+    expect(d.siteWideKakaoClick.v2Visitors).toBe(2)
+    expect(d.siteWideKakaoClick.historicalVisitors).toBe(2)
+    // 합계를 만들 수 있는 필드가 있으면 누군가 반드시 더한다 — 아예 두지 않는다
+    expect(Object.keys(d.siteWideKakaoClick)).not.toContain('visitors')
+    expect(Object.keys(d.siteWideKakaoClick)).not.toContain('total')
+  })
+
+  it('v2 이벤트가 0 이면 0% 가 아니라 미수집이다', async () => {
+    seedUsers()
+    db.events = [
+      { eventName: 'kakao_button_click', sessionId: 'old1', isBot: false, createdAt: ago(2 * DAY), properties: { from: 'login_page' } },
+    ]
+    const d = await run(30)
+    expect(d.siteWideKakaoClick.status).toBe('NOT_COLLECTED')
+    expect(d.siteWideKakaoClick.v2Visitors).toBe(0)
+    expect(d.siteWideKakaoClick.firstSeenInWindowAt).toBeNull()
+    expect(d.siteWideKakaoClick.historicalVisitors).toBe(1)
+  })
+
+  it('v2 가 도착하면 최초 관측 시각이 정본이다 — 배포 시각 상수를 쓰지 않는다', async () => {
+    seedUsers()
+    db.events = [
+      { eventName: 'kakao_button_click', sessionId: 'n1', isBot: false, createdAt: ago(4 * DAY), properties: { ...V2, from: 'login_page' } },
+      { eventName: 'kakao_button_click', sessionId: 'n2', isBot: false, createdAt: ago(2 * DAY), properties: { ...V2, from: 'login_page' } },
+    ]
+    const d = await run(30)
+    expect(d.siteWideKakaoClick.status).toBe('COLLECTED')
+    expect(d.siteWideKakaoClick.firstSeenInWindowAt).toBe(new Date(NOW - 4 * DAY).toISOString())
+  })
+
+  it('v2 카카오 클릭을 배너 CTA 분자로 귀속하지 않는다', async () => {
+    seedUsers()
+    db.events = [
+      { eventName: 'signup_banner_shown', sessionId: 'v1', isBot: false, createdAt: ago(3 * DAY), properties: { ...V2, cta_type: 'kakao_oauth' } },
+      // 같은 방문자·같은 버전이어도 배너 CTA 가 아니다
+      { eventName: 'kakao_button_click', sessionId: 'v1', isBot: false, createdAt: ago(2 * DAY), properties: { ...V2, from: 'login_page' } },
+    ]
+    const d = await run(30)
+    const kakao = d.bannerCtaV2.rows.find((r) => r.ctaType === 'kakao_oauth')!
+    expect(kakao.shownVisitors).toBe(1)
+    expect(kakao.clickedVisitors).toBe(0)
+    expect(d.bannerCta.anyVisitors).toBe(0)
+    expect(d.siteWideKakaoClick.v2Visitors).toBe(1)
+  })
+
+  it('어드민에 배포 시각 상수를 되기록하는 필드가 없다', async () => {
+    seedUsers()
+    const d = await run()
+    expect(Object.keys(d.bannerCtaV2)).not.toContain('recordedDeployedAt')
+    // 경계 정본은 실제 최초 관측 시각이다
+    expect(Object.keys(d.bannerCtaV2)).toContain('firstSeenInWindowAt')
   })
 })

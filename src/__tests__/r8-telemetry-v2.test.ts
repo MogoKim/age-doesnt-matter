@@ -135,12 +135,14 @@ describe('kakao_button_click 과 배너 클릭의 분리', () => {
     expect(src).not.toContain('kakao_button_click')
   })
 
-  it('kakao_button_click 호출부는 전부 공용 normalizer 를 거친다', () => {
+  it('kakao_button_click 호출부는 전부 공용 버전 payload 빌더를 거친다', () => {
     for (const rel of ['components/features/auth/KakaoSignupButton.tsx', 'components/features/login/LoginForm.tsx']) {
       const src = read(rel)
-      expect(src).toContain('normalizeKakaoClickSource')
-      // from 에 정규화되지 않은 raw 값을 그대로 넣으면 안 된다
-      expect(src).not.toMatch(/trackEvent\('kakao_button_click', \{ from: '(?!.*normalize)/)
+      expect(src).toContain('buildKakaoClickTelemetry')
+      // 호출부가 payload 를 직접 조립하면 measurement_version·from 정규화가 갈라진다
+      expect(src).not.toMatch(/trackEvent\('kakao_button_click', \{ from: /)
+      expect(src).not.toMatch(/sendGtmEvent\('kakao_button_click', \{ from: /)
+      expect(src).not.toContain("measurement_version:")
     }
   })
 
@@ -230,11 +232,61 @@ describe('isRateLimitExemptEvent', () => {
     expect(src).not.toContain('const CONVERSION_EVENTS =')
   })
 
-  it('면제 사유와 계측 단절 시점이 문서화돼 있다', async () => {
+  it('면제 사유가 문서화돼 있고, 단절 기준이 **이벤트 버전**이다', async () => {
     const m = await import('@/lib/telemetry/event-rate-limit')
     expect(m.KAKAO_CLICK_EXEMPTION).toBeTruthy()
     expect(m.KAKAO_CLICK_EXEMPTION.reason).toMatch(/429|rate limit|버킷/)
-    // 단절 시점은 배포 후 기록한다 — 그 전에는 null 이고 "모름"으로 읽어야 한다
-    expect(m.KAKAO_CLICK_EXEMPTION).toHaveProperty('effectiveFrom')
+    expect(m.KAKAO_CLICK_EXEMPTION.separatedBy).toBe('measurement_version=r8-v2')
+  })
+})
+
+// ──────────────────────────────────────────────
+// 6. 배포 시각 상수 후속 작업이 없다 — 경계는 이벤트 버전이다
+// ──────────────────────────────────────────────
+describe('계측 경계는 달력 시각이 아니라 이벤트 버전이다', () => {
+  it('배포 후 코드에 되기록해야 하는 상수가 없다', async () => {
+    const banner = await import('@/lib/telemetry/signup-banner-cta')
+    const rl = await import('@/lib/telemetry/event-rate-limit')
+    // 🔴 이런 상수가 있으면 계측 배포 뒤 또 한 번의 PR·재배포가 필요해진다
+    expect(banner).not.toHaveProperty('R8_V2_DEPLOYED_AT')
+    expect(rl.KAKAO_CLICK_EXEMPTION).not.toHaveProperty('effectiveFrom')
+    expect(read('lib/telemetry/signup-banner-cta.ts')).not.toContain('DEPLOYED_AT')
+    expect(read('lib/telemetry/event-rate-limit.ts')).not.toContain('effectiveFrom')
+    expect(read('lib/queries/admin/admin.member-recovery.ts')).not.toContain('recordedDeployedAt')
+  })
+
+  it('버전 상수는 한 곳에서만 정의된다 — 배너와 카카오 클릭이 같은 값을 쓴다', async () => {
+    const { MEASUREMENT_VERSION } = await import('@/lib/telemetry/measurement-version')
+    const { SIGNUP_BANNER_MEASUREMENT_VERSION } = await import('@/lib/telemetry/signup-banner-cta')
+    const { buildKakaoClickTelemetry } = await import('@/lib/telemetry/kakao-click-source')
+    expect(MEASUREMENT_VERSION).toBe('r8-v2')
+    expect(SIGNUP_BANNER_MEASUREMENT_VERSION).toBe(MEASUREMENT_VERSION)
+    expect(buildKakaoClickTelemetry({ from: 'login_page', browserEnv: 'desktop' }).measurement_version)
+      .toBe(MEASUREMENT_VERSION)
+  })
+})
+
+// ──────────────────────────────────────────────
+// 7. buildKakaoClickTelemetry — 버전 + allowlist 를 한 번에
+// ──────────────────────────────────────────────
+describe('buildKakaoClickTelemetry', () => {
+  it('from allowlist 정규화와 measurement_version 을 함께 싣는다', async () => {
+    const { buildKakaoClickTelemetry } = await import('@/lib/telemetry/kakao-click-source')
+    expect(buildKakaoClickTelemetry({ from: 'guest_comment_success', browserEnv: 'kakao-android' }))
+      .toEqual({ from: 'guest_comment_success', measurement_version: 'r8-v2', browser_env: 'kakao-android' })
+    // 목록 밖 값은 여전히 unknown 으로 접힌다(기존 allowlist 유지)
+    expect(buildKakaoClickTelemetry({ from: 'made_up', browserEnv: 'desktop' }).from).toBe('unknown')
+    expect(buildKakaoClickTelemetry({ from: undefined, browserEnv: 'desktop' }).from).toBe('unknown')
+  })
+
+  it('payload 에 UA 전체 문자열·개인정보를 넣지 않는다', async () => {
+    const { buildKakaoClickTelemetry } = await import('@/lib/telemetry/kakao-click-source')
+    const keys = Object.keys(buildKakaoClickTelemetry({ from: 'login_page', browserEnv: 'desktop' }))
+    expect(keys.sort()).toEqual(['browser_env', 'from', 'measurement_version'])
+  })
+
+  it('배너 표면은 여전히 allowlist 에 없다 — 배너 클릭으로 귀속되지 않는다', async () => {
+    const { KAKAO_CLICK_SOURCES } = await import('@/lib/telemetry/kakao-click-source')
+    for (const s of KAKAO_CLICK_SOURCES) expect(s).not.toContain('banner')
   })
 })

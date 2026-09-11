@@ -1,3 +1,5 @@
+import { MEASUREMENT_VERSION } from '@/lib/telemetry/measurement-version'
+
 /**
  * `kakao_button_click.from` — **사이트 전체** 카카오 로그인 시작 위치의 typed allowlist.
  *
@@ -43,4 +45,31 @@ const ALLOWED = new Set<string>(KAKAO_CLICK_SOURCES)
 /** 목록 밖 값·빈 값은 전부 `unknown` 으로 접는다. 지표 축을 임의 문자열이 늘리지 못하게 한다. */
 export function normalizeKakaoClickSource(raw: string | null | undefined): KakaoClickSource {
   return raw && ALLOWED.has(raw) ? (raw as KakaoClickSource) : 'unknown'
+}
+
+/**
+ * `kakao_button_click` payload — **공용 빌더**. 모든 호출부가 이걸 거친다.
+ *
+ * 🔴 `measurement_version` 을 싣는 이유: 이 이벤트는 r8-v2 에서 rate limit 면제로 바뀌었다.
+ *    면제 이전 값은 429 로 유실된 **하한값**이라 이후와 같은 숫자로 합산하면 안 된다.
+ *    캐시된 구버전 클라이언트가 배포 뒤에도 미버전 이벤트를 보내므로 **달력 시각으로 자르면 틀린다.**
+ *    분리 기준은 이벤트에 실린 버전 하나뿐이다.
+ *
+ * 🔴 이것은 **배너 클릭이 아니다.** 배너 CTA 는 `signup_banner_clicked` 로만 센다.
+ */
+export interface KakaoClickTelemetryProps {
+  from: KakaoClickSource
+  measurement_version: typeof MEASUREMENT_VERSION
+  browser_env: string
+}
+
+export function buildKakaoClickTelemetry(input: {
+  from: string | null | undefined
+  browserEnv: string
+}): KakaoClickTelemetryProps {
+  return {
+    from: normalizeKakaoClickSource(input.from),
+    measurement_version: MEASUREMENT_VERSION,
+    browser_env: input.browserEnv,
+  }
 }

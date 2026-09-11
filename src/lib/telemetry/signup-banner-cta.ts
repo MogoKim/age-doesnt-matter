@@ -1,4 +1,5 @@
 import type { AndroidConversionVariant } from '@/lib/experiments/android-conversion'
+import { MEASUREMENT_VERSION } from '@/lib/telemetry/measurement-version'
 
 /**
  * 가입 배너 CTA 판정 + r8-v2 계측 계약 (순수 모듈 — DOM·네트워크 의존 없음).
@@ -16,8 +17,11 @@ import type { AndroidConversionVariant } from '@/lib/experiments/android-convers
  * 회귀 테스트(`r8-telemetry-v2.test.ts`)가 전 조합에서 기존 분기와의 동치를 검증한다.
  */
 
-/** 노출·클릭에 함께 싣는 계측 버전. 이 값이 붙은 이벤트끼리만 CTA별 전환율을 만든다. */
-export const SIGNUP_BANNER_MEASUREMENT_VERSION = 'r8-v2'
+/**
+ * 노출·클릭에 함께 싣는 계측 버전. 이 값이 붙은 이벤트끼리만 CTA별 전환율을 만든다.
+ * 경계는 **이 버전**이지 배포 시각이 아니다 — `measurement-version.ts` 참고.
+ */
+export const SIGNUP_BANNER_MEASUREMENT_VERSION = MEASUREMENT_VERSION
 
 /** 이 계측이 붙는 노출면 — `android_conversion_prompt_*` 와 같은 값을 쓴다(조인 가능). */
 export const SIGNUP_BANNER_SURFACE = 'signup_prompt_banner'
@@ -65,7 +69,7 @@ export function resolveSignupBannerCta(input: SignupBannerCtaInput): SignupBanne
  */
 export interface SignupBannerTelemetryProps {
   cta_type: SignupBannerCtaType
-  measurement_version: typeof SIGNUP_BANNER_MEASUREMENT_VERSION
+  measurement_version: typeof MEASUREMENT_VERSION
   surface: typeof SIGNUP_BANNER_SURFACE
   /** `getBrowserEnv()` — 채널 통계용 분류값 */
   browser_env: string
@@ -90,11 +94,3 @@ export function buildSignupBannerTelemetry(input: {
     variant: input.variant || null,
   }
 }
-
-/**
- * r8-v2 계측이 production 에 반영된 시각(ISO).
- *
- * ⚠️ merge·배포 **후에** 실측으로 채워 넣는다. `null` 이면 "아직 기록되지 않았다"이지 "배포 전"이 아니다.
- * 판정의 정본은 어드민이 실제 이벤트에서 읽는 최초 관측 시각(`bannerCtaV2.firstSeenInWindowAt`)이다.
- */
-export const R8_V2_DEPLOYED_AT: string | null = null

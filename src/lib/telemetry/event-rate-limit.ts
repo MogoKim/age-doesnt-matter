@@ -1,3 +1,5 @@
+import { MEASUREMENT_VERSION } from '@/lib/telemetry/measurement-version'
+
 /**
  * `/api/events` rate limit 면제 목록 — **전환·측정 필수 이벤트만**.
  *
@@ -35,12 +37,16 @@ const EXEMPT: readonly string[] = [
 ] as const
 
 /**
- * `kakao_button_click` 면제 — **적용 이유와 계측 단절 시점**.
+ * `kakao_button_click` 면제 — **적용 이유와 계측 단절 기준**.
  *
  * 이 이벤트는 로그인 화면·홈 가입 카드·게스트 댓글 카드 등 **여러 표면**에서 발생한다.
  * 면제 목록에 없던 동안에는 `page_view` 와 같은 버킷(`event:ip`, max 30)을 써서
  * 같은 IP 에서 글을 여러 개 보고 로그인을 누른 방문자의 클릭이 **429 로 조용히 사라졌다.**
  * 따라서 **면제 이전 구간의 값은 하한값**이고, 이후 구간과 **같은 계열로 합산하면 안 된다.**
+ *
+ * 🔴 단절 기준은 **달력 시각이 아니라 이벤트에 실린 `measurement_version`** 이다.
+ *    배포 직후에도 캐시된 구버전 클라이언트가 미버전 이벤트를 계속 보내므로 시각으로 자르면 섞인다.
+ *    배포 시각을 코드 상수로 되기록하지 않는다(계측 배포 뒤 또 한 번의 PR·재배포를 요구하게 된다).
  *
  * 🔴 이것은 배너 전환 지표가 아니다. 배너 클릭은 `signup_banner_clicked` 로만 센다.
  */
@@ -49,11 +55,8 @@ export const KAKAO_CLICK_EXEMPTION = {
   reason:
     '로그인 화면·홈 가입 카드·게스트 댓글 카드 등 여러 표면에서 발생하는데 면제 목록에 없어 ' +
     '`page_view` 와 같은 버킷(event:ip, max 30)에서 429 로 유실돼 왔다. 면제 이전 값은 하한값이다.',
-  /**
-   * 계측 단절 시점 — 이 시각 **이전과 이후를 같은 계열로 합산하지 않는다.**
-   * ⚠️ merge·production 배포 후 실측으로 채워 넣는다. `null` = 아직 기록되지 않음(배포 전이라는 뜻이 아니다).
-   */
-  effectiveFrom: null as string | null,
+  /** 분리 기준 — 이벤트에 이 버전이 실렸는지로만 가른다. 시각 기준 분리는 쓰지 않는다. */
+  separatedBy: `measurement_version=${MEASUREMENT_VERSION}`,
 } as const
 
 const EXEMPT_SET = new Set<string>(EXEMPT)

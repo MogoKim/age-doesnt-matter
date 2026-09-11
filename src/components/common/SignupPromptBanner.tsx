@@ -186,10 +186,31 @@ export function SignupPromptBanner() {
   // 발동 원인(read_complete | backstop) — 노출/클릭/닫기 이벤트에 함께 싣는다
   const triggerRef = useRef<'read_complete' | 'backstop'>('backstop')
 
+  // ── ref 선언 (판정 effect 보다 **먼저** 선언돼야 같은 effect 안에서 쓸 수 있다) ──
+  //
+  // 🔴 왜 state 가 아니라 ref 인가, 그리고 왜 **판정하는 그 effect 안에서** 갱신하는가
+  //   `tryFire` 는 [pathname, isLoggedIn, status, isTWA, isCapacitor] effect 안에서 만들어지고
+  //   `currentEnv`·`isIOS`·`variant` 변경으로는 재생성되지 않는다(재생성하면 60초 백스톱이 리셋된다).
+  //   그런데 React 는 한 flush 의 passive effect 를 **전부 실행한 뒤에** setState 재렌더를 처리한다.
+  //   그래서 "state 를 별도 effect 에서 ref 로 복사"하면 그 복사는 **초기값**을 복사한다.
+  //   뒤로가기 스크롤 복원처럼 같은 flush 안에서 `tryFire` 가 불리면
+  //   iOS·인앱·app_card 노출이 전부 `kakao_oauth` 로 오기록된다.
+  //   → 판정과 ref 갱신을 **같은 effect 안에서 동기로** 끝내고, state 갱신은 그 뒤에 한다(렌더용).
+  const variantRef = useRef<AndroidConversionVariant | ''>('')
+  const inappRef = useRef(false)
+  const envRef = useRef('android-chrome')
+  const isIOSRef = useRef(false)
+
   // 마운트 시 환경 감지 (SSR 안전)
   useEffect(() => {
-    setCurrentEnv(detectEnv())
-    setIsIOS(isIOSUserAgent(navigator.userAgent))
+    const env = detectEnv()
+    const ios = isIOSUserAgent(navigator.userAgent)
+    // ⚠️ 순서가 중요하다 — ref 먼저(동기), state 나중(렌더용).
+    envRef.current = env
+    isIOSRef.current = ios
+    inappRef.current = isInappEnv(env)
+    setCurrentEnv(env)
+    setIsIOS(ios)
   }, [])
 
   // 실험 배정 — 세션 확정 후(로그인 여부가 세그먼트 조건) 1회.
@@ -205,34 +226,16 @@ export function SignupPromptBanner() {
       isStandalone,
     })
     if (!eligible) {
+      // ⚠️ ref 먼저(동기), state 나중 — 위 마운트 effect 와 같은 이유다.
+      variantRef.current = ''
       setVariant('')
       return
     }
     const assigned = getExperimentVariant(ANDROID_CONVERSION_EXPERIMENT_ID)
-    setVariant(isAndroidConversionVariant(assigned) ? assigned : '')
+    const resolved = isAndroidConversionVariant(assigned) ? assigned : ''
+    variantRef.current = resolved
+    setVariant(resolved)
   }, [status, isLoggedIn, isTWA, isCapacitor, isStandalone])
-
-  // variant를 ref로도 들고 있는다 — 타이머 effect 의존성에 넣으면 배정이 늦게 확정될 때
-  // 60초 백스톱 타이머가 재시작돼 노출 타이밍이 밀린다(기존 트리거 정책 보존).
-  const variantRef = useRef<AndroidConversionVariant | ''>('')
-  useEffect(() => { variantRef.current = variant }, [variant])
-
-  // 인앱 여부도 같은 이유로 ref로 들고 있는다.
-  //   `currentEnv`는 마운트 직후 `detectEnv()`로 확정되는데, 이걸 타이머 effect 의존성에 넣으면
-  //   확정되는 순간 effect가 재실행돼 **비인앱의 60초 백스톱이 리셋된다.**
-  //   이번 변경은 인앱만 건드리는 것이므로 비인앱 타이밍을 1ms도 바꾸면 안 된다.
-  const inappRef = useRef(false)
-  useEffect(() => { inappRef.current = isInappEnv(currentEnv) }, [currentEnv])
-
-  // 🔴 노출 시점 CTA 판정도 **ref** 로 읽는다.
-  //   `tryFire` 는 [pathname, isLoggedIn, status, isTWA, isCapacitor] effect 안에서 만들어지고
-  //   `currentEnv`·`isIOS` state 변경으로는 재생성되지 않는다(재생성하면 60초 백스톱 타이머가 리셋된다).
-  //   state 를 그대로 읽으면 **마운트 첫 렌더의 초기값**(`android-chrome` / `false`)에 고정돼
-  //   iOS·인앱 사용자의 노출이 전부 `kakao_oauth` 로 잘못 기록된다.
-  const envRef = useRef('android-chrome')
-  useEffect(() => { envRef.current = currentEnv }, [currentEnv])
-  const isIOSRef = useRef(false)
-  useEffect(() => { isIOSRef.current = isIOS }, [isIOS])
 
   // ── ?signup=1 auto-trigger: 인앱→외부브라우저 도착 시 카운트다운 배너 ──
   useEffect(() => {

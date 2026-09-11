@@ -209,11 +209,21 @@ export default async function MemberRecoveryPage({ searchParams }: Props) {
                   <td className="py-1.5 pr-3 pl-4 text-zinc-600">↳ 기타·미상</td>
                   <td className="py-1.5 text-right tabular-nums text-zinc-500">{num(bannerCta.byType.other)}명</td>
                 </tr>
-                <tr>
+                <tr className="border-b border-zinc-100">
                   <td className="py-1.5 pr-3 text-zinc-600">
-                    참고 — 사이트 전체 <code>kakao_button_click</code>
+                    참고 — 사이트 전체 <code>kakao_button_click</code> (r8-v2)
                   </td>
-                  <td className="py-1.5 text-right tabular-nums text-zinc-500">{num(siteWideKakaoClick.visitors)}명</td>
+                  <td className="py-1.5 text-right tabular-nums text-zinc-500">
+                    {siteWideKakaoClick.status === 'NOT_COLLECTED'
+                      ? <span className="text-zinc-400">미수집</span>
+                      : `${num(siteWideKakaoClick.v2Visitors)}명`}
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-1.5 pr-3 pl-4 text-zinc-500">
+                    ↳ 미버전(합산 금지 · 하한값)
+                  </td>
+                  <td className="py-1.5 text-right tabular-nums text-zinc-400">{num(siteWideKakaoClick.historicalVisitors)}명</td>
                 </tr>
               </tbody>
             </table>
@@ -304,10 +314,6 @@ export default async function MemberRecoveryPage({ searchParams }: Props) {
                   ? new Date(v2.firstSeenInWindowAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })
                   : '없음'}
               </dd>
-            </div>
-            <div>
-              <dt className="inline text-zinc-500">기록된 배포 시각 — </dt>
-              <dd className="inline">{v2.recordedDeployedAt ?? '미기록(배포 후 채운다)'}</dd>
             </div>
             <div>
               <dt className="inline text-zinc-500">cta_type 없는 v2 노출 — </dt>
