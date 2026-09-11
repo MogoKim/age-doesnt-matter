@@ -1,7 +1,12 @@
 # REWRITE_BRAND_COPY 59건 — SEO 문구 정정안 (출처 분리판)
 
-> **정정안(제안)이다. 이 배치에서 DB 를 바꾸지 않았다.**
-> production write · Post 변경 · 배포 · merge **0건**.
+> ✅ **2026-09-11 적용 완료.** `applyEligible = true` **50건**의 `seoDescription` 을
+> production 에 반영했다(영향 행 50/50). `seoTitle`·`title`·`content`·`JobDetail` 은 변경 0.
+> **적용 제외 9건은 그대로다**(무변경 확인 9/9).
+> 실행 절차·기록: [적용 도구 문서](./2026-09-11-seo-desc-apply-tool.md) §8-A2 ·
+> 로그: [`logs/2026-09-11-seo-desc-apply.log`](./logs/2026-09-11-seo-desc-apply.log)
+>
+> 아래 표의 `currentSeoDescription` 은 **적용 전 값**이다(롤백 기준값으로 보존).
 >
 > 기준 main `137cb0a5` · 대상 재조회 **2026-09-11** (59/59 최신 production 값 대조, 불일치 **0**)
 > 선행: [2차 분류](./2026-09-11-review-tier2.md) · 전건 표: [`data/2026-09-11-seo-brand-copy-rewrite.csv`](./data/2026-09-11-seo-brand-copy-rewrite.csv) (**59행 · 24열**)
@@ -292,9 +297,24 @@ JOB description = `seoDescription ?? 본문 첫 100자 + location + salary`)으�
 
 ---
 
-## 8. 이번 배치에서 하지 않은 것
+## 8. 적용 결과 (2026-09-11)
 
-- production DB write · `Post` 상태 변경 · 배포 · merge — **0건**
+| 항목 | 결과 |
+|---|---|
+| 트랜잭션 영향 행 | **50 / 50** (단일 트랜잭션 · 7,848ms) |
+| `seoDescription` 목표값 일치 | **50 / 50** |
+| `seoTitle` 무변경 | **50 / 50** |
+| 대상 상태 JOB·PUBLISHED | **50 / 50** |
+| **적용 제외 9건 무변경** | **9 / 9** |
+| production HTML meta description | **50 / 50 일치** · 미승인 금지 표현 **0** |
+
+정정 후 공개 면에 남는 금지 표현은 **보존 근거가 있는 13행**(원문 제목 인용 ·
+공식 제도명 · 공식 직함)과 **판단 보류 5행**(§4)뿐이다. 이는 §6 에 적은 그대로다.
+
+## 9. 이 배치에서 하지 않은 것
+
 - 원문 `title` · `content` 변경 — **0건**
 - `JobDetail` (회사·지역·급여·근무조건) 변경 — **0건**
+- `seoTitle` 변경 — **0건**
+- 적용 제외 9건 변경 — **0건**
 - 개인정보·계정 식별값·본문 전문의 CSV/문서 기록 — **0건**

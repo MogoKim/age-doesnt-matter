@@ -82,7 +82,7 @@ b 와 c 의 교집합 5건, 합집합이 a 32건이다.
 | **PRESERVE_CANDIDATE** | **247** | BOT 매거진 장문 — **확정 보존이 아니다**(§3-4) |
 | **KEEP_NOINDEX** | **153** | 🔴 **이미 Google noindex 다. 신규 실행 작업이 아니다** |
 | **MANUAL_REVIEW** | **159** | 사람 판단 필요 (그중 JOB **136** — §5) |
-| **REWRITE_BRAND_COPY** | **50** | 우나어가 쓴 SEO 카피의 금지 표현 정정 · **적용 대상**(`applyEligible=true`) |
+| **REWRITE_BRAND_COPY** | **50** | 우나어가 쓴 SEO 카피의 금지 표현 정정 · ✅ **2026-09-11 적용 완료**(50/50) |
 | **BRAND_COPY_PARTIAL_HOLD_REVIEW** | **1** | 정정안은 있으나 **미승인 금지 표현이 남아** 적용 대상에서 제외 |
 | **BRAND_COPY_HOLD_REVIEW** | **4** | 우나어 카피지만 **대체어 확정 불가** → 치환 보류, 사람 검토 |
 | **OFFICIAL_NAME_ONLY_REVIEW** | **3** | 금지 표현이 **정부 공식 제도명**(`노인일자리사업`)뿐 → 전건 보존 |
@@ -320,7 +320,7 @@ prisma/schema.prisma  model JobDetail
 
 | # | 항목 | 선택지 |
 |---|---|---|
-| **1** | **REWRITE_BRAND_COPY 50건 정정 적용 여부** — 정정안 작성 완료(DB write 미실행, fail-closed 절차 명세됨) | 적용 / 단계적 / 보류 |
+| ~~1~~ | ~~REWRITE_BRAND_COPY 50건 정정 적용~~ — ✅ **2026-09-11 적용 완료**(영향 행 50/50 · HTML 50/50) | **종결** |
 | **2** | REWRITE 중 원문 공식 직함(title 10건) | 원문 보존 / 치환 |
 | **2-b** | **보류 5건**(HOLD 계열) — `실버타운` 1(대체어 부재) + 상호 부분 일치 4. 그중 1건은 제안문이 있으나 **적용 제외** | 현행 유지 / 개별 판단 |
 | **3** | **PRESERVE_CANDIDATE 247건 확정 여부** — 지금은 분량 외 근거가 없다 | 검색 유입 측정 후 재판정 / 현행 유지 |

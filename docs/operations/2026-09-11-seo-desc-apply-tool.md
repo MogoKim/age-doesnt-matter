@@ -1,7 +1,10 @@
 # SEO description 적용·롤백 도구
 
-> **이 배치에서 production DB write · merge · 배포는 0건이다.** 도구만 만들었다.
-> 실제 적용은 **창업자 승인 후** 운영자가 손으로 실행한다.
+> ✅ **2026-09-11 적용 완료.** 창업자 승인 후 운영자가 수동 실행했다.
+> 영향 행 **50/50** · DB 사후 검증 전건 PASS · production HTML **50/50** ·
+> 보류 9건 무변경. 실행 로그: [`logs/2026-09-11-seo-desc-apply.log`](./logs/2026-09-11-seo-desc-apply.log)
+>
+> 이 문서는 그 실행의 절차서이자 기록이다. 재실행은 `ALREADY_APPLIED` 로 막힌다(§4-B).
 >
 > 기준 main `d88392d9` · 대상: [정정안 문서](./2026-09-11-seo-brand-copy-rewrite.md) §7 ·
 > 입력 CSV: [`data/2026-09-11-seo-brand-copy-rewrite.csv`](./data/2026-09-11-seo-brand-copy-rewrite.csv)
@@ -314,6 +317,24 @@ npx tsx scripts/seo-desc-apply.ts --read=rest
 | **공개 무인증 revalidate API 금지** | 만들지 않았다. 기존 인증 경로(`/api/admin/revalidate-deleted`)만 안내 |
 | 변경 금지 파일 | `prisma/schema.prisma` · migration · `.env*` · `.github/workflows/**` · launchd · `src/lib/actions/admin-auth.ts` · `src/app/api/health/auth/route.ts` — **전부 미변경** |
 
+### 8-A2. 실행 기록 (2026-09-11)
+
+| 항목 | 값 |
+|---|---|
+| 기준 커밋 | `a392d425` (origin/main) |
+| 실행 주체 | 창업자 승인 후 **운영자 수동 실행** — 에이전트·크론 경로 아님 |
+| 연결 | `DATABASE_URL`(pooler). `DIRECT_URL` 은 도달 불가라 **command-scoped 로 제외**. env 파일·도구 코드 **미수정** |
+| 적용 전 dry-run | 대상 50 / 제외 9 / 응답 50 / drift 0 / 전건 JOB·PUBLISHED |
+| 트랜잭션 | 영향 행 **50/50** · **7,848ms** · maxWait 10s / timeout 60s |
+| 도구 사후 검증 [6] | seoDescription 50/50 · seoTitle 무변경 50/50 |
+| 독립 DB 재검증 | 목표 일치 50/50 · seoTitle 무변경 50/50 · JOB·PUBLISHED 50/50 · **보류 9건 무변경 9/9** |
+| production HTML | **50/50 일치** · 위반 0 · 요청 실패 0 · 판정 `OK` (round 1, +10s) |
+| 로그 | [`logs/2026-09-11-seo-desc-apply.log`](./logs/2026-09-11-seo-desc-apply.log) |
+
+> 📌 **pooler 호환성을 먼저 실측했다.** 적용 전에 read-only interactive transaction 으로
+> 50회 순차 왕복을 재현한 결과 **7,541ms** 가 걸렸다 — Prisma **기본 timeout 5초를 넘는다.**
+> §4-F 의 `timeout: 60s` 는 가정이 아니라 이 실측에 근거한다. 실제 적용도 7,848ms 였다.
+
 ### 8-A. COO-only write 정책 — 실행 주체와 증거
 
 `agents/core/constitution.yaml` 은 DB write 를 COO 에이전트로 한정한다. 이 도구는
@@ -345,7 +366,7 @@ npx tsx scripts/seo-desc-apply.ts --read=rest
 
 ---
 
-## 9. 실행 전 확인 (창업자 승인 후)
+## 9. 실행 전 확인 (창업자 승인 후) — **2026-09-11 전건 완료**
 
 ```
 [ ] origin/main 최신에서 실행하는가
