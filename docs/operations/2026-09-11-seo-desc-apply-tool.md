@@ -1,7 +1,10 @@
 # SEO description 적용·롤백 도구
 
-> **이 배치에서 production DB write · merge · 배포는 0건이다.** 도구만 만들었다.
-> 실제 적용은 **창업자 승인 후** 운영자가 손으로 실행한다.
+> ✅ **2026-09-11 적용 완료.** 창업자 승인 후 운영자가 수동 실행했다.
+> 영향 행 **50/50** · DB 사후 검증 전건 PASS · production HTML **50/50** ·
+> 보류 9건 무변경. 실행 로그: [`logs/2026-09-11-seo-desc-apply.log`](./logs/2026-09-11-seo-desc-apply.log)
+>
+> 이 문서는 그 실행의 절차서이자 기록이다. 재실행은 `ALREADY_APPLIED` 로 막힌다(§4-B).
 >
 > 기준 main `d88392d9` · 대상: [정정안 문서](./2026-09-11-seo-brand-copy-rewrite.md) §7 ·
 > 입력 CSV: [`data/2026-09-11-seo-brand-copy-rewrite.csv`](./data/2026-09-11-seo-brand-copy-rewrite.csv)
@@ -46,7 +49,7 @@
 ```bash
 # 1) 미리보기 — 기본 동작, write 0
 npx tsx scripts/seo-desc-apply.ts
-npx tsx scripts/seo-desc-apply.ts --read=rest      # Postgres 직결이 막힌 환경(§7)
+npx tsx scripts/seo-desc-apply.ts --read=rest      # Prisma 연결이 안 되는 환경에서의 미리보기(§7)
 
 # 2) 적용 — --execute 와 확인 토큰이 둘 다 있어야 한다
 npx tsx scripts/seo-desc-apply.ts --execute --confirm=APPLY-SEO-DESC-50
@@ -285,8 +288,6 @@ npx tsx scripts/seo-desc-verify-production.ts --expect=before
 
 ---
 
----
-
 ## 7. 로컬 실행 제약 — 읽기 경로
 
 이 저장소의 개발 환경에서는 Supabase Postgres 직결(`db.*.supabase.co`)이
@@ -298,15 +299,19 @@ npx tsx scripts/seo-desc-apply.ts --read=rest
 
 🔒 **write 는 절대 REST 로 하지 않는다.** `--execute` 를 `--read=rest` 와 같이 쓰면 ABORT 한다.
 낙관적 잠금과 트랜잭션은 같은 연결 위에 있어야 의미가 있기 때문이다.
-**실제 적용은 Postgres 직결이 되는 환경에서 해야 한다.**
+
+**실제 적용에는 Prisma 트랜잭션이 실제로 통과하는 Postgres 연결이 필요하다.**
+직결(direct)이어야 한다는 뜻은 아니다 — 2026-09-11 실행은 **사전 호환성 검증을 통과한
+`DATABASE_URL`(pooler)** 를 사용했다(§8-B). pooler 에서도 interactive transaction 이
+정상 동작함을 read-only 로 먼저 확인한 뒤에 적용했다.
 
 ---
 
-## 8. 정책 준수
+## 8. 정책 대조
 
 | 항목 | 준수 방법 |
 |---|---|
-| **DB write 는 COO 에이전트만** (CLAUDE.md) | §8-A |
+| **DB write 는 COO 에이전트만** (CLAUDE.md) | 🔴 **이번 실행은 부합하지 않았다** — 창업자 승인에 따른 일회성 예외. §8-A |
 | **Raw SQL 금지** | Prisma `updateMany` + `$transaction` 만 사용 |
 | **SEO 노출면 보호** (네이버) | `seoDescription` 만 바꾼다. `sitemap`·`robots`·`canonical`·일반 `<meta name="robots">` 를 건드리지 않는다. `seoTitle` 도 바꾸지 않는다 |
 | **자사 요청 `x-bot-type`** | 검증 스크립트가 항상 붙인다 |
@@ -314,53 +319,84 @@ npx tsx scripts/seo-desc-apply.ts --read=rest
 | **공개 무인증 revalidate API 금지** | 만들지 않았다. 기존 인증 경로(`/api/admin/revalidate-deleted`)만 안내 |
 | 변경 금지 파일 | `prisma/schema.prisma` · migration · `.env*` · `.github/workflows/**` · launchd · `src/lib/actions/admin-auth.ts` · `src/app/api/health/auth/route.ts` — **전부 미변경** |
 
-### 8-A. COO-only write 정책 — 실행 주체와 증거
+### 8-A. DB write 주체 정책 — 이번 실행은 **예외**였다
 
-`agents/core/constitution.yaml` 은 DB write 를 COO 에이전트로 한정한다. 이 도구는
-그 규칙을 **우회하지 않는다.** 대신 성격이 다르다 — **에이전트 자동화가 아니라
-1회성 운영 작업**이다.
+`agents/core/constitution.yaml` 과 `CLAUDE.md` 는 **DB write 를 COO 에이전트로 한정**한다.
+
+🔴 **이번 실행은 그 규칙을 따른 것이 아니다.** 사실대로 적는다.
 
 | | |
 |---|---|
-| **실행 주체** | 창업자 승인을 받은 **운영자(사람)**. 터미널에서 손으로 실행한다 |
-| **에이전트 경로** | **연결하지 않았다.** `runner.ts` HANDLERS · `.github/workflows/**` · launchd 어디에도 등록되어 있지 않다. `automation_status`(현재 `PAUSED`)를 읽지도 바꾸지도 않는다 |
-| **자동 실행 가능성** | 없다. 실행하려면 사람이 `--execute` 와 확인 토큰을 직접 입력해야 한다 |
-| **범위** | `Post.seoDescription` 50행. COO 에이전트가 하는 콘텐츠 생성·상태 변경과 겹치지 않는다 |
+| 규칙 | DB write 는 COO 에이전트만 |
+| **실제 실행** | 창업자 승인 후 **Claude Code 세션의 Bash 에서 1회** 수행 |
+| COO handler · cron · workflow | **경유하지 않았다** |
 
-**실행 증거는 이렇게 남긴다.** 감사 추적이 없으면 "누가 언제 무엇을 바꿨나"를
-나중에 확인할 수 없다.
+즉 **규칙에 부합했다고 말할 수 없다.** "에이전트 자동화가 아니니 규칙 밖"이라는 식으로
+넘기지 않는다 — 규칙은 주체를 한정하고 있고, 이번 주체는 COO 가 아니었다.
 
-1. CLI 출력 전체를 파일로 저장한다 (개인정보·문구가 없으므로 그대로 보관 가능)
-   ```bash
-   npx tsx scripts/seo-desc-apply.ts --execute --confirm=APPLY-SEO-DESC-50 \
-     2>&1 | tee docs/operations/logs/2026-09-11-seo-desc-apply.log
-   ```
+**창업자 승인에 따른 일회성 운영 예외였으며, 반복 실행 선례로 삼지 않는다.**
+같은 성격의 DB write 가 또 필요하면 ⓐ COO handler 경로로 옮기거나
+ⓑ 그때마다 창업자 승인을 다시 받아 예외로 처리할지 **먼저 결정**한다.
+
+> 데이터 결과는 **50/50 정상**이고 독립 재검증·HTML 전수 검증도 전건 통과했다.
+> **이 절차 문제만을 이유로 롤백하지 않는다.** 기록으로 남겨 다음 판단에 쓴다.
+
+이 도구 자체는 자동 실행 경로가 없다 — `runner.ts` HANDLERS · `.github/workflows/**` ·
+launchd 어디에도 등록되어 있지 않고, `automation_status`(현재 `PAUSED`)를 읽지도 바꾸지도 않는다.
+실행하려면 사람이 `--execute` 와 확인 토큰을 직접 입력해야 한다.
+
+**실행 증거 기록 방식** — 감사 추적이 없으면 "누가 언제 무엇을 바꿨나"를 확인할 수 없다.
+
+1. CLI 출력 전체를 로그 파일로 저장한다 (개인정보·문구가 없어 그대로 보관 가능)
 2. 로그에 남는 것: CSV SHA-256 · 대상/제외 건수 · 조회 건수 · drift 판정 ·
    영향 행 수 · 트랜잭션 옵션 · 사후 검증 결과 · `post#<지문>` 별 before→after 지문
-3. `docs/operations/MASTER-OPERATING-SYSTEM.md` 에 **실행 일시 · 실행자 · merge commit ·
-   영향 행 수 · 검증 결과**를 한 줄 기록한다
+3. 이 문서 §8-B 와 `MASTER-OPERATING-SYSTEM.md` 에 실행 기록을 남긴다
 4. `pending_founder_actions.md` 의 해당 항목을 완료로 갱신한다
 
-로그·기록 없이 실행하지 않는다. 롤백 판단의 근거가 그 로그다.
+### 8-B. 실행 기록 (2026-09-11)
+
+| 항목 | 값 |
+|---|---|
+| 기준 커밋 | `a392d425` (origin/main) |
+| **실행 주체** | 창업자 승인 후 **Claude Code 세션 Bash 에서 1회** — COO handler·cron·workflow 아님(§8-A) |
+| 연결 | `DATABASE_URL`(pooler). `DIRECT_URL` 은 도달 불가라 **command-scoped 로만 제외**. env 파일·도구 코드 **미수정** |
+| 적용 전 dry-run | 대상 50 / 제외 9 / 응답 50 / drift 0 / 전건 JOB·PUBLISHED |
+| 트랜잭션 | 영향 행 **50/50** · **7,848ms** · maxWait 10s / timeout 60s |
+| 도구 사후 검증 [6] | `seoDescription` 50/50 · `seoTitle` 무변경 50/50 |
+| 독립 DB 재검증 | 목표 일치 50/50 · `seoTitle` 무변경 50/50 · JOB·PUBLISHED 50/50 · **보류 9건 무변경 9/9** |
+| production HTML | **50/50 일치** · 위반 0 · 요청 실패 0 · 판정 `OK` (round 1, +10s) |
+| 로그 | [`logs/2026-09-11-seo-desc-apply.log`](./logs/2026-09-11-seo-desc-apply.log) |
+
+**실행 시각 — 정확 시각 미계측.** 도구가 타임스탬프를 남기지 않아 시작·종료 시각을
+계측하지 못했다. 추정하지 않는다. 참고로 실행 산출물 파일이 기록된 시각은
+적용 로그 **2026-09-11 20:45:42 KST** · HTML 검증 로그 **20:46:11 KST** 였다(간접 증거).
+다음 실행부터는 로그에 시각을 남기는 것이 낫다.
+
+> 📌 **pooler 호환성을 적용 전에 실측했다.** read-only interactive transaction 으로
+> 50회 순차 왕복을 재현한 결과 **7,541ms** — Prisma **기본 timeout 5초를 넘는다.**
+> §4-F 의 `timeout: 60s` 는 가정이 아니라 이 실측에 근거한다. 실제 적용도 **7,848ms** 였다.
 
 ---
 
-## 9. 실행 전 확인 (창업자 승인 후)
+## 9. 실행 전 확인 (창업자 승인 후) — **2026-09-11 전건 완료**
 
 ```
-[ ] origin/main 최신에서 실행하는가
-[ ] CSV 무결성 통과 (dry-run [1] 에 "확정본 일치" 가 찍히는가)
-[ ] dry-run: 대상 50 · drift 0 · 전건 JOB/PUBLISHED · mutation 0
-[ ] Postgres 직결이 되는 환경인가 (--read=rest 없이 dry-run 이 통과하는가)
-[ ] 출력을 로그 파일로 남기는가 (§8-A)
-[ ] 적용:  --execute --confirm=APPLY-SEO-DESC-50
-[ ] 사후 검증 [6] 에서 seoDescription 50/50 · seoTitle 무변경 50/50
-[ ] production 전수 검증 (§6) — 판정이 OK 가 될 때까지 반복 확인
+[x] origin/main 최신에서 실행하는가                      → a392d425
+[x] CSV 무결성 통과 (dry-run [1] "확정본 일치")           → 통과
+[x] dry-run: 대상 50 · drift 0 · 전건 JOB/PUBLISHED · mutation 0
+[x] Prisma 트랜잭션이 통과하는 연결인가
+      (--read=rest 없이 dry-run 통과 + 사전 호환성 검증)  → DATABASE_URL pooler
+[x] 출력을 로그 파일로 남기는가 (§8-A)                    → logs/…-apply.log
+[x] 적용:  --execute --confirm=APPLY-SEO-DESC-50          → 1회 실행
+[x] 사후 검증 [6] seoDescription 50/50 · seoTitle 무변경 50/50
+[x] production 전수 검증 (§6) — 판정 OK
       · CACHE_PENDING 이면 **롤백하지 말고** 제한시간을 늘려 재확인
         (옛 문구의 금지 표현은 정상이다 — 위반으로 세지 않는다)
       · CONTENT_VIOLATION 이면 롤백이 아니라 **CSV 를 먼저 다시 검토**
-[ ] 롤백했다면 --expect=before 로 옛 문구 정확 복원 확인 (48건 금지 표현은 정상)
-[ ] 실행 기록을 MASTER 정본에 남겼는가
+                                                          → round 1 에서 50/50 OK
+[—] 롤백했다면 --expect=before 로 옛 문구 정확 복원 확인   → **미실행·불필요**
+                                                          (롤백 사유 없음)
+[x] 실행 기록을 MASTER 정본에 남겼는가                    → §8-B · MASTER
 ```
 
 ---

@@ -1,0 +1,50 @@
+# SEO description 50건 production 적용 실행 로그
+#
+# 실행 일시: 2026-09-11 (KST)
+# 실행 주체: 창업자 승인 후 운영자 수동 실행 (에이전트 자동화 아님)
+# 기준 커밋: a392d425 (origin/main)
+# 연결: DATABASE_URL(pooler) — DIRECT_URL 은 command-scoped 제외, env 파일 미수정
+# 글 ID·본문·SEO 문구·자격증명 없음 (해시 지문만)
+#
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SEO description 적용 — EXECUTE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1] CSV   docs/operations/data/2026-09-11-seo-brand-copy-rewrite.csv
+    sha256=17f44bb785ac1246… ✅ 확정본 일치
+    전체 59행
+    분류: REWRITE_BRAND_COPY=50 · OFFICIAL_NAME_ONLY_REVIEW=3 · SOURCE_TITLE_ONLY_REVIEW=1 · BRAND_COPY_HOLD_REVIEW=4 · BRAND_COPY_PARTIAL_HOLD_REVIEW=1
+    적용 대상 50 · 적용 제외 9
+    ✅ 행수·분류 합계·고유 ID·보류 제외·행별 해시 재계산 검증 통과
+
+[2] production 조회 (prisma)  요청 50 · 응답 50
+[3] ✅ 누락 0 · 중복 0 · drift 0 · 전건 JOB/PUBLISHED (null-safe exact match)
+
+[5] 트랜잭션 시작 — 50건 · maxWait 10000ms · timeout 60000ms
+    ✅ commit — 영향 행 50/50 · 7848ms
+
+[6] 사후 검증  seoDescription 일치 50/50 · seoTitle 무변경 50/50
+    ✅ 전건 일치
+
+[7] 캐시 — 이 CLI 는 Next 런타임 밖이라 revalidate 를 호출할 수 없다.
+    /jobs/[id] 는 라우트 ISR(revalidate 300)로 HTML 이 캐시되고,
+    ISR 은 만료 후 첫 요청에 stale 을 주고 뒤에서 다시 만든다 —
+    그래서 "몇 분이면 반영된다"고 단정할 수 없다. 확인해야 한다:
+      npx tsx scripts/seo-desc-verify-production.ts        (제한시간 동안 반복 확인)
+    HTML 이 아직 옛 문구여도 DB 는 이미 맞다([6] 확인 완료). 롤백 사유가 아니다.
+
+─── production HTML 전수 검증 (30분 한도 · 60초 간격) ───
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  production meta description 전수 검증 — 기대: 적용 후(제안값)
+  https://age-doesnt-matter.com/jobs/{id} × 50 · 제한시간 1800s · 간격 60s
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  [round 1] 일치 50/50 · 대기 0 · 예상 밖 0 · 실패 0 · 위반 0 · +10s
+
+일치            50/50
+아직 반대쪽 값  0
+예상 밖 값      0
+요청 실패       0
+내용 위반       0
+
+판정: OK
+  DB 롤백 사유가 아니다.
