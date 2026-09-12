@@ -6,11 +6,9 @@ on:
     - cron: "6 0 * * 1"
   workflow_dispatch:
 
-# 알림 경로는 agents/core/notifier.ts 와 **같은 계약**을 쓴다.
-# 이전에는 존재하지 않는 SLACK_WEBHOOK_LOG 를 참조했다 — 이 workflow 만 고립돼 있었다.
-env:
-  SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-  SLACK_CHANNEL_LOG: ${{ secrets.SLACK_CHANNEL_LOG }}
+# 읽기만 한다 — 격리 폴더를 훑고 Slack 에 알릴 뿐, 저장소에 쓰지 않는다.
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}
@@ -19,6 +17,8 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
+    # 스캔 + 알림 1회다. 이보다 오래 걸린다면 매달린 것이다.
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -27,8 +27,18 @@ jobs:
 
       # 스캔·판정·전송이 한 스크립트 안에 있다.
       #   초과 0건            → Slack 호출 없이 성공
-      #   secret 누락·HTTP 실패·Slack ok:false → 전부 exit 1 → workflow 실패
+      #   secret 누락·HTTP 실패·무응답·Slack ok:false → 전부 exit 1 → workflow 실패
       # 이전의 `curl ... || echo` 성공 위장을 제거했다.
       # 기한 목록은 셸 보간이 아니라 JSON.stringify 로 조립한다.
+      #
+      # 🔒 Slack secret 은 **이 step 에만** 준다.
+      #    workflow-level `env:` 에 두면 checkout·setup-node·`npm ci` 까지 전부
+      #    받는다. 특히 `npm ci` 는 임의 패키지의 postinstall 을 돌리므로
+      #    토큰이 거기 떠 있을 이유가 없다.
+      # 알림 경로는 agents/core/notifier.ts 와 **같은 계약**을 쓴다.
+      # 이전에는 존재하지 않는 SLACK_WEBHOOK_LOG 를 참조했다 — 이 workflow 만 고립돼 있었다.
       - name: Check quarantine deadlines and notify
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL_LOG: ${{ secrets.SLACK_CHANNEL_LOG }}
         run: npx tsx agents/scripts/quarantine-slack-notify.ts

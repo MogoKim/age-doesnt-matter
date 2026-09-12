@@ -15,6 +15,7 @@
  *   초과 있음 + 성공 → exit 0
  *   secret 없음      → exit 1
  *   HTTP 실패        → exit 1
+ *   무응답(15초 초과) → exit 1
  *   HTTP 200 + ok:false → exit 1   (Slack 은 오류도 200 으로 준다)
  *
  * 🔇 로그에 secret 값도 메시지 원문도 찍지 않는다. 건수와 상태만 남긴다.
@@ -27,6 +28,15 @@ import { join } from 'node:path'
 
 export const SLACK_POST_MESSAGE_URL = 'https://slack.com/api/chat.postMessage'
 export const QUARANTINE_ROOT = '_quarantine'
+
+/**
+ * Slack 응답 제한시간.
+ *
+ * fetch 는 기본적으로 **무한정 기다린다.** Slack 이 연결만 잡고 응답을 주지
+ * 않으면 job 은 실패도 성공도 아닌 채로 매달린다. 15초면 정상 응답에는
+ * 충분하고, 초과는 네트워크 실패와 **똑같이** 실패로 본다.
+ */
+export const SLACK_TIMEOUT_MS = 15_000
 
 export interface OverdueItem {
   /** 격리 폴더명 */
@@ -126,6 +136,7 @@ export type FetchLike = (url: string, init: {
   method: string
   headers: Record<string, string>
   body: string
+  signal: AbortSignal
 }) => Promise<{ ok: boolean; status: number; text(): Promise<string> }>
 
 /**
@@ -133,36 +144,64 @@ export type FetchLike = (url: string, init: {
  *
  * 🔴 Slack 은 **오류도 HTTP 200 으로 준다.** 그래서 상태 코드만 보면 안 되고
  * 본문의 `ok` 를 반드시 확인해야 한다. 실패하면 throw 한다 — 삼키지 않는다.
+ *
+ * 무응답도 실패다. `AbortSignal` 로 제한시간을 걸고, 초과는 네트워크 오류와
+ * 같은 취급을 한다. 오류 문구에 token·channel·메시지 원문은 담지 않는다.
  */
 export async function postToSlack(
   fetchImpl: FetchLike,
   cfg: SlackConfig,
   message: { channel: string; text: string },
+  timeoutMs: number = SLACK_TIMEOUT_MS,
 ): Promise<void> {
-  let res: Awaited<ReturnType<FetchLike>>
-  try {
-    res = await fetchImpl(SLACK_POST_MESSAGE_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-        Authorization: `Bearer ${cfg.token}`,
-      },
-      body: JSON.stringify(message),
-    })
-  } catch (e) {
-    throw new Error(`Slack 요청 실패: ${e instanceof Error ? e.message : String(e)}`)
-  }
-  if (!res.ok) throw new Error(`Slack HTTP ${res.status}`)
+  // 타이머는 **본문을 다 읽을 때까지** 살려둔다. 헤더만 주고 body 를
+  // 찔끔거리는 응답도 매달림이기는 마찬가지다.
+  const controller = new AbortController()
+  let timedOut = false
+  const timer = setTimeout(() => {
+    timedOut = true
+    controller.abort()
+  }, timeoutMs)
+  const timeoutError = () => new Error(`Slack 요청 제한시간 초과 (${timeoutMs}ms)`)
 
-  const raw = await res.text()
-  let body: { ok?: boolean; error?: string }
   try {
-    body = JSON.parse(raw) as { ok?: boolean; error?: string }
-  } catch {
-    // 응답 본문을 그대로 찍지 않는다 — 토큰이 섞여 돌아올 이유는 없지만 습관을 지킨다
-    throw new Error('Slack 응답을 JSON 으로 읽을 수 없다')
+    let res: Awaited<ReturnType<FetchLike>>
+    try {
+      res = await fetchImpl(SLACK_POST_MESSAGE_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          Authorization: `Bearer ${cfg.token}`,
+        },
+        body: JSON.stringify(message),
+        signal: controller.signal,
+      })
+    } catch (e) {
+      if (timedOut) throw timeoutError()
+      throw new Error(`Slack 요청 실패: ${e instanceof Error ? e.message : String(e)}`)
+    }
+    if (!res.ok) throw new Error(`Slack HTTP ${res.status}`)
+
+    let raw: string
+    try {
+      raw = await res.text()
+    } catch (e) {
+      if (timedOut) throw timeoutError()
+      throw new Error(`Slack 응답 본문을 읽지 못했다: ${e instanceof Error ? e.message : String(e)}`)
+    }
+
+    let body: { ok?: boolean; error?: string }
+    try {
+      body = JSON.parse(raw) as { ok?: boolean; error?: string }
+    } catch {
+      // 응답 본문을 그대로 찍지 않는다 — 토큰이 섞여 돌아올 이유는 없지만 습관을 지킨다
+      throw new Error('Slack 응답을 JSON 으로 읽을 수 없다')
+    }
+    if (body.ok !== true) throw new Error(`Slack ok:false (error=${body.error ?? 'unknown'})`)
+  } finally {
+    // 성공했든 실패했든 타이머를 남기지 않는다 — 남으면 프로세스가 안 끝난다.
+    clearTimeout(timer)
   }
-  if (body.ok !== true) throw new Error(`Slack ok:false (error=${body.error ?? 'unknown'})`)
 }
 
 export interface RunDeps {
@@ -172,6 +211,8 @@ export interface RunDeps {
   scan: ScanDeps
   root: string
   dryRun: boolean
+  /** 생략하면 SLACK_TIMEOUT_MS. 테스트에서만 줄인다. */
+  timeoutMs?: number
   log(line: string): void
 }
 
@@ -201,7 +242,7 @@ export async function run(deps: RunDeps): Promise<number> {
   }
 
   try {
-    await postToSlack(deps.fetchImpl, cfg, message)
+    await postToSlack(deps.fetchImpl, cfg, message, deps.timeoutMs ?? SLACK_TIMEOUT_MS)
   } catch (e) {
     deps.log(`❌ Slack 알림 실패: ${e instanceof Error ? e.message : String(e)}`)
     return 1

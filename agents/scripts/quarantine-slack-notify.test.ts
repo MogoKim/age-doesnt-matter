@@ -5,10 +5,13 @@
  * **안 갔는데도 workflow 가 success 였던 것**이다. 그래서 여기서는
  * 정상 경로보다 실패 경로를 더 많이 본다.
  */
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { parse as parseYaml } from 'yaml'
 import {
   parseDeadline, isOverdue, scanOverdue, resolveSlackConfig, buildMessage,
-  postToSlack, run, isDirectRun, SLACK_POST_MESSAGE_URL,
+  postToSlack, run, isDirectRun, SLACK_POST_MESSAGE_URL, SLACK_TIMEOUT_MS,
   type ScanDeps, type FetchLike, type OverdueItem,
 } from './quarantine-slack-notify.js'
 
@@ -20,12 +23,12 @@ function scanFrom(manifests: Record<string, string>): ScanDeps {
   }
 }
 
-interface FetchCall { url: string; body: string; headers: Record<string, string> }
+interface FetchCall { url: string; body: string; headers: Record<string, string>; signal?: AbortSignal }
 
 function fetchStub(res: { ok: boolean; status: number; body: string } | Error) {
   const calls: FetchCall[] = []
   const impl: FetchLike = async (url, init) => {
-    calls.push({ url, body: init.body, headers: init.headers })
+    calls.push({ url, body: init.body, headers: init.headers, signal: init.signal })
     if (res instanceof Error) throw res
     return { ok: res.ok, status: res.status, text: async () => res.body }
   }
@@ -319,5 +322,145 @@ describe('검증 7 — 로그에 secret 값도 메시지 원문도 없다', () =
 describe('import 부작용', () => {
   it('vitest 에서 import 해도 직접 실행으로 보지 않는다', () => {
     expect(isDirectRun()).toBe(false)
+  })
+})
+
+// ─────────────────────────────────────────────────────────────
+// P1-1 — secret 노출면 축소
+//
+// workflow-level `env:` 는 **모든 step** 에 값을 흘린다. checkout·setup-node·
+// `npm ci` 는 Slack 토큰이 전혀 필요 없는데도 받게 된다. `npm ci` 는 임의의
+// 패키지 postinstall 을 돌리므로 그 노출면이 가장 아프다.
+// 그래서 secret 은 실제로 쓰는 한 step 의 env 에만 둔다.
+// ─────────────────────────────────────────────────────────────
+// vitest 의 root 는 저장소 루트다(`vitest.config.ts`).
+const WORKFLOW_PATH = resolve(process.cwd(), '.github/workflows/quarantine-check.yml')
+const WORKFLOW_TEXT = readFileSync(WORKFLOW_PATH, 'utf8')
+const WORKFLOW = parseYaml(WORKFLOW_TEXT) as {
+  permissions?: Record<string, string>
+  env?: Record<string, string>
+  jobs: Record<string, {
+    'timeout-minutes'?: number
+    steps: Array<{ name?: string; uses?: string; run?: string; env?: Record<string, string> }>
+  }>
+}
+const NOTIFY_STEP_NAME = 'Check quarantine deadlines and notify'
+const SLACK_SECRETS = ['SLACK_BOT_TOKEN', 'SLACK_CHANNEL_LOG'] as const
+
+describe('P1-1 — Slack secret 은 알림 step 에만 존재한다', () => {
+  it('workflow-level env 에 Slack secret 이 없다', () => {
+    expect(JSON.stringify(WORKFLOW.env ?? {})).not.toContain('SLACK')
+  })
+
+  it('checkout·setup-node·npm ci 에는 Slack secret 이 전달되지 않는다', () => {
+    const others = WORKFLOW.jobs.check.steps.filter((s) => s.name !== NOTIFY_STEP_NAME)
+    // 알림 step 을 뺀 나머지가 실제로 존재해야 이 검사가 의미를 가진다
+    expect(others.length).toBeGreaterThan(0)
+    for (const step of others) {
+      expect(JSON.stringify(step.env ?? {})).not.toContain('SLACK')
+    }
+  })
+
+  it('알림 step 의 env 에 두 secret 이 모두 있다', () => {
+    const step = WORKFLOW.jobs.check.steps.find((s) => s.name === NOTIFY_STEP_NAME)
+    expect(step).toBeDefined()
+    for (const key of SLACK_SECRETS) {
+      expect(step?.env?.[key]).toBe(`\${{ secrets.${key} }}`)
+    }
+  })
+
+  it('각 secret 참조는 파일 전체에서 정확히 1회뿐이다', () => {
+    for (const key of SLACK_SECRETS) {
+      const hits = WORKFLOW_TEXT.split(`secrets.${key}`).length - 1
+      expect(hits).toBe(1)
+    }
+  })
+
+  it('workflow 권한은 최소값 contents: read 로 명시돼 있다', () => {
+    expect(WORKFLOW.permissions).toEqual({ contents: 'read' })
+  })
+
+  it('job 에 timeout-minutes 5 가 있다', () => {
+    expect(WORKFLOW.jobs.check['timeout-minutes']).toBe(5)
+  })
+})
+
+// ─────────────────────────────────────────────────────────────
+// P1-2 — 무응답 제한시간
+//
+// Slack 이 연결만 잡고 응답을 안 주면 fetch 는 **영원히 기다린다.**
+// 그러면 workflow 는 실패도 성공도 아닌 채로 매달린다.
+// 제한시간을 걸고, 초과는 네트워크 실패와 **똑같이** exit 1 로 본다.
+// ─────────────────────────────────────────────────────────────
+/** signal 을 존중하되 스스로는 절대 끝나지 않는 fetch. 실제 무응답 서버와 같다. */
+function hangingFetch() {
+  const seen: { signal?: AbortSignal }[] = []
+  const impl: FetchLike = (_url, init) => {
+    seen.push({ signal: init.signal })
+    return new Promise((_resolve, reject) => {
+      init.signal?.addEventListener('abort', () => reject(new Error('The operation was aborted')))
+    })
+  }
+  return { impl, seen }
+}
+
+describe('P1-2 — Slack 무응답 제한시간', () => {
+  it('기본 제한시간은 15초다', () => {
+    expect(SLACK_TIMEOUT_MS).toBe(15_000)
+  })
+
+  it('fetch init 에 AbortSignal 이 전달된다', async () => {
+    const f = fetchStub(OK)
+    await postToSlack(f.impl, { token: 'dummy-t', channel: 'C1' }, { channel: 'C1', text: 'x' })
+    expect(f.calls[0].signal).toBeInstanceOf(AbortSignal)
+    expect(f.calls[0].signal?.aborted).toBe(false)
+  })
+
+  it('제한시간을 넘기면 throw 한다', async () => {
+    const f = hangingFetch()
+    await expect(
+      postToSlack(f.impl, { token: 'dummy-t', channel: 'C1' }, { channel: 'C1', text: 'x' }, 20),
+    ).rejects.toThrow(/제한시간 초과/)
+    expect(f.seen[0].signal?.aborted).toBe(true)
+  })
+
+  it('제한시간 초과는 네트워크 실패와 동일하게 exit 1 이다', async () => {
+    const f = hangingFetch()
+    const d = deps({
+      scan: scanFrom({ 'old-folder': manifest('2026-09-01') }),
+      fetchImpl: f.impl,
+      timeoutMs: 20,
+    })
+    expect(await run(d.args)).toBe(1)
+  })
+
+  it('초과 로그에 token·channel·메시지 원문이 없다', async () => {
+    const f = hangingFetch()
+    const d = deps({
+      env: { SLACK_BOT_TOKEN: 'dummy-secret-value-for-leak-test', SLACK_CHANNEL_LOG: 'C-SECRET-CHANNEL' },
+      scan: scanFrom({ 'secret-folder-name': manifest('2026-09-01') }),
+      fetchImpl: f.impl,
+      timeoutMs: 20,
+    })
+    expect(await run(d.args)).toBe(1)
+    const log = d.lines.join('\n')
+    expect(log).not.toContain('dummy-secret-value-for-leak-test')
+    expect(log).not.toContain('C-SECRET-CHANNEL')
+    expect(log).not.toContain('secret-folder-name')
+    expect(log).not.toContain('clean_quarantine')
+  })
+
+  it('제한시간을 걸어도 초과 0건이면 fetch 는 여전히 0회다', async () => {
+    const f = hangingFetch()
+    const d = deps({ fetchImpl: f.impl, timeoutMs: 20 })
+    expect(await run(d.args)).toBe(0)
+    expect(f.seen).toHaveLength(0)
+  })
+
+  it('정상 응답이면 타이머가 남아 프로세스를 붙잡지 않는다', async () => {
+    const f = fetchStub(OK)
+    const d = deps({ scan: scanFrom({ a: manifest('2026-09-01') }), fetchImpl: f.impl })
+    expect(await run(d.args)).toBe(0)
+    expect(f.calls[0].signal?.aborted).toBe(false)
   })
 })
