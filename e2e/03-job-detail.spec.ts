@@ -146,8 +146,14 @@ test.describe('시나리오 3: 일자리 목록 → 상세 + 매거진 플로우
       await expect(page.locator('main')).toBeVisible()
       await expect(page.locator('h1').first()).toBeVisible()
 
-      // PR #68 이후 매거진 상세는 읽기 전용 — 댓글 섹션이 없어야 한다(커뮤니티/일자리 댓글은 별도 유지)
-      await expect(page.locator('main').getByText(/댓글/)).toHaveCount(0)
+      // PR #68 이후 매거진 상세는 읽기 전용 — 댓글 **섹션**이 없어야 한다
+      // (커뮤니티/일자리 댓글은 별도 유지)
+      //
+      // 🔴 예전에는 `main` 전체에서 /댓글/ 텍스트를 셌다. 그러면 **본문 산문까지 잡힌다** —
+      //    매거진 기사가 "댓글"이라는 낱말을 쓰기만 해도 실패했다.
+      //    실제로 2026-09-14 에 첫 매거진 글이 바뀌면서 본문의 "댓글" 2회에 걸려 깨졌다.
+      //    섹션 유무는 `CommentSection` 의 heading(`💬 댓글 <count>`)으로만 판정한다.
+      await expect(page.getByRole('heading', { name: /댓글\s+\d+$/ })).toHaveCount(0)
 
       // 하단 읽기 전용 동선(우나어 소개·둘러보기)만 유지
       await expect(page.getByText(/우나어 둘러보기/).first()).toBeVisible({ timeout: 5000 })
