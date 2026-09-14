@@ -106,7 +106,7 @@ DAU·MAU·PV·SEO 클릭·색인 수는 **생존/유입 참고지표이지 목�
 | GHA DB 인증 | ✅ | ✅ | ✅ | run `34187374847` success · AuthenticationFailed 0 |
 | B-3 공급망 제거 | ✅ | ✅ | ✅ | `agents/cafe/` 부재 · 카페 크롤 plist 0 · 신규 발행 0 |
 | Next 16 / React 19 | ✅ | ✅ | ✅ | production LCP median 2,264ms · perf 99 · #418 0/20 |
-| 네이버 기술 방어선 | ✅ | ✅ | ✅ | 현재 **232 URL**(2026-09-14 처분 후) · canonical 100% · noindex 0 · Yeti 200 · *859 URL 은 2026-09-10 역사값* |
+| 네이버 기술 방어선 | ✅ | ✅ | ✅ | 현재 **229 URL** · canonical 100% · noindex 0 · Yeti 200 · *역사값: 232(627건 처분 직후) · 859(2026-09-10)* |
 | 네이버 **색인 회복** | ✅ | — | ❌ | 최근 창업자 증거 기준 색인 0 · **현재값 Search Advisor 재확인 필요**(Claude 접근 권한 없음) |
 | 콘텐츠 오염 처분 | ✅ | ✅ | ✅ **완료** | 2026-09-10 `09:32:39Z`=**18:32:39 KST** production 실행 `done ok:true`. 검증표 12항목 전항 PASS — 네이버 유래 Post **0** · tombstone **324** · `CafePost`/`CafeTrend`/`CommentWaveQueue` **0** · R2 잔존 **0** · **글 경로 보존 지표 전부 불변**. 🔴 단, 검증표 밖에서 **댓글 경로 `GuestLike` 82건이 cascade 폐기**됐다(§8) |
 | 목록 SSR 크롤 경로(**병렬 E**) | ✅ | ✅ | ✅ **완료** | production 실측 2026-09-10: 6경로 각 **고유 상세 링크 12건** · `page=1`·`page=2` 겹침 0 · #418 140회 0 (PR #458 → `18792f44`). ⚠️ 그 140회는 **홈+목록 6경로** 측정이고 **글상세는 대상이 아니었다** — 글상세 #418 은 2026-09-11 에 별도로 발견·수정됐다(#465) |
@@ -279,7 +279,7 @@ A-3 폐기에서 FK 사각으로 `GuestLike` 82건이 cascade 손실됐고 `Like
 
 | 축 | 상태 |
 |---|---|
-| 기술 수집 가능 | ✅ canonical 자기참조 100% · 일반 robots noindex 0 · X-Robots-Tag 0 · Yeti 200 · 404 정상 · **현재 `<loc>` 232**(2026-09-14 처분 후 · 삭제 글 0/627) · *2026-09-10 역사값 859 URL(폐기 후 불변 — 대상이 전부 비공개였다)* |
+| 기술 수집 가능 | ✅ canonical 자기참조 100% · 일반 robots noindex 0 · X-Robots-Tag 0 · Yeti 200 · 404 정상 · **현재 `<loc>` 229**(시드 글 3건 숨김 반영) · *역사값: 232(627건 처분 직후 · 삭제 글 0/627) · 859(2026-09-10 폐기 후 불변 — 대상이 전부 비공개였다)* |
 | 내부 링크 경로 | ✅ **복구(2026-09-10)** — 6경로 각 고유 상세 링크 **12건**, `page=1`·`page=2` 겹침 0. sitemap 외 발견 경로가 생겼다 |
 | 네이버 수집·색인·노출 | ❌ **최근 창업자 증거 기준 색인 0** — 🔴 **현재 Search Advisor 재확인 필요** |
 
@@ -441,7 +441,7 @@ production **`2026.09.11-a392d42`** · main **`a392d425`** (2026-09-11 실측)
 | `/` · `/community/stories` · `/magazine` · `/jobs` | 200 |
 | `/api/health` | 200 · `status: healthy` · `database: ok` |
 | `/api/health/auth` | 200 · `ok·db·authSecret·kakao` 전부 true |
-| `/sitemap.xml` | 200 · **232 URL** (2026-09-14 처분 후 실측) · *859 URL 은 2026-09-10 역사값* |
+| `/sitemap.xml` | 200 · **229 URL** (2026-09-14 시드 3건 숨김 후 실측) · *역사값: 232(627건 처분 직후) · 859(2026-09-10)* |
 | `/robots.txt` | 200 · `Allow: /` + `Disallow: /admin/ /api/ /my/` |
 | `/admin/*` (익명) | 307 → `/admin/login` |
 
@@ -604,7 +604,7 @@ page=2 가 12건 미만인 곳은 **글 자체가 그만큼뿐**이다(life2 23�
 직전 빈 shell 은 371~416자였다 — 전 경로가 **3배 이상**이다.
 
 함께 확인: 홈+6경로 **#418 desktop·mobile 각 10회 = 140회 전부 0** · pageerror 0 ·
-필터·정렬·검색(9건)·페이지네이션·뒤로가기 정상 · `/api/health` `/api/health/auth` `/sitemap.xml` 200 · sitemap **859 URL**(당시값 · 현재 232).
+필터·정렬·검색(9건)·페이지네이션·뒤로가기 정상 · `/api/health` `/api/health/auth` `/sitemap.xml` 200 · sitemap **859 URL**(당시값 · 현재 **229**).
 잔여 console 오류는 광고·폰트·동의관리(doubleclick·fundingchoices·fonts.googleapis) 등 **제3자 스크립트**이며 이 변경과 무관하다.
 
 ### 종결 — 네이버 카페 데이터 폐기 (A-3) **실행 완료**
