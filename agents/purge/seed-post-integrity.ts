@@ -341,77 +341,58 @@ export function planTargets(rows: readonly SeedPostRow[]): TargetPlan {
 }
 
 // ── 사후 검증 ────────────────────────────────────────────────
+/**
+ * 🔴 **성공 판정은 세 가지뿐이다.**
+ *
+ * 이전 판은 반응 5축을 여기서 **exact equality** 로 또 봤다. 그래서 12축
+ * `compareReactions`(감소만 실패)와 **판정이 둘**이 됐고, 실행 중 누가 댓글을 달아
+ * 9 → 10 이 되면 12축은 통과하는데 5축이 실패하는 모순이 생겼다.
+ * 반응 판정은 `compareReactions` 하나, 본문 판정은 `verifyContentUnchanged` 하나다.
+ *
+ * 전체 `Post`·`PUBLISHED`·`HIDDEN` **절대값도 판정에서 뺐다.** 다른 배치가 글을 쓰거나
+ * 지워도 이 작업의 성패와는 무관하다 — 관측값으로 출력만 한다.
+ */
 export interface AfterCheck {
-  seedPublishedRemaining: number
+  /** 확정 manifest 3건이 실제로 HIDDEN + BOT 인가 — 이게 성공의 정의다 */
   seedHiddenBot: number
-  totalPosts: number
-  publishedTotal: number
-  hiddenTotal: number
-  comments: number
-  realMemberComments: number
-  postLikes: number
-  guestLikesOnComments: number
-  postViews: number
+  /** 시드 계정의 공개 글이 하나도 안 남았는가 */
+  seedPublishedRemaining: number
+  /** 홈 고정이 풀렸는가 */
   homeCurationOverrides: number
-  /** 제목·본문을 지우지 않았는지 — tombstone 금지 계약 */
-  postsWithEmptyTitleOrContent: number
+
+  // ── 아래는 **관측값**이다. 판정에 쓰지 않는다. ──
+  totalPosts?: number
+  publishedTotal?: number
+  hiddenTotal?: number
 }
 
 export const EXPECTED_AFTER = {
-  seedPublishedRemaining: 0,
   seedHiddenBot: 3,
-  totalPosts: 3968,
-  publishedTotal: 216,
-  hiddenTotal: 3545,
+  seedPublishedRemaining: 0,
   homeCurationOverrides: 0,
 } as const
 
-/**
- * `done` 을 말해도 되는지 판정한다.
- *
- * 반응 데이터는 **전후 동일**해야 한다. 하나라도 줄었으면 실패다 —
- * 이 작업은 아무것도 지우지 않기로 한 작업이기 때문이다.
- */
-export function verifyAfter(a: AfterCheck, before: Baseline): Issue[] {
+export function verifyAfter(a: AfterCheck): Issue[] {
   const out: Issue[] = []
   const e = EXPECTED_AFTER
 
+  if (a.seedHiddenBot !== e.seedHiddenBot) {
+    out.push({ code: 'HIDDEN_BOT_COUNT', detail: `확정 3건 중 HIDDEN/BOT ${a.seedHiddenBot} · 기대 ${e.seedHiddenBot}` })
+  }
   if (a.seedPublishedRemaining !== e.seedPublishedRemaining) {
     out.push({ code: 'STILL_PUBLISHED', detail: `공개 시드 글 ${a.seedPublishedRemaining}건 남음` })
-  }
-  if (a.seedHiddenBot !== e.seedHiddenBot) {
-    out.push({ code: 'HIDDEN_BOT_COUNT', detail: `HIDDEN/BOT 기대 ${e.seedHiddenBot} · 실제 ${a.seedHiddenBot}` })
-  }
-  if (a.totalPosts !== e.totalPosts) {
-    out.push({ code: 'TOTAL_POSTS_CHANGED', detail: `전체 Post 기대 ${e.totalPosts} · 실제 ${a.totalPosts}` })
-  }
-  if (a.publishedTotal !== e.publishedTotal) {
-    out.push({ code: 'PUBLISHED_TOTAL', detail: `PUBLISHED 기대 ${e.publishedTotal} · 실제 ${a.publishedTotal}` })
-  }
-  if (a.hiddenTotal !== e.hiddenTotal) {
-    out.push({ code: 'HIDDEN_TOTAL', detail: `HIDDEN 기대 ${e.hiddenTotal} · 실제 ${a.hiddenTotal}` })
   }
   if (a.homeCurationOverrides !== e.homeCurationOverrides) {
     out.push({ code: 'CURATION_REMAINS', detail: `HomeCurationOverride ${a.homeCurationOverrides}건 남음` })
   }
-
-  // 반응 데이터 — 전후 동일해야 한다
-  const same: [string, number, number][] = [
-    ['Comment', before.comments, a.comments],
-    ['실회원 Comment', before.realMemberComments, a.realMemberComments],
-    ['Like(post)', before.postLikes, a.postLikes],
-    ['GuestLike(comment)', before.guestLikesOnComments, a.guestLikesOnComments],
-    ['PostView', before.postViews, a.postViews],
-  ]
-  for (const [label, b, aft] of same) {
-    if (b !== aft) out.push({ code: 'REACTION_DATA_CHANGED', detail: `${label} ${b} → ${aft}` })
-  }
-
-  if (a.postsWithEmptyTitleOrContent !== 0) {
-    out.push({
-      code: 'TOMBSTONED',
-      detail: `제목·본문이 비워진 글 ${a.postsWithEmptyTitleOrContent}건 — tombstone 은 하지 않기로 했다`,
-    })
-  }
   return out
+}
+
+/**
+ * `Report` 는 **글에도 댓글에도** 붙는다(`postId` XOR `commentId`).
+ * 댓글 신고는 `postId` 가 null 이라 글 기준 조회로는 안 잡힌다 —
+ * 두 경로를 합쳐야 "신고가 줄었는가"를 제대로 본다.
+ */
+export function totalReports(r: { onPosts: number; onComments: number }): number {
+  return r.onPosts + r.onComments
 }

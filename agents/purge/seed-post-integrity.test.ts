@@ -12,6 +12,7 @@ import {
   SEED_PROVIDER_ID, CONFIRM_TOKEN, TRANSACTION_OPTIONS,
   EXPECTED_FROM, EXPECTED_TO, EXPECTED_BASELINE, EXPECTED_AFTER, EXPECTED_REACTIONS,
   assertManifestIntegrity, parseManifest, verifyIdentity, compareReactions, verifyContentUnchanged,
+  totalReports,
   type SeedPostRow, type Baseline, type AfterCheck, type LivePostRow, type ReactionCounts,
   type ManifestRow,
 } from './seed-post-integrity.js'
@@ -360,60 +361,9 @@ describe('트랜잭션 실행', () => {
   })
 })
 
-// ── 사후 검증 ────────────────────────────────────────────────
-const AFTER_OK: AfterCheck = {
-  seedPublishedRemaining: 0, seedHiddenBot: 3,
-  totalPosts: 3968, publishedTotal: 216, hiddenTotal: 3545,
-  comments: 9, realMemberComments: 2, postLikes: 4,
-  guestLikesOnComments: 1, postViews: 5,
-  homeCurationOverrides: 0, postsWithEmptyTitleOrContent: 0,
-}
-
-describe('사후 검증을 통과해야만 done 이다', () => {
-  it('전부 기대대로면 이슈 0', () => {
-    expect(verifyAfter(AFTER_OK, BASE)).toEqual([])
-  })
-  it('공개 시드 글이 남으면 잡는다', () => {
-    expect(verifyAfter({ ...AFTER_OK, seedPublishedRemaining: 1 }, BASE)
-      .some((i) => i.code === 'STILL_PUBLISHED')).toBe(true)
-  })
-  it('🔴 전체 Post 가 줄면 잡는다 — 이 작업은 아무것도 지우지 않는다', () => {
-    expect(verifyAfter({ ...AFTER_OK, totalPosts: 3965 }, BASE)
-      .some((i) => i.code === 'TOTAL_POSTS_CHANGED')).toBe(true)
-  })
-  it('PUBLISHED·HIDDEN 총계가 기대와 다르면 잡는다', () => {
-    expect(verifyAfter({ ...AFTER_OK, publishedTotal: 219 }, BASE)
-      .some((i) => i.code === 'PUBLISHED_TOTAL')).toBe(true)
-    expect(verifyAfter({ ...AFTER_OK, hiddenTotal: 3542 }, BASE)
-      .some((i) => i.code === 'HIDDEN_TOTAL')).toBe(true)
-  })
-  it('🔴 댓글이 한 건이라도 줄면 실패다', () => {
-    expect(verifyAfter({ ...AFTER_OK, comments: 8 }, BASE)
-      .some((i) => i.code === 'REACTION_DATA_CHANGED')).toBe(true)
-  })
-  it('🔴 실회원 댓글 2건이 줄면 실패다', () => {
-    expect(verifyAfter({ ...AFTER_OK, realMemberComments: 1 }, BASE)
-      .some((i) => i.code === 'REACTION_DATA_CHANGED')).toBe(true)
-  })
-  it('🔴 Like·GuestLike·PostView 가 줄어도 실패다', () => {
-    for (const k of ['postLikes', 'guestLikesOnComments', 'postViews'] as const) {
-      const bent = { ...AFTER_OK, [k]: (AFTER_OK[k] as number) - 1 }
-      expect(verifyAfter(bent, BASE).some((i) => i.code === 'REACTION_DATA_CHANGED'), k).toBe(true)
-    }
-  })
-  it('🔴 제목·본문이 비워졌으면 실패다 — tombstone 은 안 하기로 했다', () => {
-    expect(verifyAfter({ ...AFTER_OK, postsWithEmptyTitleOrContent: 1 }, BASE)
-      .some((i) => i.code === 'TOMBSTONED')).toBe(true)
-  })
-  it('큐레이션이 남으면 잡는다', () => {
-    expect(verifyAfter({ ...AFTER_OK, homeCurationOverrides: 1 }, BASE)
-      .some((i) => i.code === 'CURATION_REMAINS')).toBe(true)
-  })
-  it('HIDDEN/BOT 수가 3이 아니면 잡는다', () => {
-    expect(verifyAfter({ ...AFTER_OK, seedHiddenBot: 2 }, BASE)
-      .some((i) => i.code === 'HIDDEN_BOT_COUNT')).toBe(true)
-  })
-})
+// ── 사후 검증 (구 5축 검사는 B단계에서 제거 — 아래 "판정 단일화" 블록으로 옮겼다) ──
+// 반응은 `compareReactions`(감소만 실패), 본문은 `verifyContentUnchanged`(해시 일치),
+// 성공 판정은 `verifyAfter`(HIDDEN/BOT 3 · 공개 0 · 큐레이션 0) — 셋이 각자 한 가지만 본다.
 
 // ── 계약 상수 ────────────────────────────────────────────────
 describe('계약 상수', () => {
@@ -424,10 +374,11 @@ describe('계약 상수', () => {
   it('DELETED 로 바꾸지 않는다 — hard delete 도 soft delete 도 아니다', () => {
     expect(EXPECTED_TO.status).not.toBe('DELETED')
   })
-  it('사후 기대값이 착수 실측과 산술적으로 맞는다', () => {
-    expect(EXPECTED_AFTER.publishedTotal).toBe(219 - EXPECTED_BASELINE.seedPublishedPosts)
-    expect(EXPECTED_AFTER.hiddenTotal).toBe(3542 + EXPECTED_BASELINE.seedPublishedPosts)
-    expect(EXPECTED_AFTER.totalPosts).toBe(3968)
+  it('🔴 사후 기대값에 절대 총계가 없다 — 관측값으로만 쓴다', () => {
+    expect(EXPECTED_AFTER.seedHiddenBot).toBe(EXPECTED_BASELINE.seedPublishedPosts)
+    expect(EXPECTED_AFTER).not.toHaveProperty('totalPosts')
+    expect(EXPECTED_AFTER).not.toHaveProperty('publishedTotal')
+    expect(EXPECTED_AFTER).not.toHaveProperty('hiddenTotal')
   })
   it('확인 토큰이 고정돼 있다', () => {
     expect(CONFIRM_TOKEN).toBe('HIDE-SEED-PUBLIC-POSTS-3')
@@ -579,5 +530,76 @@ describe('🔴 title·content 는 비어 있는지가 아니라 해시로 본다
   })
   it('행이 사라지면 잡는다', () => {
     expect(verifyContentUnchanged(M, same.slice(1)).some((i) => i.code === 'CONTENT_MISSING')).toBe(true)
+  })
+})
+
+// ── 🔴 B단계: 판정 단일화 ─────────────────────────────────────
+//
+// 이전 `verifyAfter` 는 반응 5축을 **exact equality** 로 또 봤다.
+// 그래서 12축 `compareReactions`(감소만 실패)와 **판정이 둘**이 됐고,
+// 실행 중 누가 댓글을 달아 9 → 10 이 되면 12축은 통과하는데 5축이 실패했다.
+// 반응 판정은 `compareReactions` **하나**여야 한다.
+describe('🔴 verifyAfter 에서 반응 exact equality 를 걷어냈다', () => {
+  const base: AfterCheck = {
+    seedHiddenBot: 3,
+    homeCurationOverrides: 0,
+    seedPublishedRemaining: 0,
+    totalPosts: 3968, publishedTotal: 216, hiddenTotal: 3545,
+  }
+
+  it('확정 3건이 HIDDEN/BOT 이고 큐레이션 0 이면 통과', () => {
+    expect(verifyAfter(base)).toEqual([])
+  })
+
+  it('🔴 전체 Post 절대값이 달라도 실패하지 않는다 — 관측값일 뿐이다', () => {
+    // 다른 배치가 글을 쓰거나 지워도 이 작업의 성패와 무관하다.
+    expect(verifyAfter({ ...base, totalPosts: 4001 })).toEqual([])
+  })
+  it('🔴 PUBLISHED·HIDDEN 총계가 달라도 실패하지 않는다', () => {
+    expect(verifyAfter({ ...base, publishedTotal: 230, hiddenTotal: 3600 })).toEqual([])
+  })
+
+  it('확정 3건이 HIDDEN/BOT 이 아니면 실패한다 — 이게 성공 판정이다', () => {
+    expect(verifyAfter({ ...base, seedHiddenBot: 2 }).some((i) => i.code === 'HIDDEN_BOT_COUNT')).toBe(true)
+  })
+  it('공개 시드 글이 남으면 실패한다', () => {
+    expect(verifyAfter({ ...base, seedPublishedRemaining: 1 })
+      .some((i) => i.code === 'STILL_PUBLISHED')).toBe(true)
+  })
+  it('큐레이션이 남으면 실패한다', () => {
+    expect(verifyAfter({ ...base, homeCurationOverrides: 1 })
+      .some((i) => i.code === 'CURATION_REMAINS')).toBe(true)
+  })
+
+  it('🔴 AfterCheck 에 반응 축이 더 이상 없다 — 판정이 하나다', () => {
+    const keys = Object.keys(base)
+    for (const k of ['comments', 'realMemberComments', 'postLikes',
+                     'guestLikesOnComments', 'postViews', 'postsWithEmptyTitleOrContent']) {
+      expect(keys, `${k} 는 compareReactions·verifyContentUnchanged 가 본다`).not.toContain(k)
+    }
+  })
+
+  it('🔴 실행 중 댓글이 늘어난 실행도 전체가 통과한다', () => {
+    // verifyAfter(성공 판정) + compareReactions(감소만 실패) 를 합쳐도 이슈 0 이어야 한다.
+    const after = { ...FULL, comments: 10, postViews: 12 }
+    expect([...verifyAfter(base), ...compareReactions(FULL, after)]).toEqual([])
+  })
+})
+
+// ── 🔴 Report 는 두 경로의 합집합이다 ─────────────────────────
+describe('🔴 Report 는 postId·commentId 두 경로를 합쳐 센다', () => {
+  it('글 신고만 있으면 그 수', () => {
+    expect(totalReports({ onPosts: 2, onComments: 0 })).toBe(2)
+  })
+  it('댓글 신고만 있어도 센다 — postId 경로로는 안 잡힌다', () => {
+    expect(totalReports({ onPosts: 0, onComments: 3 })).toBe(3)
+  })
+  it('둘 다 있으면 합이다', () => {
+    expect(totalReports({ onPosts: 2, onComments: 3 })).toBe(5)
+  })
+  it('🔴 댓글 신고가 생겼다 사라지면 감소로 잡힌다', () => {
+    const before = { ...FULL, reports: totalReports({ onPosts: 0, onComments: 1 }) }
+    const after = { ...FULL, reports: totalReports({ onPosts: 0, onComments: 0 }) }
+    expect(compareReactions(before, after).some((i) => i.code === 'REACTION_LOST')).toBe(true)
   })
 })

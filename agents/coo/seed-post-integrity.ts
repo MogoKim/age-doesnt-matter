@@ -18,7 +18,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import {
   isSeedAccount, planTargets, checkBaseline, verifyAfter, sha256,
-  assertManifestIntegrity, parseManifest, compareReactions, verifyContentUnchanged,
+  assertManifestIntegrity, parseManifest, compareReactions, verifyContentUnchanged, totalReports,
   CONFIRM_TOKEN, MANIFEST_PATH, EXPECTED_REACTIONS, EXPECTED_PROVIDER_IDS,
   type Baseline, type AfterCheck, type Issue, type SeedPostRow,
   type ManifestRow, type ReactionCounts,
@@ -78,7 +78,12 @@ async function measureReactions(prisma: PrismaLike, ids: string[]): Promise<Reac
     scraps: scraps.length,
     realMemberScraps: scraps.filter((s) => isRealMember(s.user)).length,
     postViews: await prisma.postView.count({ where: w }),
-    reports: await prisma.report.count({ where: w }),
+    // 🔴 Report 는 글에도 댓글에도 붙는다(postId XOR commentId).
+    //    댓글 신고는 postId 가 null 이라 글 기준 조회로는 안 잡힌다 — 두 경로를 합친다.
+    reports: totalReports({
+      onPosts: await prisma.report.count({ where: w }),
+      onComments: cids.length ? await prisma.report.count({ where: cw }) : 0,
+    }),
   }
 }
 
@@ -214,40 +219,34 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
     const seedUsers = (await prisma.user.findMany({ select: { id: true, providerId: true } }))
       .filter((u) => isSeedAccount(u.providerId))
     const seedAuthorIds = seedUsers.map((u) => u.id)
-    const comments = await prisma.comment.findMany({
-      where: w, select: { id: true, author: { select: { providerId: true, role: true, status: true } } },
-    })
-    const commentIds = comments.map((c) => c.id)
+    // 관측용 — 판정에 쓰지 않는다(§verifyAfter 주석 참조).
     const statusGroups = await prisma.post.groupBy({ by: ['status'], _count: { _all: true } })
     const byStatus = Object.fromEntries(statusGroups.map((g) => [g.status, g._count._all]))
-    const changed = await prisma.post.findMany({
-      where: { id: { in: ids } }, select: { title: true, content: true },
-    })
 
     const after: AfterCheck = {
+      // 성공 판정 3축
+      seedHiddenBot: await prisma.post.count({
+        where: { id: { in: manifestIds }, status: 'HIDDEN', source: 'BOT' } }),
       seedPublishedRemaining: await prisma.post.count({
         where: { authorId: { in: seedAuthorIds }, status: 'PUBLISHED' } }),
-      seedHiddenBot: await prisma.post.count({
-        where: { id: { in: ids }, status: 'HIDDEN', source: 'BOT' } }),
+      homeCurationOverrides: await prisma.homeCurationOverride.count({ where: w }),
+      // 관측값 — 판정에 쓰지 않는다
       totalPosts: await prisma.post.count(),
       publishedTotal: byStatus.PUBLISHED ?? 0,
       hiddenTotal: byStatus.HIDDEN ?? 0,
-      comments: comments.length,
-      realMemberComments: comments.filter((c) => isRealMember(c.author)).length,
-      postLikes: await prisma.like.count({ where: w }),
-      guestLikesOnComments: commentIds.length
-        ? await prisma.guestLike.count({ where: { commentId: { in: commentIds } } }) : 0,
-      postViews: await prisma.postView.count({ where: w }),
-      homeCurationOverrides: await prisma.homeCurationOverride.count({ where: w }),
-      postsWithEmptyTitleOrContent: changed.filter((p) => p.title.trim() === '' || p.content.trim() === '').length,
     }
+
     const reactionsAfter = await measureReactions(prisma, manifestIds)
     const contentAfter = (await prisma.post.findMany({
       where: { id: { in: manifestIds } }, select: { id: true, title: true, content: true },
     })).map((p) => ({ id: p.id, titleSha256: sha256(p.title), contentSha256: sha256(p.content) }))
 
+    // 판정은 셋이 각자 한 가지만 본다 —
+    //   verifyAfter: 성공 정의(HIDDEN/BOT 3 · 공개 0 · 큐레이션 0)
+    //   compareReactions: 반응 12축 **감소만** 실패
+    //   verifyContentUnchanged: 제목·본문 해시 일치
     const issues = [
-      ...verifyAfter(after, base),
+      ...verifyAfter(after),
       ...compareReactions(reactionsBefore, reactionsAfter),
       ...verifyContentUnchanged(manifest, contentAfter),
     ]
@@ -256,11 +255,13 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       throw new Error('[ABORT] 변경은 커밋됐지만 사후 검증을 통과하지 못했다 — done 이라고 말하지 않는다.')
     }
     out('\n── 사후 검증 ──')
+    out('  ── 성공 판정 ──')
+    out(`  확정 3건 HIDDEN/BOT    ${after.seedHiddenBot}/3`)
     out(`  공개 시드 글 잔량      ${after.seedPublishedRemaining}`)
-    out(`  HIDDEN/BOT             ${after.seedHiddenBot}`)
-    out(`  전체 Post              ${after.totalPosts} (불변)`)
+    out(`  HomeCurationOverride   ${after.homeCurationOverrides}`)
+    out('  ── 관측값 (판정에 쓰지 않음) ──')
+    out(`  전체 Post              ${after.totalPosts}`)
     out(`  PUBLISHED / HIDDEN     ${after.publishedTotal} / ${after.hiddenTotal}`)
-    out(`  댓글 / 실회원 댓글     ${after.comments} / ${after.realMemberComments} (보존)`)
     out('  ── 반응 12축 (감소 0) ──')
     for (const [k, v] of Object.entries(reactionsAfter)) {
       const b = reactionsBefore[k as keyof ReactionCounts]

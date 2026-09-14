@@ -113,16 +113,32 @@ PUBLISHED / source=USER  →  HIDDEN / source=BOT
 
 ## 4. 사후 기대값
 
-| 항목 | 기대 |
+### 4-A. 🔴 판정은 셋이 각자 한 가지만 본다
+
+| 판정 | 보는 것 |
+|---|---|
+| `verifyAfter` | **성공 정의** — 확정 3건이 HIDDEN/BOT · 공개 시드 글 0 · 큐레이션 0 |
+| `compareReactions` | 반응 **12축 감소만** 실패 (증가는 허용) |
+| `verifyContentUnchanged` | 제목·본문 **해시 일치** |
+
+이전 판은 `verifyAfter` 가 반응 5축을 **exact equality** 로 또 봤다.
+그래서 12축과 **판정이 둘**이 됐고, 실행 중 누가 댓글을 달아 9 → 10 이 되면
+12축은 통과하는데 5축이 실패하는 모순이 생겼다. 반응 판정은 하나여야 한다.
+
+전체 `Post`·`PUBLISHED`·`HIDDEN` **절대값은 판정에서 뺐다.**
+다른 배치가 글을 쓰거나 지워도 이 작업의 성패와 무관하다 — **관측값으로 출력만** 한다.
+
+| 성공 판정 | 기대 |
 |---|---:|
-| PUBLISHED 시드 글 | **0** |
-| HIDDEN + BOT 시드 글 | **3** |
-| 전체 Post | **3,968** (불변) |
-| PUBLISHED 총계 | **219 → 216** |
-| HIDDEN 총계 | **3,542 → 3,545** |
-| **반응 12축** | 전부 **감소 0** |
+| 확정 manifest 3건이 **HIDDEN + BOT** | **3/3** |
+| 공개 시드 글 잔량 | **0** |
 | HomeCurationOverride | **0** |
-| **title·content 해시** | manifest 와 **정확히 일치** |
+| 반응 12축 | **감소 0** |
+| title·content 해시 | manifest 와 **정확히 일치** |
+
+| 관측값 (판정 아님) | 참고 |
+|---|---:|
+| 전체 Post · PUBLISHED · HIDDEN | 출력만 한다 |
 
 ### 4-0. 반응 12축 (착수 = 사후 기준선)
 
@@ -134,6 +150,9 @@ PUBLISHED / source=USER  →  HIDDEN / source=BOT
 | `guestLikesOnPosts` / `guestLikesOnComments` | 0 / **1** |
 | `scraps` / `realMemberScraps` | 0 / 0 |
 | `postViews` / `reports` | 5 / 0 |
+
+🔴 `reports` 는 **`postId` 경로와 `commentId → Comment.postId` 경로의 합집합**이다.
+댓글 신고는 `postId` 가 null 이라 글 기준 조회로는 안 잡힌다.
 
 **감소하면 실패 · 증가는 허용**한다. 실행 중 누가 댓글을 달거나 조회해서 늘어나는 것은
 정상이고, 그걸 실패로 보면 사람이 서비스를 쓰는 것만으로 작업이 실패한다.
@@ -147,7 +166,7 @@ manifest 의 `titleSha256`·`contentSha256` 과 **정확히 같아야** 한다(`
 Post 와 반응 데이터는 삭제하지 않는다. `HomeCurationOverride` 2건만 의도적으로 제거한다.
 실행 중 누가 댓글을 달거나 조회해서 **늘어나는 것은 정상**이다 — 감소만 실패로 본다.
 
-### 4-A. 노출면 (실행 배치에서 확인)
+### 4-B. 노출면 (실행 배치에서 확인)
 
 - [ ] 공개 URL **404 또는 410**
 - [ ] `sitemap.xml` 에서 3건 제외
