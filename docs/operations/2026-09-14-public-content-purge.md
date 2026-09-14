@@ -252,7 +252,7 @@ DB 가 시작 전인데 이미지만 지우면 **살아 있는 글의 이미지�
 | `agents/coo/public-content-purge.ts` | **COO 핸들러** — 유일한 실행 입구 |
 | `agents/cron/runner.ts` | `coo:public-content-purge` 등록 (LOCAL ONLY · 스케줄 미연결) |
 | `docs/operations/data/2026-09-14-public-content-purge.csv` | 확정 대상 628행 (SHA 잠금) |
-| `docs/operations/data/2026-09-14-public-content-purge-r2.txt` | R2 manifest 851키 (SHA 잠금) |
+| `docs/operations/data/2026-09-14-public-content-purge-r2.txt` | R2 manifest **867키** (후보 전체 객체 · SHA 잠금) |
 
 ### 5-0. 🔴 TOCTOU — Serializable + 트랜잭션 내 재판정
 
@@ -369,13 +369,12 @@ npx tsx agents/coo/public-content-purge.ts --execute --confirm=PURGE-PUBLIC-CONT
 ## 6. dry-run 결과 (2026-09-14 · write 0)
 
 ```
-확정 CSV 628행 · R2 manifest 851키 — 무결성 통과
+확정 CSV 628행 · R2 manifest 867키 — 무결성 통과
 보존 경계 218건 (기대 218)
 계획 이슈: 0건
 재실행 판정: NOT_STARTED (남은 후보 628/628)
-── R2 계획 ── 전용 851 · 공유(삭제 금지) 16 · 외부 6
 drift 이슈: 0건
-  (관측 4건 — 막지 않음: updatedAt 만 바뀐 글. 본문·제목은 동일)
+  (관측 37건 — 막지 않음: updatedAt 만 바뀐 글. 본문·제목은 동일)
 삭제 후보 628건 · 보호 자동 제외 0건
 boardType: {"JOB":141,"HUMOR":127,"MAGAZINE":262,"STORY":89,"LIFE2":7,"WEEKLY":2}
 ── semantic 평문 참조 ──
@@ -387,8 +386,22 @@ boardType: {"JOB":141,"HUMOR":127,"MAGAZINE":262,"STORY":89,"LIFE2":7,"WEEKLY":2
   SocialPost.linkUrl                  5  CLEANUP
   ChannelDraft.linkUrl               97  CLEANUP
   AdminAuditLog.targetId              7  PRESERVE
-dry-run 종료 — DB write 0건 · R2 삭제 0건
+── R2 보호 판정 ── manifest 867 · 살아 있는 참조로 보호 867 · 삭제 후보 0
+   (미리보기 — 삭제 후 기준: 보호 0 · R2 삭제 후보 867)
+── R2 (dry-run) ── manifest 867키 · 삭제 0
+상태: DRY_RUN
 ```
+
+### 6-0. R2 수치는 두 시점으로 읽는다
+
+| 시점 | 보호 | R2 삭제 |
+|---|---:|---:|
+| **실행 전** (후보 628건이 아직 살아 있다) | **867** | **0** |
+| **DB 삭제 후 예상** | **0** | **867** |
+
+실행 전 보호 867 은 후보 글 자신이 자기 이미지를 참조하기 때문이다 — 정상이다.
+`updatedAt` 관측 37건은 `viewCount`·`likeCount`·`trendingScore` 비정규화 갱신이며
+본문·제목 drift 는 0 이다(§5-0-B).
 
 ## 6-A. semantic 평문 참조 — 정책과 잔존 이유
 
