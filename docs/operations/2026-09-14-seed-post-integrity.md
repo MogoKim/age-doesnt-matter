@@ -14,14 +14,29 @@
 PUBLISHED / source=USER  →  HIDDEN / source=BOT
 ```
 
-### 0-A. 🔴 지우는 작업이 아니다
+### 0-A. 🔴 무엇을 지우고 무엇을 지키는가
+
+**Post 와 반응 데이터는 삭제하지 않는다. `HomeCurationOverride` 2건만 의도적으로 제거한다.**
 
 `hard delete` 를 하지 않는다. **tombstone(제목·본문 비우기)도 하지 않는다.**
 
 이 세 글에는 **실회원 댓글 2건**이 달려 있다. 본문을 지우면 그 댓글이 무엇에 대한
 말이었는지 알 수 없게 된다 — 사람의 흔적을 망가뜨리는 셈이고, 감사 가능성도 사라진다.
 
-반응 데이터(`Comment`·`Like`·`GuestLike`·`PostView`)는 **한 행도 건드리지 않는다.**
+반응 데이터(`Comment`·`Like`·`GuestLike`·`Scrap`·`PostView`·`Report`)는
+**한 행도 건드리지 않는다.** `HomeCurationOverride` 2건은 홈 고정을 푸는 것이라
+의도적으로 제거한다 — 숨긴 글이 홈에 고정된 채로 남으면 안 되기 때문이다.
+
+### 0-A-1. 🔴 대상 identity 는 manifest 로 고정한다
+
+대상 3건의 **identity 를 파일로 못 박는다** — Post ID · `providerId` · `authorId` 해시 ·
+`boardType` · 기대 `status`/`source` · **title/content 해시**.
+
+`docs/operations/data/2026-09-14-seed-post-manifest.csv` · 전체 SHA-256 `ce0b5769bf46c9ad…`
+
+한 글자라도 바뀌면 실행되지 않는다. 트랜잭션 안에서 이 **여덟 축**을 다시 대조하고,
+하나라도 어긋나면 **mutation 0 으로 ABORT** 한다. `updateMany` 의 `where` 에도
+확정 ID + 기대 `status`·`source` 를 넣는다(낙관적 잠금).
 
 ### 0-B. 🔴 `seed-` 가 아니라 `seed_` 다
 
@@ -74,7 +89,8 @@ PUBLISHED / source=USER  →  HIDDEN / source=BOT
 
 ### 3-A. 🔴 구조로 막는다
 
-트랜잭션 인터페이스(`SeedTx`)에 `comment`·`like`·`guestLike`·`postView` 를 **아예 넣지 않았다.**
+트랜잭션 인터페이스(`SeedTx`)에 `comment`·`like`·`guestLike`·`scrap`·`report`·`postView` 를
+**아예 넣지 않았다.**
 실수로 그 테이블을 건드리는 코드를 쓰면 **컴파일이 안 된다.**
 주석으로 "건드리지 마라"라고 적는 것보다 확실하다.
 
@@ -87,7 +103,7 @@ PUBLISHED / source=USER  →  HIDDEN / source=BOT
 
 - `isolationLevel: 'Serializable'` · 직렬화 충돌(P2034)은 **재시도하지 않고 ABORT**
 - 낙관적 잠금 — `where` 에 기대 `status`·`source` 를 넣는다
-- 트랜잭션 안에서 다시 읽어 drift·이미 비어 있음을 확인
+- 트랜잭션 안에서 **identity 8축** 재확인(id·authorId·providerId·boardType·status·source·title·content)
 - 영향 행이 대상 수와 다르면 ABORT · 큐레이션 영향 행이 기대와 달라도 ABORT
 - 기본 dry-run · `--execute` + `--confirm=HIDE-SEED-PUBLIC-POSTS-3` 둘 다 필요
 - DB write 는 **COO 경로만**(`agents/coo/`) · `LOCAL ONLY` 라 스케줄 미연결
@@ -104,12 +120,32 @@ PUBLISHED / source=USER  →  HIDDEN / source=BOT
 | 전체 Post | **3,968** (불변) |
 | PUBLISHED 총계 | **219 → 216** |
 | HIDDEN 총계 | **3,542 → 3,545** |
-| 댓글 / 실회원 댓글 | **9 / 2** (보존) |
-| Like · GuestLike · PostView | **4 · 1 · 5** (보존) |
+| **반응 12축** | 전부 **감소 0** |
 | HomeCurationOverride | **0** |
-| 제목·본문이 빈 글 | **0** (tombstone 금지) |
+| **title·content 해시** | manifest 와 **정확히 일치** |
 
-**반응 데이터가 한 건이라도 줄면 실패다.** 이 작업은 아무것도 지우지 않기로 한 작업이다.
+### 4-0. 반응 12축 (착수 = 사후 기준선)
+
+| 축 | 착수값 |
+|---|---:|
+| `comments` / `realMemberComments` | 9 / **2** |
+| `postLikes` / `realMemberPostLikes` | 4 / 0 |
+| `commentLikes` / `realMemberCommentLikes` | 0 / 0 |
+| `guestLikesOnPosts` / `guestLikesOnComments` | 0 / **1** |
+| `scraps` / `realMemberScraps` | 0 / 0 |
+| `postViews` / `reports` | 5 / 0 |
+
+**감소하면 실패 · 증가는 허용**한다. 실행 중 누가 댓글을 달거나 조회해서 늘어나는 것은
+정상이고, 그걸 실패로 보면 사람이 서비스를 쓰는 것만으로 작업이 실패한다.
+
+### 4-1. 제목·본문은 해시로 본다
+
+"비어 있지 않다"만 보면 누가 **다른 문구로 덮어써도 통과**한다.
+manifest 의 `titleSha256`·`contentSha256` 과 **정확히 같아야** 한다(`verifyContentUnchanged`).
+
+**반응 데이터가 한 건이라도 줄면 실패다.**
+Post 와 반응 데이터는 삭제하지 않는다. `HomeCurationOverride` 2건만 의도적으로 제거한다.
+실행 중 누가 댓글을 달거나 조회해서 **늘어나는 것은 정상**이다 — 감소만 실패로 본다.
 
 ### 4-A. 노출면 (실행 배치에서 확인)
 
@@ -128,10 +164,11 @@ canonical slug 로 **301** 한 뒤 최종 상태가 정해진다. 리다이렉�
 
 | 파일 | 역할 |
 |---|---|
-| `agents/purge/seed-post-integrity.ts` | 순수 — 시드 판별 · 착수 조건 · 대상 판정 · 사후 검증 |
+| `agents/purge/seed-post-integrity.ts` | 순수 — 시드 판별 · manifest · identity 8축 · 반응 12축 · 본문 해시 · 사후 검증 |
 | `agents/purge/seed-post-integrity-exec.ts` | 트랜잭션 실행 (반응 테이블이 타입에 없다) |
-| `agents/purge/seed-post-integrity.test.ts` | 실패 경로 테스트 **59건** |
+| `agents/purge/seed-post-integrity.test.ts` | 실패 경로 테스트 **102건** |
 | `agents/coo/seed-post-integrity.ts` | COO 핸들러 — 유일한 실행 입구 |
+| `docs/operations/data/2026-09-14-seed-post-manifest.csv` | **확정 identity manifest**(SHA 잠금) |
 
 실행:
 
@@ -156,6 +193,13 @@ npx tsx agents/coo/seed-post-integrity.ts --execute --confirm=HIDE-SEED-PUBLIC-P
   PostView                5
   HomeCurationOverride    2
   R2 이미지 포함 글       0
+  ── 반응 12축 ──
+    comments 9 · realMemberComments 2
+    postLikes 4 · realMemberPostLikes 0
+    commentLikes 0 · realMemberCommentLikes 0
+    guestLikesOnPosts 0 · guestLikesOnComments 1
+    scraps 0 · realMemberScraps 0
+    postViews 5 · reports 0
 
 착수 조건: 기대와 일치 (이슈 0건)
 대상: 3건 · PUBLISHED/USER → HIDDEN/BOT

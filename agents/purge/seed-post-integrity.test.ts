@@ -8,10 +8,12 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
-  isSeedAccount, planTargets, checkBaseline, verifyAfter, tag, fingerprint,
+  isSeedAccount, planTargets, checkBaseline, verifyAfter, tag, fingerprint, sha256,
   SEED_PROVIDER_ID, CONFIRM_TOKEN, TRANSACTION_OPTIONS,
-  EXPECTED_FROM, EXPECTED_TO, EXPECTED_BASELINE, EXPECTED_AFTER,
-  type SeedPostRow, type Baseline, type AfterCheck,
+  EXPECTED_FROM, EXPECTED_TO, EXPECTED_BASELINE, EXPECTED_AFTER, EXPECTED_REACTIONS,
+  assertManifestIntegrity, parseManifest, verifyIdentity, compareReactions, verifyContentUnchanged,
+  type SeedPostRow, type Baseline, type AfterCheck, type LivePostRow, type ReactionCounts,
+  type ManifestRow,
 } from './seed-post-integrity.js'
 import {
   executeSeedHide, assertPatchShape, SeedAbortError, ALLOWED_PATCH_KEYS,
@@ -185,6 +187,17 @@ describe('🔴 반응 데이터는 구조적으로 못 건드린다', () => {
 // ── 트랜잭션 ─────────────────────────────────────────────────
 type PostRow = Awaited<ReturnType<SeedTx['post']['findMany']>>[number]
 
+/** manifest 와 일치하는 라이브 행을 만든다. `over` 로 특정 인덱스만 어긋뜨린다. */
+function postsFrom(over: Record<number, Partial<PostRow>>): PostRow[] {
+  return MFX.map((m, i) => ({
+    id: m.id, authorId: `author-${m.id}`, boardType: m.boardType,
+    status: 'PUBLISHED', source: 'USER',
+    title: `제목-${m.id}`, content: `본문-${m.id}`,
+    author: { providerId: m.providerId },
+    ...(over[i] ?? {}),
+  }))
+}
+
 function fakeDb(opts: {
   posts?: PostRow[]
   updated?: number
@@ -194,8 +207,11 @@ function fakeDb(opts: {
 }) {
   const calls: string[] = []
   let committed = false
-  const posts = opts.posts ?? ['p1', 'p2', 'p3'].map((id) => ({
-    id, status: 'PUBLISHED', source: 'USER', title: '제목', content: '본문',
+  const posts = opts.posts ?? MFX.map((m) => ({
+    id: m.id, authorId: `author-${m.id}`, boardType: m.boardType,
+    status: 'PUBLISHED', source: 'USER',
+    title: `제목-${m.id}`, content: `본문-${m.id}`,
+    author: { providerId: m.providerId },
   }))
   const tx: SeedTx = {
     post: {
@@ -220,7 +236,23 @@ function fakeDb(opts: {
   return { db, calls, wasCommitted: () => committed }
 }
 
-const DEPS = { targets: ['p1', 'p2', 'p3'], expectedCurationDeletes: 2 }
+/**
+ * 트랜잭션 테스트용 manifest fixture.
+ * 해시는 fake 가 돌려주는 값과 맞춰 둔다 — 그래야 identity 검사를 통과하고
+ * **불일치를 일부러 만들 때만** 실패한다.
+ */
+const MFX: ManifestRow[] = ['p1', 'p2', 'p3'].map((id, i) => ({
+  id,
+  providerId: ['seed_001', 'seed_005', 'seed_007'][i],
+  authorIdSha256: sha256(`author-${id}`),
+  boardType: i === 2 ? 'HUMOR' : 'STORY',
+  expectedStatus: 'PUBLISHED',
+  expectedSource: 'USER',
+  titleSha256: sha256(`제목-${id}`),
+  contentSha256: sha256(`본문-${id}`),
+}))
+
+const DEPS = { manifest: MFX, expectedCurationDeletes: 2 }
 
 describe('트랜잭션 실행', () => {
   it('정상 경로 — 3건 갱신 · 큐레이션 2건 제거', async () => {
@@ -251,39 +283,42 @@ describe('트랜잭션 실행', () => {
   })
 
   it('트랜잭션 안에서 status 가 바뀌어 있으면 ABORT', async () => {
-    const f = fakeDb({ posts: [
-      { id: 'p1', status: 'HIDDEN', source: 'USER', title: 't', content: 'c' },
-      { id: 'p2', status: 'PUBLISHED', source: 'USER', title: 't', content: 'c' },
-      { id: 'p3', status: 'PUBLISHED', source: 'USER', title: 't', content: 'c' },
-    ] })
-    await expect(executeSeedHide(f.db, DEPS)).rejects.toThrow(/DRIFT|기대와 다르다/)
+    const f = fakeDb({ posts: postsFrom({ 0: { status: 'HIDDEN' } }) })
+    await expect(executeSeedHide(f.db, DEPS)).rejects.toThrow(/IDENTITY_STATUS/)
     expect(f.wasCommitted()).toBe(false)
   })
 
   it('source 가 바뀌어 있어도 ABORT', async () => {
-    const f = fakeDb({ posts: [
-      { id: 'p1', status: 'PUBLISHED', source: 'BOT', title: 't', content: 'c' },
-      { id: 'p2', status: 'PUBLISHED', source: 'USER', title: 't', content: 'c' },
-      { id: 'p3', status: 'PUBLISHED', source: 'USER', title: 't', content: 'c' },
-    ] })
-    await expect(executeSeedHide(f.db, DEPS)).rejects.toThrow(/기대와 다르다/)
+    const f = fakeDb({ posts: postsFrom({ 0: { source: 'BOT' } }) })
+    await expect(executeSeedHide(f.db, DEPS)).rejects.toThrow(/IDENTITY_SOURCE/)
   })
 
   it('대상 일부가 사라졌으면 ABORT', async () => {
-    const f = fakeDb({ posts: [
-      { id: 'p1', status: 'PUBLISHED', source: 'USER', title: 't', content: 'c' },
-    ] })
-    await expect(executeSeedHide(f.db, DEPS)).rejects.toThrow(/만 보인다/)
+    const f = fakeDb({ posts: postsFrom({}).slice(0, 1) })
+    await expect(executeSeedHide(f.db, DEPS)).rejects.toThrow(/IDENTITY_MISSING/)
     expect(f.wasCommitted()).toBe(false)
   })
 
-  it('🔴 제목·본문이 이미 비어 있으면 ABORT — 전제가 다르다', async () => {
-    const f = fakeDb({ posts: [
-      { id: 'p1', status: 'PUBLISHED', source: 'USER', title: '', content: 'c' },
-      { id: 'p2', status: 'PUBLISHED', source: 'USER', title: 't', content: 'c' },
-      { id: 'p3', status: 'PUBLISHED', source: 'USER', title: 't', content: 'c' },
-    ] })
-    await expect(executeSeedHide(f.db, DEPS)).rejects.toThrow(/이미 비어 있다/)
+  it('🔴 제목이 바뀌어 있으면 ABORT — 해시로 잡는다', async () => {
+    const f = fakeDb({ posts: postsFrom({ 0: { title: '누가 고친 제목' } }) })
+    await expect(executeSeedHide(f.db, DEPS)).rejects.toThrow(/IDENTITY_TITLE/)
+    expect(f.wasCommitted()).toBe(false)
+  })
+  it('🔴 본문이 비워져 있어도 ABORT', async () => {
+    const f = fakeDb({ posts: postsFrom({ 0: { content: '' } }) })
+    await expect(executeSeedHide(f.db, DEPS)).rejects.toThrow(/IDENTITY_CONTENT/)
+  })
+  it('🔴 작성자가 시드가 아니게 바뀌었으면 ABORT', async () => {
+    const f = fakeDb({ posts: postsFrom({ 0: { author: { providerId: '3812345678' } } }) })
+    await expect(executeSeedHide(f.db, DEPS)).rejects.toThrow(/IDENTITY_PROVIDER/)
+  })
+  it('🔴 authorId 가 바뀌었으면 ABORT', async () => {
+    const f = fakeDb({ posts: postsFrom({ 0: { authorId: 'someone-else' } }) })
+    await expect(executeSeedHide(f.db, DEPS)).rejects.toThrow(/IDENTITY_AUTHOR/)
+  })
+  it('🔴 boardType 이 바뀌었으면 ABORT', async () => {
+    const f = fakeDb({ posts: postsFrom({ 0: { boardType: 'JOB' } }) })
+    await expect(executeSeedHide(f.db, DEPS)).rejects.toThrow(/IDENTITY_BOARD_TYPE/)
   })
 
   it('영향 행이 대상 수와 다르면 ABORT — 커밋 0', async () => {
@@ -300,7 +335,7 @@ describe('트랜잭션 실행', () => {
 
   it('대상 0건이면 실행하지 않는다', async () => {
     const f = fakeDb({})
-    await expect(executeSeedHide(f.db, { targets: [], expectedCurationDeletes: 0 }))
+    await expect(executeSeedHide(f.db, { manifest: [], expectedCurationDeletes: 0 }))
       .rejects.toThrow(/0건/)
     expect(f.wasCommitted()).toBe(false)
   })
@@ -309,8 +344,7 @@ describe('트랜잭션 실행', () => {
     let where: unknown = null
     const tx: SeedTx = {
       post: {
-        findMany: async () => ['p1', 'p2', 'p3'].map((id) => ({
-          id, status: 'PUBLISHED', source: 'USER', title: 't', content: 'c' })),
+        findMany: async () => postsFrom({}),
         updateMany: async (a) => { where = a.where; return { count: 3 } },
       },
       homeCurationOverride: { deleteMany: async () => ({ count: 2 }) },
@@ -397,5 +431,153 @@ describe('계약 상수', () => {
   })
   it('확인 토큰이 고정돼 있다', () => {
     expect(CONFIRM_TOKEN).toBe('HIDE-SEED-PUBLIC-POSTS-3')
+  })
+})
+
+// ── 🔴 확정 manifest — identity 를 fail-closed 로 고정 ─────────
+const MANIFEST_RAW = readFileSync(resolve(ROOT, 'docs/operations/data/2026-09-14-seed-post-manifest.csv'), 'utf8')
+
+describe('🔴 확정 manifest 무결성', () => {
+  it('SHA-256 이 코드에 박힌 값과 같다', () => {
+    expect(() => assertManifestIntegrity(MANIFEST_RAW)).not.toThrow()
+  })
+  it('한 글자만 바뀌어도 ABORT', () => {
+    expect(() => assertManifestIntegrity(MANIFEST_RAW + ' ')).toThrow(/변조/)
+  })
+  it('3행이고 providerId 3종이 정확히 들어 있다', () => {
+    const rows = parseManifest(MANIFEST_RAW)
+    expect(rows).toHaveLength(3)
+    expect(rows.map((r) => r.providerId).sort()).toEqual(['seed_001', 'seed_005', 'seed_007'])
+  })
+  it('모든 행이 PUBLISHED/USER 기대값을 갖는다', () => {
+    for (const r of parseManifest(MANIFEST_RAW)) {
+      expect(r.expectedStatus).toBe('PUBLISHED')
+      expect(r.expectedSource).toBe('USER')
+    }
+  })
+  it('title·content·authorId 해시가 64자 hex 다', () => {
+    for (const r of parseManifest(MANIFEST_RAW)) {
+      for (const h of [r.titleSha256, r.contentSha256, r.authorIdSha256]) {
+        expect(h).toMatch(/^[0-9a-f]{64}$/)
+      }
+    }
+  })
+  it('boardType 분해가 STORY 2 · HUMOR 1 이다', () => {
+    const bt: Record<string, number> = {}
+    for (const r of parseManifest(MANIFEST_RAW)) bt[r.boardType] = (bt[r.boardType] ?? 0) + 1
+    expect(bt).toEqual({ STORY: 2, HUMOR: 1 })
+  })
+})
+
+// ── 🔴 트랜잭션 내 identity 전수 재확인 ───────────────────────
+describe('🔴 identity 8축을 트랜잭션 안에서 다시 본다', () => {
+  const M = parseManifest(MANIFEST_RAW)
+  const liveOf = (m: typeof M[number], over: Partial<LivePostRow> = {}): LivePostRow => ({
+    id: m.id, authorId: 'author-x', providerId: m.providerId, boardType: m.boardType,
+    status: m.expectedStatus, source: m.expectedSource,
+    titleSha256: m.titleSha256, contentSha256: m.contentSha256,
+    authorIdSha256: m.authorIdSha256, ...over,
+  })
+
+  it('전건 일치하면 이슈 0', () => {
+    expect(verifyIdentity(M, M.map((m) => liveOf(m)))).toEqual([])
+  })
+
+  const axes: [string, Partial<LivePostRow>][] = [
+    ['IDENTITY_AUTHOR', { authorIdSha256: 'f'.repeat(64) }],
+    ['IDENTITY_PROVIDER', { providerId: 'seed_999' }],
+    ['IDENTITY_BOARD_TYPE', { boardType: 'JOB' }],
+    ['IDENTITY_STATUS', { status: 'HIDDEN' }],
+    ['IDENTITY_SOURCE', { source: 'BOT' }],
+    ['IDENTITY_TITLE', { titleSha256: 'a'.repeat(64) }],
+    ['IDENTITY_CONTENT', { contentSha256: 'b'.repeat(64) }],
+  ]
+  for (const [code, over] of axes) {
+    it(`${code} 가 어긋나면 잡는다`, () => {
+      const live = M.map((m, i) => liveOf(m, i === 0 ? over : {}))
+      expect(verifyIdentity(M, live).some((x) => x.code === code), code).toBe(true)
+    })
+  }
+
+  it('manifest 에 없는 글이 섞이면 잡는다', () => {
+    const live = [...M.map((m) => liveOf(m)), liveOf(M[0], { id: 'stranger' })]
+    expect(verifyIdentity(M, live).some((x) => x.code === 'IDENTITY_EXTRA')).toBe(true)
+  })
+  it('manifest 의 글이 안 보이면 잡는다', () => {
+    expect(verifyIdentity(M, M.slice(1).map((m) => liveOf(m)))
+      .some((x) => x.code === 'IDENTITY_MISSING')).toBe(true)
+  })
+  it('이슈 detail 에 원본 ID·제목·본문이 없다', () => {
+    const live = M.map((m, i) => liveOf(m, i === 0 ? { providerId: 'seed_999' } : {}))
+    const joined = verifyIdentity(M, live).map((i) => i.detail).join(' ')
+    for (const m of M) {
+      expect(joined).not.toContain(m.id)
+      expect(joined).not.toContain(m.titleSha256)
+      expect(joined).not.toContain(m.contentSha256)
+    }
+  })
+})
+
+// ── 🔴 반응 축 전수 ───────────────────────────────────────────
+const FULL: ReactionCounts = {
+  comments: 9, realMemberComments: 2,
+  postLikes: 4, realMemberPostLikes: 0,
+  commentLikes: 0, realMemberCommentLikes: 0,
+  guestLikesOnPosts: 0, guestLikesOnComments: 1,
+  scraps: 0, realMemberScraps: 0,
+  postViews: 5, reports: 0,
+}
+
+describe('🔴 반응 축 12개 — 감소는 실패, 증가는 허용', () => {
+  it('전후 동일하면 이슈 0', () => {
+    expect(compareReactions(FULL, FULL)).toEqual([])
+  })
+
+  for (const k of Object.keys(FULL) as (keyof ReactionCounts)[]) {
+    it(`${k} 가 줄면 실패한다`, () => {
+      const after = { ...FULL, [k]: (FULL[k] as number) - 1 }
+      expect(compareReactions(FULL, after).some((i) => i.code === 'REACTION_LOST'), k).toBe(true)
+    })
+  }
+
+  it('🔴 동시 신규 반응으로 늘어난 것은 허용한다', () => {
+    const after = { ...FULL, comments: 10, postLikes: 5, postViews: 40 }
+    expect(compareReactions(FULL, after)).toEqual([])
+  })
+  it('실회원 축이 늘어나는 것도 허용한다', () => {
+    expect(compareReactions(FULL, { ...FULL, realMemberComments: 3 })).toEqual([])
+  })
+  it('여러 축이 동시에 줄면 전부 보고한다', () => {
+    const after = { ...FULL, comments: 8, postViews: 4, guestLikesOnComments: 0 }
+    expect(compareReactions(FULL, after).filter((i) => i.code === 'REACTION_LOST')).toHaveLength(3)
+  })
+  it('착수 기대 반응값이 실측과 같다', () => {
+    expect(EXPECTED_REACTIONS).toEqual(FULL)
+  })
+})
+
+// ── 🔴 본문 해시 사후 대조 ────────────────────────────────────
+describe('🔴 title·content 는 비어 있는지가 아니라 해시로 본다', () => {
+  const M = parseManifest(MANIFEST_RAW)
+  const same = M.map((m) => ({ id: m.id, titleSha256: m.titleSha256, contentSha256: m.contentSha256 }))
+
+  it('해시가 그대로면 이슈 0', () => {
+    expect(verifyContentUnchanged(M, same)).toEqual([])
+  })
+  it('🔴 제목이 바뀌면 잡는다 — 비어 있지 않아도 잡힌다', () => {
+    const bent = same.map((r, i) => (i === 0 ? { ...r, titleSha256: 'c'.repeat(64) } : r))
+    expect(verifyContentUnchanged(M, bent).some((i) => i.code === 'CONTENT_CHANGED')).toBe(true)
+  })
+  it('🔴 본문이 바뀌면 잡는다', () => {
+    const bent = same.map((r, i) => (i === 0 ? { ...r, contentSha256: 'd'.repeat(64) } : r))
+    expect(verifyContentUnchanged(M, bent).some((i) => i.code === 'CONTENT_CHANGED')).toBe(true)
+  })
+  it('빈 문자열로 tombstone 해도 해시가 달라 잡힌다', () => {
+    const emptySha = sha256('')
+    const bent = same.map((r, i) => (i === 0 ? { ...r, titleSha256: emptySha, contentSha256: emptySha } : r))
+    expect(verifyContentUnchanged(M, bent).filter((i) => i.code === 'CONTENT_CHANGED')).toHaveLength(1)
+  })
+  it('행이 사라지면 잡는다', () => {
+    expect(verifyContentUnchanged(M, same.slice(1)).some((i) => i.code === 'CONTENT_MISSING')).toBe(true)
   })
 })

@@ -2,7 +2,8 @@
  * 공개 시드 글 3건 — Serializable 트랜잭션 실행.
  *
  * ── 🔴 구조로 막는다 ────────────────────────────────────────
- *  이 작업은 **아무것도 지우지 않는다.** 그래서 트랜잭션 인터페이스(`SeedTx`)에
+ *  **Post 와 반응 데이터는 삭제하지 않는다. `HomeCurationOverride` 2건만 의도적으로 제거한다.**
+ *  그래서 트랜잭션 인터페이스(`SeedTx`)에
  *  `comment`·`like`·`guestLike`·`postView` 를 **아예 넣지 않았다.**
  *  실수로 그 테이블을 건드리는 코드를 쓰면 **컴파일이 안 된다.**
  *  주석으로 "건드리지 마라"라고 적는 것보다 이게 확실하다.
@@ -10,7 +11,10 @@
  *  `post.updateMany` 만 쓴다 — `delete`·`deleteMany` 는 인터페이스에 없다.
  *  `data` 에는 `status`·`source` 두 필드만 넣는다(§`assertPatchShape`).
  */
-import { TRANSACTION_OPTIONS, EXPECTED_FROM, EXPECTED_TO } from './seed-post-integrity.js'
+import {
+  TRANSACTION_OPTIONS, EXPECTED_FROM, EXPECTED_TO, sha256, verifyIdentity,
+  type ManifestRow, type LivePostRow,
+} from './seed-post-integrity.js'
 
 export class SeedAbortError extends Error {
   constructor(readonly code: string, message: string) {
@@ -31,7 +35,9 @@ export interface DeleteManyResult { count: number }
 export interface SeedTx {
   post: {
     findMany(a: { where: unknown; select: unknown }): Promise<Array<{
-      id: string; status: string; source: string | null; title: string; content: string
+      id: string; authorId: string | null; boardType: string
+      status: string; source: string | null; title: string; content: string
+      author: { providerId: string } | null
     }>>
     updateMany(a: { where: unknown; data: unknown }): Promise<UpdateManyResult>
   }
@@ -64,7 +70,8 @@ export interface SeedOutcome {
 }
 
 export interface ExecDeps {
-  targets: readonly string[]
+  /** 🔴 확정 manifest. 대상 ID 는 여기서만 나온다 — 호출자가 고른 목록을 믿지 않는다. */
+  manifest: readonly ManifestRow[]
   /** 지워야 할 HomeCurationOverride 수. 다르면 ABORT. */
   expectedCurationDeletes: number
 }
@@ -86,7 +93,7 @@ export async function executeSeedHide(
   db: TransactionRunner,
   deps: ExecDeps,
 ): Promise<SeedOutcome> {
-  const ids = [...deps.targets]
+  const ids = deps.manifest.map((m) => m.id)
   if (ids.length === 0) {
     throw new SeedAbortError('EMPTY_TARGET', '[ABORT] 대상이 0건이다 — 실행하지 않는다')
   }
@@ -95,22 +102,30 @@ export async function executeSeedHide(
   assertPatchShape(patch)
 
   return db.$transaction(async (tx) => {
-    // 트랜잭션 안에서 다시 읽어 기대 상태인지 본다.
-    const live = await tx.post.findMany({
+    // 🔴 트랜잭션 안에서 identity **여덟 축**을 다시 본다.
+    //    id · authorId(해시) · providerId · boardType · status · source · title(해시) · content(해시).
+    const rows = await tx.post.findMany({
       where: { id: { in: ids } },
-      select: { id: true, status: true, source: true, title: true, content: true },
+      select: {
+        id: true, authorId: true, boardType: true, status: true, source: true,
+        title: true, content: true, author: { select: { providerId: true } },
+      },
     })
-    if (live.length !== ids.length) {
-      throw new SeedAbortError('MISSING', `[ABORT] 대상 ${ids.length} 중 ${live.length} 만 보인다`)
-    }
-    for (const p of live) {
-      if (p.status !== EXPECTED_FROM.status || (p.source ?? '') !== EXPECTED_FROM.source) {
-        throw new SeedAbortError('DRIFT', '[ABORT] 트랜잭션 안에서 status·source 가 기대와 다르다')
-      }
-      // tombstone 금지 계약 — 들어올 때 이미 비어 있으면 전제가 틀린 것이다.
-      if (p.title.trim() === '' || p.content.trim() === '') {
-        throw new SeedAbortError('ALREADY_EMPTY', '[ABORT] 제목·본문이 이미 비어 있다 — 전제가 다르다')
-      }
+    const live: LivePostRow[] = rows.map((p) => ({
+      id: p.id,
+      authorId: p.authorId ?? '',
+      authorIdSha256: p.authorId ? sha256(p.authorId) : '',
+      providerId: p.author?.providerId ?? null,
+      boardType: p.boardType,
+      status: p.status,
+      source: p.source,
+      titleSha256: sha256(p.title),
+      contentSha256: sha256(p.content),
+    }))
+    const identityIssues = verifyIdentity(deps.manifest, live)
+    if (identityIssues.length > 0) {
+      const codes = [...new Set(identityIssues.map((i) => i.code))].join(', ')
+      throw new SeedAbortError('IDENTITY', `[ABORT] 트랜잭션 안에서 identity 불일치 — ${codes}`)
     }
 
     const curation = await tx.homeCurationOverride.deleteMany({ where: { postId: { in: ids } } })
@@ -121,10 +136,11 @@ export async function executeSeedHide(
       )
     }
 
+    // 낙관적 잠금 — 확정 ID + 기대 status·source 를 where 에 넣는다.
     const res = await tx.post.updateMany({
       where: {
         id: { in: ids },
-        status: EXPECTED_FROM.status,   // 낙관적 잠금
+        status: EXPECTED_FROM.status,
         source: EXPECTED_FROM.source,
       },
       data: patch,

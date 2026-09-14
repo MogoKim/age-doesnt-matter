@@ -3,7 +3,8 @@
 // 시드 계정(`seed_NNN`)이 쓴 글이 `source=USER` · `PUBLISHED` 로 남아 **회원 글처럼 보인다.**
 // 공개면에서 내리고(`HIDDEN`) 출처를 사실대로(`BOT`) 바꾼다.
 //
-// 🔴 **지우는 작업이 아니다.** hard delete 도, tombstone(제목·본문 비우기)도 하지 않는다.
+// 🔴 **Post 와 반응 데이터는 삭제하지 않는다. HomeCurationOverride 2건만 의도적으로 제거한다.**
+//    hard delete 도, tombstone(제목·본문 비우기)도 하지 않는다.
 //    이 글들에는 **실회원 댓글 2건**이 달려 있다 — 본문을 지우면 그 댓글이 무엇에 대한
 //    말이었는지 알 수 없게 된다. 반응 데이터는 한 행도 건드리지 않는다.
 //
@@ -13,10 +14,14 @@
 //
 // 정책: `agents/CLAUDE.md` — DB write 는 COO 만 가능. Raw SQL·REST write 를 쓰지 않는다.
 // 🔇 로그: ID·제목·본문·개인정보를 쓰지 않는다. 지문과 집계만 남긴다.
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import {
-  isSeedAccount, planTargets, checkBaseline, verifyAfter,
-  CONFIRM_TOKEN, EXPECTED_BASELINE,
+  isSeedAccount, planTargets, checkBaseline, verifyAfter, sha256,
+  assertManifestIntegrity, parseManifest, compareReactions, verifyContentUnchanged,
+  CONFIRM_TOKEN, MANIFEST_PATH, EXPECTED_REACTIONS, EXPECTED_PROVIDER_IDS,
   type Baseline, type AfterCheck, type Issue, type SeedPostRow,
+  type ManifestRow, type ReactionCounts,
 } from '../purge/seed-post-integrity.js'
 import { executeSeedHide, type TransactionRunner } from '../purge/seed-post-integrity-exec.js'
 import { isRealMember } from '../purge/public-content-policy.js'
@@ -44,6 +49,38 @@ function issuesOut(label: string, issues: readonly Issue[]): void {
  */
 async function db() { return import('../core/db.js') }
 type PrismaLike = Awaited<ReturnType<typeof db>>['prisma']
+
+/** 반응 **12축** 전수 측정. 착수와 사후에 같은 함수를 쓴다. */
+async function measureReactions(prisma: PrismaLike, ids: string[]): Promise<ReactionCounts> {
+  const w = { postId: { in: ids } }
+  const comments = await prisma.comment.findMany({
+    where: w, select: { id: true, author: { select: { providerId: true, role: true, status: true } } },
+  })
+  const cids = comments.map((c) => c.id)
+  const cw = { commentId: { in: cids } }
+  const postLikes = await prisma.like.findMany({
+    where: w, select: { user: { select: { providerId: true, role: true, status: true } } } })
+  const commentLikes = cids.length
+    ? await prisma.like.findMany({ where: cw, select: { user: { select: { providerId: true, role: true, status: true } } } })
+    : []
+  const scraps = await prisma.scrap.findMany({
+    where: w, select: { user: { select: { providerId: true, role: true, status: true } } } })
+
+  return {
+    comments: comments.length,
+    realMemberComments: comments.filter((c) => isRealMember(c.author)).length,
+    postLikes: postLikes.length,
+    realMemberPostLikes: postLikes.filter((l) => isRealMember(l.user)).length,
+    commentLikes: commentLikes.length,
+    realMemberCommentLikes: commentLikes.filter((l) => isRealMember(l.user)).length,
+    guestLikesOnPosts: await prisma.guestLike.count({ where: w }),
+    guestLikesOnComments: cids.length ? await prisma.guestLike.count({ where: cw }) : 0,
+    scraps: scraps.length,
+    realMemberScraps: scraps.filter((s) => isRealMember(s.user)).length,
+    postViews: await prisma.postView.count({ where: w }),
+    reports: await prisma.report.count({ where: w }),
+  }
+}
 
 /** 착수 조건 실측. read-only 다. */
 async function measure(prisma: PrismaLike): Promise<{ base: Baseline; rows: SeedPostRow[]; ids: string[] }> {
@@ -99,6 +136,16 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
     throw new Error(`[ABORT] --confirm 토큰이 없거나 다르다. 필요한 값: ${CONFIRM_TOKEN}`)
   }
 
+  // 🔴 확정 manifest 부터 검증한다 — DB 를 건드리기 전이다.
+  const manifestRaw = readFileSync(resolve(process.cwd(), MANIFEST_PATH), 'utf8')
+  assertManifestIntegrity(manifestRaw)
+  const manifest: ManifestRow[] = parseManifest(manifestRaw)
+  const manifestIds = manifest.map((m) => m.id)
+  const gotProviders = [...manifest.map((m) => m.providerId)].sort()
+  if (JSON.stringify(gotProviders) !== JSON.stringify([...EXPECTED_PROVIDER_IDS].sort())) {
+    throw new Error('[ABORT] manifest 의 providerId 3종이 기대와 다르다')
+  }
+
   const { prisma, disconnect } = await db()
   out('━'.repeat(64))
   out(`  [COO] 공개 시드 글 정합성 — ${authorized ? '🔴 실행 모드' : 'dry-run (write 0)'}`)
@@ -106,6 +153,11 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
 
   try {
     const { base, rows, ids } = await measure(prisma)
+    // 라이브에서 찾은 글이 manifest 와 정확히 같은 집합인지 먼저 본다.
+    if (JSON.stringify([...ids].sort()) !== JSON.stringify([...manifestIds].sort())) {
+      throw new Error('[ABORT] 라이브 대상이 확정 manifest 와 다르다 — mutation 0 으로 중단한다.')
+    }
+    const reactionsBefore = await measureReactions(prisma, manifestIds)
     out('\n── 착수 실측 ──')
     out(`  PUBLISHED 시드 글       ${base.seedPublishedPosts} (${JSON.stringify(base.boardType)})`)
     out(`  댓글 / 실회원 댓글      ${base.comments} / ${base.realMemberComments}`)
@@ -114,6 +166,15 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
     out(`  PostView                ${base.postViews}`)
     out(`  HomeCurationOverride    ${base.homeCurationOverrides}`)
     out(`  R2 이미지 포함 글       ${base.postsWithR2Image}`)
+    out('  ── 반응 12축 ──')
+    for (const [k, v] of Object.entries(reactionsBefore)) out(`    ${k.padEnd(24)} ${v}`)
+    const reactionDrift = Object.entries(EXPECTED_REACTIONS)
+      .filter(([k, v]) => reactionsBefore[k as keyof ReactionCounts] !== v)
+    if (reactionDrift.length > 0) {
+      issuesOut('반응 축 착수값 불일치', reactionDrift.map(([k, v]) =>
+        ({ code: 'REACTION_BASELINE', detail: `${k} 기대 ${v} · 실제 ${reactionsBefore[k as keyof ReactionCounts]}` })))
+      throw new Error('[ABORT] 반응 착수값이 기대와 다르다 — write 전에 중단한다.')
+    }
 
     const baseIssues = checkBaseline(base)
     if (baseIssues.length > 0) {
@@ -141,7 +202,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       $transaction: (fn, options) => prisma.$transaction(fn as never, options as never) as never,
     }
     const r = await executeSeedHide(runner, {
-      targets: plan.targets,
+      manifest,
       expectedCurationDeletes: base.homeCurationOverrides,
     })
     out(`\n── 실제 변경 ──`)
@@ -180,7 +241,16 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       homeCurationOverrides: await prisma.homeCurationOverride.count({ where: w }),
       postsWithEmptyTitleOrContent: changed.filter((p) => p.title.trim() === '' || p.content.trim() === '').length,
     }
-    const issues = verifyAfter(after, base)
+    const reactionsAfter = await measureReactions(prisma, manifestIds)
+    const contentAfter = (await prisma.post.findMany({
+      where: { id: { in: manifestIds } }, select: { id: true, title: true, content: true },
+    })).map((p) => ({ id: p.id, titleSha256: sha256(p.title), contentSha256: sha256(p.content) }))
+
+    const issues = [
+      ...verifyAfter(after, base),
+      ...compareReactions(reactionsBefore, reactionsAfter),
+      ...verifyContentUnchanged(manifest, contentAfter),
+    ]
     if (issues.length > 0) {
       issuesOut('사후 검증 실패', issues)
       throw new Error('[ABORT] 변경은 커밋됐지만 사후 검증을 통과하지 못했다 — done 이라고 말하지 않는다.')
@@ -191,14 +261,18 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
     out(`  전체 Post              ${after.totalPosts} (불변)`)
     out(`  PUBLISHED / HIDDEN     ${after.publishedTotal} / ${after.hiddenTotal}`)
     out(`  댓글 / 실회원 댓글     ${after.comments} / ${after.realMemberComments} (보존)`)
-    out(`  Like / GuestLike / View ${after.postLikes} / ${after.guestLikesOnComments} / ${after.postViews} (보존)`)
+    out('  ── 반응 12축 (감소 0) ──')
+    for (const [k, v] of Object.entries(reactionsAfter)) {
+      const b = reactionsBefore[k as keyof ReactionCounts]
+      out(`    ${k.padEnd(24)} ${b} → ${v}${v > b ? ' (신규 반응)' : ''}`)
+    }
+    out('  제목·본문 해시: manifest 와 일치')
     out('\n✅ done — 이슈 0건. 캐시 반영은 노출면 검증으로 따로 확인한다.')
   } finally {
     await disconnect()
   }
 }
 
-void EXPECTED_BASELINE
 
 // `tsx agents/coo/seed-post-integrity.ts` 로 직접 돌릴 때만 실행한다.
 const invokedDirectly = process.argv[1]?.includes('seed-post-integrity')
