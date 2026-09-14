@@ -129,7 +129,8 @@
 | 항목 | 값 |
 |---|---:|
 | 후보 글이 참조하는 고유 R2 **객체 키** | 867 |
-| **삭제 대상**(삭제 글 전용) | **851** |
+| **manifest**(후보 전체 객체 · SHA 잠금) | **867** |
+| 삭제 대상(실행 시점 전용) | 851 |
 | **공유 — 삭제 금지** | **16** |
 | 외부 이미지(unsplash) — 손대지 않음 | 6 |
 
@@ -162,11 +163,25 @@
 지웠다고 **추정하지 않는다**. S3 계열은 없는 키에도 `204` 를 주므로 응답 코드만으로는
 판정이 안 된다. DELETE 뒤 HEAD 가 `404` 여야만 `DELETED` 라고 쓴다.
 
-manifest 는 `docs/operations/data/2026-09-14-public-content-purge-r2.txt` 에 고정하고
-전체 SHA-256 으로 잠근다 — `80da1a9f…`. 851키.
+### 4-C-1. 🔴 manifest 는 867(전체)이고 공유 판정은 실행 시점이다
 
-R2 정리는 **DB 와 독립**이다. DB 가 이미 `COMPLETE` 여도 남은 이미지 정리를 이어서 돌릴 수 있고
-(`--r2-only`), 이미 지워진 키는 `ALREADY_GONE` 으로 조용히 지나간다.
+manifest 를 851(전용)로 굳히면 **실행 시점의 보호 변화를 담지 못한다.**
+트랜잭션에서 회원 흔적이 새로 발견돼 어떤 글이 보호되면 그 글은 살아남는데,
+계획 때 "전용"으로 박아둔 그 글의 이미지는 그대로 지워진다.
+
+그래서 manifest 는 후보 글이 참조하는 **전체 867키**를 담고
+(`…-r2.txt` · SHA `f9eda12f…`), **삭제할지 말지는 커밋 뒤 다시 계산한 공유 집합**이 정한다.
+
+커밋 후 재계산은 **남아 있는 모든 `Post`** + `SocialPost`·`ChannelDraft`·`NaverBlogQueue`·`Banner`
+를 다시 읽어서 한다. 보호된 글은 그때 `survivors` 에 들어가므로 그 이미지가 자동으로 `shared` 가 된다.
+
+### 4-C-2. `--r2-only` 는 아무 때나 못 쓴다
+
+DB 가 시작 전인데 이미지만 지우면 **살아 있는 글의 이미지가 깨진다.**
+그래서 `DB COMPLETE` 이거나 **남은 후보가 전부 현재 보호 대상**일 때만 허용한다.
+그 외에는 ABORT — 실측으로도 `NOT_STARTED` 에서 거부되는 것을 확인했다.
+
+이미 지워진 키는 `ALREADY_GONE` 으로 조용히 지나가므로 재개는 안전하다.
 
 ### 4-D. 불확실하면 그 객체만 뺀다
 
@@ -188,7 +203,16 @@ R2 정리는 **DB 와 독립**이다. DB 가 이미 `COMPLETE` 여도 남은 이
 | `docs/operations/data/2026-09-14-public-content-purge.csv` | 확정 대상 628행 (SHA 잠금) |
 | `docs/operations/data/2026-09-14-public-content-purge-r2.txt` | R2 manifest 851키 (SHA 잠금) |
 
-### 5-0. 🔴 TOCTOU — 보호 판정은 트랜잭션 안에서 다시 한다
+### 5-0. 🔴 TOCTOU — Serializable + 트랜잭션 내 재판정
+
+트랜잭션은 **`isolationLevel: 'Serializable'`** 로 연다. 보호 조회와 삭제가 같은 스냅샷에서
+일어나야, 조회 뒤 커밋 전에 들어온 댓글·Like·Scrap 이 무시되지 않는다.
+기본 `ReadCommitted` 면 그 삽입을 못 보고 지워버린다.
+
+직렬화 충돌(`P2034` · `could not serialize` · `deadlock detected`)은 **재시도하지 않는다.**
+되돌릴 수 없는 삭제라 다시 미는 것보다 멈추는 편이 낫다. 그 시점 트랜잭션은 롤백됐다 = mutation 0.
+
+
 
 preflight 에서 "사람 흔적 없음"을 확인하고 트랜잭션을 열기까지 수십 초가 뜬다.
 그 사이 회원이 댓글·좋아요·스크랩을 남기면 **방금 참여한 흔적을 지우게 된다.**
@@ -200,11 +224,15 @@ CASCADE 예상량도 같은 트랜잭션 안에서 확정한다.
 보호 축은 다섯이다 — 실회원 작성 · 실회원 댓글 · 게스트 댓글 · **실회원 좋아요** · **실회원 스크랩**.
 `PostView` 와 새 `GuestLike` 는 주체를 알 수 없어 보호 근거가 아니다(창업자 결정).
 
+**게스트 댓글 계약**: `guestNickname` **AND** `guestPasswordHash` 가 둘 다 있어야 한다.
+닉네임만 있는 행은 비회원 댓글 계약을 만족하지 않으므로 사람 흔적으로 세지 않는다.
+
 ### 5-0-A. 🔴 익명화된 탈퇴 회원도 실제 회원이다
 
 `cto:anonymize-withdrawn-apply` 가 30일 지난 WITHDRAWN 계정의 `providerId` 를
 `withdrawn_<원본>` 으로 바꾼다. 숫자만 보고 판정하면 **익명화된 탈퇴 실회원이
-봇으로 분류돼 그 사람의 글이 지워진다.** 접두사를 벗겨서 판정한다.
+봇으로 분류돼 그 사람의 글이 지워진다.** 접두사를 벗겨서 판정하되,
+접두사만 믿지 않고 **`status=WITHDRAWN` 까지 함께 확인**한다.
 
 ### 5-0-B. drift 잠금 — 여섯 축 + 관측 1
 
@@ -216,10 +244,45 @@ CASCADE 예상량도 같은 트랜잭션 안에서 확정한다.
 `viewCount`·`likeCount`·`trendingScore` 비정규화 갱신이다. ABORT 축으로 두면
 조회수가 오르는 것만으로 도구가 영영 못 돈다. 실제 편집은 본문·제목 해시가 잡는다.
 
+### 5-A-0. 🔴 실행 경로는 **하나**다
+
+| 경로 | 되는가 | 근거 |
+|---|---|---|
+| GitHub Actions 스케줄 | ❌ | workflow 에 연결하지 않았다(`LOCAL ONLY`). 테스트로 고정 |
+| `agents/cron/runner.ts coo public-content-purge` | ❌ | **실측**: `automation_status=PAUSED` 라 runner 가 스킵한다 → `[Runner] automation_status=PAUSED — coo:public-content-purge 실행 스킵` |
+| **창업자 승인 후 COO 모듈 직접 실행** | ✅ | **유일한 실행 경로** |
+
+즉 runner 등록은 "DB write 는 COO 만"이라는 소유권을 코드로 표시한 것이고,
+실제 방아쇠는 사람이 당긴다. PAUSED 가 풀려도 스케줄에 없으므로 저절로 돌지 않는다.
+
+```
+# dry-run (write 0)
+npx tsx agents/coo/public-content-purge.ts
+
+# 실제 삭제 — 창업자 승인 후 1회
+npx tsx agents/coo/public-content-purge.ts --execute --confirm=PURGE-PUBLIC-CONTENT-628
+
+# 이미지만 재개
+npx tsx agents/coo/public-content-purge.ts --execute --confirm=PURGE-PUBLIC-CONTENT-628 --r2-only
+```
+
+### 5-A-1. 완료 상태는 DB 와 R2 를 따로 본다
+
+한 단어로 뭉치면 **이미지가 남았는데 done 이라고 말하게 된다.**
+
+| 상태 | 뜻 | exit |
+|---|---|---:|
+| `DRY_RUN` | write 0 | 0 |
+| `DB_COMPLETE_R2_PENDING` | DB 는 끝났지만 R2 자격증명 없음 / `UNCERTAIN>0` / `remaining>0` | **3** |
+| `R2_COMPLETE` | DB 는 이미 끝나 있었고 이미지 정리를 마쳤다 | 0 |
+| `FULLY_COMPLETE` | 둘 다 끝났다 | 0 |
+
+`DB_COMPLETE_R2_PENDING` 을 0 으로 끝내면 아무도 이어서 돌리지 않는다. 그래서 3 이다.
+
 ### 5-A. 안전장치
 
 - **Raw SQL·REST write 를 쓰지 않는다.** Prisma 트랜잭션만 쓴다.
-- **DB write 는 COO 경로만.** 이전 판의 `PURGE_AGENT_ID` 환경변수 게이트는 **문자열 위장**이라 제거했다 — 아무나 값을 넣으면 통과했다. 이제 실행 코드가 `agents/coo/` 안에 있고 `agents/cron/runner.ts` 의 `coo:public-content-purge` 로 등록돼 있다. 스케줄(workflow)에는 연결하지 않았고(`LOCAL ONLY`), runner 의 `automation_status=PAUSED` 가 자동 실행을 한 겹 더 막는다.
+- **DB write 는 COO 경로만.** 이전 판의 `PURGE_AGENT_ID` 환경변수 게이트는 **문자열 위장**이라 제거했다 — 아무나 값을 넣으면 통과했다. 이제 실행 코드가 `agents/coo/` 안에 있고 `agents/cron/runner.ts` 의 `coo:public-content-purge` 로 등록돼 있다.
 - `agents/core/db.ts` 의 Prisma 만 쓴다(`agents/` → `src/` 런타임 import 금지 규칙 준수). DB 모듈은 **지연 로드**라 import 만으로는 연결하지 않는다.
 - 기본 dry-run. `--execute` **와** `--confirm=PURGE-PUBLIC-CONTENT-628` 이 **둘 다** 있어야 쓴다.
 - 확정 CSV **전체 SHA-256** 검증 — `35f1130ecfdca6e3a4b34bc8fbe0f066b977a5f24026622c735344e153cde70d`
@@ -280,11 +343,17 @@ dry-run 종료 — DB write 0건 · R2 삭제 0건
 
 ### 7-A. DB
 
-- [ ] 삭제 후보 잔량 **0** (`Post.count({ id: in 628 })` = 0)
+CLI 가 이 검사를 **통과해야만** `done` 을 출력한다. 하나라도 어긋나면 ABORT 한다.
+
+- [ ] **실제로 지운 ID** 잔량 **0** — 후보 628 이 아니라 `deletedIds` 기준이다.
+      보호 제외가 생긴 실행에서는 후보가 남는 게 **정상**이라 후보 기준으로 보면 오판한다.
+- [ ] 보호 제외한 글은 **전건 그대로 살아 있다**(`protectedRemaining`)
 - [ ] 보존 대상 **218 → 218** 동일
 - [ ] 실회원 글·실회원 댓글 총량 **전후 동일**
-- [ ] 테이블별 실제 삭제량이 §3 예상과 일치
+- [ ] 테이블별 실제 삭제량이 트랜잭션 내 확정 계수와 일치
 - [ ] `Notification.postId` 고아 0 · `WaveQueue` 잔재 0
+- [ ] **semantic 8종 전부** 확인 — BLOCK·CLEANUP 은 0, `AdminAuditLog` 는 남아 있어야 정상.
+      한 축이라도 안 보면 `SEMANTIC_NOT_CHECKED` 로 잡힌다
 
 ### 7-B. 노출면
 

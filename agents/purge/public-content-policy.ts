@@ -19,13 +19,45 @@ import { createHash } from 'node:crypto'
 export const CSV_SHA256 = 'a13e206efbe92bdd298248b71a91aa59bca97bd2b72714323fe7767df619ea73'
 
 /** R2 실행 manifest 전체 SHA-256. */
-export const R2_MANIFEST_SHA256 = '80da1a9f54f958a46998f6b59708b52a9e53e55866e6c497aed636979e8c334e'
-export const R2_MANIFEST_KEYS = 851
+/**
+ * manifest 는 후보 글이 참조하는 **전체 객체 867키**다 — 851(전용)이 아니다.
+ *
+ * 공유 여부는 **실행 시점**에 정해진다. 트랜잭션 안에서 새로 보호된 글이 생기면
+ * 그 글의 이미지는 삭제하면 안 되는데, 계획 시점에 851 로 굳혀 두면 그 변화를 못 담는다.
+ * 그래서 manifest 는 후보 전체를 담고, **삭제할지 말지는 커밋 뒤 재계산한 공유 집합**이 정한다.
+ */
+export const R2_MANIFEST_SHA256 = 'f9eda12fc09a840353ec47f00cccb3db34e9bd72cdb96ed435788cdf4676e710'
+export const R2_MANIFEST_KEYS = 867
 
 export const CONFIRM_TOKEN = 'PURGE-PUBLIC-CONTENT-628'
 
-/** 단계별 deleteMany + 트랜잭션 내부 재조회까지 있다. Prisma 기본 5초로는 모자란다. */
-export const TRANSACTION_OPTIONS = { maxWait: 15_000, timeout: 180_000 } as const
+/**
+ * 트랜잭션 옵션.
+ *
+ * `isolationLevel: 'Serializable'` 이 핵심이다. 보호 조회와 삭제가 **같은 스냅샷**에서
+ * 일어나야, 조회 뒤 커밋 전에 들어온 댓글·Like·Scrap 이 무시되지 않는다.
+ * 기본 격리 수준(ReadCommitted)이면 그 삽입을 못 보고 지워버린다.
+ *
+ * 충돌(P2034)이 나면 **재시도하지 않는다.** 되돌릴 수 없는 삭제라, 다시 시도하는 것보다
+ * 멈추고 사람이 보는 편이 낫다. 롤백된 상태 = mutation 0 이다.
+ *
+ * 기본 5초 timeout 으로는 모자란다 — 단계별 deleteMany + 트랜잭션 내부 재조회가 있다.
+ */
+export const TRANSACTION_OPTIONS = {
+  maxWait: 15_000,
+  timeout: 180_000,
+  isolationLevel: 'Serializable',
+} as const
+
+/** Prisma 직렬화 충돌. 재시도 대상이 아니라 ABORT 대상이다. */
+export const SERIALIZATION_CONFLICT_CODES = ['P2034'] as const
+
+export function isSerializationConflict(e: unknown): boolean {
+  const code = (e as { code?: string } | null)?.code
+  if (code && (SERIALIZATION_CONFLICT_CODES as readonly string[]).includes(code)) return true
+  const msg = e instanceof Error ? e.message : String(e ?? '')
+  return /could not serialize|serialization failure|write conflict|deadlock detected/i.test(msg)
+}
 
 export const EXPECTED_TOTAL = 628
 export const EXPECTED_STATUS = 'PUBLISHED' as const
@@ -74,16 +106,39 @@ export function assertR2ManifestIntegrity(raw: string): void {
  *    숫자만 보면 익명화된 탈퇴 실회원이 봇으로 분류돼 그 사람의 글이 지워진다.
  *    봇 페르소나는 애초에 카카오 숫자 ID 가 아니므로 이 접두사를 갖지 않는다.
  */
-export interface AuthorLike { providerId: string; role: string }
+export interface AuthorLike { providerId: string; role: string; status?: string }
 
 export const WITHDRAWN_PREFIX = 'withdrawn_'
+export const WITHDRAWN_STATUS = 'WITHDRAWN'
 
 export function isRealMember(a: AuthorLike | null | undefined): boolean {
   if (!a) return false
   if (a.role === 'ADMIN') return false
   const raw = a.providerId ?? ''
-  const bare = raw.startsWith(WITHDRAWN_PREFIX) ? raw.slice(WITHDRAWN_PREFIX.length) : raw
-  return /^\d+$/.test(bare)
+  if (raw.startsWith(WITHDRAWN_PREFIX)) {
+    // 접두사만 보고 믿지 않는다. 실제로 탈퇴 상태인 계정이어야 익명화된 실회원이다.
+    // (status 를 조회하지 않은 호출자는 undefined 를 주므로, 그때는 접두사만으로 판정한다.)
+    if (a.status !== undefined && a.status !== WITHDRAWN_STATUS) return false
+    return /^\d+$/.test(raw.slice(WITHDRAWN_PREFIX.length))
+  }
+  return /^\d+$/.test(raw)
+}
+
+/**
+ * 게스트 댓글 계약.
+ *
+ * `guestNickname` 하나만 보면 안 된다. 비회원 댓글은 **닉네임과 비밀번호 해시가 함께**
+ * 저장된다(`prisma/schema.prisma` Comment). 닉네임만 있는 행은 그 계약을 만족하지 않으므로
+ * 사람 흔적으로 세지 않는다.
+ */
+export interface GuestCommentLike {
+  authorId: string | null
+  guestNickname: string | null
+  guestPasswordHash: string | null
+}
+
+export function isGuestComment(c: GuestCommentLike): boolean {
+  return c.authorId === null && c.guestNickname !== null && c.guestPasswordHash !== null
 }
 
 // ── CSV ──────────────────────────────────────────────────────
@@ -374,11 +429,17 @@ export function classifyRunState(expected: number, remaining: number): RunState 
 
 // ── 사후 검증 ─────────────────────────────────────────────────
 export interface PostCheckInput {
-  targetsRemaining: number
+  /** 🔴 **실제로 지운 ID** 중 남아 있는 수. 보호된 글은 여기 들어가면 안 된다. */
+  deletedRemaining: number
+  /** 트랜잭션이 지웠다고 보고한 수 */
+  deletedCount: number
   preserveBefore: number
   preserveAfter: number
+  /** 보호돼 제외된 글 수(preflight + 트랜잭션) */
   protectedExpected: number
+  /** 그 글들이 지금도 살아 있는 수. 보호했으면 전건 그대로여야 한다. */
   protectedRemaining: number
+  /** 8종 전부. BLOCK·CLEANUP 은 0이어야 하고 PRESERVE 는 남아 있어야 정상이다. */
   semanticResidual: readonly SemanticCount[]
   tableDeltas: readonly { table: string; expected: number; actual: number }[]
 }
@@ -386,17 +447,31 @@ export interface PostCheckInput {
 /**
  * `done` 을 말해도 되는지 판정한다.
  * 하나라도 어긋나면 성공이라고 하지 않는다 — 이 도구의 마지막 안전선이다.
+ *
+ * 🔴 보호 제외가 생긴 실행도 **정상 성공**이다. 그때 삭제 대상은 628 보다 적고,
+ *    남아 있는 글이 있는 게 맞다. 그래서 "후보가 남았는가"가 아니라
+ *    **"실제로 지운 ID 가 남았는가"** 를 본다.
  */
 export function verifyAfterPurge(i: PostCheckInput): PlanIssue[] {
   const out: PlanIssue[] = []
-  if (i.targetsRemaining !== 0) {
-    out.push({ code: 'TARGET_REMAINS', detail: `삭제 대상 ${i.targetsRemaining}건 남음` })
+  if (i.deletedRemaining !== 0) {
+    out.push({ code: 'TARGET_REMAINS', detail: `삭제한 글 ${i.deletedRemaining}건이 아직 있다` })
+  }
+  if (i.deletedCount <= 0) {
+    out.push({ code: 'NOTHING_DELETED', detail: '삭제 건수가 0이다' })
   }
   if (i.preserveAfter !== i.preserveBefore) {
     out.push({ code: 'PRESERVE_CHANGED', detail: `보존 ${i.preserveBefore} → ${i.preserveAfter}` })
   }
   if (i.protectedRemaining !== i.protectedExpected) {
     out.push({ code: 'PROTECTED_LOST', detail: `보호 제외 글 ${i.protectedExpected} → ${i.protectedRemaining}` })
+  }
+  // 8종 전부 확인 — 빠진 축이 있으면 그것부터 잡는다.
+  const seen = new Set(i.semanticResidual.map((c) => `${c.model}.${c.field}`))
+  for (const r of SEMANTIC_REFS) {
+    if (!seen.has(`${r.model}.${r.field}`)) {
+      out.push({ code: 'SEMANTIC_NOT_CHECKED', detail: `${r.model}.${r.field} 를 사후에 확인하지 않았다` })
+    }
   }
   out.push(...residualSemanticIssues(i.semanticResidual))
   for (const t of i.tableDeltas) {
@@ -405,4 +480,65 @@ export function verifyAfterPurge(i: PostCheckInput): PlanIssue[] {
     }
   }
   return out
+}
+
+// ── 완료 상태 ─────────────────────────────────────────────────
+/**
+ * 이 작업은 **DB 와 R2 두 개**로 끝난다. 둘을 한 단어로 뭉치면
+ * 이미지가 남았는데 done 이라고 말하게 된다.
+ */
+export type CompletionState =
+  | 'DRY_RUN'
+  | 'DB_COMPLETE_R2_PENDING'
+  | 'DB_COMPLETE'
+  | 'R2_COMPLETE'
+  | 'FULLY_COMPLETE'
+
+export interface R2Outcome {
+  /** 자격증명이 없어 아예 시도하지 못했는가 */
+  skippedNoCredentials: boolean
+  uncertain: number
+  remaining: number
+}
+
+export function classifyCompletion(dbDone: boolean, r2: R2Outcome | null): CompletionState {
+  if (!dbDone && r2 === null) return 'DRY_RUN'
+  const r2Done = r2 !== null && !r2.skippedNoCredentials && r2.uncertain === 0 && r2.remaining === 0
+  if (!dbDone) return r2Done ? 'R2_COMPLETE' : 'DB_COMPLETE_R2_PENDING'
+  if (r2Done) return 'FULLY_COMPLETE'
+  return 'DB_COMPLETE_R2_PENDING'
+}
+
+/** 종료 코드. 호출자가 `--r2-only` 로 재개할지 판단하는 근거다. */
+export const EXIT_CODE: Record<CompletionState, number> = {
+  DRY_RUN: 0,
+  FULLY_COMPLETE: 0,
+  R2_COMPLETE: 0,
+  DB_COMPLETE: 0,
+  /** 실패는 아니지만 **끝난 것도 아니다.** 0 으로 끝내면 아무도 이어서 돌리지 않는다. */
+  DB_COMPLETE_R2_PENDING: 3,
+}
+
+/**
+ * `--r2-only` 를 허용해도 되는가.
+ *
+ * DB 가 아직 시작 전인데 이미지만 지우면 **살아 있는 글의 이미지가 깨진다.**
+ * DB 가 끝났거나, 남은 후보가 전부 지금 보호 대상일 때만 허용한다.
+ */
+export function canRunR2Only(
+  state: RunState,
+  remainingCandidates: number,
+  protectedAmongRemaining: number,
+): { allowed: boolean; reason: string } {
+  if (state === 'COMPLETE') return { allowed: true, reason: 'DB 가 이미 COMPLETE 다' }
+  if (state === 'NOT_STARTED') {
+    if (remainingCandidates > 0 && remainingCandidates === protectedAmongRemaining) {
+      return { allowed: true, reason: '남은 후보가 전부 현재 보호 대상이다 — 지울 글이 없다' }
+    }
+    return { allowed: false, reason: 'DB 가 시작 전이다 — 살아 있는 글의 이미지를 지울 수 없다' }
+  }
+  if (remainingCandidates > 0 && remainingCandidates === protectedAmongRemaining) {
+    return { allowed: true, reason: '남은 후보가 전부 현재 보호 대상이다' }
+  }
+  return { allowed: false, reason: '아직 지워야 할 후보가 남아 있다' }
 }

@@ -10,19 +10,20 @@ import { describe, expect, it } from 'vitest'
 import {
   parseCsv, toPurgeRows, buildPlan, detectDrift, assertCsvIntegrity, assertR2ManifestIntegrity,
   classifyRunState, blockingSemanticIssues, residualSemanticIssues, verifyAfterPurge,
-  isRealMember, protectionReasons, fingerprint, tag, keyTag, sha12,
+  isRealMember, isGuestComment, isSerializationConflict, protectionReasons,
+  classifyCompletion, canRunR2Only, fingerprint, tag, keyTag, sha12,
   EXPECTED_TOTAL, EXPECTED_ORIGIN_COUNTS, EXPECTED_PRESERVE_TOTAL, R2_MANIFEST_KEYS,
-  SEMANTIC_REFS, PROTECTION_AXES, WITHDRAWN_PREFIX,
+  SEMANTIC_REFS, PROTECTION_AXES, WITHDRAWN_PREFIX, TRANSACTION_OPTIONS, EXIT_CODE,
   type PurgeRow, type LiveRow, type SemanticCount,
 } from './public-content-policy.js'
 import {
   planR2Deletion, toObjectKey, extractImageUrls, classifyHead, classifyDelete, R2_PUBLIC_HOSTS,
 } from './r2-objects.js'
 import {
-  executePurge, PurgeAbortError, type PurgeTx, type TransactionRunner,
+  executePurge, linkPointsToPost, PurgeAbortError, type PurgeTx, type TransactionRunner,
 } from './public-content-exec.js'
 import { signHeaders, objectUrl, deleteObject, runR2Cleanup, type FetchLike, type R2Config } from './r2-client.js'
-import { parseArgs, isExecutionAuthorized, preserveIdsFrom, findDeadLinkRows } from '../coo/public-content-purge.js'
+import { parseArgs, isExecutionAuthorized, preserveIdsFrom } from '../coo/public-content-purge.js'
 
 const ROOT = resolve(__dirname, '../..')
 const RAW = readFileSync(resolve(ROOT, 'docs/operations/data/2026-09-14-public-content-purge.csv'), 'utf8')
@@ -238,13 +239,17 @@ describe('semantic 평문 참조 정책', () => {
     expect(blockingSemanticIssues([{ model: 'Mystery', field: 'postId', count: 0 }])
       .some((i) => i.code === 'UNKNOWN_SEMANTIC_REF')).toBe(true)
   })
-  it('URL 안에 대상 ID 가 박힌 행을 경로 매칭으로 찾는다', () => {
-    const rows = [
-      { id: 's1', linkUrl: 'https://age-doesnt-matter.com/community/abc123' },
-      { id: 's2', linkUrl: 'https://age-doesnt-matter.com/community/other' },
-      { id: 's3', linkUrl: null },
-    ]
-    expect(findDeadLinkRows(rows, new Set(['abc123']))).toEqual(['s1'])
+  it('URL 은 ID 로 매칭된다', () => {
+    expect(linkPointsToPost('https://age-doesnt-matter.com/community/abc123', 'abc123', null)).toBe(true)
+    expect(linkPointsToPost('https://age-doesnt-matter.com/community/other', 'abc123', null)).toBe(false)
+  })
+  it('🔴 slug 경로도 매칭된다 — ID 만 보면 놓친다', () => {
+    expect(linkPointsToPost('https://age-doesnt-matter.com/community/점심-뭐드세요', 'abc123', '점심-뭐드세요')).toBe(true)
+  })
+  it('slug 가 없거나 ID 와 같으면 ID 매칭만 한다', () => {
+    expect(linkPointsToPost('https://x/other', 'abc123', null)).toBe(false)
+    expect(linkPointsToPost('https://x/other', 'abc123', 'abc123')).toBe(false)
+    expect(linkPointsToPost('https://x/other', 'abc123', '')).toBe(false)
   })
 })
 
@@ -455,7 +460,7 @@ function postOf(r: PurgeRow, over: Partial<PostRow> = {}): PostRow {
   return {
     id: r.id, boardType: r.boardType, status: 'PUBLISHED', source: r.source,
     authorId: r.authorIdSha256_12 ? 'author-x' : null,
-    title: '', content: '', updatedAt: new Date(r.updatedAt), author: BOT, ...over,
+    title: '', content: '', updatedAt: new Date(r.updatedAt), slug: null, author: BOT, ...over,
   } as PostRow
 }
 
@@ -468,6 +473,14 @@ function fakeDb(opts: {
   counts?: Record<string, number>
   voteRefs?: number
   eventRefs?: number
+  socialRows?: { id: string; linkUrl: string | null }[]
+  draftRows?: { id: string; linkUrl: string | null }[]
+  /** 조회 직후 다른 세션이 linkUrl 을 바꾼 상황 — 값 조건 매칭이 실패한다. */
+  linkUrlChangedUnderneath?: boolean
+  /** $transaction 에 전달된 options 를 기록한다. */
+  onOptions?: (o: unknown) => void
+  /** 트랜잭션 자체가 던질 오류(직렬화 충돌 재현). */
+  throwOnTx?: unknown
 }) {
   const counts = opts.counts ?? {}
   const calls: string[] = []
@@ -496,12 +509,36 @@ function fakeDb(opts: {
     userPostWaveQueue: { deleteMany: del('UserPostWaveQueue') },
     user: { updateMany: async () => { calls.push('User'); return { count: counts.User ?? 0 } } },
     naverBlogQueue: { deleteMany: del('NaverBlogQueue') },
-    socialPost: { updateMany: async () => { calls.push('SocialPost'); return { count: counts.SocialPost ?? 0 } } },
-    channelDraft: { updateMany: async () => { calls.push('ChannelDraft'); return { count: counts.ChannelDraft ?? 0 } } },
+    socialPost: {
+      findMany: async () => opts.socialRows ?? [],
+      updateMany: async (a) => {
+        calls.push('SocialPost')
+        const w = a.where as { id: string; linkUrl: string | null }
+        if (opts.linkUrlChangedUnderneath) return { count: 0 }
+        const row = (opts.socialRows ?? []).find((r) => r.id === w.id && r.linkUrl === w.linkUrl)
+        return { count: row ? 1 : 0 }
+      },
+    },
+    channelDraft: {
+      findMany: async () => opts.draftRows ?? [],
+      updateMany: async (a) => {
+        calls.push('ChannelDraft')
+        const w = a.where as { id: string; linkUrl: string | null }
+        if (opts.linkUrlChangedUnderneath) return { count: 0 }
+        const row = (opts.draftRows ?? []).find((r) => r.id === w.id && r.linkUrl === w.linkUrl)
+        return { count: row ? 1 : 0 }
+      },
+    },
     voteEvent: { count: async () => opts.voteRefs ?? 0 },
     event: { count: async () => opts.eventRefs ?? 0 },
   }
-  const db: TransactionRunner = { $transaction: async (fn) => { const r = await fn(tx); committed = true; return r } }
+  const db: TransactionRunner = {
+    $transaction: async (fn, options) => {
+      opts.onOptions?.(options)
+      if (opts.throwOnTx !== undefined) throw opts.throwOnTx
+      const r = await fn(tx); committed = true; return r
+    },
+  }
   return { db, calls, wasCommitted: () => committed }
 }
 
@@ -520,7 +557,7 @@ describe('🔴 TOCTOU — 보호 판정을 트랜잭션 안에서 다시 한다'
     const row = { ...R, contentSha256_12: R.titleSha256_12 }
     const f = fakeDb({
       posts: [postOf(row)],
-      comments: [{ id: 'c1', postId: row.id, authorId: 'u1', guestNickname: null, author: MEMBER }],
+      comments: [{ id: 'c1', postId: row.id, authorId: 'u1', guestNickname: null, guestPasswordHash: null, author: MEMBER }],
       counts: { Post: 0 },
     })
     await expect(executePurge(f.db, { sha12: shaBoth, candidates: [row], expectedMax: 1 }))
@@ -546,7 +583,7 @@ describe('🔴 TOCTOU — 보호 판정을 트랜잭션 안에서 다시 한다'
     const row = { ...R, contentSha256_12: R.titleSha256_12 }
     const f = fakeDb({
       posts: [postOf(row)],
-      comments: [{ id: 'c1', postId: row.id, authorId: null, guestNickname: '지나가던', author: null }],
+      comments: [{ id: 'c1', postId: row.id, authorId: null, guestNickname: '지나가던', guestPasswordHash: 'hash', author: null }],
     })
     await expect(executePurge(f.db, { sha12: shaBoth, candidates: [row], expectedMax: 1 }))
       .rejects.toThrow(/전건이 보호 대상/)
@@ -574,7 +611,7 @@ describe('🔴 TOCTOU — 보호 판정을 트랜잭션 안에서 다시 한다'
     const bAligned = { ...b, titleSha256_12: a.titleSha256_12, contentSha256_12: a.titleSha256_12, authorIdSha256_12: a.authorIdSha256_12, updatedAt: a.updatedAt }
     const f = fakeDb({
       posts: [postOf(a), postOf({ ...bAligned })],
-      comments: [{ id: 'c1', postId: b.id, authorId: 'u1', guestNickname: null, author: MEMBER }],
+      comments: [{ id: 'c1', postId: b.id, authorId: 'u1', guestNickname: null, guestPasswordHash: null, author: MEMBER }],
       counts: { Post: 1 },
     })
     const r = await executePurge(f.db, { sha12: shaAB, candidates: [a, bAligned], expectedMax: 2 })
@@ -629,7 +666,7 @@ describe('트랜잭션 안 drift·순서·집계', () => {
   it('Restrict 해제가 Post 삭제보다 먼저다', async () => {
     const f = fakeDb({
       posts: [postOf(R)],
-      comments: [{ id: 'c1', postId: R.id, authorId: 'bot', guestNickname: null, author: BOT }],
+      comments: [{ id: 'c1', postId: R.id, authorId: 'bot', guestNickname: null, guestPasswordHash: null, author: BOT }],
       counts: { Post: 1 },
     })
     await executePurge(f.db, { sha12: shaBoth, candidates: [R], expectedMax: 1 })
@@ -646,7 +683,7 @@ describe('트랜잭션 안 drift·순서·집계', () => {
   it('CASCADE 계수를 트랜잭션 안에서 확정한다', async () => {
     const f = fakeDb({
       posts: [postOf(R)],
-      comments: [{ id: 'c1', postId: R.id, authorId: 'bot', guestNickname: null, author: BOT }],
+      comments: [{ id: 'c1', postId: R.id, authorId: 'bot', guestNickname: null, guestPasswordHash: null, author: BOT }],
       likes: [{ postId: R.id, user: BOT }],
       counts: { Post: 1, PostView: 3, JobDetail: 1 },
     })
@@ -668,31 +705,327 @@ describe('트랜잭션 안 drift·순서·집계', () => {
 })
 
 // ── 사후 검증 ─────────────────────────────────────────────────
+const ALL_SEMANTIC_ZERO: SemanticCount[] =
+  SEMANTIC_REFS.map((r) => ({ model: r.model, field: r.field, count: 0 }))
+
 describe('사후 검증을 통과해야만 done 이다', () => {
   const ok = {
-    targetsRemaining: 0, preserveBefore: 218, preserveAfter: 218,
+    deletedRemaining: 0, deletedCount: 628,
+    preserveBefore: 218, preserveAfter: 218,
     protectedExpected: 0, protectedRemaining: 0,
-    semanticResidual: [] as SemanticCount[],
+    semanticResidual: ALL_SEMANTIC_ZERO,
     tableDeltas: [{ table: 'Comment', expected: 775, actual: 775 }],
   }
   it('전부 맞으면 이슈 0', () => expect(verifyAfterPurge(ok)).toEqual([]))
-  it('대상이 남아 있으면 TARGET_REMAINS', () => {
-    expect(verifyAfterPurge({ ...ok, targetsRemaining: 3 }).some((i) => i.code === 'TARGET_REMAINS')).toBe(true)
+
+  it('🔴 보호 제외가 1건 있어도 정상 PASS 한다', () => {
+    // 후보 628 중 1건이 보호돼 627만 지운 실행. 남은 1건은 **있는 게 맞다**.
+    const r = verifyAfterPurge({
+      ...ok, deletedCount: 627, deletedRemaining: 0,
+      protectedExpected: 1, protectedRemaining: 1,
+    })
+    expect(r).toEqual([])
+  })
+
+  it('🔴 보호 제외가 여러 건이어도 PASS 한다', () => {
+    expect(verifyAfterPurge({
+      ...ok, deletedCount: 600, protectedExpected: 28, protectedRemaining: 28,
+    })).toEqual([])
+  })
+
+  it('실제로 지운 글이 남아 있으면 TARGET_REMAINS', () => {
+    expect(verifyAfterPurge({ ...ok, deletedRemaining: 3 }).some((i) => i.code === 'TARGET_REMAINS')).toBe(true)
+  })
+  it('아무것도 못 지웠으면 성공이 아니다', () => {
+    expect(verifyAfterPurge({ ...ok, deletedCount: 0 }).some((i) => i.code === 'NOTHING_DELETED')).toBe(true)
   })
   it('🔴 보존 대상이 줄면 PRESERVE_CHANGED', () => {
     expect(verifyAfterPurge({ ...ok, preserveAfter: 217 }).some((i) => i.code === 'PRESERVE_CHANGED')).toBe(true)
   })
-  it('보호 제외한 글이 사라졌으면 PROTECTED_LOST', () => {
+  it('🔴 보호한 글이 사라졌으면 PROTECTED_LOST', () => {
     expect(verifyAfterPurge({ ...ok, protectedExpected: 2, protectedRemaining: 1 })
       .some((i) => i.code === 'PROTECTED_LOST')).toBe(true)
   })
   it('평문 참조 잔재가 남으면 잡는다', () => {
-    const residual: SemanticCount[] = [{ model: 'NaverBlogQueue', field: 'magazinePostId', count: 2 }]
+    const residual = ALL_SEMANTIC_ZERO.map((c) =>
+      c.model === 'NaverBlogQueue' ? { ...c, count: 2 } : c)
     expect(verifyAfterPurge({ ...ok, semanticResidual: residual })
       .some((i) => i.code === 'RESIDUAL_SEMANTIC_REF')).toBe(true)
+  })
+  it('🔴 semantic 8종 중 하나라도 안 봤으면 잡는다', () => {
+    const partial = ALL_SEMANTIC_ZERO.slice(0, 7)
+    const r = verifyAfterPurge({ ...ok, semanticResidual: partial })
+    expect(r.some((i) => i.code === 'SEMANTIC_NOT_CHECKED')).toBe(true)
+  })
+  it('사후 검증은 VoteEvent·Event·linkUrl 2종을 포함해 8종을 요구한다', () => {
+    expect(SEMANTIC_REFS).toHaveLength(8)
+    const keys = SEMANTIC_REFS.map((r) => `${r.model}.${r.field}`)
+    for (const k of ['VoteEvent.linkedPostId', 'Event.bodyPostId',
+                     'SocialPost.linkUrl', 'ChannelDraft.linkUrl']) {
+      expect(keys).toContain(k)
+    }
   })
   it('테이블 실제 감소량이 다르면 TABLE_DELTA', () => {
     expect(verifyAfterPurge({ ...ok, tableDeltas: [{ table: 'Comment', expected: 775, actual: 700 }] })
       .some((i) => i.code === 'TABLE_DELTA')).toBe(true)
+  })
+})
+
+// ── 트랜잭션 격리 ─────────────────────────────────────────────
+describe('🔴 Serializable 격리와 충돌 처리', () => {
+  it('트랜잭션 옵션에 isolationLevel=Serializable 이 있다', () => {
+    expect(TRANSACTION_OPTIONS.isolationLevel).toBe('Serializable')
+    expect(TRANSACTION_OPTIONS.timeout).toBeGreaterThan(5_000)
+  })
+
+  it('$transaction 에 그 옵션이 실제로 전달된다', async () => {
+    const R = { ...ROWS[0], contentSha256_12: ROWS[0].titleSha256_12 }
+    const shaBoth = (v: string) => (v === 'author-x' ? R.authorIdSha256_12 : v === '' ? R.titleSha256_12 : sha12(v))
+    let seen: unknown = null
+    const f = fakeDb({ posts: [postOf(R)], counts: { Post: 1 }, onOptions: (o) => { seen = o } })
+    await executePurge(f.db, { sha12: shaBoth, candidates: [R], expectedMax: 1 })
+    expect(seen).toMatchObject({ isolationLevel: 'Serializable', maxWait: 15_000, timeout: 180_000 })
+  })
+
+  it('P2034 를 직렬화 충돌로 인식한다', () => {
+    expect(isSerializationConflict({ code: 'P2034' })).toBe(true)
+    expect(isSerializationConflict(new Error('could not serialize access due to concurrent update'))).toBe(true)
+    expect(isSerializationConflict(new Error('deadlock detected'))).toBe(true)
+    expect(isSerializationConflict(new Error('연결 끊김'))).toBe(false)
+  })
+
+  it('🔴 충돌이 나면 재시도하지 않고 ABORT 한다 — 커밋 0', async () => {
+    const R = { ...ROWS[0], contentSha256_12: ROWS[0].titleSha256_12 }
+    const shaBoth = (v: string) => (v === 'author-x' ? R.authorIdSha256_12 : v === '' ? R.titleSha256_12 : sha12(v))
+    const conflict = Object.assign(new Error('write conflict'), { code: 'P2034' })
+    const f = fakeDb({ posts: [postOf(R)], counts: { Post: 1 }, throwOnTx: conflict })
+    await expect(executePurge(f.db, { sha12: shaBoth, candidates: [R], expectedMax: 1 }))
+      .rejects.toThrow(/직렬화 충돌.*재시도하지 않는다/)
+    expect(f.wasCommitted()).toBe(false)
+  })
+
+  it('충돌이 아닌 오류는 그대로 올린다 — 삼키지 않는다', async () => {
+    const R = { ...ROWS[0], contentSha256_12: ROWS[0].titleSha256_12 }
+    const shaBoth = (v: string) => (v === 'author-x' ? R.authorIdSha256_12 : v === '' ? R.titleSha256_12 : sha12(v))
+    const f = fakeDb({ posts: [postOf(R)], throwOnTx: new Error('연결이 끊겼다') })
+    await expect(executePurge(f.db, { sha12: shaBoth, candidates: [R], expectedMax: 1 }))
+      .rejects.toThrow(/연결이 끊겼다/)
+  })
+})
+
+// ── 게스트 댓글 계약 ──────────────────────────────────────────
+describe('🔴 게스트 댓글은 닉네임 + 비밀번호 해시 둘 다 있어야 한다', () => {
+  it('둘 다 있으면 사람 흔적', () => {
+    expect(isGuestComment({ authorId: null, guestNickname: '지나가던', guestPasswordHash: 'h' })).toBe(true)
+  })
+  it('닉네임만 있으면 계약 미충족 — 흔적으로 세지 않는다', () => {
+    expect(isGuestComment({ authorId: null, guestNickname: '지나가던', guestPasswordHash: null })).toBe(false)
+  })
+  it('해시만 있어도 아니다', () => {
+    expect(isGuestComment({ authorId: null, guestNickname: null, guestPasswordHash: 'h' })).toBe(false)
+  })
+  it('회원 댓글은 게스트가 아니다', () => {
+    expect(isGuestComment({ authorId: 'u1', guestNickname: '지나가던', guestPasswordHash: 'h' })).toBe(false)
+  })
+})
+
+describe('🔴 withdrawn_ 은 status=WITHDRAWN 까지 확인한다', () => {
+  it('접두사 + WITHDRAWN 이면 실회원', () => {
+    expect(isRealMember({ providerId: 'withdrawn_3812345678', role: 'USER', status: 'WITHDRAWN' })).toBe(true)
+  })
+  it('접두사가 있는데 status 가 ACTIVE 면 실회원으로 보지 않는다', () => {
+    expect(isRealMember({ providerId: 'withdrawn_3812345678', role: 'USER', status: 'ACTIVE' })).toBe(false)
+  })
+  it('status 를 조회하지 않은 호출자는 접두사만으로 판정한다', () => {
+    expect(isRealMember({ providerId: 'withdrawn_3812345678', role: 'USER' })).toBe(true)
+  })
+})
+
+// ── 완료 상태 ─────────────────────────────────────────────────
+describe('🔴 완료 상태는 DB 와 R2 를 따로 본다', () => {
+  const clean = { skippedNoCredentials: false, uncertain: 0, remaining: 0 }
+
+  it('dry-run', () => expect(classifyCompletion(false, null)).toBe('DRY_RUN'))
+  it('DB + R2 둘 다 끝나야 FULLY_COMPLETE', () => {
+    expect(classifyCompletion(true, clean)).toBe('FULLY_COMPLETE')
+  })
+  it('R2 자격증명이 없으면 done 이 아니다', () => {
+    expect(classifyCompletion(true, { ...clean, skippedNoCredentials: true })).toBe('DB_COMPLETE_R2_PENDING')
+  })
+  it('UNCERTAIN 이 있으면 done 이 아니다', () => {
+    expect(classifyCompletion(true, { ...clean, uncertain: 2 })).toBe('DB_COMPLETE_R2_PENDING')
+  })
+  it('remaining 이 있으면 done 이 아니다', () => {
+    expect(classifyCompletion(true, { ...clean, remaining: 5 })).toBe('DB_COMPLETE_R2_PENDING')
+  })
+  it('DB 가 이미 끝난 상태에서 R2 만 마치면 R2_COMPLETE', () => {
+    expect(classifyCompletion(false, clean)).toBe('R2_COMPLETE')
+  })
+  it('🔴 DB_COMPLETE_R2_PENDING 은 0 으로 끝나지 않는다 — 아무도 이어 돌리지 않는다', () => {
+    expect(EXIT_CODE.DB_COMPLETE_R2_PENDING).toBe(3)
+    expect(EXIT_CODE.FULLY_COMPLETE).toBe(0)
+    expect(EXIT_CODE.DRY_RUN).toBe(0)
+  })
+})
+
+describe('🔴 --r2-only 게이트', () => {
+  it('DB 가 COMPLETE 면 허용', () => {
+    expect(canRunR2Only('COMPLETE', 0, 0).allowed).toBe(true)
+  })
+  it('DB 가 NOT_STARTED 면 거부 — 살아 있는 글의 이미지를 지우게 된다', () => {
+    const g = canRunR2Only('NOT_STARTED', 628, 0)
+    expect(g.allowed).toBe(false)
+    expect(g.reason).toMatch(/시작 전/)
+  })
+  it('남은 후보가 전부 보호 대상이면 허용 — 지울 글이 없다', () => {
+    expect(canRunR2Only('NOT_STARTED', 628, 628).allowed).toBe(true)
+  })
+  it('일부만 보호 대상이면 거부', () => {
+    expect(canRunR2Only('NOT_STARTED', 628, 627).allowed).toBe(false)
+    expect(canRunR2Only('PARTIAL', 100, 40).allowed).toBe(false)
+  })
+})
+
+// ── 동시 삽입 계약 (TOCTOU 재현) ──────────────────────────────
+describe('🔴 보호 조회 뒤 동시 삽입 — 삭제가 커밋되지 않는다', () => {
+  const R = { ...ROWS[0], contentSha256_12: ROWS[0].titleSha256_12 }
+  const shaBoth = (v: string) => (v === 'author-x' ? R.authorIdSha256_12 : v === '' ? R.titleSha256_12 : sha12(v))
+
+  /**
+   * preflight 는 "흔적 없음"으로 통과했는데, 트랜잭션이 읽는 시점에는 이미
+   * 회원의 댓글·Like·Scrap 이 들어와 있는 상황. Serializable 스냅샷에서
+   * 그게 보이면 그 글은 최종 집합에서 빠져야 하고, 남은 게 없으면 커밋되면 안 된다.
+   */
+  const cases: [string, Parameters<typeof fakeDb>[0]][] = [
+    ['댓글', { posts: [postOf(R)], comments: [{ id: 'c', postId: R.id, authorId: 'u', guestNickname: null, guestPasswordHash: null, author: MEMBER }] }],
+    ['Like', { posts: [postOf(R)], likes: [{ postId: R.id, user: MEMBER }] }],
+    ['Scrap', { posts: [postOf(R)], scraps: [{ postId: R.id, user: MEMBER }] }],
+    ['게스트 댓글', { posts: [postOf(R)], comments: [{ id: 'c', postId: R.id, authorId: null, guestNickname: '손님', guestPasswordHash: 'h', author: null }] }],
+  ]
+  for (const [label, opts] of cases) {
+    it(`${label} 이 들어오면 커밋하지 않는다`, async () => {
+      const f = fakeDb({ ...opts, counts: { Post: 1 } })
+      await expect(executePurge(f.db, { sha12: shaBoth, candidates: [R], expectedMax: 1 })).rejects.toThrow()
+      expect(f.wasCommitted(), `${label}: 커밋되면 안 된다`).toBe(false)
+    })
+  }
+
+  it('닉네임만 있는 게스트 댓글은 흔적이 아니라 삭제가 진행된다', async () => {
+    const f = fakeDb({
+      posts: [postOf(R)],
+      comments: [{ id: 'c', postId: R.id, authorId: null, guestNickname: '손님', guestPasswordHash: null, author: null }],
+      counts: { Post: 1 },
+    })
+    const r = await executePurge(f.db, { sha12: shaBoth, candidates: [R], expectedMax: 1 })
+    expect(r.deleted).toBe(1)
+  })
+
+  it('삭제 ID 와 보호 ID 를 따로 돌려준다', async () => {
+    const a = { ...ROWS[0], contentSha256_12: ROWS[0].titleSha256_12 }
+    const b0 = ROWS[1]
+    const b = { ...b0, titleSha256_12: a.titleSha256_12, contentSha256_12: a.titleSha256_12,
+                authorIdSha256_12: a.authorIdSha256_12, updatedAt: a.updatedAt }
+    const shaAB = (v: string) => (v === 'author-x' ? a.authorIdSha256_12 : v === '' ? a.titleSha256_12 : sha12(v))
+    const f = fakeDb({
+      posts: [postOf(a), postOf(b)],
+      comments: [{ id: 'c', postId: b.id, authorId: 'u', guestNickname: null, guestPasswordHash: null, author: MEMBER }],
+      counts: { Post: 1 },
+    })
+    const r = await executePurge(f.db, { sha12: shaAB, candidates: [a, b], expectedMax: 2 })
+    expect(r.deletedIds).toEqual([a.id])
+    expect(r.protectedInTx).toEqual([b.id])
+  })
+})
+
+// ── linkUrl 정리는 트랜잭션 안에서 값까지 맞춘다 ───────────────
+describe('🔴 linkUrl 정리', () => {
+  const R = { ...ROWS[0], contentSha256_12: ROWS[0].titleSha256_12 }
+  const shaBoth = (v: string) => (v === 'author-x' ? R.authorIdSha256_12 : v === '' ? R.titleSha256_12 : sha12(v))
+
+  it('ID 가 박힌 링크를 트랜잭션 안에서 찾아 null 로 만든다', async () => {
+    const f = fakeDb({
+      posts: [postOf(R)], counts: { Post: 1 },
+      socialRows: [{ id: 's1', linkUrl: `https://age-doesnt-matter.com/community/${R.id}` },
+                   { id: 's2', linkUrl: 'https://age-doesnt-matter.com/community/other' }],
+    })
+    const r = await executePurge(f.db, { sha12: shaBoth, candidates: [R], expectedMax: 1 })
+    expect(r.steps.find((s) => s.step === 'SocialPost.linkUrl→null')?.affected).toBe(1)
+  })
+
+  it('🔴 slug 로 만든 링크도 잡는다', async () => {
+    const f = fakeDb({
+      posts: [postOf(R, { slug: '점심-뭐드세요' })], counts: { Post: 1 },
+      draftRows: [{ id: 'd1', linkUrl: 'https://age-doesnt-matter.com/community/점심-뭐드세요' }],
+    })
+    const r = await executePurge(f.db, { sha12: shaBoth, candidates: [R], expectedMax: 1 })
+    expect(r.steps.find((s) => s.step === 'ChannelDraft.linkUrl→null')?.affected).toBe(1)
+  })
+
+  it('🔴 읽은 뒤 값이 바뀌면 덮어쓰지 않고 ABORT 한다', async () => {
+    // updateMany 조건에 `linkUrl: 읽은 값` 이 들어가므로, 그 사이 누가 링크를 고치면
+    // 0건이 되고 그 불일치를 그대로 터뜨린다 — 모르는 채로 남의 수정을 덮지 않는다.
+    const f = fakeDb({
+      posts: [postOf(R)], counts: { Post: 1 },
+      socialRows: [{ id: 's1', linkUrl: `https://age-doesnt-matter.com/community/${R.id}` }],
+      linkUrlChangedUnderneath: true,
+    })
+    await expect(executePurge(f.db, { sha12: shaBoth, candidates: [R], expectedMax: 1 }))
+      .rejects.toThrow(/linkUrl 이 트랜잭션 중 바뀌었다/)
+    expect(f.wasCommitted()).toBe(false)
+  })
+
+  it('링크가 없으면 0건이고 조용히 지나간다', async () => {
+    const f = fakeDb({ posts: [postOf(R)], counts: { Post: 1 } })
+    const r = await executePurge(f.db, { sha12: shaBoth, candidates: [R], expectedMax: 1 })
+    expect(r.steps.find((s) => s.step === 'SocialPost.linkUrl→null')?.affected).toBe(0)
+  })
+})
+
+// ── R2 공유 재계산 (커밋 후) ──────────────────────────────────
+describe('🔴 트랜잭션에서 새로 보호된 글의 이미지는 shared 로 빠진다', () => {
+  const A = `https://${R2_PUBLIC_HOSTS[0]}`
+
+  /**
+   * 계획 시점에는 두 글 모두 삭제 대상이라 이미지 2개가 전용이었다.
+   * 트랜잭션에서 b 가 보호되면 **b 는 살아남는다** — 커밋 뒤 "남아 있는 글" 기준으로
+   * 다시 세면 b 의 이미지가 자동으로 shared 가 된다. 그래서 manifest 를 851(전용)로
+   * 굳히지 않고 867(전체)로 두고 공유 판정을 실행 시점에 한다.
+   */
+  it('커밋 후 기준으로 다시 세면 보호된 글의 이미지가 shared 가 된다', () => {
+    const doomedPlan = [
+      { id: 'a', thumbnailUrl: `${A}/a.jpg`, content: '' },
+      { id: 'b', thumbnailUrl: `${A}/b.jpg`, content: '' },
+    ]
+    // 계획 시점 — 둘 다 지울 예정이라 둘 다 전용
+    const planned = planR2Deletion(doomedPlan, [], [])
+    expect(planned.exclusive).toEqual(['a.jpg', 'b.jpg'])
+    expect(planned.shared).toEqual([])
+
+    // 커밋 후 — b 는 보호돼 살아남았다. survivors 에 b 가 들어간다.
+    const after = planR2Deletion(
+      [doomedPlan[0]],
+      [{ id: 'b', thumbnailUrl: `${A}/b.jpg`, content: '' }],
+      [],
+    )
+    expect(after.exclusive).toEqual(['a.jpg'])
+    expect(after.shared).toEqual([])
+    // 그리고 manifest 전체(a+b)를 돌릴 때 b 는 sharedKeys 로 막혀야 한다.
+    const sharedKeys = new Set(
+      planR2Deletion(doomedPlan, [{ id: 'b', thumbnailUrl: `${A}/b.jpg`, content: '' }], []).shared,
+    )
+    expect(sharedKeys.has('b.jpg')).toBe(true)
+  })
+
+  it('manifest 는 전용이 아니라 후보 전체 객체 수다', () => {
+    // 851(전용)이 아니라 867(전체)이어야 실행 시점 보호 변화를 담을 수 있다.
+    expect(R2_MANIFEST_KEYS).toBe(867)
+    expect(MANIFEST.trim().split('\n')).toHaveLength(867)
+  })
+
+  it('sharedKeys 에 든 키는 runR2Cleanup 이 요청조차 하지 않는다', async () => {
+    const s = r2Stub([])
+    const r = await runR2Cleanup(s.impl, R2CFG, ['a.jpg', 'b.jpg'], new Set(['a.jpg', 'b.jpg']))
+    expect(s.calls).toEqual([])
+    expect(r.sharedSkipped).toBe(2)
   })
 })

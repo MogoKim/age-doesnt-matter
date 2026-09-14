@@ -17,7 +17,7 @@
  *  나머지(Comment·Like·GuestLike·Scrap·PostView·JobDetail·CpsLink)는 CASCADE 가 맡는다.
  */
 import {
-  TRANSACTION_OPTIONS, EXPECTED_STATUS, isRealMember,
+  TRANSACTION_OPTIONS, EXPECTED_STATUS, isRealMember, isGuestComment, isSerializationConflict,
   type PurgeRow, type AuthorLike,
 } from './public-content-policy.js'
 
@@ -37,13 +37,15 @@ export interface PurgeTx {
     findMany(a: { where: unknown; select: unknown }): Promise<Array<{
       id: string; boardType: string; status: string; source: string | null
       authorId: string | null; title: string; content: string; updatedAt: Date
+      slug: string | null
       author: AuthorLike | null
     }>>
     deleteMany(a: { where: unknown }): Promise<DeleteManyResult>
   }
   comment: {
     findMany(a: { where: unknown; select: unknown }): Promise<Array<{
-      id: string; postId: string; authorId: string | null; guestNickname: string | null
+      id: string; postId: string; authorId: string | null
+      guestNickname: string | null; guestPasswordHash: string | null
       author: AuthorLike | null
     }>>
   }
@@ -69,8 +71,14 @@ export interface PurgeTx {
   userPostWaveQueue: { deleteMany(a: { where: unknown }): Promise<DeleteManyResult> }
   user: { updateMany(a: { where: unknown; data: unknown }): Promise<UpdateManyResult> }
   naverBlogQueue: { deleteMany(a: { where: unknown }): Promise<DeleteManyResult> }
-  socialPost: { updateMany(a: { where: unknown; data: unknown }): Promise<UpdateManyResult> }
-  channelDraft: { updateMany(a: { where: unknown; data: unknown }): Promise<UpdateManyResult> }
+  socialPost: {
+    findMany(a: { where?: unknown; select: unknown }): Promise<{ id: string; linkUrl: string | null }[]>
+    updateMany(a: { where: unknown; data: unknown }): Promise<UpdateManyResult>
+  }
+  channelDraft: {
+    findMany(a: { where?: unknown; select: unknown }): Promise<{ id: string; linkUrl: string | null }[]>
+    updateMany(a: { where: unknown; data: unknown }): Promise<UpdateManyResult>
+  }
   voteEvent: { count(a: { where: unknown }): Promise<number> }
   event: { count(a: { where: unknown }): Promise<number> }
 }
@@ -83,19 +91,14 @@ export interface TransactionRunner {
 export interface StepResult { step: string; affected: number }
 
 export interface PurgeOutcome {
-  /** 트랜잭션 안에서 최종 확정된 삭제 ID 수 */
-  deleted: number
+  /** 🔴 트랜잭션 안에서 **실제로 지운 ID**. 사후 검증은 이 목록으로만 한다. */
+  deletedIds: string[]
   /** 트랜잭션 안에서 보호 신호가 발견돼 빠진 ID */
   protectedInTx: string[]
+  deleted: number
   /** 트랜잭션 안에서 확정한 CASCADE 실측 계수 */
   cascade: Record<string, number>
   steps: StepResult[]
-}
-
-export interface DeadLinkIds {
-  /** linkUrl 안에 삭제 대상 ID 가 박힌 행. 경로 매칭이라 동등 비교로는 못 찾는다. */
-  socialPost: string[]
-  channelDraft: string[]
 }
 
 export interface ExecDeps {
@@ -104,8 +107,17 @@ export interface ExecDeps {
   candidates: readonly PurgeRow[]
   /** preflight 가 예상한 삭제 건수. 트랜잭션 결과가 이보다 크면 ABORT. */
   expectedMax: number
-  /** URL 평문 참조는 호출자가 미리 찾아 준다(경로 매칭). 없으면 정리하지 않는다. */
-  deadLinkUrlIds?: DeadLinkIds
+}
+
+/**
+ * URL 안에 이 글을 가리키는 경로가 있는가.
+ *
+ * ID 만 보면 안 된다 — 링크는 `/community/<slug>` 로도 만들어진다.
+ * 그래서 **ID 와 slug 둘 다** 본다.
+ */
+export function linkPointsToPost(url: string, id: string, slug: string | null): boolean {
+  if (url.includes(id)) return true
+  return slug !== null && slug !== '' && slug !== id && url.includes(slug)
 }
 
 /**
@@ -129,31 +141,29 @@ export async function executePurge(db: TransactionRunner, deps: ExecDeps): Promi
       where: { id: { in: candidateIds } },
       select: {
         id: true, boardType: true, status: true, source: true, authorId: true,
-        title: true, content: true, updatedAt: true,
-        author: { select: { providerId: true, role: true } },
+        title: true, content: true, updatedAt: true, slug: true,
+        author: { select: { providerId: true, role: true, status: true } },
       },
     })
 
     const comments = await tx.comment.findMany({
       where: { postId: { in: candidateIds } },
       select: {
-        id: true, postId: true, authorId: true, guestNickname: true,
-        author: { select: { providerId: true, role: true } },
+        id: true, postId: true, authorId: true, guestNickname: true, guestPasswordHash: true,
+        author: { select: { providerId: true, role: true, status: true } },
       },
     })
     const likes = await tx.like.findMany({
       where: { postId: { in: candidateIds } },
-      select: { postId: true, user: { select: { providerId: true, role: true } } },
+      select: { postId: true, user: { select: { providerId: true, role: true, status: true } } },
     })
     const scraps = await tx.scrap.findMany({
       where: { postId: { in: candidateIds } },
-      select: { postId: true, user: { select: { providerId: true, role: true } } },
+      select: { postId: true, user: { select: { providerId: true, role: true, status: true } } },
     })
 
     const realComment = new Set(comments.filter((c) => isRealMember(c.author)).map((c) => c.postId))
-    const guestComment = new Set(
-      comments.filter((c) => c.authorId === null && c.guestNickname !== null).map((c) => c.postId),
-    )
+    const guestComment = new Set(comments.filter(isGuestComment).map((c) => c.postId))
     const realLike = new Set(likes.filter((l) => isRealMember(l.user)).map((l) => l.postId ?? ''))
     const realScrap = new Set(scraps.filter((s) => isRealMember(s.user)).map((s) => s.postId))
 
@@ -249,16 +259,48 @@ export async function executePurge(db: TransactionRunner, deps: ExecDeps): Promi
     await step('SocialPost.sourcePostId→null', () =>
       tx.socialPost.updateMany({ where: { sourcePostId: { in: doomed } }, data: { sourcePostId: null } }))
 
-    // linkUrl 은 ID 가 경로 안에 박혀 있어 동등 비교가 안 된다 — 호출자가 찾아 준 행만 지운다.
-    const deadLinkIds = deps.deadLinkUrlIds ?? { socialPost: [], channelDraft: [] }
-    await step('SocialPost.linkUrl→null', () =>
-      deadLinkIds.socialPost.length
-        ? tx.socialPost.updateMany({ where: { id: { in: deadLinkIds.socialPost } }, data: { linkUrl: null } })
-        : Promise.resolve({ count: 0 }))
-    await step('ChannelDraft.linkUrl→null', () =>
-      deadLinkIds.channelDraft.length
-        ? tx.channelDraft.updateMany({ where: { id: { in: deadLinkIds.channelDraft } }, data: { linkUrl: null } })
-        : Promise.resolve({ count: 0 }))
+    // linkUrl 은 ID·slug 가 경로 안에 박혀 있어 동등 비교가 안 된다.
+    // 🔴 바깥에서 찾아 오면 그 사이 값이 바뀔 수 있다 — **트랜잭션 안에서** 읽고 확정한다.
+    //    그리고 **읽은 값과 같을 때만** null 로 바꾼다. 그 사이 누가 고쳤으면 건드리지 않는다.
+    const doomedPosts = posts.filter((p) => doomed.includes(p.id))
+    const pointsToDoomed = (url: string | null): boolean =>
+      url !== null && doomedPosts.some((p) => linkPointsToPost(url, p.id, p.slug))
+
+    const socialRows = (await tx.socialPost.findMany({ select: { id: true, linkUrl: true } }))
+      .filter((r) => pointsToDoomed(r.linkUrl))
+    let socialCleared = 0
+    for (const r of socialRows) {
+      const res = await tx.socialPost.updateMany({
+        where: { id: r.id, linkUrl: r.linkUrl },   // 읽은 값과 같을 때만
+        data: { linkUrl: null },
+      })
+      socialCleared += res.count
+    }
+    if (socialCleared !== socialRows.length) {
+      throw new PurgeAbortError(
+        'LINK_URL_CHANGED',
+        `[ABORT] SocialPost.linkUrl 이 트랜잭션 중 바뀌었다 — ${socialCleared}/${socialRows.length}`,
+      )
+    }
+    steps.push({ step: 'SocialPost.linkUrl→null', affected: socialCleared })
+
+    const draftRows = (await tx.channelDraft.findMany({ select: { id: true, linkUrl: true } }))
+      .filter((r) => pointsToDoomed(r.linkUrl))
+    let draftCleared = 0
+    for (const r of draftRows) {
+      const res = await tx.channelDraft.updateMany({
+        where: { id: r.id, linkUrl: r.linkUrl },
+        data: { linkUrl: null },
+      })
+      draftCleared += res.count
+    }
+    if (draftCleared !== draftRows.length) {
+      throw new PurgeAbortError(
+        'LINK_URL_CHANGED',
+        `[ABORT] ChannelDraft.linkUrl 이 트랜잭션 중 바뀌었다 — ${draftCleared}/${draftRows.length}`,
+      )
+    }
+    steps.push({ step: 'ChannelDraft.linkUrl→null', affected: draftCleared })
 
     const deleted = await step('Post', () =>
       tx.post.deleteMany({ where: { id: { in: doomed }, status: EXPECTED_STATUS } }))
@@ -269,6 +311,16 @@ export async function executePurge(db: TransactionRunner, deps: ExecDeps): Promi
       )
     }
 
-    return { deleted, protectedInTx, cascade, steps }
-  }, { ...TRANSACTION_OPTIONS })
+    return { deletedIds: doomed, deleted, protectedInTx, cascade, steps }
+  }, { ...TRANSACTION_OPTIONS }).catch((e: unknown) => {
+    // 🔴 직렬화 충돌은 **재시도하지 않는다.** 되돌릴 수 없는 삭제라, 다시 미는 것보다
+    //    멈추고 사람이 보는 편이 낫다. 이 시점의 트랜잭션은 롤백됐다 = mutation 0.
+    if (isSerializationConflict(e)) {
+      throw new PurgeAbortError(
+        'SERIALIZATION_CONFLICT',
+        '[ABORT] 직렬화 충돌로 트랜잭션이 롤백됐다 — 재시도하지 않는다. mutation 0.',
+      )
+    }
+    throw e
+  })
 }

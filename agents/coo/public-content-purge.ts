@@ -20,12 +20,13 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import {
   parseCsv, toPurgeRows, buildPlan, detectDrift, assertCsvIntegrity, assertR2ManifestIntegrity,
-  classifyRunState, blockingSemanticIssues, verifyAfterPurge, isRealMember, sha12, tag,
+  classifyRunState, blockingSemanticIssues, verifyAfterPurge, isRealMember, isGuestComment,
+  classifyCompletion, canRunR2Only, sha12, tag, EXIT_CODE,
   CONFIRM_TOKEN, EXPECTED_TOTAL, EXPECTED_PRESERVE_TOTAL, R2_MANIFEST_KEYS, SEMANTIC_REFS,
-  type PurgeRow, type LiveRow, type PlanIssue, type SemanticCount,
+  type PurgeRow, type LiveRow, type PlanIssue, type SemanticCount, type CompletionState, type R2Outcome,
 } from '../purge/public-content-policy.js'
 import { planR2Deletion, type PostImageSource, type ForeignImageSource } from '../purge/r2-objects.js'
-import { executePurge, PurgeAbortError, type TransactionRunner } from '../purge/public-content-exec.js'
+import { executePurge, linkPointsToPost, type TransactionRunner } from '../purge/public-content-exec.js'
 import { runR2Cleanup, type R2Config, type FetchLike } from '../purge/r2-client.js'
 
 const CSV_PATH = 'docs/operations/data/2026-09-14-public-content-purge.csv'
@@ -63,15 +64,6 @@ export function preserveIdsFrom(tier1: string, tier2: string): string[] {
   return [...keep]
 }
 
-/** URL 안에 대상 ID 가 박힌 행을 찾는다. 경로 매칭이라 동등 비교로는 못 찾는다. */
-export function findDeadLinkRows(
-  rows: readonly { id: string; linkUrl: string | null }[],
-  doomed: ReadonlySet<string>,
-): string[] {
-  return rows
-    .filter((r) => r.linkUrl !== null && [...doomed].some((id) => r.linkUrl!.includes(id)))
-    .map((r) => r.id)
-}
 
 function out(line: string): void { console.log(line) }
 function issuesOut(label: string, issues: readonly PlanIssue[]): void {
@@ -97,7 +89,7 @@ async function db() {
   return import('../core/db.js')
 }
 
-export async function main(argv: readonly string[] = process.argv.slice(2)): Promise<void> {
+export async function main(argv: readonly string[] = process.argv.slice(2)): Promise<CompletionState> {
   const { prisma, disconnect } = await db()
   const args = parseArgs(argv)
   const authorized = isExecutionAuthorized(args)
@@ -141,8 +133,8 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       where: { id: { in: ids } },
       select: {
         id: true, boardType: true, status: true, source: true, authorId: true,
-        title: true, content: true, updatedAt: true, thumbnailUrl: true,
-        author: { select: { providerId: true, role: true } },
+        title: true, content: true, updatedAt: true, thumbnailUrl: true, slug: true,
+        author: { select: { providerId: true, role: true, status: true } },
       },
     })
     const state = classifyRunState(EXPECTED_TOTAL, posts.length)
@@ -153,56 +145,24 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       throw new Error(`[ABORT] 보존 대상이 이미 줄었다 — ${preserveBefore}/${keep.length}`)
     }
 
-    // R2 는 DB 와 독립이다. DB 가 COMPLETE 여도 남은 이미지 정리를 이어갈 수 있다.
-    const runR2 = async (sharedKeys: ReadonlySet<string>): Promise<void> => {
-      const cfg = r2ConfigFromEnv()
-      if (!authorized) {
-        out(`\n── R2 (dry-run) ── manifest ${manifestKeys.length}키 · 공유 제외 ${sharedKeys.size} · 삭제 0`)
-        return
-      }
-      if (!cfg) { out('\n── R2 ── 자격증명이 없다 — 이미지 정리를 건너뛴다(DB 결과는 유효하다)'); return }
-      const s = await runR2Cleanup(fetch as unknown as FetchLike, cfg, manifestKeys, sharedKeys)
-      out(`\n── R2 ── 삭제 ${s.deleted} · 이미 없음 ${s.alreadyGone} · 공유 제외 ${s.sharedSkipped} · 불확실 ${s.uncertain} · 잔존 ${s.remaining}`)
-    }
-
-    // 공유 키는 DB 상태와 무관하게 매번 다시 계산한다.
-    const survivors: PostImageSource[] = await prisma.post.findMany({
-      where: { id: { notIn: ids } },
-      select: { id: true, thumbnailUrl: true, content: true },
-    })
-    const foreign: ForeignImageSource[] = [
-      { model: 'SocialPost', urls: (await prisma.socialPost.findMany({ select: { imageUrls: true } })).flatMap((r) => r.imageUrls) },
-      { model: 'ChannelDraft', urls: (await prisma.channelDraft.findMany({ select: { imageUrls: true } })).flatMap((r) => r.imageUrls) },
-      { model: 'NaverBlogQueue', urls: (await prisma.naverBlogQueue.findMany({ select: { imageUrls: true } })).flatMap((r) => r.imageUrls) },
-      { model: 'Banner', urls: (await prisma.banner.findMany({ select: { imageUrl: true } })).map((b) => b.imageUrl).filter((u): u is string => !!u) },
-    ]
-    const doomedImgs: PostImageSource[] = posts.map((p) => ({ id: p.id, thumbnailUrl: p.thumbnailUrl, content: p.content }))
-    const r2plan = planR2Deletion(doomedImgs, survivors, foreign)
-    const sharedKeys = new Set(r2plan.shared)
-    out(`\n── R2 계획 ── 전용 ${r2plan.exclusive.length} · 공유(삭제 금지) ${r2plan.shared.length} · 외부 ${r2plan.external.length}`)
-
-    if (args.r2Only || state === 'COMPLETE') {
-      if (state === 'COMPLETE') out('\nDB 는 이미 COMPLETE — 남은 R2 정리만 이어간다.')
-      await runR2(sharedKeys)
-      return
-    }
-    if (state === 'PARTIAL') {
-      throw new Error('[ABORT] 후보가 일부만 남아 있다 — 자동으로 이어서 지우지 않는다. 사람이 확인해야 한다.')
-    }
-
-    // ── 보호 신호 preflight ────────────────────────────────────
+    // ── 보호 신호 (preflight) ──────────────────────────────────
     const comments = await prisma.comment.findMany({
       where: { postId: { in: ids } },
-      select: { postId: true, authorId: true, guestNickname: true, author: { select: { providerId: true, role: true } } },
+      select: {
+        postId: true, authorId: true, guestNickname: true, guestPasswordHash: true,
+        author: { select: { providerId: true, role: true, status: true } },
+      },
     })
     const likes = await prisma.like.findMany({
-      where: { postId: { in: ids } }, select: { postId: true, user: { select: { providerId: true, role: true } } },
+      where: { postId: { in: ids } },
+      select: { postId: true, user: { select: { providerId: true, role: true, status: true } } },
     })
     const scraps = await prisma.scrap.findMany({
-      where: { postId: { in: ids } }, select: { postId: true, user: { select: { providerId: true, role: true } } },
+      where: { postId: { in: ids } },
+      select: { postId: true, user: { select: { providerId: true, role: true, status: true } } },
     })
     const realComment = new Set(comments.filter((c) => isRealMember(c.author)).map((c) => c.postId))
-    const guestComment = new Set(comments.filter((c) => c.authorId === null && c.guestNickname !== null).map((c) => c.postId))
+    const guestComment = new Set(comments.filter(isGuestComment).map((c) => c.postId))
     const realLike = new Set(likes.filter((l) => isRealMember(l.user)).map((l) => l.postId ?? ''))
     const realScrap = new Set(scraps.filter((s) => isRealMember(s.user)).map((s) => s.postId))
 
@@ -217,7 +177,81 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       hasRealLike: realLike.has(p.id),
       hasRealScrap: realScrap.has(p.id),
     }))
+    const protectedNow = live.filter(
+      (l) => l.hasRealAuthor || l.hasRealComment || l.hasGuestComment || l.hasRealLike || l.hasRealScrap,
+    ).length
 
+    /**
+     * 공유 키는 **호출 시점의 DB** 로 매번 다시 계산한다.
+     * 커밋 뒤에 부르면 "남아 있는 글 + 이미지 보유 모델" 기준이라,
+     * 트랜잭션에서 새로 보호된 글의 이미지가 자동으로 shared 로 빠진다.
+     */
+    const computeSharedKeys = async (doomedIds: ReadonlySet<string>): Promise<Set<string>> => {
+      const survivors: PostImageSource[] = await prisma.post.findMany({
+        where: { id: { notIn: [...doomedIds] } },
+        select: { id: true, thumbnailUrl: true, content: true },
+      })
+      const foreign: ForeignImageSource[] = [
+        { model: 'SocialPost', urls: (await prisma.socialPost.findMany({ select: { imageUrls: true } })).flatMap((r) => r.imageUrls) },
+        { model: 'ChannelDraft', urls: (await prisma.channelDraft.findMany({ select: { imageUrls: true } })).flatMap((r) => r.imageUrls) },
+        { model: 'NaverBlogQueue', urls: (await prisma.naverBlogQueue.findMany({ select: { imageUrls: true } })).flatMap((r) => r.imageUrls) },
+        { model: 'Banner', urls: (await prisma.banner.findMany({ select: { imageUrl: true } })).map((b) => b.imageUrl).filter((u): u is string => !!u) },
+      ]
+      const doomedImgs: PostImageSource[] = posts
+        .filter((p) => doomedIds.has(p.id))
+        .map((p) => ({ id: p.id, thumbnailUrl: p.thumbnailUrl, content: p.content }))
+      const plan = planR2Deletion(doomedImgs, survivors, foreign)
+      out(`── R2 공유 판정 ── 전용 ${plan.exclusive.length} · 공유(삭제 금지) ${plan.shared.length} · 외부 ${plan.external.length}`)
+      return new Set(plan.shared)
+    }
+
+    const runR2 = async (sharedKeys: ReadonlySet<string>): Promise<R2Outcome> => {
+      const cfg = r2ConfigFromEnv()
+      if (!cfg) {
+        out('\n── R2 ── 자격증명이 없다 — 이미지를 지우지 못했다')
+        return { skippedNoCredentials: true, uncertain: 0, remaining: manifestKeys.length - sharedKeys.size }
+      }
+      const s = await runR2Cleanup(fetch as unknown as FetchLike, cfg, manifestKeys, sharedKeys)
+      out(`\n── R2 ── 삭제 ${s.deleted} · 이미 없음 ${s.alreadyGone} · 공유 제외 ${s.sharedSkipped} · 불확실 ${s.uncertain} · 잔존 ${s.remaining}`)
+      return { skippedNoCredentials: false, uncertain: s.uncertain, remaining: s.remaining }
+    }
+
+    const report = (st: CompletionState): CompletionState => {
+      out('\n' + '─'.repeat(66))
+      out(`  상태: ${st}`)
+      if (st === 'DB_COMPLETE_R2_PENDING') {
+        out('  DB 는 끝났지만 이미지가 남았다 — done 이 아니다.')
+        out('  재개: npx tsx agents/coo/public-content-purge.ts --execute --confirm=<토큰> --r2-only')
+      }
+      out('─'.repeat(66))
+      return st
+    }
+
+    // ── --r2-only 게이트 ───────────────────────────────────────
+    if (args.r2Only) {
+      const gate = canRunR2Only(state, posts.length, protectedNow)
+      out(`\n--r2-only 판정: ${gate.allowed ? '허용' : '거부'} — ${gate.reason}`)
+      if (!gate.allowed) {
+        throw new Error('[ABORT] --r2-only 를 쓸 수 없다 — 살아 있는 글의 이미지를 지우게 된다.')
+      }
+      const shared = await computeSharedKeys(new Set(posts.filter((p) => !live.find((l) => l.id === p.id && (l.hasRealAuthor || l.hasRealComment || l.hasGuestComment || l.hasRealLike || l.hasRealScrap))).map((p) => p.id)))
+      if (!authorized) return report('DRY_RUN')
+      const r2 = await runR2(shared)
+      return report(classifyCompletion(false, r2))
+    }
+
+    if (state === 'COMPLETE') {
+      out('\nDB 는 이미 COMPLETE — 남은 R2 정리만 이어간다.')
+      const shared = await computeSharedKeys(new Set())
+      if (!authorized) return report('DRY_RUN')
+      const r2 = await runR2(shared)
+      return report(classifyCompletion(false, r2))
+    }
+    if (state === 'PARTIAL') {
+      throw new Error('[ABORT] 후보가 일부만 남아 있다 — 자동으로 이어서 지우지 않는다. 사람이 확인해야 한다.')
+    }
+
+    // ── drift ─────────────────────────────────────────────────
     const drift = detectDrift(rows, live)
     if (drift.issues.length > 0) {
       issuesOut('drift 이슈', drift.issues)
@@ -234,22 +268,8 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
     for (const p of posts) if (doomedSet.has(p.id)) bt[p.boardType] = (bt[p.boardType] ?? 0) + 1
     out(`boardType: ${JSON.stringify(bt)}`)
 
-    // ── semantic 평문 참조 ─────────────────────────────────────
-    const socialRows = await prisma.socialPost.findMany({ select: { id: true, linkUrl: true } })
-    const draftRows = await prisma.channelDraft.findMany({ select: { id: true, linkUrl: true } })
-    const deadSocial = findDeadLinkRows(socialRows, doomedSet)
-    const deadDraft = findDeadLinkRows(draftRows, doomedSet)
-
-    const semantic: SemanticCount[] = [
-      { model: 'VoteEvent', field: 'linkedPostId', count: await prisma.voteEvent.count({ where: { linkedPostId: { in: [...doomedSet] } } }) },
-      { model: 'Event', field: 'bodyPostId', count: await prisma.event.count({ where: { bodyPostId: { in: [...doomedSet] } } }) },
-      { model: 'User', field: 'firstGreetingPostId', count: await prisma.user.count({ where: { firstGreetingPostId: { in: [...doomedSet] } } }) },
-      { model: 'NaverBlogQueue', field: 'magazinePostId', count: await prisma.naverBlogQueue.count({ where: { magazinePostId: { in: [...doomedSet] } } }) },
-      { model: 'SocialPost', field: 'sourcePostId', count: await prisma.socialPost.count({ where: { sourcePostId: { in: [...doomedSet] } } }) },
-      { model: 'SocialPost', field: 'linkUrl', count: deadSocial.length },
-      { model: 'ChannelDraft', field: 'linkUrl', count: deadDraft.length },
-      { model: 'AdminAuditLog', field: 'targetId', count: await prisma.adminAuditLog.count({ where: { targetId: { in: [...doomedSet] } } }) },
-    ]
+    // ── semantic 평문 참조 (preflight) ─────────────────────────
+    const semantic = await semanticCounts(prisma, [...doomedSet], posts)
     out('\n── semantic 평문 참조 ──')
     const policyOf = new Map(SEMANTIC_REFS.map((r) => [`${r.model}.${r.field}`, r.policy]))
     for (const s of semantic) out(`  ${`${s.model}.${s.field}`.padEnd(32)} ${String(s.count).padStart(4)}  ${policyOf.get(`${s.model}.${s.field}`)}`)
@@ -261,39 +281,33 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
     }
 
     if (!authorized) {
-      await runR2(sharedKeys)
-      out('\n' + '─'.repeat(66))
-      out('  dry-run 종료 — DB write 0건 · R2 삭제 0건')
-      out('─'.repeat(66))
-      return
+      await computeSharedKeys(doomedSet)
+      out(`\n── R2 (dry-run) ── manifest ${manifestKeys.length}키 · 삭제 0`)
+      return report('DRY_RUN')
     }
 
     // ── 실행 ──────────────────────────────────────────────────
     const before = await tableCounts(prisma, [...doomedSet])
     const runner: TransactionRunner = {
-      $transaction: (fn, options) => prisma.$transaction(fn as never, options) as never,
+      $transaction: (fn, options) => prisma.$transaction(fn as never, options as never) as never,
     }
     const result = await executePurge(runner, {
       sha12,
       candidates: rows.filter((r) => doomedSet.has(r.id)),
       expectedMax: doomedSet.size,
-      deadLinkUrlIds: { socialPost: deadSocial, channelDraft: deadDraft },
     })
     out('\n── 실제 삭제 ──')
-    for (const s of result.steps) out(`  ${s.step.padEnd(30)} ${s.affected}`)
+    for (const st of result.steps) out(`  ${st.step.padEnd(30)} ${st.affected}`)
     out(`  트랜잭션 내 보호 제외: ${result.protectedInTx.length}건`)
 
     // ── 사후 검증 — 통과해야만 done 을 말한다 ───────────────────
-    const after = await tableCounts(prisma, [...doomedSet])
-    const residual: SemanticCount[] = [
-      { model: 'User', field: 'firstGreetingPostId', count: await prisma.user.count({ where: { firstGreetingPostId: { in: [...doomedSet] } } }) },
-      { model: 'NaverBlogQueue', field: 'magazinePostId', count: await prisma.naverBlogQueue.count({ where: { magazinePostId: { in: [...doomedSet] } } }) },
-      { model: 'SocialPost', field: 'sourcePostId', count: await prisma.socialPost.count({ where: { sourcePostId: { in: [...doomedSet] } } }) },
-      { model: 'AdminAuditLog', field: 'targetId', count: await prisma.adminAuditLog.count({ where: { targetId: { in: [...doomedSet] } } }) },
-    ]
+    const deletedIds = result.deletedIds
+    const after = await tableCounts(prisma, deletedIds)
     const protectedIds = [...drift.protectedExclusions, ...result.protectedInTx]
+    const residual = await semanticCounts(prisma, deletedIds, posts)
     const check = verifyAfterPurge({
-      targetsRemaining: await prisma.post.count({ where: { id: { in: [...doomedSet] } } }),
+      deletedRemaining: await prisma.post.count({ where: { id: { in: deletedIds } } }),
+      deletedCount: result.deleted,
       preserveBefore,
       preserveAfter: await prisma.post.count({ where: { id: { in: keep } } }),
       protectedExpected: protectedIds.length,
@@ -305,17 +319,50 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       issuesOut('사후 검증 실패', check)
       throw new Error('[ABORT] 삭제는 커밋됐지만 사후 검증을 통과하지 못했다 — done 이라고 말하지 않는다.')
     }
-    out('\n사후 검증: 이슈 0건')
+    out('\n사후 검증: 이슈 0건 (semantic 8종 전부 확인)')
 
-    await runR2(sharedKeys)
-    out('\n✅ done — DB 삭제 · 사후 검증 · R2 정리까지 마쳤다.')
+    // 🔴 공유 키는 **커밋 뒤에** 다시 센다 — 트랜잭션에서 새로 보호된 글의 이미지가
+    //    여기서 자동으로 shared 로 빠진다.
+    out('\n커밋 후 공유 키 재계산:')
+    const sharedAfter = await computeSharedKeys(new Set(deletedIds))
+    const r2 = await runR2(sharedAfter)
+    return report(classifyCompletion(true, r2))
   } finally {
     await disconnect()
   }
 }
 
-/** CASCADE 실제 감소량을 재기 위한 스냅샷. */
 type PrismaLike = Awaited<ReturnType<typeof db>>['prisma']
+
+/**
+ * semantic 평문 참조 **8종 전부**를 센다.
+ *
+ * 실행 전에는 "막을 것이 있는가"를, 실행 후에는 "잔재가 남았는가"를 같은 함수로 본다.
+ * 축을 빼먹으면 `verifyAfterPurge` 가 `SEMANTIC_NOT_CHECKED` 로 잡는다.
+ */
+async function semanticCounts(
+  prisma: PrismaLike,
+  ids: string[],
+  posts: readonly { id: string; slug: string | null }[],
+): Promise<SemanticCount[]> {
+  const target = new Set(ids)
+  const slugged = posts.filter((p) => target.has(p.id))
+  const hits = (rows: readonly { linkUrl: string | null }[]) =>
+    rows.filter((r) => r.linkUrl !== null && slugged.some((p) => linkPointsToPost(r.linkUrl!, p.id, p.slug))).length
+
+  return [
+    { model: 'VoteEvent', field: 'linkedPostId', count: await prisma.voteEvent.count({ where: { linkedPostId: { in: ids } } }) },
+    { model: 'Event', field: 'bodyPostId', count: await prisma.event.count({ where: { bodyPostId: { in: ids } } }) },
+    { model: 'User', field: 'firstGreetingPostId', count: await prisma.user.count({ where: { firstGreetingPostId: { in: ids } } }) },
+    { model: 'NaverBlogQueue', field: 'magazinePostId', count: await prisma.naverBlogQueue.count({ where: { magazinePostId: { in: ids } } }) },
+    { model: 'SocialPost', field: 'sourcePostId', count: await prisma.socialPost.count({ where: { sourcePostId: { in: ids } } }) },
+    { model: 'SocialPost', field: 'linkUrl', count: hits(await prisma.socialPost.findMany({ select: { linkUrl: true } })) },
+    { model: 'ChannelDraft', field: 'linkUrl', count: hits(await prisma.channelDraft.findMany({ select: { linkUrl: true } })) },
+    { model: 'AdminAuditLog', field: 'targetId', count: await prisma.adminAuditLog.count({ where: { targetId: { in: ids } } }) },
+  ]
+}
+
+/** CASCADE 실제 감소량을 재기 위한 스냅샷. */
 async function tableCounts(prisma: PrismaLike, ids: string[]): Promise<Record<string, number>> {
   const where = { postId: { in: ids } }
   const commentIds = (await prisma.comment.findMany({ where, select: { id: true } })).map((c) => c.id)
@@ -334,13 +381,16 @@ async function tableCounts(prisma: PrismaLike, ids: string[]): Promise<Record<st
 }
 
 void tag
-void PurgeAbortError
 
 // `tsx agents/coo/public-content-purge.ts` 로 직접 돌릴 때만 실행한다.
 const invokedDirectly = process.argv[1]?.includes('public-content-purge')
 if (invokedDirectly) {
-  main().catch((e) => {
-    console.error(`\n${e instanceof Error ? e.message : String(e)}\n`)
-    process.exit(1)
-  })
+  main()
+    // 종료 코드로 상태를 구분한다 — `DB_COMPLETE_R2_PENDING` 을 0 으로 끝내면
+    // 아무도 이어서 돌리지 않는다.
+    .then((state) => process.exit(EXIT_CODE[state]))
+    .catch((e) => {
+      console.error(`\n${e instanceof Error ? e.message : String(e)}\n`)
+      process.exit(1)
+    })
 }
