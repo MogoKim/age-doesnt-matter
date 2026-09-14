@@ -228,13 +228,14 @@ describe('buildReport — 실제 저장소 기준 분류', () => {
    * 그래서 "0" 이 아니라 **정확한 목록**으로 고정한다. 다른 것이 슬쩍 들어오면 여전히 깨진다.
    */
   it('localOnly 는 의도적으로 수동 전용인 것만 있다', () => {
-    expect(report.localOnly).toEqual(['coo:public-content-purge'])
+    // 둘 다 불가역 운영 작업이라 일부러 스케줄에 연결하지 않았다.
+    expect(report.localOnly.sort()).toEqual(['coo:public-content-purge', 'coo:seed-post-integrity'])
   })
 
   it('orphan 은 그 수동 전용 1건뿐이다 — 나머지는 전부 workflow 에 연결돼 있다', () => {
     // 연결 없이 등록만 돼 있던 dispatch·local 전용 키를 전부 걷어낸 결과다.
     // 여기에 **이유 없는** 키가 생기면 unlinkedWithoutReason 이 잡는다(아래 총계).
-    expect(report.orphaned).toEqual(['coo:public-content-purge'])
+    expect(report.orphaned.sort()).toEqual(['coo:public-content-purge', 'coo:seed-post-integrity'])
   })
 
   it('분류 총계를 고정한다', () => {
@@ -248,11 +249,11 @@ describe('buildReport — 실제 저장소 기준 분류', () => {
       workflowWithoutHandler: report.workflowWithoutHandler.length,
       launchdOrphans: report.launchdOrphans.length,
     }).toEqual({
-      total: 7,
+      total: 8,
       linked: 6,
-      orphaned: 1,
+      orphaned: 2,
       dispatchOnly: 0,
-      localOnly: 1,
+      localOnly: 2,
       unlinkedWithoutReason: 0,
       workflowWithoutHandler: 0,
       launchdOrphans: 0,
@@ -386,9 +387,9 @@ const HANDLERS: Record<string, () => Promise<void>> = {
     expect(() => extractHandlers(runnerFile('export const NOTHING = {}\n'))).toThrow(/HANDLERS/)
   })
 
-  it('실제 runner.ts 를 읽으면 7개이고 coo:moderator 가 들어 있다', () => {
+  it('실제 runner.ts 를 읽으면 8개이고 coo:moderator 가 들어 있다', () => {
     const handlers = extractHandlers()
-    expect(handlers).toHaveLength(7)
+    expect(handlers).toHaveLength(8)
     expect(handlers.map((h) => h.key)).toContain('coo:moderator')
     // 수동 전용 영구 삭제 핸들러도 runner 에 등록돼 있어야 한다 — DB write 는 COO 만.
     expect(handlers.map((h) => h.key)).toContain('coo:public-content-purge')
@@ -415,7 +416,7 @@ describe('workflowWithoutHandler — 역방향 가드', () => {
   it('현재 저장소는 통과 상태다 (이유 있는 orphan 1 · 실패 배열 3종 0)', () => {
     const report = buildReport()
     // orphan 이지만 `LOCAL ONLY` 사유가 붙어 있어 실패로 치지 않는다.
-    expect(report.orphaned).toEqual(['coo:public-content-purge'])
+    expect(report.orphaned.sort()).toEqual(['coo:public-content-purge', 'coo:seed-post-integrity'])
     expect(report.unlinkedWithoutReason).toEqual([])
     expect(isFailingReport(report), '현재 저장소는 통과 상태여야 한다').toBe(false)
   })
