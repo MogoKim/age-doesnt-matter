@@ -1,7 +1,9 @@
-# 공개 시드 글 3건 정합성 — 도구·계획
+# 공개 시드 글 3건 정합성 — **실행 완료**
 
-> 2026-09-14 · 기준 `origin/main` `9cd4a932` · **production write 0 · merge 0 · 배포 0**
-> 이 배치는 **측정과 도구까지**다. 실행은 Codex 리뷰 + 창업자 승인 후다.
+> **2026-09-14 실행 완료** · 기준 `origin/main` `b0891578`(도구 PR #475 merge)
+> Codex 최종 리뷰 통과 후 COO 모듈 직접 실행 **1회**
+> `PUBLISHED/USER → HIDDEN/BOT` **3건** · `HomeCurationOverride` **2건 제거**
+> **Post 삭제 0 · 반응 데이터 감소 0 · 제목·본문 해시 3/3 불변**
 
 ---
 
@@ -227,8 +229,62 @@ dry-run 종료 — DB write 0건
 
 ---
 
-## 7. 이 배치에서 하지 않은 것
+## 7. 실행 기록 — 2026-09-14
 
-- production DB write **0건**
-- merge · 배포 **0건**
-- MASTER 6-C 진행률 변경 — **실행 완료 후**에 95% → 100% 로 종결한다
+도구 PR #475 merge(`b0891578`) 후 최신 `origin/main` 의 깨끗한 전용 worktree 에서
+**COO 모듈 직접 실행 1회**. 중단 조건은 발생하지 않았다.
+
+### 7-A. 실행 직전 조건 (전부 일치)
+
+대상 **3건** · `PUBLISHED/USER → HIDDEN/BOT` · manifest·identity 8축 drift **0** ·
+반응 12축 착수값 일치 · `HomeCurationOverride` **2** · R2 대상 **0**.
+
+### 7-B. 변경
+
+| 대상 | 영향 행 |
+|---|---:|
+| `Post` `status`·`source` | **3** |
+| `HomeCurationOverride` 제거 | **2** |
+
+**이 둘이 DB 변경의 전부다.** `Serializable` 격리에서 1회 커밋.
+
+### 7-C. 사후 검증 (전부 통과)
+
+| 항목 | 결과 |
+|---|---|
+| manifest 3건 `HIDDEN`/`BOT` | **3/3** ✅ (`seed_001`·`seed_005`·`seed_007`) |
+| 공개 `seed_` 글 | **0** ✅ |
+| `Post` 삭제 | **0** — 전체 3,968 불변 ✅ |
+| title·content 해시 | **3/3 불변** ✅ |
+| 반응 12축 감소 | **0** ✅ (댓글 9 · 실회원 댓글 **2** · Like 4 · GuestLike 1 · View 5 · Report 0 전부 보존) |
+| `HomeCurationOverride` 잔존 | **0** ✅ |
+| 공개 URL (id·slug 각 3) | **6/6 404** ✅ |
+| `/` · `/community` · `/magazine` · `/jobs` · `/api/health` · `/api/health/auth` | **전부 200** ✅ |
+
+`PUBLISHED` **219 → 216** · `HIDDEN` **3,542 → 3,545** (관측값 · 판정 아님).
+
+### 7-D. sitemap 캐시 지연
+
+DB 는 즉시 정확했다 — sitemap 쿼리 조건(`status IN PUBLISHED,SEO_ONLY`)이 **216건**을
+돌려주고 시드 3건은 **0** 이었다.
+
+다만 `/sitemap.xml` 은 `unstable_cache(revalidate 3600, tags:['sitemap-posts'])` 를 쓰므로
+변경 직후에는 **stale 목록**을 준다. 실제로 XML 의 `lastmod` 최대값이 변경 시각보다
+이르러 stale 임이 확인됐다. 캐시 만료 후 제외를 확인했다.
+
+**캐시 지연은 롤백 사유가 아니다.** 다만 확인 전에는 done 이라고 쓰지 않는다.
+
+### 7-E. 하지 않은 것
+
+- `Post` 삭제 · tombstone · 반응 데이터 변경 **0**
+- 재시도 (중단 조건 없었음)
+- 추가 배포
+
+---
+
+## 8. 후속 항목 (이번 배치에 섞지 않음)
+
+🔴 **CI `frontend` path filter 에 `e2e/**` 가 빠져 있다.**
+`e2e/**` 만 바꾼 PR 은 E2E 가 **skipping** 돼 검증을 못 받는다(PR #476 실측).
+그래서 #476 은 `E2E_BASE_URL` 로 production 을 겨냥해 spec 을 직접 돌려 확인했고,
+최종 검증은 PR #475 CI 에서 이뤄졌다. workflow 변경이라 별도 승인·배치가 필요하다.
