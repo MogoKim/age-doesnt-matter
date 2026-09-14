@@ -436,6 +436,32 @@ describe('[T10] 폐기 후 네이버 원문 소비처가 0 이어야 한다 — 
       }
     }
     for (const d of ['src', 'agents', 'scripts']) walk(path.join(root, d))
-    expect(hits.sort()).toEqual(['agents/scripts/purge-old-logs.ts'])
+    /**
+     * 이 가드가 막는 것은 네이버 원문을 **소비·재발행하는** 경로다.
+     *
+     * 아래 두 파일은 반대 방향이다.
+     *  - `purge-old-logs.ts`  — 보존정책상 오래된 행을 지운다.
+     *  - `public-content-purge.ts` — CafePost 가 참조하는 **R2 객체를 삭제에서 지키려고**
+     *    읽는다. 읽지 않으면 그 이미지를 지우게 된다. 본문을 어디에도 쓰지 않는다.
+     */
+    expect(hits.sort()).toEqual([
+      'agents/coo/public-content-purge.ts',
+      'agents/scripts/purge-old-logs.ts',
+    ])
+  }, 30_000)
+
+  it('보존 purge 는 CafePost 본문을 재발행·복사하지 않는다', async () => {
+    const { readFileSync } = await import('node:fs')
+    const path = await import('node:path')
+    const src = readFileSync(
+      path.resolve(__dirname, '../coo/public-content-purge.ts'), 'utf8',
+    )
+    // 읽기만 한다 — 쓰기·생성 경로가 없어야 한다.
+    for (const forbidden of ['cafePost.create', 'cafePost.update', 'cafePost.upsert', 'cafePost.delete']) {
+      expect(src, `${forbidden} 이 있으면 안 된다`).not.toContain(forbidden)
+    }
+    // 본문은 이미지 URL 추출에만 쓰이고 Post 로 흘러가지 않는다.
+    expect(src).not.toContain('post.create')
+    expect(src).not.toContain('post.update')
   }, 30_000)
 })

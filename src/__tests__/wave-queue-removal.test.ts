@@ -77,10 +77,33 @@ describe('런타임에서 두 wave 큐를 쓰지 않는다', () => {
     'userPostWaveQueue',
   ] as const
 
+  /**
+   * 정리(cleanup) 전용 예외.
+   *
+   * 이 가드가 막으려는 것은 **소비자 없는 큐를 다시 채우는 것**이다.
+   * 두 큐에는 FK 가 없어서(평문 `postId` String) 글을 지워도 CASCADE 가 치워주지
+   * 않는다 — 고아가 남는다. 그래서 영구 삭제 도구는 남은 행을 **지우기 위해**
+   * 접근한다. 방향이 반대이므로 허용하되, 그 파일이 큐를 **채우지 않는지**
+   * 바로 아래에서 따로 확인한다.
+   */
+  const CLEANUP_ONLY = new Set(['agents/coo/public-content-purge.ts', 'agents/purge/public-content-exec.ts'])
+  const ENQUEUE_OPS = ['create', 'createMany', 'upsert', 'update', 'updateMany'] as const
+
   for (const symbol of FORBIDDEN) {
-    it(`prisma.${symbol} 접근이 0건이다`, () => {
-      const hits = sources.filter((s) => s.src.includes(`prisma.${symbol}`)).map((s) => s.file)
+    it(`prisma.${symbol} 접근이 정리 도구 밖에서 0건이다`, () => {
+      const hits = sources
+        .filter((s) => s.src.includes(`prisma.${symbol}`))
+        .map((s) => s.file)
+        .filter((f) => !CLEANUP_ONLY.has(f))
       expect(hits, `런타임에서 ${symbol} 를 다시 쓴다`).toEqual([])
+    })
+
+    it(`정리 도구조차 ${symbol} 를 채우지 않는다`, () => {
+      const hits = sources
+        .filter((s) => CLEANUP_ONLY.has(s.file))
+        .filter((s) => ENQUEUE_OPS.some((op) => s.src.includes(`${symbol}.${op}`)))
+        .map((s) => s.file)
+      expect(hits, `정리 도구가 ${symbol} 에 쓰기를 한다`).toEqual([])
     })
   }
 
