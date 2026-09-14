@@ -40,6 +40,15 @@ export function toObjectKey(url: string): string | null {
 
 export interface PostImageSource { id: string; thumbnailUrl: string | null; content: string }
 
+/**
+ * 글이 아닌 **다른 모델**이 들고 있는 이미지.
+ *
+ * 🔴 실측: `SocialPost.imageUrls` · `NaverBlogQueue.imageUrls` 까지 대조하니
+ *    공유 객체가 0 → **16** 으로 늘었다. 글끼리만 비교하면 그 16개를 지웠을 것이다.
+ *    `ChannelDraft.imageUrls` · `Banner.imageUrl` 도 같은 이유로 본다.
+ */
+export interface ForeignImageSource { model: string; urls: readonly string[] }
+
 export interface R2Plan {
   /** 삭제 글만 참조하는 키 — 삭제 대상 */
   exclusive: string[]
@@ -52,16 +61,24 @@ export interface R2Plan {
 /**
  * 삭제 대상 키를 고른다.
  *
- * `preserved` 는 **남는 글 전부**여야 한다. 보존 218건만 넘기면
- * 나머지 글이 참조하는 객체를 공유로 못 보고 지운다.
+ * `preserved` 는 **남는 글 전부**여야 하고, `foreign` 은 이미지를 들고 있는
+ * **다른 모델 전부**여야 한다. 둘 중 하나라도 빠지면 공유 객체를 못 보고 지운다.
  */
 export function planR2Deletion(
   doomed: readonly PostImageSource[],
   preserved: readonly PostImageSource[],
+  foreign: readonly ForeignImageSource[] = [],
 ): R2Plan {
   const keep = new Set<string>()
   for (const p of preserved) {
     for (const u of extractImageUrls(p.thumbnailUrl, p.content)) {
+      const k = toObjectKey(u)
+      if (k) keep.add(k)
+    }
+  }
+  // 글이 아닌 모델이 쓰는 객체도 보존 대상이다.
+  for (const f of foreign) {
+    for (const u of f.urls) {
       const k = toObjectKey(u)
       if (k) keep.add(k)
     }

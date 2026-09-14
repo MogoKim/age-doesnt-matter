@@ -129,8 +129,8 @@
 | 항목 | 값 |
 |---|---:|
 | 후보 글이 참조하는 고유 R2 **객체 키** | 867 |
-| **삭제 대상**(삭제 글 전용) | **867** |
-| **공유 — 삭제 금지** | **0** |
+| **삭제 대상**(삭제 글 전용) | **851** |
+| **공유 — 삭제 금지** | **16** |
 | 외부 이미지(unsplash) — 손대지 않음 | 6 |
 
 전용 객체 prefix: `magazine` 507 · `scraped` 349 · `magazine-thumbnails` 11.
@@ -143,7 +143,32 @@
 그래서 공유 여부를 **URL 로 세면 안 된다.** 보존 글이 다른 호스트로 같은 객체를 참조하고 있으면
 공유를 못 보고 지워버린다. 도구는 URL 을 **객체 키로 정규화한 뒤** 센다.
 
-### 4-B. 불확실하면 그 객체만 뺀다
+### 4-B. 🔴 글끼리만 비교하면 16개를 잘못 지운다
+
+`Post` 끼리만 대조했을 때는 전용 867 · 공유 0 이었다.
+**이미지를 들고 있는 다른 모델**까지 넣으니 공유가 **16** 으로 늘었다.
+
+| 모델 | 필드 | 대조한 URL |
+|---|---|---:|
+| `SocialPost` | `imageUrls` | 43 |
+| `NaverBlogQueue` | `imageUrls` | 34 |
+| `ChannelDraft` | `imageUrls` | 0 |
+| `Banner` | `imageUrl` | 0 |
+
+즉 이전 판대로 실행했으면 카드뉴스·블로그 큐가 쓰는 객체 16개를 지웠을 것이다.
+
+### 4-C. 실행은 HEAD → DELETE → HEAD
+
+지웠다고 **추정하지 않는다**. S3 계열은 없는 키에도 `204` 를 주므로 응답 코드만으로는
+판정이 안 된다. DELETE 뒤 HEAD 가 `404` 여야만 `DELETED` 라고 쓴다.
+
+manifest 는 `docs/operations/data/2026-09-14-public-content-purge-r2.txt` 에 고정하고
+전체 SHA-256 으로 잠근다 — `80da1a9f…`. 851키.
+
+R2 정리는 **DB 와 독립**이다. DB 가 이미 `COMPLETE` 여도 남은 이미지 정리를 이어서 돌릴 수 있고
+(`--r2-only`), 이미 지워진 키는 `ALREADY_GONE` 으로 조용히 지나간다.
+
+### 4-D. 불확실하면 그 객체만 뺀다
 
 `403`·`429`·`5xx` 는 "없다"는 뜻이 아니다. `UNCERTAIN` 으로 보고 **그 객체만 건너뛴다**.
 이미지 실패는 **글 삭제를 막지 않는다**(창업자 지시).
@@ -154,16 +179,48 @@
 
 | 파일 | 역할 |
 |---|---|
-| `src/lib/purge/public-content-plan.ts` | 순수 — CSV 검증 · 계획 · drift · COO 권한 · 재실행 판정 |
-| `src/lib/purge/r2-keys.ts` | 순수 — 객체 키 정규화 · 공유 판정 · HTTP 상태 분류 |
-| `src/lib/purge/public-content-exec.ts` | 트랜잭션 실행 · 단계별 영향 행 대조 |
-| `scripts/purge-public-content.ts` | CLI (dry-run 기본) |
-| `docs/operations/data/2026-09-14-public-content-purge.csv` | 확정 대상 628행 |
+| `agents/purge/public-content-policy.ts` | 순수 — CSV·manifest 검증 · 계획 · drift · 회원 판정 · semantic 정책 · 사후 검증 |
+| `agents/purge/r2-objects.ts` | 순수 — 객체 키 정규화 · 공유 판정 · HTTP 상태 분류 |
+| `agents/purge/public-content-exec.ts` | 트랜잭션 실행 — **보호 재판정·CASCADE 계수를 트랜잭션 안에서** |
+| `agents/purge/r2-client.ts` | R2 SigV4 · HEAD→DELETE→HEAD |
+| `agents/coo/public-content-purge.ts` | **COO 핸들러** — 유일한 실행 입구 |
+| `agents/cron/runner.ts` | `coo:public-content-purge` 등록 (LOCAL ONLY · 스케줄 미연결) |
+| `docs/operations/data/2026-09-14-public-content-purge.csv` | 확정 대상 628행 (SHA 잠금) |
+| `docs/operations/data/2026-09-14-public-content-purge-r2.txt` | R2 manifest 851키 (SHA 잠금) |
+
+### 5-0. 🔴 TOCTOU — 보호 판정은 트랜잭션 안에서 다시 한다
+
+preflight 에서 "사람 흔적 없음"을 확인하고 트랜잭션을 열기까지 수십 초가 뜬다.
+그 사이 회원이 댓글·좋아요·스크랩을 남기면 **방금 참여한 흔적을 지우게 된다.**
+
+그래서 최종 삭제 집합은 **트랜잭션 안에서** 다시 계산한다. 바깥 preflight 결과는
+상한선일 뿐이고, 트랜잭션 안에서 줄어드는 건 정상, **늘어나면 ABORT** 다.
+CASCADE 예상량도 같은 트랜잭션 안에서 확정한다.
+
+보호 축은 다섯이다 — 실회원 작성 · 실회원 댓글 · 게스트 댓글 · **실회원 좋아요** · **실회원 스크랩**.
+`PostView` 와 새 `GuestLike` 는 주체를 알 수 없어 보호 근거가 아니다(창업자 결정).
+
+### 5-0-A. 🔴 익명화된 탈퇴 회원도 실제 회원이다
+
+`cto:anonymize-withdrawn-apply` 가 30일 지난 WITHDRAWN 계정의 `providerId` 를
+`withdrawn_<원본>` 으로 바꾼다. 숫자만 보고 판정하면 **익명화된 탈퇴 실회원이
+봇으로 분류돼 그 사람의 글이 지워진다.** 접두사를 벗겨서 판정한다.
+
+### 5-0-B. drift 잠금 — 여섯 축 + 관측 1
+
+`status` · `boardType` · `source` · `authorId` 해시 · `title` 해시 · `content` 해시.
+`boardType` 은 전체 허용목록이 아니라 **ID 별 기대값**과 맞춘다.
+
+`updatedAt` 은 **관측만** 한다. 실측(2026-09-14) 628건 중 3~4건이 CSV 생성 뒤
+`updatedAt` 이 바뀌었는데 **본문 drift 0 · 제목 drift 0** 이었다. 원인은
+`viewCount`·`likeCount`·`trendingScore` 비정규화 갱신이다. ABORT 축으로 두면
+조회수가 오르는 것만으로 도구가 영영 못 돈다. 실제 편집은 본문·제목 해시가 잡는다.
 
 ### 5-A. 안전장치
 
 - **Raw SQL·REST write 를 쓰지 않는다.** Prisma 트랜잭션만 쓴다.
-- **DB write 는 COO 경로만.** `PURGE_AGENT_ID` 가 `coo:` 로 시작하고 `canWrite` 가 참이어야 write 경로가 열린다. (`agents/` 실측상 `canWrite: true` 는 `agents/coo/*` 에만 있다.)
+- **DB write 는 COO 경로만.** 이전 판의 `PURGE_AGENT_ID` 환경변수 게이트는 **문자열 위장**이라 제거했다 — 아무나 값을 넣으면 통과했다. 이제 실행 코드가 `agents/coo/` 안에 있고 `agents/cron/runner.ts` 의 `coo:public-content-purge` 로 등록돼 있다. 스케줄(workflow)에는 연결하지 않았고(`LOCAL ONLY`), runner 의 `automation_status=PAUSED` 가 자동 실행을 한 겹 더 막는다.
+- `agents/core/db.ts` 의 Prisma 만 쓴다(`agents/` → `src/` 런타임 import 금지 규칙 준수). DB 모듈은 **지연 로드**라 import 만으로는 연결하지 않는다.
 - 기본 dry-run. `--execute` **와** `--confirm=PURGE-PUBLIC-CONTENT-628` 이 **둘 다** 있어야 쓴다.
 - 확정 CSV **전체 SHA-256** 검증 — `35f1130ecfdca6e3a4b34bc8fbe0f066b977a5f24026622c735344e153cde70d`
 - 실행 직전 재검사: 무결성 → 정합성 → 보존 교집합 → 권한 → 재실행 상태 → drift → 보호 신호.
@@ -181,15 +238,41 @@
 ## 6. dry-run 결과 (2026-09-14 · write 0)
 
 ```
-확정 CSV 검증 통과 · 628행
-보존 경계: 218건 (기대 218)
+확정 CSV 628행 · R2 manifest 851키 — 무결성 통과
+보존 경계 218건 (기대 218)
 계획 이슈: 0건
 재실행 판정: NOT_STARTED (남은 후보 628/628)
+── R2 계획 ── 전용 851 · 공유(삭제 금지) 16 · 외부 6
 drift 이슈: 0건
-삭제 대상 628건 · 보호 신호 자동 제외 0건
-보존 대상 현재 잔량: 218/218
+  (관측 4건 — 막지 않음: updatedAt 만 바뀐 글. 본문·제목은 동일)
+삭제 후보 628건 · 보호 자동 제외 0건
+boardType: {"JOB":141,"HUMOR":127,"MAGAZINE":262,"STORY":89,"LIFE2":7,"WEEKLY":2}
+── semantic 평문 참조 ──
+  VoteEvent.linkedPostId              0  BLOCK
+  Event.bodyPostId                    0  BLOCK
+  User.firstGreetingPostId            0  CLEANUP
+  NaverBlogQueue.magazinePostId      15  CLEANUP
+  SocialPost.sourcePostId             9  CLEANUP
+  SocialPost.linkUrl                  5  CLEANUP
+  ChannelDraft.linkUrl               97  CLEANUP
+  AdminAuditLog.targetId              7  PRESERVE
 dry-run 종료 — DB write 0건 · R2 삭제 0건
 ```
+
+## 6-A. semantic 평문 참조 — 정책과 잔존 이유
+
+| 모델·필드 | 건수 | 정책 | 왜 |
+|---|---:|---|---|
+| `VoteEvent.linkedPostId` | 0 | **BLOCK** | 살아 있으면 이벤트가 깨진다 — mutation 전 ABORT |
+| `Event.bodyPostId` | 0 | **BLOCK** | 같은 이유 |
+| `User.firstGreetingPostId` | 0 | CLEANUP | 글이 사라지면 무효한 포인터 → `null` |
+| `NaverBlogQueue.magazinePostId` | **15** | CLEANUP | `naver-blog:post` 는 2026-06-04 ARCHIVED — **소비자 없는 dead queue** |
+| `SocialPost.sourcePostId` | **9** | CLEANUP | 출처 포인터 무효 → `null` |
+| `SocialPost.linkUrl` | **5** | CLEANUP | 404 가 될 링크 → `null` (경로 매칭으로 찾는다) |
+| `ChannelDraft.linkUrl` | **97** | CLEANUP | 404 가 될 홍보 초안 링크 → `null` |
+| `AdminAuditLog.targetId` | **7** | **PRESERVE** | **감사 기록이다.** 대상이 사라져도 "무엇에 무슨 조치를 했는지"는 남아야 한다 |
+
+`BLOCK` 은 트랜잭션 안에서도 다시 센다 — preflight 이후 이벤트가 생겨도 막힌다.
 
 ---
 
@@ -210,12 +293,31 @@ dry-run 종료 — DB write 0건 · R2 삭제 0건
 - [ ] `sitemap.xml` 에서 삭제 URL 제거
 - [ ] `/` · `/community` · `/magazine` · `/jobs` · `/api/health` · `/api/health/auth` 정상
 
-### 7-C. 캐시
+### 7-C. 캐시 — hard delete 는 기존 경로로 다 못 지운다
 
-`/jobs/[id]` 는 데이터 캐시(`unstable_cache` 300s)와 라우트 ISR 이 겹쳐 있다.
-삭제 직후 즉시 404 가 아닐 수 있다 — **캐시 지연은 롤백 사유가 아니다.**
-기존 `POST /api/admin/revalidate-deleted` 가 DELETED/HIDDEN 글의 경로를 무효화한다.
-단 이번은 **hard delete** 라 행 자체가 사라지므로, 그 경로가 그대로 쓰이는지 실행 배치에서 먼저 확인해야 한다.
+**정정**: 이전 판은 `POST /api/admin/revalidate-deleted` 가 동작한다고 썼다. **반만 맞다.**
+
+그 엔드포인트는 `status IN (DELETED, HIDDEN)` 인 **행을 읽어서** 경로를 만든다.
+hard delete 후에는 그 행이 없으므로 **628개 상세 경로의 `revalidatePath` 는 돌지 않는다.**
+
+돌기는 도는 것도 있다. 마지막의 전역 태그 무효화는 행과 무관하게 실행된다:
+`sitemap-posts` · `post-detail` · `post-meta` · `community-board-page` ·
+`home-trending`/`stories`/`humor` · `jobs-list` · `home-jobs` · `job-detail`.
+→ **sitemap 과 목록·홈·상세 데이터 캐시는 이걸로 비워진다.**
+
+남는 것은 **삭제된 글 상세 URL 의 라우트 ISR 경로 캐시**뿐이다.
+
+확정한 방법 (새 공개 무인증 API 를 만들지 않는다):
+
+1. 삭제 **직전에** CLI 가 628개 상세 경로를 파일로 뽑는다(보드별 prefix + id/slug).
+2. 삭제 후 어드민 세션으로 `POST /api/admin/revalidate-deleted` 를 1회 호출한다
+   → 전역 태그가 비워져 **sitemap 에서 즉시 빠진다.**
+3. 상세 경로 ISR 은 **재배포로 무효화한다.** Vercel 배포는 라우트 캐시를 새로 만든다.
+   추가 배포가 싫으면 ISR 만료(`revalidate 300`)를 기다린다 — 최대 5분이다.
+4. 검증은 §7-B 로 한다. 대표 삭제 URL 이 **404/410**, 보존 URL 이 **200**,
+   `sitemap.xml` 에 삭제 URL 이 **0건**이어야 통과다.
+
+**캐시 지연은 롤백 사유가 아니다.** 다만 위 검증을 통과하기 전에는 done 이라고 쓰지 않는다.
 
 ### 7-D. 검색 노출
 

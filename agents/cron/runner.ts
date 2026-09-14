@@ -41,6 +41,10 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   // `.then(() => {})` 이면 import 만 끝나고 곧바로 disconnect + exit 해서 판정이 잘린다.
   'coo:moderator': () => import('../coo/moderator.js').then((m) => m.main()),
   'coo:job-scraper': () => import('../coo/job-scraper.js').then(m => m.main()),
+  // LOCAL ONLY — 공개 콘텐츠 628건 영구 삭제(2026-09-14). 크론에 연결하지 않는다.
+  // 기본 dry-run. 실제 삭제는 `-- --execute --confirm=<토큰>` 이 둘 다 있어야 한다.
+  // DB write 는 COO 만 가능하다는 규칙(agents/CLAUDE.md) 때문에 이 자리에 둔다.
+  'coo:public-content-purge': () => import('../coo/public-content-purge.js').then((m) => m.main(process.argv.slice(4))),
   // community:* · cafe_crawler:* · cafe:session-refresh · coo:content-scheduler ·
   // coo:trending-scorer — 삭제됨 2026-09-09 (점수 계산이 실시간 액션과 중복)
   // cto:crawler-health · cto:health-check · cto:error-monitor · cto:purge-old-logs ·

@@ -86,7 +86,7 @@ describe('런타임에서 두 wave 큐를 쓰지 않는다', () => {
    * 접근한다. 방향이 반대이므로 허용하되, 그 파일이 큐를 **채우지 않는지**
    * 바로 아래에서 따로 확인한다.
    */
-  const CLEANUP_ONLY = new Set(['scripts/purge-public-content.ts'])
+  const CLEANUP_ONLY = new Set(['agents/coo/public-content-purge.ts', 'agents/purge/public-content-exec.ts'])
   const ENQUEUE_OPS = ['create', 'createMany', 'upsert', 'update', 'updateMany'] as const
 
   for (const symbol of FORBIDDEN) {

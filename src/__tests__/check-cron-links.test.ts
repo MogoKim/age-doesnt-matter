@@ -217,14 +217,24 @@ describe('hasExemptComment — 크론 미연결이 의도적임을 알리는 표
 describe('buildReport — 실제 저장소 기준 분류', () => {
   const report = buildReport()
 
-  it('localOnly 는 0 이다 — 로컬 전용 카페·시트 자동화가 전부 제거됐다 (R4 B-3)', () => {
-    expect(report.localOnly).toEqual([])
+  /**
+   * R4 B-3 은 **로컬 전용 카페·시트 자동화**를 걷어낸 작업이었다.
+   * 그래서 원래 이 배열은 비어 있었다.
+   *
+   * 지금 하나 있는 것은 성격이 다르다 — 공개 콘텐츠 628건 영구 삭제(2026-09-14)는
+   * **일부러 스케줄에 연결하지 않은 수동 전용** 핸들러다. 자동으로 돌면 안 되는
+   * 불가역 작업이라 `LOCAL ONLY` 로 둔 것이지, 잊고 방치된 잔재가 아니다.
+   *
+   * 그래서 "0" 이 아니라 **정확한 목록**으로 고정한다. 다른 것이 슬쩍 들어오면 여전히 깨진다.
+   */
+  it('localOnly 는 의도적으로 수동 전용인 것만 있다', () => {
+    expect(report.localOnly).toEqual(['coo:public-content-purge'])
   })
 
-  it('orphan 이 0 이다 — 모든 핸들러가 실제 workflow 에 연결돼 있다 (R4 최종 정리)', () => {
+  it('orphan 은 그 수동 전용 1건뿐이다 — 나머지는 전부 workflow 에 연결돼 있다', () => {
     // 연결 없이 등록만 돼 있던 dispatch·local 전용 키를 전부 걷어낸 결과다.
-    // 여기가 다시 0 이 아니게 되면, 새로 넣은 핸들러가 어디서도 안 불리고 있다는 뜻이다.
-    expect(report.orphaned).toEqual([])
+    // 여기에 **이유 없는** 키가 생기면 unlinkedWithoutReason 이 잡는다(아래 총계).
+    expect(report.orphaned).toEqual(['coo:public-content-purge'])
   })
 
   it('분류 총계를 고정한다', () => {
@@ -238,11 +248,11 @@ describe('buildReport — 실제 저장소 기준 분류', () => {
       workflowWithoutHandler: report.workflowWithoutHandler.length,
       launchdOrphans: report.launchdOrphans.length,
     }).toEqual({
-      total: 6,
+      total: 7,
       linked: 6,
-      orphaned: 0,
+      orphaned: 1,
       dispatchOnly: 0,
-      localOnly: 0,
+      localOnly: 1,
       unlinkedWithoutReason: 0,
       workflowWithoutHandler: 0,
       launchdOrphans: 0,
@@ -376,10 +386,12 @@ const HANDLERS: Record<string, () => Promise<void>> = {
     expect(() => extractHandlers(runnerFile('export const NOTHING = {}\n'))).toThrow(/HANDLERS/)
   })
 
-  it('실제 runner.ts 를 읽으면 6개이고 coo:moderator 가 들어 있다', () => {
+  it('실제 runner.ts 를 읽으면 7개이고 coo:moderator 가 들어 있다', () => {
     const handlers = extractHandlers()
-    expect(handlers).toHaveLength(6)
+    expect(handlers).toHaveLength(7)
     expect(handlers.map((h) => h.key)).toContain('coo:moderator')
+    // 수동 전용 영구 삭제 핸들러도 runner 에 등록돼 있어야 한다 — DB write 는 COO 만.
+    expect(handlers.map((h) => h.key)).toContain('coo:public-content-purge')
   })
 })
 
@@ -400,9 +412,11 @@ describe('workflowWithoutHandler — 역방향 가드', () => {
     expect(isFailingReport(report)).toBe(true)
   })
 
-  it('현재 저장소는 통과 상태다 (orphan 0 · 실패 배열 3종 0)', () => {
+  it('현재 저장소는 통과 상태다 (이유 있는 orphan 1 · 실패 배열 3종 0)', () => {
     const report = buildReport()
-    expect(report.orphaned).toEqual([])
+    // orphan 이지만 `LOCAL ONLY` 사유가 붙어 있어 실패로 치지 않는다.
+    expect(report.orphaned).toEqual(['coo:public-content-purge'])
+    expect(report.unlinkedWithoutReason).toEqual([])
     expect(isFailingReport(report), '현재 저장소는 통과 상태여야 한다').toBe(false)
   })
 })
