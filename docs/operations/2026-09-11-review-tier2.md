@@ -2,6 +2,12 @@
 
 > **read-only 분류다. 이 배치에서 콘텐츠 상태를 바꾸지 않았다.**
 > DB write · Post 상태 변경 · HIDE/DELETE 실행 · migration **0건**.
+> ---
+> ⚠️ **대체 상태 (2026-09-14)** — 이 문서의 분류에 따른 **처분이 실행됐다.**
+> 후보 **628건 중 627건 영구 삭제 · 1건 보호**(실회원의 댓글 공감 확인) · R2 객체 867개 삭제.
+> 아래 본문은 **당시 분류 기록**으로 그대로 둔다 — 현재 상태가 아니다.
+> 실행 기록: [`2026-09-14-public-content-purge.md`](./2026-09-14-public-content-purge.md)
+> ---
 >
 > 기준 main `ef1a93f5` · 측정 2026-09-11 · 모수는 1차 분류의 `verdict=REVIEW` **650건**
 > 선행: [`2026-09-11-public-content-disposition.md`](./2026-09-11-public-content-disposition.md)
