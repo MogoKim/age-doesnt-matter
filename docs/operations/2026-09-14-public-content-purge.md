@@ -479,9 +479,73 @@ hard delete 후에는 그 행이 없으므로 **628개 상세 경로의 `revalid
 
 ---
 
-## 8. 이번 배치에서 하지 않은 것
+## 8. 실행 기록 — 2026-09-14 · 창업자 승인 후 1회
 
-- production DB write **0건**
-- R2 객체 삭제 **0건**
-- merge · 배포 **0건**
-- 행별 문구 검토 · 추가 사업 판단 요청 **0건**
+도구 PR #472 merge(`e06ad7cf`) 직후, 최신 `origin/main` 에서
+**COO 모듈 직접 실행** 1회로 수행했다. 상태 `FULLY_COMPLETE`.
+
+### 8-A. 🔴 628 이 아니라 627 을 지웠다
+
+실행 직전 dry-run 에서 **보호 자동 제외 1건**이 나왔다(`post#2d2899cb72` · STORY).
+축은 `hasRealCommentLike` — 실회원이 그 글의 봇 댓글에 누른 공감 2건(**2026-07-01**)이다.
+
+**새로 생긴 흔적이 아니다.** `Like.postId` 는 댓글 공감일 때 null 이라 글 기준 조회에
+안 잡혔고, 리뷰 지적으로 `Like.commentId → Comment.postId` 경로를 넣은 뒤에야 드러났다.
+창업자 정책("실회원 댓글이 확인된 글은 절대 삭제하지 않는다")의 보호 대상이므로 남겼다.
+
+전제가 어긋났기에 **실행을 멈추고 보고한 뒤 창업자 재승인을 받아** 627 로 진행했다.
+확인 토큰은 확정 배치 식별자라 `PURGE-PUBLIC-CONTENT-628` 을 그대로 썼다.
+
+### 8-B. DB
+
+| 단계 | 영향 행 |
+|---|---:|
+| `Report(comment)` · `Report(post)` | 0 · 0 |
+| **`HomeCurationOverride`** | **4** |
+| `Notification` | 1 |
+| `CommentWaveQueue` · `UserPostWaveQueue` | 0 · 0 |
+| `User.firstGreetingPostId→null` | 0 |
+| **`NaverBlogQueue`(dead queue)** | **15** |
+| `SocialPost.sourcePostId→null` | 9 |
+| `SocialPost.linkUrl→null` | 5 |
+| **`ChannelDraft.linkUrl→null`** | **97** |
+| **`Post`** | **627** |
+
+트랜잭션 확정 CASCADE: `Comment` 773 · `Like(post)` 1,270 · `PostView` 44 ·
+`JobDetail` 141 · `CpsLink` 105 · `GuestLike(comment)` 1 · 나머지 0.
+
+`Serializable` 격리에서 1회 커밋. 트랜잭션 내 추가 보호 제외 0건.
+
+### 8-C. R2
+
+커밋 **후** 살아 있는 참조를 다시 계산했다 — 보호 **0** · 삭제 후보 **867**.
+결과: **삭제 867 · 이미 없음 0 · 공유 제외 0 · 불확실 0 · 잔존 0.**
+표본 12건 HEAD 재확인 → **12/12 `404`**.
+
+보호 대상 글이 참조하는 키는 없었다(그 글은 이미지가 없는 텍스트 글이다).
+
+### 8-D. 사후 검증 (전부 통과)
+
+| 항목 | 결과 |
+|---|---|
+| 삭제한 627건 잔량 | **0** |
+| 보호 제외 1건 생존 | ✅ `PUBLISHED` |
+| 보존 경계 218건 | **218/218 불변** |
+| 삭제 627건 자식 잔량 12개 테이블 | **전부 0** |
+| semantic 8종 | BLOCK·CLEANUP **전부 0** · `AdminAuditLog` **7 보존** |
+| 실회원 자산 | 글 63 · 댓글 171 · Like 127 · Scrap 0 · 게스트 댓글 74 — **손실 0** |
+| 삭제 URL 표본 12건(6개 보드) | **전부 404** |
+| 보존 URL 표본 5건 + 보호 글 | **전부 200** |
+| `sitemap.xml` | 삭제 글 **0/627** (159KB → 42KB) |
+| `/` · `/community` · `/magazine` · `/jobs` · `/api/health` · `/api/health/auth` | **전부 200** |
+
+전체 `Post` 4,595 → **3,968**.
+
+⚠️ 커뮤니티 글은 canonical slug 로 **301** 한 뒤 최종 상태가 정해진다.
+검증할 때 리다이렉트를 따라가지 않으면 살아 있는 글도 301 로 보인다 — 최종 상태로 판정해야 한다.
+
+### 8-E. 하지 않은 것
+
+- 롤백 (애초에 경로가 없다 — hard delete)
+- 재시도·우회 (중단 조건 없었음)
+- 추가 배포
