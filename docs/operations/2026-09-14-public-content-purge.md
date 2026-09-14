@@ -1,7 +1,11 @@
-# 공개 콘텐츠 628건 영구 삭제 — 진단·도구·실행 계획
+# 공개 콘텐츠 — 후보 628건 중 **627건 영구 삭제 완료**
 
-> 2026-09-14 · 기준 `origin/main` `bb91b79b` · **production write 0 · merge 0 · 배포 0**
-> 이 배치는 **측정과 도구까지**다. 실행은 창업자 승인 후 별도 배치다.
+> **2026-09-14 실행 완료 · 상태 `FULLY_COMPLETE`**
+> 기준 `origin/main` `e06ad7cf`(도구 PR #472 merge) · 창업자 승인 후 COO 모듈 직접 실행 1회
+> **DB `Post` 627건 삭제 · R2 객체 867개 삭제 · 보호 자동 제외 1건**
+>
+> 후보 628건 중 1건(`post#2d2899cb72`)은 실회원의 **댓글 공감**이 확인돼 보호했다(§8-A).
+> 불가역이다 — 롤백 경로가 없다. 사후 검증은 §7에 전수 기록했다.
 
 ---
 
@@ -420,58 +424,62 @@ boardType: {"JOB":141,"HUMOR":127,"MAGAZINE":262,"STORY":89,"LIFE2":7,"WEEKLY":2
 
 ---
 
-## 7. 사후 검증 계획 (실행 배치에서 수행)
+## 7. 사후 검증 — **완료** (2026-09-14 실측)
 
 ### 7-A. DB
 
 CLI 가 이 검사를 **통과해야만** `done` 을 출력한다. 하나라도 어긋나면 ABORT 한다.
+아래는 전부 **실행 후 독립 재확인**한 결과다.
 
-- [ ] **실제로 지운 ID** 잔량 **0** — 후보 628 이 아니라 `deletedIds` 기준이다.
+- [x] **실제로 지운 ID** 잔량 **0** — 후보 628 이 아니라 `deletedIds`(627) 기준이다.
       보호 제외가 생긴 실행에서는 후보가 남는 게 **정상**이라 후보 기준으로 보면 오판한다.
-- [ ] 보호 제외한 글은 **전건 그대로 살아 있다**(`protectedRemaining`)
-- [ ] 보존 대상 **218 → 218** 동일
-- [ ] 실회원 글·실회원 댓글 총량 **전후 동일**
-- [ ] **삭제한 글 기준 자식 행 잔량 0** — 차분이 아니다.
+- [x] 보호 제외한 글 **1건 그대로 생존**(`PUBLISHED`) — `post#2d2899cb72`
+- [x] 보존 대상 **218 → 218** 동일
+- [x] 실회원 자산 **손실 0** — 글 63 · 댓글 171 · Like 127 · Scrap 0 · 게스트 댓글 74
+- [x] **삭제한 글 기준 자식 행 잔량 0** (12개 테이블 전부) — 차분이 아니다.
       이전 계약(`before=후보 전체` − `after=deletedIds`)은 집합이 달라서,
       보호 제외가 한 건이라도 생기면 그 글의 자식 행이 "안 지워진 것"으로 잡혀
       멀쩡한 실행이 실패했다. 보호된 글의 자식은 **남아 있는 게 맞다**.
       기대값은 트랜잭션이 확정한 cascade 계수로 기록한다
-- [ ] `Notification.postId` 고아 0 · `WaveQueue` 잔재 0
-- [ ] **semantic 8종 전부** 확인 — BLOCK·CLEANUP 은 0, `AdminAuditLog` 는 남아 있어야 정상.
+- [x] `Notification.postId` 고아 0 · `WaveQueue` 잔재 0
+- [x] **semantic 8종 전부** 확인 — BLOCK·CLEANUP **전부 0** · `AdminAuditLog` **7 보존**.
       한 축이라도 안 보면 `SEMANTIC_NOT_CHECKED` 로 잡힌다
+
+전체 `Post` **4,595 → 3,968** · `PUBLISHED` **846 → 219**.
 
 ### 7-B. 노출면
 
-- [ ] 대표 삭제 URL **404 또는 410**
-- [ ] 대표 보존 URL **200**
-- [ ] `sitemap.xml` 에서 삭제 URL 제거
-- [ ] `/` · `/community` · `/magazine` · `/jobs` · `/api/health` · `/api/health/auth` 정상
+- [x] 삭제 URL 표본 **12건(6개 보드) 전부 404**
+- [x] 보존 URL 표본 5건 + 보호 글 1건 **전부 200**
+- [x] `sitemap.xml` 에서 삭제 URL **0/627** — 현재 **232 URL**(159,008 → 42,467 bytes)
+- [x] `/` · `/community` · `/magazine` · `/jobs` · `/api/health` · `/api/health/auth` **전부 200**
 
-### 7-C. 캐시 — hard delete 는 기존 경로로 다 못 지운다
+🔴 **검증 함정**: 커뮤니티 글은 `/community/<보드slug>/<id>` 이고, canonical slug 로 **301** 한 뒤
+최종 상태가 정해진다. 리다이렉트를 따라가지 않으면 **살아 있는 글도 301 로 보여** 오판한다.
+보드 접두사는 `src/lib/board-registry.ts` 가 단일 소스다(`/community/stories` 등).
+
+### 7-C. 캐시 — 실제로 쓴 방식
 
 **정정**: 이전 판은 `POST /api/admin/revalidate-deleted` 가 동작한다고 썼다. **반만 맞다.**
+그 엔드포인트는 `status IN (DELETED, HIDDEN)` 인 **행을 읽어** 경로를 만든다.
+hard delete 후에는 그 행이 없으므로 **삭제한 627개 상세 경로의 `revalidatePath` 는 돌지 않는다.**
 
-그 엔드포인트는 `status IN (DELETED, HIDDEN)` 인 **행을 읽어서** 경로를 만든다.
-hard delete 후에는 그 행이 없으므로 **628개 상세 경로의 `revalidatePath` 는 돌지 않는다.**
+**실제로는 별도 무효화 호출 없이 반영됐다.**
 
-돌기는 도는 것도 있다. 마지막의 전역 태그 무효화는 행과 무관하게 실행된다:
-`sitemap-posts` · `post-detail` · `post-meta` · `community-board-page` ·
-`home-trending`/`stories`/`humor` · `jobs-list` · `home-jobs` · `job-detail`.
-→ **sitemap 과 목록·홈·상세 데이터 캐시는 이걸로 비워진다.**
+- `sitemap.xml` 은 `unstable_cache(revalidate 3600, tags:['sitemap-posts'])` 인데,
+  **실측 결과 삭제 직후 232 URL 로 이미 갱신**돼 있었다(삭제 글 0/627 · 크기 159KB → 42KB).
+- 상세 URL 도 표본 12건 전부 **404** 였다. 라우트 ISR(`revalidate 300`)이
+  만료된 뒤 재생성 시 DB 에 행이 없어 `notFound()` 로 떨어진다.
+- 목록·홈은 표본 검증에서 전부 200 이었고 삭제 글이 노출되지 않았다.
 
-남는 것은 **삭제된 글 상세 URL 의 라우트 ISR 경로 캐시**뿐이다.
+즉 이번에는 **ISR/데이터 캐시 자연 만료로 충분**했고, 추가 배포도 어드민 호출도 하지 않았다.
 
-확정한 방법 (새 공개 무인증 API 를 만들지 않는다):
+남아 있을 수 있는 경우의 대비책(이번엔 쓰지 않았다):
+1. 어드민 세션으로 `POST /api/admin/revalidate-deleted` 1회 → 전역 태그(`sitemap-posts` 포함) 무효화.
+2. 상세 ISR 은 재배포로 무효화하거나 `revalidate 300` 만료를 기다린다.
 
-1. 삭제 **직전에** CLI 가 628개 상세 경로를 파일로 뽑는다(보드별 prefix + id/slug).
-2. 삭제 후 어드민 세션으로 `POST /api/admin/revalidate-deleted` 를 1회 호출한다
-   → 전역 태그가 비워져 **sitemap 에서 즉시 빠진다.**
-3. 상세 경로 ISR 은 **재배포로 무효화한다.** Vercel 배포는 라우트 캐시를 새로 만든다.
-   추가 배포가 싫으면 ISR 만료(`revalidate 300`)를 기다린다 — 최대 5분이다.
-4. 검증은 §7-B 로 한다. 대표 삭제 URL 이 **404/410**, 보존 URL 이 **200**,
-   `sitemap.xml` 에 삭제 URL 이 **0건**이어야 통과다.
-
-**캐시 지연은 롤백 사유가 아니다.** 다만 위 검증을 통과하기 전에는 done 이라고 쓰지 않는다.
+판정 기준은 §7-B 다 — 삭제 URL **404/410**, 보존 URL **200**, `sitemap` 에 삭제 URL **0건**.
+**캐시 지연은 롤백 사유가 아니다.** 다만 §7-B 를 통과하기 전에는 done 이라고 쓰지 않는다.
 
 ### 7-D. 검색 노출
 
@@ -479,9 +487,73 @@ hard delete 후에는 그 행이 없으므로 **628개 상세 경로의 `revalid
 
 ---
 
-## 8. 이번 배치에서 하지 않은 것
+## 8. 실행 기록 — 2026-09-14 · 창업자 승인 후 1회
 
-- production DB write **0건**
-- R2 객체 삭제 **0건**
-- merge · 배포 **0건**
-- 행별 문구 검토 · 추가 사업 판단 요청 **0건**
+도구 PR #472 merge(`e06ad7cf`) 직후, 최신 `origin/main` 에서
+**COO 모듈 직접 실행** 1회로 수행했다. 상태 `FULLY_COMPLETE`.
+
+### 8-A. 🔴 628 이 아니라 627 을 지웠다
+
+실행 직전 dry-run 에서 **보호 자동 제외 1건**이 나왔다(`post#2d2899cb72` · STORY).
+축은 `hasRealCommentLike` — 실회원이 그 글의 봇 댓글에 누른 공감 2건(**2026-07-01**)이다.
+
+**새로 생긴 흔적이 아니다.** `Like.postId` 는 댓글 공감일 때 null 이라 글 기준 조회에
+안 잡혔고, 리뷰 지적으로 `Like.commentId → Comment.postId` 경로를 넣은 뒤에야 드러났다.
+창업자 정책상 **실회원의 댓글 공감이 확인된 글**은 사람 흔적이 있는 글이므로 남겼다.
+
+전제가 어긋났기에 **실행을 멈추고 보고한 뒤 창업자 재승인을 받아** 627 로 진행했다.
+확인 토큰은 확정 배치 식별자라 `PURGE-PUBLIC-CONTENT-628` 을 그대로 썼다.
+
+### 8-B. DB
+
+| 단계 | 영향 행 |
+|---|---:|
+| `Report(comment)` · `Report(post)` | 0 · 0 |
+| **`HomeCurationOverride`** | **4** |
+| `Notification` | 1 |
+| `CommentWaveQueue` · `UserPostWaveQueue` | 0 · 0 |
+| `User.firstGreetingPostId→null` | 0 |
+| **`NaverBlogQueue`(dead queue)** | **15** |
+| `SocialPost.sourcePostId→null` | 9 |
+| `SocialPost.linkUrl→null` | 5 |
+| **`ChannelDraft.linkUrl→null`** | **97** |
+| **`Post`** | **627** |
+
+트랜잭션 확정 CASCADE: `Comment` 773 · `Like(post)` 1,270 · `PostView` 44 ·
+`JobDetail` 141 · `CpsLink` 105 · `GuestLike(comment)` 1 · 나머지 0.
+
+`Serializable` 격리에서 1회 커밋. 트랜잭션 내 추가 보호 제외 0건.
+
+### 8-C. R2
+
+커밋 **후** 살아 있는 참조를 다시 계산했다 — 보호 **0** · 삭제 후보 **867**.
+결과: **삭제 867 · 이미 없음 0 · 공유 제외 0 · 불확실 0 · 잔존 0.**
+표본 12건 HEAD 재확인 → **12/12 `404`**.
+
+보호 대상 글이 참조하는 키는 없었다(그 글은 이미지가 없는 텍스트 글이다).
+
+### 8-D. 사후 검증 (전부 통과)
+
+| 항목 | 결과 |
+|---|---|
+| 삭제한 627건 잔량 | **0** |
+| 보호 제외 1건 생존 | ✅ `PUBLISHED` |
+| 보존 경계 218건 | **218/218 불변** |
+| 삭제 627건 자식 잔량 12개 테이블 | **전부 0** |
+| semantic 8종 | BLOCK·CLEANUP **전부 0** · `AdminAuditLog` **7 보존** |
+| 실회원 자산 | 글 63 · 댓글 171 · Like 127 · Scrap 0 · 게스트 댓글 74 — **손실 0** |
+| 삭제 URL 표본 12건(6개 보드) | **전부 404** |
+| 보존 URL 표본 5건 + 보호 글 | **전부 200** |
+| `sitemap.xml` | 삭제 글 **0/627** (159KB → 42KB) |
+| `/` · `/community` · `/magazine` · `/jobs` · `/api/health` · `/api/health/auth` | **전부 200** |
+
+전체 `Post` 4,595 → **3,968**.
+
+⚠️ 커뮤니티 글은 canonical slug 로 **301** 한 뒤 최종 상태가 정해진다.
+검증할 때 리다이렉트를 따라가지 않으면 살아 있는 글도 301 로 보인다 — 최종 상태로 판정해야 한다.
+
+### 8-E. 하지 않은 것
+
+- 롤백 (애초에 경로가 없다 — hard delete)
+- 재시도·우회 (중단 조건 없었음)
+- 추가 배포
