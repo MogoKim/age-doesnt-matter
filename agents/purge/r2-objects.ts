@@ -47,7 +47,13 @@ export interface PostImageSource { id: string; thumbnailUrl: string | null; cont
  *    공유 객체가 0 → **16** 으로 늘었다. 글끼리만 비교하면 그 16개를 지웠을 것이다.
  *    `ChannelDraft.imageUrls` · `Banner.imageUrl` 도 같은 이유로 본다.
  */
-export interface ForeignImageSource { model: string; urls: readonly string[] }
+export interface ForeignImageSource {
+  model: string
+  /** 이미 URL 인 필드 — `imageUrl` · `imageUrls[]` · `profileImage` 등 */
+  urls?: readonly string[]
+  /** 본문 — 안에 박힌 이미지 URL 을 뽑아내야 하는 필드(`content` · `body`) */
+  texts?: readonly string[]
+}
 
 export interface R2Plan {
   /** 삭제 글만 참조하는 키 — 삭제 대상 */
@@ -80,9 +86,15 @@ export function liveReferencedKeys(
     }
   }
   for (const f of foreign) {
-    for (const u of f.urls) {
+    for (const u of f.urls ?? []) {
       const k = toObjectKey(u)
       if (k) keys.add(k)
+    }
+    for (const t of f.texts ?? []) {
+      for (const u of extractImageUrls(null, t)) {
+        const k = toObjectKey(u)
+        if (k) keys.add(k)
+      }
     }
   }
   return keys
@@ -127,12 +139,7 @@ export function planR2Deletion(
     }
   }
   // 글이 아닌 모델이 쓰는 객체도 보존 대상이다.
-  for (const f of foreign) {
-    for (const u of f.urls) {
-      const k = toObjectKey(u)
-      if (k) keep.add(k)
-    }
-  }
+  for (const k of liveReferencedKeys([], foreign)) keep.add(k)
 
   const exclusive = new Set<string>()
   const shared = new Set<string>()

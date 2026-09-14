@@ -147,16 +147,35 @@
 ### 4-B. 🔴 글끼리만 비교하면 16개를 잘못 지운다
 
 `Post` 끼리만 대조했을 때는 전용 867 · 공유 0 이었다.
-**이미지를 들고 있는 다른 모델**까지 넣으니 공유가 **16** 으로 늘었다.
+이미지를 들고 있는 **다른 모델**까지 넣으니 공유가 **16** 으로 늘었다.
 
-| 모델 | 필드 | 대조한 URL |
-|---|---|---:|
-| `SocialPost` | `imageUrls` | 43 |
-| `NaverBlogQueue` | `imageUrls` | 34 |
-| `ChannelDraft` | `imageUrls` | 0 |
-| `Banner` | `imageUrl` | 0 |
+### 4-B-1. live closure 전수 — schema 전체 기준 (2026-09-14 실측)
 
-즉 이전 판대로 실행했으면 카드뉴스·블로그 큐가 쓰는 객체 16개를 지웠을 것이다.
+`prisma/schema.prisma` 를 이미지·본문 필드로 전수 검색해 **15개 소스**를 모두 넣고
+manifest 867키와 교차한 결과다.
+
+| 소스 | 읽은 행/URL | manifest 교집합 |
+|---|---:|---:|
+| **`NaverBlogQueue.imageUrls`** | 34 | **16** |
+| `SocialPost.imageUrls` | 43 | 0 |
+| `Comment.content` | 12,590 | 0 |
+| `User.profileImage` | 159 | 0 |
+| `Notice.body` | 11 | 0 |
+| `Banner.imageUrl` · `AdBanner.imageUrl` | 1 · 1 | 0 |
+| `ChannelDraft.imageUrls` · `Popup.imageUrl/content` · `CpsLink.productImageUrl` | 0 | 0 |
+| `DraftPost.content` · `Comment.imageUrl` · `CafePost.*` | 0 | 0 |
+| 살아남는 `Post` 3,967건 | — | 0 |
+| | **합집합** | **16** |
+
+**정정**: 이전 판은 이 16을 "SocialPost 43 + NaverBlogQueue 34" 에서 나온 것처럼 적었다.
+모델별로 분해해 보니 **전부 `NaverBlogQueue.imageUrls` 단독 기여**이고 `SocialPost` 는 0 이다.
+
+닫은 뒤 수치가 그대로인 것은 **새 모델들이 실제로 0건 기여하기 때문**이지
+검사를 안 해서가 아니다. 각 모델을 단독으로 넣어도 manifest 키를 지키는지 테스트로 고정했다.
+
+제외한 필드와 이유: `Post.sourceUrl` · `CafePost.postUrl` · `AdBanner.clickUrl` ·
+`CpsLink.productUrl` · `Notice.url` · `ScheduledPush.url` · `Banner.ctaUrl` 은 링크지 이미지가 아니다.
+`CafePost.videoUrls` 는 이미지 확장자 필터에 걸리지 않는다.
 
 ### 4-C. 실행은 HEAD → DELETE → HEAD
 
@@ -232,7 +251,13 @@ preflight 에서 "사람 흔적 없음"을 확인하고 트랜잭션을 열기�
 상한선일 뿐이고, 트랜잭션 안에서 줄어드는 건 정상, **늘어나면 ABORT** 다.
 CASCADE 예상량도 같은 트랜잭션 안에서 확정한다.
 
-보호 축은 다섯이다 — 실회원 작성 · 실회원 댓글 · 게스트 댓글 · **실회원 좋아요** · **실회원 스크랩**.
+보호 축은 **여섯**이다 — 실회원 작성 · 실회원 댓글 · 게스트 댓글 · 실회원 좋아요 ·
+**실회원 댓글 공감** · 실회원 스크랩.
+
+🔴 **댓글 공감**: `Like` 는 글에도 댓글에도 붙고(`postId` XOR `commentId`),
+댓글 공감 행은 `postId` 가 **null** 이라 글 기준 조회에 안 잡힌다.
+그래서 봇 댓글에 실회원이 공감을 눌러도 그 글이 지워졌다.
+이제 `Like.commentId → Comment.postId` 경로를 preflight 와 트랜잭션 **양쪽에서** 읽는다.
 `PostView` 와 새 `GuestLike` 는 주체를 알 수 없어 보호 근거가 아니다(창업자 결정).
 
 **게스트 댓글 계약**: `guestNickname` **AND** `guestPasswordHash` 가 둘 다 있어야 한다.

@@ -152,7 +152,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
     const comments = await prisma.comment.findMany({
       where: { postId: { in: ids } },
       select: {
-        postId: true, authorId: true, guestNickname: true, guestPasswordHash: true,
+        id: true, postId: true, authorId: true, guestNickname: true, guestPasswordHash: true,
         author: { select: { providerId: true, role: true, status: true } },
       },
     })
@@ -164,6 +164,20 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       where: { postId: { in: ids } },
       select: { postId: true, user: { select: { providerId: true, role: true, status: true } } },
     })
+    // 🔴 댓글 공감은 Like.postId 가 null 이라 글 기준 조회에 안 잡힌다 — 댓글 경유로 읽는다.
+    const commentIdsAll = comments.map((c) => c.id)
+    const commentLikes = commentIdsAll.length
+      ? await prisma.like.findMany({
+          where: { commentId: { in: commentIdsAll } },
+          select: { commentId: true, user: { select: { providerId: true, role: true, status: true } } },
+        })
+      : []
+    const postOfComment = new Map(comments.map((c) => [c.id, c.postId]))
+    const realCommentLike = new Set(
+      commentLikes.filter((l) => isRealMember(l.user))
+        .map((l) => postOfComment.get(l.commentId ?? ''))
+        .filter((id): id is string => id !== undefined),
+    )
     const realComment = new Set(comments.filter((c) => isRealMember(c.author)).map((c) => c.postId))
     const guestComment = new Set(comments.filter(isGuestComment).map((c) => c.postId))
     const realLike = new Set(likes.filter((l) => isRealMember(l.user)).map((l) => l.postId ?? ''))
@@ -178,10 +192,12 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       hasRealComment: realComment.has(p.id),
       hasGuestComment: guestComment.has(p.id),
       hasRealLike: realLike.has(p.id),
+      hasRealCommentLike: realCommentLike.has(p.id),
       hasRealScrap: realScrap.has(p.id),
     }))
     const protectedNow = live.filter(
-      (l) => l.hasRealAuthor || l.hasRealComment || l.hasGuestComment || l.hasRealLike || l.hasRealScrap,
+      (l) => l.hasRealAuthor || l.hasRealComment || l.hasGuestComment ||
+             l.hasRealLike || l.hasRealCommentLike || l.hasRealScrap,
     ).length
 
     /**
@@ -195,12 +211,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       const livePosts: PostImageSource[] = await prisma.post.findMany({
         select: { id: true, thumbnailUrl: true, content: true },
       })
-      const foreign: ForeignImageSource[] = [
-        { model: 'SocialPost', urls: (await prisma.socialPost.findMany({ select: { imageUrls: true } })).flatMap((r) => r.imageUrls) },
-        { model: 'ChannelDraft', urls: (await prisma.channelDraft.findMany({ select: { imageUrls: true } })).flatMap((r) => r.imageUrls) },
-        { model: 'NaverBlogQueue', urls: (await prisma.naverBlogQueue.findMany({ select: { imageUrls: true } })).flatMap((r) => r.imageUrls) },
-        { model: 'Banner', urls: (await prisma.banner.findMany({ select: { imageUrl: true } })).map((b) => b.imageUrl).filter((u): u is string => !!u) },
-      ]
+      const foreign: ForeignImageSource[] = await collectForeignImageSources(prisma)
       const live = liveReferencedKeys(livePosts, foreign)
       const shared = protectedManifestKeys(manifestKeys, live)
       const deletable = deletableManifestKeys(manifestKeys, live)
@@ -345,6 +356,63 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
 type PrismaLike = Awaited<ReturnType<typeof db>>['prisma']
 
 /**
+ * 🔴 R2 객체를 들고 있을 수 있는 **모든 모델**.
+ *
+ * `prisma/schema.prisma` 를 이미지·본문 필드 기준으로 전수 검색해 뽑았다(2026-09-14).
+ * 여기서 한 모델이라도 빠지면 그 모델만 쓰는 객체가 "참조 없음"으로 보여 **지워진다.**
+ *
+ * 살아 있는 행만 읽는다 — DB 삭제 후에 부르면 남은 것만 잡히므로 자동으로 맞다.
+ *
+ * 포함하지 않은 필드와 이유:
+ *   `Post.sourceUrl`·`CafePost.postUrl`·`AdBanner.clickUrl`·`CpsLink.productUrl`·
+ *   `Notice.url`·`ScheduledPush.url`·`Banner.ctaUrl` — 링크지 이미지가 아니다.
+ *   `CafePost.videoUrls` — 이미지 확장자 필터에 걸리지 않아 키가 안 나온다(무해).
+ */
+async function collectForeignImageSources(prisma: PrismaLike): Promise<ForeignImageSource[]> {
+  const arr = <T, K extends keyof T>(rows: T[], k: K): string[] =>
+    rows.flatMap((r) => (r[k] as unknown as string[]) ?? [])
+  const one = <T, K extends keyof T>(rows: T[], k: K): string[] =>
+    rows.map((r) => r[k] as unknown as string | null).filter((u): u is string => !!u)
+
+  return [
+    { model: 'SocialPost.imageUrls', urls: arr(await prisma.socialPost.findMany({ select: { imageUrls: true } }), 'imageUrls') },
+    { model: 'ChannelDraft.imageUrls', urls: arr(await prisma.channelDraft.findMany({ select: { imageUrls: true } }), 'imageUrls') },
+    { model: 'NaverBlogQueue.imageUrls', urls: arr(await prisma.naverBlogQueue.findMany({ select: { imageUrls: true } }), 'imageUrls') },
+    { model: 'Banner.imageUrl', urls: one(await prisma.banner.findMany({ select: { imageUrl: true } }), 'imageUrl') },
+    { model: 'AdBanner.imageUrl', urls: one(await prisma.adBanner.findMany({ select: { imageUrl: true } }), 'imageUrl') },
+    { model: 'Popup.imageUrl', urls: one(await prisma.popup.findMany({ select: { imageUrl: true } }), 'imageUrl') },
+    { model: 'User.profileImage', urls: one(await prisma.user.findMany({ select: { profileImage: true } }), 'profileImage') },
+    { model: 'CpsLink.productImageUrl', urls: one(await prisma.cpsLink.findMany({ select: { productImageUrl: true } }), 'productImageUrl') },
+    ...(await cafePostSources(prisma)),
+    { model: 'Comment.imageUrl+content', ...(await commentSources(prisma)) },
+    { model: 'DraftPost.content', texts: one(await prisma.draftPost.findMany({ select: { content: true } }), 'content') },
+    { model: 'Popup.content', texts: one(await prisma.popup.findMany({ select: { content: true } }), 'content') },
+    { model: 'Notice.body', texts: one(await prisma.notice.findMany({ select: { body: true } }), 'body') },
+  ]
+}
+
+async function commentSources(prisma: PrismaLike): Promise<{ urls: string[]; texts: string[] }> {
+  const rows = await prisma.comment.findMany({ select: { imageUrl: true, content: true } })
+  return {
+    urls: rows.map((r) => r.imageUrl).filter((u): u is string => !!u),
+    texts: rows.map((r) => r.content),
+  }
+}
+
+/** CafePost 는 네이버 카페 폐기(2026-09-10) 뒤에도 테이블이 남아 있다 — 남은 행만 읽는다. */
+async function cafePostSources(prisma: PrismaLike): Promise<ForeignImageSource[]> {
+  const rows = await prisma.cafePost.findMany({ select: { imageUrls: true, thumbnailUrl: true, content: true } })
+  return [{
+    model: 'CafePost.imageUrls+thumbnailUrl+content',
+    urls: [
+      ...rows.flatMap((r) => r.imageUrls ?? []),
+      ...rows.map((r) => r.thumbnailUrl).filter((u): u is string => !!u),
+    ],
+    texts: rows.map((r) => r.content),
+  }]
+}
+
+/**
  * dry-run 전용 미리보기 — "지우고 나면 몇 개가 삭제 후보가 되는가".
  *
  * 🔴 **판정에 쓰지 않는다.** 실제 보호 집합은 커밋 뒤 `computeSharedKeys()` 가 정하며,
@@ -359,12 +427,7 @@ async function previewAfterDelete(
   const survivors: PostImageSource[] = (await prisma.post.findMany({
     select: { id: true, thumbnailUrl: true, content: true },
   })).filter((p) => !doomed.has(p.id))
-  const foreign: ForeignImageSource[] = [
-    { model: 'SocialPost', urls: (await prisma.socialPost.findMany({ select: { imageUrls: true } })).flatMap((r) => r.imageUrls) },
-    { model: 'ChannelDraft', urls: (await prisma.channelDraft.findMany({ select: { imageUrls: true } })).flatMap((r) => r.imageUrls) },
-    { model: 'NaverBlogQueue', urls: (await prisma.naverBlogQueue.findMany({ select: { imageUrls: true } })).flatMap((r) => r.imageUrls) },
-    { model: 'Banner', urls: (await prisma.banner.findMany({ select: { imageUrl: true } })).map((b) => b.imageUrl).filter((u): u is string => !!u) },
-  ]
+  const foreign: ForeignImageSource[] = await collectForeignImageSources(prisma)
   const live = liveReferencedKeys(survivors, foreign)
   const willProtect = protectedManifestKeys(manifestKeys, live).length
   const willDelete = deletableManifestKeys(manifestKeys, live).length

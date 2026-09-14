@@ -51,7 +51,7 @@ export interface PurgeTx {
   }
   like: {
     findMany(a: { where: unknown; select: unknown }): Promise<Array<{
-      postId: string | null; user: AuthorLike | null
+      postId: string | null; commentId?: string | null; user: AuthorLike | null
     }>>
     count(a: { where: unknown }): Promise<number>
   }
@@ -179,6 +179,16 @@ export async function executePurge(db: TransactionRunner, deps: ExecDeps): Promi
       where: { postId: { in: candidateIds } },
       select: { postId: true, user: { select: { providerId: true, role: true, status: true } } },
     })
+    // 🔴 댓글 공감은 `postId` 가 **null** 이라 위 조회에 안 잡힌다.
+    //    봇 댓글에 실회원이 공감을 눌렀다면 그것도 사람 흔적이다 — 댓글 경유로 따로 읽는다.
+    const allCommentIds = comments.map((c) => c.id)
+    const commentLikes = allCommentIds.length
+      ? await tx.like.findMany({
+          where: { commentId: { in: allCommentIds } },
+          select: { postId: true, commentId: true, user: { select: { providerId: true, role: true, status: true } } },
+        })
+      : []
+    const postOfComment = new Map(comments.map((c) => [c.id, c.postId]))
     const scraps = await tx.scrap.findMany({
       where: { postId: { in: candidateIds } },
       select: { postId: true, user: { select: { providerId: true, role: true, status: true } } },
@@ -187,6 +197,12 @@ export async function executePurge(db: TransactionRunner, deps: ExecDeps): Promi
     const realComment = new Set(comments.filter((c) => isRealMember(c.author)).map((c) => c.postId))
     const guestComment = new Set(comments.filter(isGuestComment).map((c) => c.postId))
     const realLike = new Set(likes.filter((l) => isRealMember(l.user)).map((l) => l.postId ?? ''))
+    const realCommentLike = new Set(
+      commentLikes
+        .filter((l) => isRealMember(l.user))
+        .map((l) => postOfComment.get(l.commentId ?? ''))
+        .filter((id): id is string => id !== undefined),
+    )
     const realScrap = new Set(scraps.filter((s) => isRealMember(s.user)).map((s) => s.postId))
 
     // ── 2) 최종 집합 확정 — 여기서만 결정된다 ────────────────────
@@ -212,7 +228,7 @@ export async function executePurge(db: TransactionRunner, deps: ExecDeps): Promi
 
       const isProtected =
         isRealMember(p.author) || realComment.has(p.id) || guestComment.has(p.id) ||
-        realLike.has(p.id) || realScrap.has(p.id)
+        realLike.has(p.id) || realCommentLike.has(p.id) || realScrap.has(p.id)
       if (isProtected) protectedInTx.push(p.id)
       else doomed.push(p.id)
     }

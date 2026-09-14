@@ -126,7 +126,7 @@ const liveOf = (r: PurgeRow, over: Partial<LiveRow> = {}): LiveRow => ({
   authorIdSha256_12: r.authorIdSha256_12, titleSha256_12: r.titleSha256_12,
   contentSha256_12: r.contentSha256_12, updatedAt: r.updatedAt,
   hasRealAuthor: false, hasRealComment: false, hasGuestComment: false,
-  hasRealLike: false, hasRealScrap: false, ...over,
+  hasRealLike: false, hasRealCommentLike: false, hasRealScrap: false, ...over,
 })
 const SOME = ROWS.slice(0, 6)
 
@@ -493,6 +493,8 @@ function fakeDb(opts: {
   posts: PostRow[]
   comments?: CommentRow[]
   likes?: { postId: string | null; user: typeof BOT | null }[]
+  /** 댓글 공감 — 실제 생성 형태는 postId=null, commentId 만 있다. */
+  commentLikes?: { postId: string | null; commentId: string; user: typeof BOT | null }[]
   scraps?: { postId: string; user: typeof BOT | null }[]
   counts?: Record<string, number>
   voteRefs?: number
@@ -520,7 +522,11 @@ function fakeDb(opts: {
       },
     },
     comment: { findMany: async () => opts.comments ?? [] },
-    like: { findMany: async () => opts.likes ?? [], count: async () => counts['Like(comment)'] ?? 0 },
+    like: {
+      findMany: async (a) =>
+        JSON.stringify(a.where).includes('commentId') ? (opts.commentLikes ?? []) : (opts.likes ?? []),
+      count: async () => counts['Like(comment)'] ?? 0,
+    },
     guestLike: { count: async () => 0 },
     scrap: { findMany: async () => opts.scraps ?? [] },
     postView: { count: async () => counts.PostView ?? 0 },
@@ -1198,5 +1204,124 @@ describe('🔴 사후 테이블 검증 — 보호 제외가 있어도 PASS 한�
       ...base, deletedCount: 600, protectedExpected: 28, protectedRemaining: 28,
       childResidual: [{ table: 'Comment', remaining: 0 }],
     })).toEqual([])
+  })
+})
+
+// ── 🔴 댓글 공감도 사람 흔적이다 ───────────────────────────────
+//
+// `Like` 는 글에도 댓글에도 붙는다(`postId` XOR `commentId`).
+// 댓글 공감만 있는 행은 `postId` 가 **null** 이라 글 기준 조회에 안 잡힌다.
+// 그래서 봇 댓글에 실회원이 공감을 눌러도 그 글이 지워졌다.
+describe('🔴 실회원의 댓글 공감도 보호축이다', () => {
+  const R = { ...ROWS[0], contentSha256_12: ROWS[0].titleSha256_12 }
+  const shaBoth = (v: string) => (v === 'author-x' ? R.authorIdSha256_12 : v === '' ? R.titleSha256_12 : sha12(v))
+  const botComment = { id: 'c1', postId: R.id, authorId: 'bot', guestNickname: null, guestPasswordHash: null, author: BOT }
+
+  it('봇 댓글에 실회원 공감이 있으면 그 글을 보호한다 — 커밋 0', async () => {
+    const f = fakeDb({
+      posts: [postOf(R)],
+      comments: [botComment],
+      // 실제 생성 형태: postId=null, commentId 만 있다.
+      commentLikes: [{ postId: null, commentId: 'c1', user: MEMBER }],
+      counts: { Post: 1 },
+    })
+    await expect(executePurge(f.db, { sha12: shaBoth, candidates: [R], expectedMax: 1 }))
+      .rejects.toThrow(/전건이 보호 대상/)
+    expect(f.wasCommitted()).toBe(false)
+  })
+
+  it('봇·관리자 댓글 공감은 보호하지 않는다', async () => {
+    const f = fakeDb({
+      posts: [postOf(R)], comments: [botComment],
+      commentLikes: [{ postId: null, commentId: 'c1', user: BOT },
+                     { postId: null, commentId: 'c1', user: { providerId: '1', role: 'ADMIN' } }],
+      counts: { Post: 1 },
+    })
+    const r = await executePurge(f.db, { sha12: shaBoth, candidates: [R], expectedMax: 1 })
+    expect(r.deleted).toBe(1)
+  })
+
+  it('다른 글의 댓글에 달린 공감은 이 글을 보호하지 않는다', async () => {
+    const f = fakeDb({
+      posts: [postOf(R)], comments: [botComment],
+      commentLikes: [{ postId: null, commentId: 'other-comment', user: MEMBER }],
+      counts: { Post: 1 },
+    })
+    const r = await executePurge(f.db, { sha12: shaBoth, candidates: [R], expectedMax: 1 })
+    expect(r.deleted).toBe(1)
+  })
+
+  it('실행 직전 댓글 공감이 새로 생겨도 커밋 0', async () => {
+    // preflight 는 통과했는데 트랜잭션 스냅샷에서 보이는 상황.
+    const f = fakeDb({
+      posts: [postOf(R)], comments: [botComment],
+      commentLikes: [{ postId: null, commentId: 'c1', user: MEMBER }],
+    })
+    await expect(executePurge(f.db, { sha12: shaBoth, candidates: [R], expectedMax: 1 })).rejects.toThrow()
+    expect(f.wasCommitted()).toBe(false)
+  })
+
+  it('글 공감과 댓글 공감이 섞여도 각각 보호한다', async () => {
+    const [a0, b0] = [ROWS[0], ROWS[1]]
+    const a = { ...a0, contentSha256_12: a0.titleSha256_12 }
+    const b = { ...b0, titleSha256_12: a.titleSha256_12, contentSha256_12: a.titleSha256_12,
+                authorIdSha256_12: a.authorIdSha256_12, updatedAt: a.updatedAt }
+    const shaAB = (v: string) => (v === 'author-x' ? a.authorIdSha256_12 : v === '' ? a.titleSha256_12 : sha12(v))
+    const f = fakeDb({
+      posts: [postOf(a), postOf(b)],
+      comments: [{ ...botComment, id: 'cb', postId: b.id }],
+      likes: [{ postId: a.id, user: MEMBER }],
+      commentLikes: [{ postId: null, commentId: 'cb', user: MEMBER }],
+    })
+    await expect(executePurge(f.db, { sha12: shaAB, candidates: [a, b], expectedMax: 2 }))
+      .rejects.toThrow(/전건이 보호 대상/)
+  })
+
+  it('보호축 이름에 댓글 공감이 들어 있다', () => {
+    expect(PROTECTION_AXES).toContain('hasRealCommentLike')
+  })
+})
+
+// ── 🔴 R2 live closure 는 schema 전체다 ───────────────────────
+describe('🔴 이미지를 들고 있는 모델이면 전부 보호한다', () => {
+  const A = `https://${R2_PUBLIC_HOSTS[0]}`
+  const MODELS = [
+    'Comment.imageUrl', 'AdBanner.imageUrl', 'Popup.imageUrl', 'User.profileImage',
+    'CpsLink.productImageUrl', 'CafePost.imageUrls', 'CafePost.thumbnailUrl',
+    'SocialPost.imageUrls', 'ChannelDraft.imageUrls', 'NaverBlogQueue.imageUrls', 'Banner.imageUrl',
+  ]
+
+  for (const model of MODELS) {
+    it(`${model} 만 참조해도 manifest 키를 지키고 요청 0회`, async () => {
+      const live = liveReferencedKeys([], [{ model, urls: [`${A}/only.jpg`] }])
+      const shared = new Set(protectedManifestKeys(['only.jpg'], live))
+      expect(shared.has('only.jpg'), model).toBe(true)
+      const s = r2Stub([])
+      await runR2Cleanup(s.impl, R2CFG, ['only.jpg'], shared)
+      expect(s.calls, model).toEqual([])
+    })
+  }
+
+  it('본문 필드(DraftPost.content 등)에 박힌 이미지도 보호한다', async () => {
+    for (const model of ['DraftPost.content', 'Comment.content', 'CafePost.content', 'Popup.content', 'Notice.body']) {
+      const live = liveReferencedKeys([], [{ model, texts: [`초안 ![x](${A}/inline.png) 끝`] }])
+      const shared = new Set(protectedManifestKeys(['inline.png'], live))
+      expect(shared.has('inline.png'), model).toBe(true)
+      const s = r2Stub([])
+      await runR2Cleanup(s.impl, R2CFG, ['inline.png'], shared)
+      expect(s.calls, model).toEqual([])
+    }
+  })
+
+  it('urls 와 texts 를 함께 가진 모델도 둘 다 모은다', () => {
+    const live = liveReferencedKeys([], [
+      { model: 'CafePost', urls: [`${A}/a.jpg`], texts: [`![i](${A}/b.png)`] },
+    ])
+    expect(protectedManifestKeys(['a.jpg', 'b.png'], live)).toEqual(['a.jpg', 'b.png'])
+  })
+
+  it('보호 계산 시그니처는 여전히 2인자다 — 삭제 대상을 받지 않는다', () => {
+    expect(liveReferencedKeys.length).toBe(2)
+    expect(protectedManifestKeys.length).toBe(2)
   })
 })

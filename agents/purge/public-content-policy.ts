@@ -245,7 +245,7 @@ export function buildPlan(rows: PurgeRow[], preserveIds: readonly string[] = [])
 /**
  * 한 글의 라이브 상태 + 보호 신호.
  *
- * 보호 신호는 **다섯 축**이다. 하나라도 켜지면 그 글은 최종 집합에서 빠진다.
+ * 보호 신호는 **여섯 축**이다. 하나라도 켜지면 그 글은 최종 집합에서 빠진다.
  * `PostView` 는 보호 근거가 아니고(주체 불명), 새 `GuestLike` 도 아니다(주체 판별 불가).
  * 둘 다 창업자 결정이다.
  */
@@ -262,11 +262,14 @@ export interface LiveRow {
   hasRealComment: boolean
   hasGuestComment: boolean
   hasRealLike: boolean
+  /** 🔴 봇 댓글에 실회원이 누른 공감. `Like.postId` 는 null 이라 글 조회로는 안 잡힌다. */
+  hasRealCommentLike: boolean
   hasRealScrap: boolean
 }
 
 export const PROTECTION_AXES = [
-  'hasRealAuthor', 'hasRealComment', 'hasGuestComment', 'hasRealLike', 'hasRealScrap',
+  'hasRealAuthor', 'hasRealComment', 'hasGuestComment',
+  'hasRealLike', 'hasRealCommentLike', 'hasRealScrap',
 ] as const
 
 export function protectionReasons(l: LiveRow): string[] {
