@@ -26,7 +26,7 @@ import {
   type PurgeRow, type LiveRow, type PlanIssue, type SemanticCount, type CompletionState, type R2Outcome,
 } from '../purge/public-content-policy.js'
 import {
-  liveReferencedKeys, protectedManifestKeys, deletableManifestKeys,
+  liveReferencedKeys, protectedManifestKeys, deletableManifestKeys, excludeDoomedOwners,
   type PostImageSource, type ForeignImageSource,
 } from '../purge/r2-objects.js'
 import { executePurge, linkPointsToPost, type TransactionRunner } from '../purge/public-content-exec.js'
@@ -424,14 +424,52 @@ async function previewAfterDelete(
   doomed: ReadonlySet<string>,
   out: (l: string) => void,
 ): Promise<void> {
+  // 글이 지워지면 그 글에 딸린 행도 같이 사라진다 — 미리보기에서 함께 빼야 한다.
+  //   NaverBlogQueue(magazinePostId) — CLEANUP 정책으로 삭제
+  //   Comment(postId) · CpsLink(postId) — CASCADE 로 삭제
   const survivors: PostImageSource[] = (await prisma.post.findMany({
     select: { id: true, thumbnailUrl: true, content: true },
   })).filter((p) => !doomed.has(p.id))
-  const foreign: ForeignImageSource[] = await collectForeignImageSources(prisma)
+
+  const queue = excludeDoomedOwners(
+    await prisma.naverBlogQueue.findMany({ select: { magazinePostId: true, imageUrls: true } }),
+    (r) => r.magazinePostId, doomed,
+  )
+  const comments = excludeDoomedOwners(
+    await prisma.comment.findMany({ select: { postId: true, imageUrl: true, content: true } }),
+    (r) => r.postId, doomed,
+  )
+  const cps = excludeDoomedOwners(
+    await prisma.cpsLink.findMany({ select: { postId: true, productImageUrl: true } }),
+    (r) => r.postId, doomed,
+  )
+
+  const one = <T, K extends keyof T>(rows: T[], k: K): string[] =>
+    rows.map((r) => r[k] as unknown as string | null).filter((u): u is string => !!u)
+
+  const foreign: ForeignImageSource[] = [
+    // 글에 딸린 것 — 함께 삭제될 행을 뺐다
+    { model: 'NaverBlogQueue.imageUrls', urls: queue.flatMap((r) => r.imageUrls ?? []) },
+    { model: 'Comment.imageUrl', urls: one(comments, 'imageUrl') },
+    { model: 'Comment.content', texts: comments.map((r) => r.content) },
+    { model: 'CpsLink.productImageUrl', urls: one(cps, 'productImageUrl') },
+    // 글과 무관한 것 — 그대로 남는다
+    { model: 'SocialPost.imageUrls', urls: (await prisma.socialPost.findMany({ select: { imageUrls: true } })).flatMap((r) => r.imageUrls) },
+    { model: 'ChannelDraft.imageUrls', urls: (await prisma.channelDraft.findMany({ select: { imageUrls: true } })).flatMap((r) => r.imageUrls) },
+    { model: 'Banner.imageUrl', urls: one(await prisma.banner.findMany({ select: { imageUrl: true } }), 'imageUrl') },
+    { model: 'AdBanner.imageUrl', urls: one(await prisma.adBanner.findMany({ select: { imageUrl: true } }), 'imageUrl') },
+    { model: 'Popup.imageUrl', urls: one(await prisma.popup.findMany({ select: { imageUrl: true } }), 'imageUrl') },
+    { model: 'Popup.content', texts: one(await prisma.popup.findMany({ select: { content: true } }), 'content') },
+    { model: 'User.profileImage', urls: one(await prisma.user.findMany({ select: { profileImage: true } }), 'profileImage') },
+    { model: 'DraftPost.content', texts: one(await prisma.draftPost.findMany({ select: { content: true } }), 'content') },
+    { model: 'Notice.body', texts: one(await prisma.notice.findMany({ select: { body: true } }), 'body') },
+    ...(await cafePostSources(prisma)),
+  ]
+
   const live = liveReferencedKeys(survivors, foreign)
   const willProtect = protectedManifestKeys(manifestKeys, live).length
   const willDelete = deletableManifestKeys(manifestKeys, live).length
-  out(`   (미리보기 — 삭제 후 기준: 보호 ${willProtect} · 삭제 예정 ${willDelete})`)
+  out(`   (미리보기 — 삭제 후 기준: 보호 ${willProtect} · R2 삭제 후보 ${willDelete})`)
 }
 
 /**

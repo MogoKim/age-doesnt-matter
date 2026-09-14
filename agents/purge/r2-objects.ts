@@ -101,6 +101,29 @@ export function liveReferencedKeys(
 }
 
 /**
+ * 글에 딸린 행 중 **이번 실행에서 함께 사라질 것**을 뺀다.
+ *
+ * 🔴 "삭제 후" 미리보기를 낼 때만 쓴다.
+ *    글이 지워지면 `Comment`·`CpsLink` 는 CASCADE 로, `NaverBlogQueue` 는 CLEANUP 정책으로
+ *    같이 사라진다. 그 행들을 "살아 있는 참조"로 세면 미리보기가 보호를 과대 계상한다.
+ *    (실측: 삭제 대상 NaverBlogQueue 15행이 manifest 키 16개를 참조하는데,
+ *     그 15행은 이번 실행에서 같이 지워진다 → 삭제 후 보호는 0 이다.)
+ *
+ * ⚠️ **실제 실행의 보호 계산에는 쓰지 않는다.** 커밋 뒤에는 DB 가 이미 진실이라
+ *    전체를 그대로 읽으면 된다 — 추정이 끼어들 자리가 없다.
+ */
+export function excludeDoomedOwners<T>(
+  rows: readonly T[],
+  ownerOf: (row: T) => string | null,
+  doomed: ReadonlySet<string>,
+): T[] {
+  return rows.filter((r) => {
+    const owner = ownerOf(r)
+    return owner === null || !doomed.has(owner)
+  })
+}
+
+/**
  * manifest 중 **건드리면 안 되는** 키 = manifest ∩ 살아 있는 참조.
  *
  * 나머지(참조가 완전히 사라진 것)만 삭제 후보다.

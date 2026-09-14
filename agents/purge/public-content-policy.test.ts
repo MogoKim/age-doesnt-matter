@@ -18,7 +18,7 @@ import {
 } from './public-content-policy.js'
 import {
   planR2Deletion, toObjectKey, extractImageUrls, classifyHead, classifyDelete, R2_PUBLIC_HOSTS,
-  liveReferencedKeys, protectedManifestKeys,
+  liveReferencedKeys, protectedManifestKeys, excludeDoomedOwners,
 } from './r2-objects.js'
 import {
   executePurge, linkPointsToPost, PurgeAbortError, type PurgeTx, type TransactionRunner,
@@ -1323,5 +1323,74 @@ describe('🔴 이미지를 들고 있는 모델이면 전부 보호한다', () 
   it('보호 계산 시그니처는 여전히 2인자다 — 삭제 대상을 받지 않는다', () => {
     expect(liveReferencedKeys.length).toBe(2)
     expect(protectedManifestKeys.length).toBe(2)
+  })
+})
+
+// ── 🔴 삭제 후 미리보기는 "함께 삭제될 행"을 빼야 한다 ──────────
+//
+// 글이 지워지면 그 글에 딸린 행도 같이 사라진다.
+//   NaverBlogQueue(magazinePostId) — CLEANUP 정책으로 삭제
+//   Comment(postId) · CpsLink(postId) — CASCADE 로 삭제
+// 이 행들을 "살아 있는 참조"로 세면 미리보기가 **보호를 과대 계상**한다.
+// 실측: 삭제 대상 NaverBlogQueue 15행(전부 EXPIRED · naverBlogUrl 0)이 manifest 키 16개를
+// 참조하는데, 그 15행은 이번 실행에서 함께 지워진다 → 삭제 후 보호는 0 이어야 한다.
+describe('🔴 삭제 후 미리보기에서 함께 삭제될 행 제외', () => {
+  const A = `https://${R2_PUBLIC_HOSTS[0]}`
+  const doomed = new Set(['p1', 'p2'])
+
+  it('삭제될 NaverBlogQueue 만 참조하는 키는 미리보기에서 보호되지 않는다', () => {
+    const queue = [
+      { magazinePostId: 'p1', imageUrls: [`${A}/q1.jpg`] },
+      { magazinePostId: 'p2', imageUrls: [`${A}/q2.jpg`] },
+    ]
+    const alive = excludeDoomedOwners(queue, (r) => r.magazinePostId, doomed)
+    expect(alive).toEqual([])
+    const live = liveReferencedKeys([], [{ model: 'NaverBlogQueue', urls: alive.flatMap((r) => r.imageUrls) }])
+    expect(protectedManifestKeys(['q1.jpg', 'q2.jpg'], live)).toEqual([])
+  })
+
+  it('살아남는 NaverBlogQueue 가 참조하는 키는 보호된다', () => {
+    const queue = [
+      { magazinePostId: 'p1', imageUrls: [`${A}/q1.jpg`] },   // 삭제됨
+      { magazinePostId: 'keep', imageUrls: [`${A}/q2.jpg`] }, // 살아남음
+    ]
+    const alive = excludeDoomedOwners(queue, (r) => r.magazinePostId, doomed)
+    expect(alive).toHaveLength(1)
+    const live = liveReferencedKeys([], [{ model: 'NaverBlogQueue', urls: alive.flatMap((r) => r.imageUrls) }])
+    expect(protectedManifestKeys(['q1.jpg', 'q2.jpg'], live)).toEqual(['q2.jpg'])
+  })
+
+  it('Comment 와 CpsLink 도 같은 기준으로 빠진다', () => {
+    const comments = [
+      { postId: 'p1', imageUrl: `${A}/c1.jpg` },
+      { postId: 'keep', imageUrl: `${A}/c2.jpg` },
+    ]
+    const cps = [
+      { postId: 'p2', productImageUrl: `${A}/s1.jpg` },
+      { postId: 'keep', productImageUrl: `${A}/s2.jpg` },
+    ]
+    const aliveC = excludeDoomedOwners(comments, (r) => r.postId, doomed)
+    const aliveS = excludeDoomedOwners(cps, (r) => r.postId, doomed)
+    const live = liveReferencedKeys([], [
+      { model: 'Comment', urls: aliveC.map((r) => r.imageUrl) },
+      { model: 'CpsLink', urls: aliveS.map((r) => r.productImageUrl) },
+    ])
+    expect(protectedManifestKeys(['c1.jpg', 'c2.jpg', 's1.jpg', 's2.jpg'], live)).toEqual(['c2.jpg', 's2.jpg'])
+  })
+
+  it('글에 딸리지 않은 모델(Banner·User 등)은 그대로 남는다', () => {
+    const banners = [{ imageUrl: `${A}/b.jpg` }]
+    const live = liveReferencedKeys([], [{ model: 'Banner', urls: banners.map((b) => b.imageUrl) }])
+    expect(protectedManifestKeys(['b.jpg'], live)).toEqual(['b.jpg'])
+  })
+
+  it('doomed 가 비면 아무것도 빠지지 않는다', () => {
+    const rows = [{ postId: 'p1' }, { postId: 'p2' }]
+    expect(excludeDoomedOwners(rows, (r) => r.postId, new Set())).toHaveLength(2)
+  })
+
+  it('owner 가 null 이면 글에 딸린 행이 아니므로 남는다', () => {
+    const rows = [{ postId: null as string | null }]
+    expect(excludeDoomedOwners(rows, (r) => r.postId, doomed)).toHaveLength(1)
   })
 })
