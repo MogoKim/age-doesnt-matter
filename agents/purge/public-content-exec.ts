@@ -109,24 +109,46 @@ export interface ExecDeps {
   expectedMax: number
 }
 
-/**
- * URL 안에 이 글을 가리키는 경로가 있는가.
- *
- * ID 만 보면 안 된다 — 링크는 `/community/<slug>` 로도 만들어진다.
- * 그래서 **ID 와 slug 둘 다** 본다.
- */
-export function linkPointsToPost(url: string, id: string, slug: string | null): boolean {
-  if (url.includes(id)) return true
-  return slug !== null && slug !== '' && slug !== id && url.includes(slug)
-}
+/** 우리 사이트 호스트. 여기가 아니면 우리 글을 가리키는 링크가 아니다. */
+export const SITE_HOSTS: readonly string[] = [
+  'age-doesnt-matter.com',
+  'www.age-doesnt-matter.com',
+]
 
 /**
- * 삭제를 한 트랜잭션으로 실행한다.
+ * URL 이 이 글을 가리키는가.
  *
- * 반환값의 `deleted` 는 **트랜잭션 안에서 확정된 수**다.
- * 바깥의 preflight 수치와 다를 수 있고, 그건 정상이다(그 사이 회원이 참여한 것).
- * 다만 **늘어나는 것은 비정상**이라 ABORT 한다.
+ * 🔴 `includes` 로 보면 안 된다. 그러면
+ *   - `/community/abc1234` 가 `abc123` 에 걸리고(접두사),
+ *   - `/community/점심-뭐드세요-2` 가 `점심-뭐드세요` 에 걸리고(비슷한 slug),
+ *   - `?ref=abc123` 같은 query 도 걸리고,
+ *   - `https://example.com/community/abc123` 같은 남의 URL 도 걸린다.
+ *  그 결과 **엉뚱한 행의 linkUrl 을 null 로 지운다.**
+ *
+ * 그래서 URL 을 파싱해 **디코딩한 pathname 의 세그먼트와 정확히 일치**하는지 본다.
+ * query·fragment 는 애초에 보지 않는다.
  */
+export function linkPointsToPost(url: string, id: string, slug: string | null): boolean {
+  let pathname: string
+  try {
+    const u = new URL(url)
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return false
+    if (!SITE_HOSTS.includes(u.host)) return false
+    pathname = u.pathname
+  } catch {
+    // 절대 URL 이 아니면 상대 경로로 본다. 그 외 문자열은 링크가 아니다.
+    if (!url.startsWith('/')) return false
+    pathname = url.split(/[?#]/)[0]
+  }
+
+  let decoded: string
+  try { decoded = decodeURIComponent(pathname) } catch { decoded = pathname }
+  const segments = decoded.split('/').filter((x) => x !== '')
+
+  if (segments.includes(id)) return true
+  return slug !== null && slug !== '' && slug !== id && segments.includes(slug)
+}
+
 export async function executePurge(db: TransactionRunner, deps: ExecDeps): Promise<PurgeOutcome> {
   const { candidates, sha12, expectedMax } = deps
   if (candidates.length === 0) {

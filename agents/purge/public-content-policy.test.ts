@@ -18,6 +18,7 @@ import {
 } from './public-content-policy.js'
 import {
   planR2Deletion, toObjectKey, extractImageUrls, classifyHead, classifyDelete, R2_PUBLIC_HOSTS,
+  liveReferencedKeys, protectedManifestKeys,
 } from './r2-objects.js'
 import {
   executePurge, linkPointsToPost, PurgeAbortError, type PurgeTx, type TransactionRunner,
@@ -239,17 +240,40 @@ describe('semantic 평문 참조 정책', () => {
     expect(blockingSemanticIssues([{ model: 'Mystery', field: 'postId', count: 0 }])
       .some((i) => i.code === 'UNKNOWN_SEMANTIC_REF')).toBe(true)
   })
-  it('URL 은 ID 로 매칭된다', () => {
+  it('정확한 ID 경로는 매칭된다', () => {
     expect(linkPointsToPost('https://age-doesnt-matter.com/community/abc123', 'abc123', null)).toBe(true)
-    expect(linkPointsToPost('https://age-doesnt-matter.com/community/other', 'abc123', null)).toBe(false)
+    expect(linkPointsToPost('https://age-doesnt-matter.com/jobs/abc123', 'abc123', null)).toBe(true)
   })
-  it('🔴 slug 경로도 매칭된다 — ID 만 보면 놓친다', () => {
+  it('정확한 slug 경로도 매칭된다', () => {
     expect(linkPointsToPost('https://age-doesnt-matter.com/community/점심-뭐드세요', 'abc123', '점심-뭐드세요')).toBe(true)
   })
-  it('slug 가 없거나 ID 와 같으면 ID 매칭만 한다', () => {
-    expect(linkPointsToPost('https://x/other', 'abc123', null)).toBe(false)
-    expect(linkPointsToPost('https://x/other', 'abc123', 'abc123')).toBe(false)
-    expect(linkPointsToPost('https://x/other', 'abc123', '')).toBe(false)
+  it('🔴 퍼센트 인코딩된 한글 slug 도 매칭된다', () => {
+    const enc = `https://age-doesnt-matter.com/community/${encodeURIComponent('점심-뭐드세요')}`
+    expect(linkPointsToPost(enc, 'abc123', '점심-뭐드세요')).toBe(true)
+  })
+
+  it('🔴 비슷한 slug 는 매칭되지 않는다', () => {
+    expect(linkPointsToPost('https://age-doesnt-matter.com/community/점심-뭐드세요-2', 'abc123', '점심-뭐드세요')).toBe(false)
+  })
+  it('🔴 slug 접두사만 겹치면 매칭되지 않는다', () => {
+    expect(linkPointsToPost('https://age-doesnt-matter.com/community/abc1234', 'abc123', null)).toBe(false)
+    expect(linkPointsToPost('https://age-doesnt-matter.com/community/xabc123', 'abc123', null)).toBe(false)
+  })
+  it('🔴 query 문자열에 ID 가 있어도 매칭되지 않는다', () => {
+    expect(linkPointsToPost('https://age-doesnt-matter.com/community?ref=abc123', 'abc123', null)).toBe(false)
+    expect(linkPointsToPost('https://age-doesnt-matter.com/search?q=abc123', 'abc123', null)).toBe(false)
+    expect(linkPointsToPost('https://age-doesnt-matter.com/community/other#abc123', 'abc123', null)).toBe(false)
+  })
+  it('🔴 외부 URL 은 경로가 같아도 매칭되지 않는다', () => {
+    expect(linkPointsToPost('https://example.com/community/abc123', 'abc123', null)).toBe(false)
+    expect(linkPointsToPost('https://blog.naver.com/x/abc123', 'abc123', null)).toBe(false)
+  })
+  it('slug 가 없거나 ID 와 같으면 ID 경로만 본다', () => {
+    expect(linkPointsToPost('https://age-doesnt-matter.com/community/other', 'abc123', null)).toBe(false)
+    expect(linkPointsToPost('https://age-doesnt-matter.com/community/other', 'abc123', '')).toBe(false)
+  })
+  it('URL 이 아니면 매칭하지 않는다', () => {
+    expect(linkPointsToPost('그냥 문자열 abc123', 'abc123', null)).toBe(false)
   })
 })
 
@@ -714,7 +738,7 @@ describe('사후 검증을 통과해야만 done 이다', () => {
     preserveBefore: 218, preserveAfter: 218,
     protectedExpected: 0, protectedRemaining: 0,
     semanticResidual: ALL_SEMANTIC_ZERO,
-    tableDeltas: [{ table: 'Comment', expected: 775, actual: 775 }],
+    childResidual: [{ table: 'Comment', remaining: 0 }],
   }
   it('전부 맞으면 이슈 0', () => expect(verifyAfterPurge(ok)).toEqual([]))
 
@@ -765,9 +789,9 @@ describe('사후 검증을 통과해야만 done 이다', () => {
       expect(keys).toContain(k)
     }
   })
-  it('테이블 실제 감소량이 다르면 TABLE_DELTA', () => {
-    expect(verifyAfterPurge({ ...ok, tableDeltas: [{ table: 'Comment', expected: 775, actual: 700 }] })
-      .some((i) => i.code === 'TABLE_DELTA')).toBe(true)
+  it('삭제한 글의 자식 행이 남으면 CHILD_ROWS_REMAIN', () => {
+    expect(verifyAfterPurge({ ...ok, childResidual: [{ table: 'Comment', remaining: 5 }] })
+      .some((i) => i.code === 'CHILD_ROWS_REMAIN')).toBe(true)
   })
 })
 
@@ -1027,5 +1051,152 @@ describe('🔴 트랜잭션에서 새로 보호된 글의 이미지는 shared �
     const r = await runR2Cleanup(s.impl, R2CFG, ['a.jpg', 'b.jpg'], new Set(['a.jpg', 'b.jpg']))
     expect(s.calls).toEqual([])
     expect(r.sharedSkipped).toBe(2)
+  })
+})
+
+// ── 🔴 R2 보호는 "살아 있는 참조" 기준이다 ─────────────────────
+//
+// 이전 구현은 shared 를 **doomed 가 참조하는 키** 중에서만 찾았다.
+// 그래서 삭제 집합에서 빠진 글(보호된 글)만 쓰는 manifest 키는 shared 에 안 들어가고,
+// manifest 를 그대로 순회하면 **그 키를 지운다.** 살아 있는 글의 이미지가 깨진다.
+//
+// 올바른 계산: sharedKeys = manifest ∩ (지금 살아 있는 모든 참조 키).
+// doomedIds·deletedIds·preflight posts 는 **입력이 아니다.**
+describe('🔴 R2 보호 = manifest ∩ 살아 있는 참조', () => {
+  const A = `https://${R2_PUBLIC_HOSTS[0]}`
+  const B = `https://${R2_PUBLIC_HOSTS[1]}`
+  const post = (id: string, ...urls: string[]) => ({ id, thumbnailUrl: urls[0] ?? null, content: urls.slice(1).join(' ') })
+
+  it('트랜잭션에서 보호돼 살아남은 글의 이미지는 요청조차 하지 않는다', async () => {
+    const manifest = ['a.jpg', 'b.jpg']
+    // b 는 보호돼 살아남았다. 지금 살아 있는 참조에 b.jpg 가 있다.
+    const live = liveReferencedKeys([post('b', `${A}/b.jpg`)], [])
+    const shared = new Set(protectedManifestKeys(manifest, live))
+    expect(shared.has('b.jpg')).toBe(true)
+
+    const s = r2Stub([200, 204, 404])
+    const r = await runR2Cleanup(s.impl, R2CFG, manifest, shared)
+    expect(s.calls.every((c) => !c.includes('b.jpg')), 'b.jpg 를 건드리면 안 된다').toBe(true)
+    expect(r.sharedSkipped).toBe(1)
+    expect(r.deleted).toBe(1)
+  })
+
+  it('DB COMPLETE 재개(후보 0건)에서도 다른 글·모델의 공유 키를 건드리지 않는다', async () => {
+    const manifest = ['shared-with-post.jpg', 'shared-with-social.jpg', 'gone.jpg']
+    // 후보는 하나도 안 남았다. 그래도 살아 있는 참조는 그대로 계산된다.
+    const live = liveReferencedKeys(
+      [post('other', `${A}/shared-with-post.jpg`)],
+      [{ model: 'SocialPost', urls: [`${B}/shared-with-social.jpg`] }],
+    )
+    const shared = new Set(protectedManifestKeys(manifest, live))
+    expect([...shared].sort()).toEqual(['shared-with-post.jpg', 'shared-with-social.jpg'])
+
+    const s = r2Stub([200, 204, 404])
+    const r = await runR2Cleanup(s.impl, R2CFG, manifest, shared)
+    expect(s.calls.join(' ')).not.toContain('shared-with')
+    expect(r.sharedSkipped).toBe(2)
+  })
+
+  it('--r2-only 에서 남은 후보가 전부 보호 상태면 그 이미지 요청 0회', async () => {
+    const manifest = ['p1.jpg', 'p2.jpg']
+    // 남은 후보 2건이 전부 보호 상태 = 둘 다 살아 있다.
+    const live = liveReferencedKeys([post('p1', `${A}/p1.jpg`), post('p2', `${A}/p2.jpg`)], [])
+    const shared = new Set(protectedManifestKeys(manifest, live))
+    const s = r2Stub([])
+    const r = await runR2Cleanup(s.impl, R2CFG, manifest, shared)
+    expect(s.calls).toEqual([])
+    expect(r.sharedSkipped).toBe(2)
+  })
+
+  it('foreign 모델만 참조하는 manifest 키도 요청 0회', async () => {
+    const manifest = ['card.jpg']
+    for (const model of ['SocialPost', 'ChannelDraft', 'NaverBlogQueue', 'Banner']) {
+      const live = liveReferencedKeys([], [{ model, urls: [`${A}/card.jpg`] }])
+      const shared = new Set(protectedManifestKeys(manifest, live))
+      const s = r2Stub([])
+      await runR2Cleanup(s.impl, R2CFG, manifest, shared)
+      expect(s.calls, model).toEqual([])
+    }
+  })
+
+  it('참조가 완전히 사라진 전용 키만 HEAD→DELETE→HEAD 를 탄다', async () => {
+    const manifest = ['orphan.jpg']
+    const live = liveReferencedKeys([post('other', `${A}/still-used.jpg`)], [])
+    const shared = new Set(protectedManifestKeys(manifest, live))
+    expect(shared.size).toBe(0)
+    const s = r2Stub([200, 204, 404])
+    const r = await runR2Cleanup(s.impl, R2CFG, manifest, shared)
+    expect(s.calls.map((c) => c.split(' ')[0])).toEqual(['HEAD', 'DELETE', 'HEAD'])
+    expect(r.deleted).toBe(1)
+  })
+
+  it('본문 안 이미지와 다른 호스트 표기도 같은 키로 모인다', () => {
+    const live = liveReferencedKeys(
+      [{ id: 'x', thumbnailUrl: null, content: `본문 ![i](${B}/deep/pic.png)` }], [],
+    )
+    expect(protectedManifestKeys(['deep/pic.png'], live)).toEqual(['deep/pic.png'])
+  })
+
+  it('보호 계산은 doomedIds·deletedIds 를 입력으로 받지 않는다', () => {
+    // 시그니처 자체가 그런 인자를 요구하지 않는다는 것을 고정한다.
+    expect(liveReferencedKeys.length).toBe(2)
+    expect(protectedManifestKeys.length).toBe(2)
+  })
+})
+
+// ── 🔴 사후 테이블 검증은 같은 집합으로 본다 ───────────────────
+//
+// 이전 구현은 before=preflight 후보 전체, after=deletedIds 로 차분을 냈다.
+// 보호 제외가 한 건이라도 생기면 두 집합이 달라서, 그 글의 자식 행이
+// "안 지워진 것"으로 계산돼 멀쩡한 실행이 TABLE_DELTA 로 실패했다.
+//
+// 고친 계약: 트랜잭션이 확정한 cascade 계수를 기대값으로 쓰고,
+// 삭제 후 **deletedIds 기준 자식 잔량이 0** 인지를 본다.
+describe('🔴 사후 테이블 검증 — 보호 제외가 있어도 PASS 한다', () => {
+  const base = {
+    deletedRemaining: 0, deletedCount: 627,
+    preserveBefore: 218, preserveAfter: 218,
+    protectedExpected: 1, protectedRemaining: 1,
+    semanticResidual: ALL_SEMANTIC_ZERO,
+  }
+
+  it('보호된 글에 자식 행이 남아 있어도 정상 PASS', () => {
+    // 보호된 글의 댓글 12건은 **남아 있는 게 맞다.** 삭제한 글 기준 잔량만 0이면 된다.
+    const r = verifyAfterPurge({
+      ...base,
+      childResidual: [
+        { table: 'Comment', remaining: 0 },
+        { table: 'Like(post)', remaining: 0 },
+        { table: 'PostView', remaining: 0 },
+      ],
+    })
+    expect(r).toEqual([])
+  })
+
+  it('삭제한 글의 자식 행이 남으면 잡는다', () => {
+    const r = verifyAfterPurge({
+      ...base,
+      childResidual: [{ table: 'Comment', remaining: 3 }],
+    })
+    expect(r.some((i) => i.code === 'CHILD_ROWS_REMAIN')).toBe(true)
+  })
+
+  it('여러 테이블에 잔량이 남으면 전부 보고한다', () => {
+    const r = verifyAfterPurge({
+      ...base,
+      childResidual: [
+        { table: 'Comment', remaining: 2 },
+        { table: 'JobDetail', remaining: 1 },
+        { table: 'PostView', remaining: 0 },
+      ],
+    })
+    expect(r.filter((i) => i.code === 'CHILD_ROWS_REMAIN')).toHaveLength(2)
+  })
+
+  it('보호 제외 28건 실행도 자식 잔량 0이면 PASS', () => {
+    expect(verifyAfterPurge({
+      ...base, deletedCount: 600, protectedExpected: 28, protectedRemaining: 28,
+      childResidual: [{ table: 'Comment', remaining: 0 }],
+    })).toEqual([])
   })
 })

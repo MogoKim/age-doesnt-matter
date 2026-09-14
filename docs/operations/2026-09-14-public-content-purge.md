@@ -172,8 +172,19 @@ manifest 를 851(전용)로 굳히면 **실행 시점의 보호 변화를 담지
 그래서 manifest 는 후보 글이 참조하는 **전체 867키**를 담고
 (`…-r2.txt` · SHA `f9eda12f…`), **삭제할지 말지는 커밋 뒤 다시 계산한 공유 집합**이 정한다.
 
-커밋 후 재계산은 **남아 있는 모든 `Post`** + `SocialPost`·`ChannelDraft`·`NaverBlogQueue`·`Banner`
-를 다시 읽어서 한다. 보호된 글은 그때 `survivors` 에 들어가므로 그 이미지가 자동으로 `shared` 가 된다.
+**보호 집합 = manifest ∩ 지금 살아 있는 모든 참조 키**다.
+
+살아 있는 참조는 **남아 있는 모든 `Post`**(`thumbnailUrl` + 본문) + `SocialPost.imageUrls` ·
+`ChannelDraft.imageUrls` · `NaverBlogQueue.imageUrls` · `Banner.imageUrl` 에서 모은다.
+
+🔴 **삭제 대상은 이 계산의 입력이 아니다.** 이전 구현은 공유를 "삭제 대상이 참조하는 키"
+안에서만 찾아서, **보호돼 살아남은 글만 쓰는 키가 공유로 안 잡히고 지워졌다.**
+지금은 `liveReferencedKeys(livePosts, foreign)` 에 `doomedIds`·`deletedIds`·preflight 스냅샷을
+아예 넘기지 않는다 — 그래서 DB 가 `COMPLETE` 라 후보가 0건인 재개에서도 정확히 계산된다.
+
+dry-run 에서는 후보 628건이 아직 살아 있어 **867 전건이 보호**로 잡힌다(정상).
+운영자가 예상 삭제량을 볼 수 있게 "삭제 후 기준" 미리보기(보호 16 · 삭제 예정 851)를
+따로 찍지만, **그 값은 어떤 판정에도 쓰지 않는다.**
 
 ### 4-C-2. `--r2-only` 는 아무 때나 못 쓴다
 
@@ -243,6 +254,17 @@ CASCADE 예상량도 같은 트랜잭션 안에서 확정한다.
 `updatedAt` 이 바뀌었는데 **본문 drift 0 · 제목 drift 0** 이었다. 원인은
 `viewCount`·`likeCount`·`trendingScore` 비정규화 갱신이다. ABORT 축으로 두면
 조회수가 오르는 것만으로 도구가 영영 못 돈다. 실제 편집은 본문·제목 해시가 잡는다.
+
+### 5-0-C. 🔴 링크 판정은 경로 세그먼트 정확 비교다
+
+`includes` 로 보면 안 된다. 그러면 `/community/abc1234` 가 `abc123` 에 걸리고,
+`점심-뭐드세요-2` 가 `점심-뭐드세요` 에 걸리고, `?ref=<id>` 같은 query 도 걸리고,
+`https://example.com/community/<id>` 같은 **남의 URL 도 걸린다.**
+그 결과 엉뚱한 행의 `linkUrl` 을 null 로 지운다.
+
+그래서 URL 을 파싱해 **호스트를 우리 사이트로 제한**하고,
+**디코딩한 `pathname` 의 세그먼트와 정확히 일치**하는지만 본다.
+query·fragment 는 애초에 보지 않는다. 퍼센트 인코딩된 한글 slug 는 디코딩 후 일치한다.
 
 ### 5-A-0. 🔴 실행 경로는 **하나**다
 
@@ -350,7 +372,11 @@ CLI 가 이 검사를 **통과해야만** `done` 을 출력한다. 하나라도 
 - [ ] 보호 제외한 글은 **전건 그대로 살아 있다**(`protectedRemaining`)
 - [ ] 보존 대상 **218 → 218** 동일
 - [ ] 실회원 글·실회원 댓글 총량 **전후 동일**
-- [ ] 테이블별 실제 삭제량이 트랜잭션 내 확정 계수와 일치
+- [ ] **삭제한 글 기준 자식 행 잔량 0** — 차분이 아니다.
+      이전 계약(`before=후보 전체` − `after=deletedIds`)은 집합이 달라서,
+      보호 제외가 한 건이라도 생기면 그 글의 자식 행이 "안 지워진 것"으로 잡혀
+      멀쩡한 실행이 실패했다. 보호된 글의 자식은 **남아 있는 게 맞다**.
+      기대값은 트랜잭션이 확정한 cascade 계수로 기록한다
 - [ ] `Notification.postId` 고아 0 · `WaveQueue` 잔재 0
 - [ ] **semantic 8종 전부** 확인 — BLOCK·CLEANUP 은 0, `AdminAuditLog` 는 남아 있어야 정상.
       한 축이라도 안 보면 `SEMANTIC_NOT_CHECKED` 로 잡힌다

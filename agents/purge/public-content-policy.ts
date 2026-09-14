@@ -441,7 +441,15 @@ export interface PostCheckInput {
   protectedRemaining: number
   /** 8종 전부. BLOCK·CLEANUP 은 0이어야 하고 PRESERVE 는 남아 있어야 정상이다. */
   semanticResidual: readonly SemanticCount[]
-  tableDeltas: readonly { table: string; expected: number; actual: number }[]
+  /**
+   * 🔴 **삭제한 글 기준** 자식 행 잔량. 전부 0이어야 한다.
+   *
+   * 이전 계약(`before=후보 전체` − `after=deletedIds`)은 집합이 달라서,
+   * 보호 제외가 한 건이라도 생기면 그 글의 자식 행이 "안 지워진 것"으로 잡혀
+   * 멀쩡한 실행이 실패했다. 보호된 글의 자식은 **남아 있는 게 맞다.**
+   * 그래서 차분이 아니라 **삭제한 ID 기준 잔량 0** 으로 본다.
+   */
+  childResidual: readonly { table: string; remaining: number }[]
 }
 
 /**
@@ -474,9 +482,9 @@ export function verifyAfterPurge(i: PostCheckInput): PlanIssue[] {
     }
   }
   out.push(...residualSemanticIssues(i.semanticResidual))
-  for (const t of i.tableDeltas) {
-    if (t.actual !== t.expected) {
-      out.push({ code: 'TABLE_DELTA', detail: `${t.table} 기대 -${t.expected} · 실제 -${t.actual}` })
+  for (const t of i.childResidual) {
+    if (t.remaining !== 0) {
+      out.push({ code: 'CHILD_ROWS_REMAIN', detail: `${t.table} 에 ${t.remaining}행 남음 (삭제한 글 기준)` })
     }
   }
   return out

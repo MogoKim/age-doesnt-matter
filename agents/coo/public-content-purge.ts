@@ -25,7 +25,10 @@ import {
   CONFIRM_TOKEN, EXPECTED_TOTAL, EXPECTED_PRESERVE_TOTAL, R2_MANIFEST_KEYS, SEMANTIC_REFS,
   type PurgeRow, type LiveRow, type PlanIssue, type SemanticCount, type CompletionState, type R2Outcome,
 } from '../purge/public-content-policy.js'
-import { planR2Deletion, type PostImageSource, type ForeignImageSource } from '../purge/r2-objects.js'
+import {
+  liveReferencedKeys, protectedManifestKeys, deletableManifestKeys,
+  type PostImageSource, type ForeignImageSource,
+} from '../purge/r2-objects.js'
 import { executePurge, linkPointsToPost, type TransactionRunner } from '../purge/public-content-exec.js'
 import { runR2Cleanup, type R2Config, type FetchLike } from '../purge/r2-client.js'
 
@@ -182,13 +185,14 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
     ).length
 
     /**
-     * 공유 키는 **호출 시점의 DB** 로 매번 다시 계산한다.
-     * 커밋 뒤에 부르면 "남아 있는 글 + 이미지 보유 모델" 기준이라,
-     * 트랜잭션에서 새로 보호된 글의 이미지가 자동으로 shared 로 빠진다.
+     * 🔴 보호 키는 **지금 살아 있는 참조 전부**로 계산한다.
+     *
+     * 삭제 대상·삭제한 ID 는 입력이 아니다. 그것들로 좁히면
+     * "보호돼 살아남은 글만 쓰는 키"가 공유로 안 잡혀 지워진다.
+     * 커밋 뒤에 부르면 남아 있는 글이 자동으로 반영된다.
      */
-    const computeSharedKeys = async (doomedIds: ReadonlySet<string>): Promise<Set<string>> => {
-      const survivors: PostImageSource[] = await prisma.post.findMany({
-        where: { id: { notIn: [...doomedIds] } },
+    const computeSharedKeys = async (): Promise<Set<string>> => {
+      const livePosts: PostImageSource[] = await prisma.post.findMany({
         select: { id: true, thumbnailUrl: true, content: true },
       })
       const foreign: ForeignImageSource[] = [
@@ -197,12 +201,11 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
         { model: 'NaverBlogQueue', urls: (await prisma.naverBlogQueue.findMany({ select: { imageUrls: true } })).flatMap((r) => r.imageUrls) },
         { model: 'Banner', urls: (await prisma.banner.findMany({ select: { imageUrl: true } })).map((b) => b.imageUrl).filter((u): u is string => !!u) },
       ]
-      const doomedImgs: PostImageSource[] = posts
-        .filter((p) => doomedIds.has(p.id))
-        .map((p) => ({ id: p.id, thumbnailUrl: p.thumbnailUrl, content: p.content }))
-      const plan = planR2Deletion(doomedImgs, survivors, foreign)
-      out(`── R2 공유 판정 ── 전용 ${plan.exclusive.length} · 공유(삭제 금지) ${plan.shared.length} · 외부 ${plan.external.length}`)
-      return new Set(plan.shared)
+      const live = liveReferencedKeys(livePosts, foreign)
+      const shared = protectedManifestKeys(manifestKeys, live)
+      const deletable = deletableManifestKeys(manifestKeys, live)
+      out(`── R2 보호 판정 ── manifest ${manifestKeys.length} · 살아 있는 참조로 보호 ${shared.length} · 삭제 후보 ${deletable.length}`)
+      return new Set(shared)
     }
 
     const runR2 = async (sharedKeys: ReadonlySet<string>): Promise<R2Outcome> => {
@@ -234,7 +237,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       if (!gate.allowed) {
         throw new Error('[ABORT] --r2-only 를 쓸 수 없다 — 살아 있는 글의 이미지를 지우게 된다.')
       }
-      const shared = await computeSharedKeys(new Set(posts.filter((p) => !live.find((l) => l.id === p.id && (l.hasRealAuthor || l.hasRealComment || l.hasGuestComment || l.hasRealLike || l.hasRealScrap))).map((p) => p.id)))
+      const shared = await computeSharedKeys()
       if (!authorized) return report('DRY_RUN')
       const r2 = await runR2(shared)
       return report(classifyCompletion(false, r2))
@@ -242,7 +245,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
 
     if (state === 'COMPLETE') {
       out('\nDB 는 이미 COMPLETE — 남은 R2 정리만 이어간다.')
-      const shared = await computeSharedKeys(new Set())
+      const shared = await computeSharedKeys()
       if (!authorized) return report('DRY_RUN')
       const r2 = await runR2(shared)
       return report(classifyCompletion(false, r2))
@@ -281,13 +284,16 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
     }
 
     if (!authorized) {
-      await computeSharedKeys(doomedSet)
+      await computeSharedKeys()
+      // dry-run 시점에는 후보 628건이 아직 살아 있어 **전건이 보호**로 잡힌다 — 정상이다.
+      // 운영자가 "지우면 몇 개가 빠지는가"를 볼 수 있게 **미리보기**만 따로 계산한다.
+      // 🔴 이 값은 어떤 판정에도 쓰이지 않는다. 실제 보호는 커밋 뒤 재계산이 정한다.
+      await previewAfterDelete(prisma, manifestKeys, doomedSet, out)
       out(`\n── R2 (dry-run) ── manifest ${manifestKeys.length}키 · 삭제 0`)
       return report('DRY_RUN')
     }
 
     // ── 실행 ──────────────────────────────────────────────────
-    const before = await tableCounts(prisma, [...doomedSet])
     const runner: TransactionRunner = {
       $transaction: (fn, options) => prisma.$transaction(fn as never, options as never) as never,
     }
@@ -302,7 +308,10 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
 
     // ── 사후 검증 — 통과해야만 done 을 말한다 ───────────────────
     const deletedIds = result.deletedIds
-    const after = await tableCounts(prisma, deletedIds)
+    // 🔴 차분이 아니라 **삭제한 ID 기준 잔량**을 본다.
+    //    보호된 글의 자식 행은 남아 있는 게 맞으므로 차분은 오판을 만든다.
+    const childResidual = Object.entries(await tableCounts(prisma, deletedIds))
+      .map(([table, remaining]) => ({ table, remaining }))
     const protectedIds = [...drift.protectedExclusions, ...result.protectedInTx]
     const residual = await semanticCounts(prisma, deletedIds, posts)
     const check = verifyAfterPurge({
@@ -313,18 +322,19 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       protectedExpected: protectedIds.length,
       protectedRemaining: protectedIds.length ? await prisma.post.count({ where: { id: { in: protectedIds } } }) : 0,
       semanticResidual: residual,
-      tableDeltas: Object.keys(before).map((t) => ({ table: t, expected: result.cascade[t] ?? 0, actual: before[t] - after[t] })),
+      childResidual,
     })
     if (check.length > 0) {
       issuesOut('사후 검증 실패', check)
       throw new Error('[ABORT] 삭제는 커밋됐지만 사후 검증을 통과하지 못했다 — done 이라고 말하지 않는다.')
     }
     out('\n사후 검증: 이슈 0건 (semantic 8종 전부 확인)')
+    out(`  트랜잭션 확정 cascade: ${JSON.stringify(result.cascade)}`)
 
-    // 🔴 공유 키는 **커밋 뒤에** 다시 센다 — 트랜잭션에서 새로 보호된 글의 이미지가
-    //    여기서 자동으로 shared 로 빠진다.
-    out('\n커밋 후 공유 키 재계산:')
-    const sharedAfter = await computeSharedKeys(new Set(deletedIds))
+    // 🔴 보호 키는 **커밋 뒤** 살아 있는 참조로 다시 센다 — 트랜잭션에서 새로 보호된
+    //    글이 그때 livePosts 에 들어가므로 그 이미지가 자동으로 보호된다.
+    out('\n커밋 후 보호 키 재계산:')
+    const sharedAfter = await computeSharedKeys()
     const r2 = await runR2(sharedAfter)
     return report(classifyCompletion(true, r2))
   } finally {
@@ -333,6 +343,33 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
 }
 
 type PrismaLike = Awaited<ReturnType<typeof db>>['prisma']
+
+/**
+ * dry-run 전용 미리보기 — "지우고 나면 몇 개가 삭제 후보가 되는가".
+ *
+ * 🔴 **판정에 쓰지 않는다.** 실제 보호 집합은 커밋 뒤 `computeSharedKeys()` 가 정하며,
+ *    그쪽은 삭제 대상을 입력으로 받지 않는다. 이 함수는 보고용 숫자일 뿐이다.
+ */
+async function previewAfterDelete(
+  prisma: PrismaLike,
+  manifestKeys: readonly string[],
+  doomed: ReadonlySet<string>,
+  out: (l: string) => void,
+): Promise<void> {
+  const survivors: PostImageSource[] = (await prisma.post.findMany({
+    select: { id: true, thumbnailUrl: true, content: true },
+  })).filter((p) => !doomed.has(p.id))
+  const foreign: ForeignImageSource[] = [
+    { model: 'SocialPost', urls: (await prisma.socialPost.findMany({ select: { imageUrls: true } })).flatMap((r) => r.imageUrls) },
+    { model: 'ChannelDraft', urls: (await prisma.channelDraft.findMany({ select: { imageUrls: true } })).flatMap((r) => r.imageUrls) },
+    { model: 'NaverBlogQueue', urls: (await prisma.naverBlogQueue.findMany({ select: { imageUrls: true } })).flatMap((r) => r.imageUrls) },
+    { model: 'Banner', urls: (await prisma.banner.findMany({ select: { imageUrl: true } })).map((b) => b.imageUrl).filter((u): u is string => !!u) },
+  ]
+  const live = liveReferencedKeys(survivors, foreign)
+  const willProtect = protectedManifestKeys(manifestKeys, live).length
+  const willDelete = deletableManifestKeys(manifestKeys, live).length
+  out(`   (미리보기 — 삭제 후 기준: 보호 ${willProtect} · 삭제 예정 ${willDelete})`)
+}
 
 /**
  * semantic 평문 참조 **8종 전부**를 센다.

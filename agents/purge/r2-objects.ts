@@ -59,6 +59,56 @@ export interface R2Plan {
 }
 
 /**
+ * 🔴 **지금 살아 있는 참조 키 전부.**
+ *
+ * 이전 구현은 공유 판정을 "삭제 대상이 참조하는 키" 안에서만 했다.
+ * 그래서 삭제 집합에서 빠진 글(보호된 글)만 쓰는 manifest 키는 공유로 안 잡히고,
+ * manifest 를 순회하면 **살아 있는 글의 이미지를 지웠다.**
+ *
+ * 보호 판정에 삭제 대상은 **입력이 아니다.** 지금 DB 에 남아 있는 것만 보면 된다.
+ * 그래서 이 함수는 `doomedIds`·`deletedIds`·preflight 스냅샷을 받지 않는다.
+ */
+export function liveReferencedKeys(
+  livePosts: readonly PostImageSource[],
+  foreign: readonly ForeignImageSource[],
+): Set<string> {
+  const keys = new Set<string>()
+  for (const p of livePosts) {
+    for (const u of extractImageUrls(p.thumbnailUrl, p.content)) {
+      const k = toObjectKey(u)
+      if (k) keys.add(k)
+    }
+  }
+  for (const f of foreign) {
+    for (const u of f.urls) {
+      const k = toObjectKey(u)
+      if (k) keys.add(k)
+    }
+  }
+  return keys
+}
+
+/**
+ * manifest 중 **건드리면 안 되는** 키 = manifest ∩ 살아 있는 참조.
+ *
+ * 나머지(참조가 완전히 사라진 것)만 삭제 후보다.
+ */
+export function protectedManifestKeys(
+  manifest: readonly string[],
+  liveKeys: ReadonlySet<string>,
+): string[] {
+  return [...new Set(manifest.filter((k) => liveKeys.has(k)))].sort()
+}
+
+/** manifest 에서 실제로 지울 키. 보고용이다 — 실행은 sharedKeys 로 막는다. */
+export function deletableManifestKeys(
+  manifest: readonly string[],
+  liveKeys: ReadonlySet<string>,
+): string[] {
+  return [...new Set(manifest.filter((k) => !liveKeys.has(k)))].sort()
+}
+
+/**
  * 삭제 대상 키를 고른다.
  *
  * `preserved` 는 **남는 글 전부**여야 하고, `foreign` 은 이미지를 들고 있는
