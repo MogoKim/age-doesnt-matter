@@ -132,6 +132,7 @@ test.describe('시나리오 3: 일자리 목록 → 상세 + 매거진 플로우
     }
   })
 
+  // [임시 검증] e2e/** 단독 변경이 E2E Smoke 를 실제로 트리거하는지 확인용 주석.
   test('매거진 상세 — 읽기 전용 액션 영역', async ({ page }) => {
     await page.goto('/magazine')
 
