@@ -1,0 +1,104 @@
+/**
+ * 삭제 글의 R2 객체 키 산출 — **순수** 로직.
+ *
+ * 🔴 이 파일이 존재하는 이유는 실측에서 나온 함정 하나 때문이다.
+ *    `pub-….r2.dev` 와 `img.age-doesnt-matter.com` 은 **같은 버킷**이다
+ *    (같은 키에 HEAD 를 걸어 ETag 가 일치하는 것을 확인했다).
+ *    그래서 **URL 로 공유 여부를 세면 안 된다.** 보존 글이 다른 호스트로
+ *    같은 객체를 참조하고 있으면 못 보고 지워버린다. 반드시 **키**로 센다.
+ */
+
+/** 같은 버킷을 가리키는 공개 호스트. 여기 없는 호스트는 우리 객체가 아니다. */
+export const R2_PUBLIC_HOSTS: readonly string[] = [
+  'pub-b0ae348768da4b63a66112f4751f5ae5.r2.dev',
+  'img.age-doesnt-matter.com',
+]
+
+const IMAGE_EXT = /\.(jpe?g|png|webp|gif|avif)(\?|$)/i
+const URL_RE = /https?:\/\/[^\s"'<>)\]]+/g
+
+/** 글 하나가 참조하는 이미지 URL. 썸네일 + 본문. */
+export function extractImageUrls(thumbnailUrl: string | null, content: string): string[] {
+  const out = new Set<string>()
+  const t = thumbnailUrl?.trim()
+  if (t) out.add(t)
+  for (const m of content.match(URL_RE) ?? []) {
+    const cleaned = m.replace(/[),.]+$/, '')
+    if (IMAGE_EXT.test(cleaned)) out.add(cleaned)
+  }
+  return [...out]
+}
+
+/** 우리 버킷의 객체 키. 우리 것이 아니면 null. */
+export function toObjectKey(url: string): string | null {
+  let u: URL
+  try { u = new URL(url) } catch { return null }
+  if (!R2_PUBLIC_HOSTS.includes(u.host)) return null
+  const key = decodeURIComponent(u.pathname).replace(/^\/+/, '')
+  return key === '' ? null : key
+}
+
+export interface PostImageSource { id: string; thumbnailUrl: string | null; content: string }
+
+export interface R2Plan {
+  /** 삭제 글만 참조하는 키 — 삭제 대상 */
+  exclusive: string[]
+  /** 보존 글도 참조하는 키 — **절대 삭제 금지** */
+  shared: string[]
+  /** 우리 버킷 밖의 URL — 손대지 않는다 */
+  external: string[]
+}
+
+/**
+ * 삭제 대상 키를 고른다.
+ *
+ * `preserved` 는 **남는 글 전부**여야 한다. 보존 218건만 넘기면
+ * 나머지 글이 참조하는 객체를 공유로 못 보고 지운다.
+ */
+export function planR2Deletion(
+  doomed: readonly PostImageSource[],
+  preserved: readonly PostImageSource[],
+): R2Plan {
+  const keep = new Set<string>()
+  for (const p of preserved) {
+    for (const u of extractImageUrls(p.thumbnailUrl, p.content)) {
+      const k = toObjectKey(u)
+      if (k) keep.add(k)
+    }
+  }
+
+  const exclusive = new Set<string>()
+  const shared = new Set<string>()
+  const external = new Set<string>()
+  for (const p of doomed) {
+    for (const u of extractImageUrls(p.thumbnailUrl, p.content)) {
+      const k = toObjectKey(u)
+      if (k === null) { external.add(u); continue }
+      if (keep.has(k)) shared.add(k)
+      else exclusive.add(k)
+    }
+  }
+
+  return { exclusive: [...exclusive].sort(), shared: [...shared].sort(), external: [...external].sort() }
+}
+
+// ── 객체 단위 처리 결과 ────────────────────────────────────────
+/**
+ * 객체 하나의 처리 판정.
+ *
+ * 창업자 지시: **공유 여부나 HEAD 상태가 불명확하면 그 객체만 빼고,
+ * 글 삭제 자체는 막지 않는다.** 그래서 이미지 실패는 ABORT 사유가 아니다.
+ */
+export type ObjectOutcome = 'DELETED' | 'ALREADY_GONE' | 'SKIPPED_SHARED' | 'SKIPPED_UNCERTAIN'
+
+export function classifyHead(status: number): 'PRESENT' | 'ABSENT' | 'UNCERTAIN' {
+  if (status === 200) return 'PRESENT'
+  if (status === 404) return 'ABSENT'
+  // 403·429·5xx 는 "없다"는 뜻이 아니다. 모르는 것은 모른다고 한다.
+  return 'UNCERTAIN'
+}
+
+export function classifyDelete(status: number): 'DELETED' | 'UNCERTAIN' {
+  // S3 DELETE 는 없는 키에도 204 를 준다.
+  return status === 204 || status === 200 ? 'DELETED' : 'UNCERTAIN'
+}
