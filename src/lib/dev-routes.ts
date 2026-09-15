@@ -27,19 +27,43 @@ export function isDevRoute(pathname: string): boolean {
   return pathname === DEV_ROUTE_PREFIX || pathname.startsWith(`${DEV_ROUTE_PREFIX}/`)
 }
 
+/** `/dev` 를 열어도 되는 Vercel 환경 — **명시적 허용 목록**. */
+const ALLOWED_VERCEL_ENV = new Set(['preview', 'development'])
+
+/** `/dev` 를 열어도 되는 Node 환경 — `VERCEL_ENV` 를 못 읽을 때만 본다. */
+const ALLOWED_NODE_ENV = new Set(['development'])
+
+export interface DevRouteEnv {
+  VERCEL_ENV?: string
+  NODE_ENV?: string
+}
+
 /**
  * 이 환경에서 `/dev` 를 열어도 되는가.
  *
- * · Vercel **production** → 차단
- * · Vercel **preview** → 허용 (Preview E2E 가 `/dev/event-preview` 를 쓴다)
- * · **로컬**(`VERCEL_ENV` 없음) → 허용
+ * ── 환경 행렬 ───────────────────────────────────────────────
+ *  | `VERCEL_ENV`        | `NODE_ENV`    | 결과 |
+ *  |---------------------|---------------|------|
+ *  | `production`        | (무관)        | 차단 |
+ *  | `preview`           | (무관)        | 허용 |
+ *  | `development`       | (무관)        | 허용 |
+ *  | 없음 · 알 수 없는 값 | `development` | 허용 |
+ *  | 없음 · 알 수 없는 값 | `production`  | 차단 |
+ *  | 없음 · 알 수 없는 값 | 그 외 · 없음  | 차단 |
  *
- * 🔴 **fail-open 이 의도다.** 값을 못 읽거나 모르는 값이면 허용한다.
- *    fail-closed 로 만들면 `VERCEL_ENV` 가 비는 순간 로컬 개발이 통째로 막힌다.
- *    차단해야 하는 대상은 "production 이라고 확인된 경우" 하나뿐이다.
+ * 🔴 **fail-closed 다.** 허용은 **명시적으로 확인된 환경**에서만 한다.
+ *    이전 구현은 `VERCEL_ENV !== 'production'` 하나로 판단하는 fail-open 이었다.
+ *    그러면 `VERCEL_ENV` 를 못 읽는 production 런타임에서 그대로 열린다 —
+ *    막으려던 상황에서 정확히 실패한다. 그래서 모르면 막는다.
+ *
+ * `VERCEL_ENV` 가 `production` 이면 `NODE_ENV` 를 보지 않는다. Vercel 환경이 곧 정답이고,
+ * fallback 은 그 값을 **못 읽을 때**만 쓰는 차선책이다.
  */
-export function isDevRouteAllowed(
-  vercelEnv: string | undefined = process.env.VERCEL_ENV,
-): boolean {
-  return vercelEnv !== 'production'
+export function isDevRouteAllowed(env: DevRouteEnv = process.env): boolean {
+  const vercel = env.VERCEL_ENV
+  if (vercel === 'production') return false
+  if (vercel && ALLOWED_VERCEL_ENV.has(vercel)) return true
+
+  // `VERCEL_ENV` 없음 또는 알 수 없는 값 → NODE_ENV fallback
+  return ALLOWED_NODE_ENV.has(env.NODE_ENV ?? '')
 }

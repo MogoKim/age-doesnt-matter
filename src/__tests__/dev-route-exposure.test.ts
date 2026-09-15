@@ -42,28 +42,60 @@ describe('isDevRoute — 경로 판별', () => {
   })
 })
 
-describe('isDevRouteAllowed — 환경별 허용/차단', () => {
-  it('🔴 Vercel production 에서만 차단한다', () => {
-    expect(isDevRouteAllowed('production')).toBe(false)
+describe('isDevRouteAllowed — 환경 행렬', () => {
+  const allow = (VERCEL_ENV?: string, NODE_ENV?: string) =>
+    isDevRouteAllowed({ VERCEL_ENV, NODE_ENV })
+
+  it('🔴 VERCEL_ENV 는 preview·development 만 허용한다', () => {
+    expect(allow('preview'), 'preview').toBe(true)
+    expect(allow('development'), 'development').toBe(true)
   })
 
-  it('Vercel preview 에서는 허용한다 — Preview E2E 가 여기서 돈다', () => {
-    expect(isDevRouteAllowed('preview')).toBe(true)
+  it('🔴 VERCEL_ENV=production 은 NODE_ENV 와 무관하게 차단한다', () => {
+    for (const node of ['production', 'development', 'test', undefined]) {
+      expect(allow('production', node), `NODE_ENV=${node}`).toBe(false)
+    }
   })
 
-  it('로컬(VERCEL_ENV 없음)에서는 허용한다', () => {
-    expect(isDevRouteAllowed(undefined)).toBe(true)
-    expect(isDevRouteAllowed('')).toBe(true)
+  it('🔴 VERCEL_ENV 가 없으면 NODE_ENV 로 fallback 한다', () => {
+    expect(allow(undefined, 'development'), 'NODE_ENV=development').toBe(true)
+    expect(allow(undefined, 'production'), 'NODE_ENV=production').toBe(false)
   })
 
-  it('Vercel development 에서도 허용한다', () => {
-    expect(isDevRouteAllowed('development')).toBe(true)
+  it('🔴 VERCEL_ENV 가 알 수 없는 값이어도 NODE_ENV 로 fallback 한다', () => {
+    expect(allow('staging', 'development')).toBe(true)
+    expect(allow('staging', 'production')).toBe(false)
+    expect(allow('', 'development')).toBe(true)
+    expect(allow('', 'production')).toBe(false)
   })
 
-  it('🔴 알 수 없는 값은 **허용**한다 — fail-open 이 의도다', () => {
-    // fail-closed 로 만들면 VERCEL_ENV 를 못 읽는 순간 로컬 개발이 통째로 막힌다.
-    // 차단해야 하는 대상은 "production 이라고 확인된 경우" 하나뿐이다.
-    expect(isDevRouteAllowed('staging')).toBe(true)
+  it('🔴 둘 다 없거나 모르는 값이면 **차단**한다 — fail-closed 다', () => {
+    // 이전 구현은 fail-open(모르면 허용)이었다. 그러면 VERCEL_ENV 를 못 읽는 production 에서
+    // 그대로 열린다 — 막으려던 상황에서 정확히 실패한다. 허용은 **명시적으로 확인된 경우**만이다.
+    expect(allow(undefined, undefined)).toBe(false)
+    expect(allow(undefined, 'test')).toBe(false)
+    expect(allow('staging', 'staging')).toBe(false)
+  })
+
+  it('환경 행렬 전체', () => {
+    const matrix: Array<[string | undefined, string | undefined, boolean]> = [
+      ['production',  'production',  false],
+      ['production',  'development', false],
+      ['production',  undefined,     false],
+      ['preview',     'production',  true],
+      ['preview',     'development', true],
+      ['development', 'production',  true],
+      ['development', 'development', true],
+      [undefined,     'development', true],
+      [undefined,     'production',  false],
+      [undefined,     'test',        false],
+      [undefined,     undefined,     false],
+      ['staging',     'development', true],
+      ['staging',     'production',  false],
+    ]
+    for (const [v, n, expected] of matrix) {
+      expect(allow(v, n), `VERCEL_ENV=${v} NODE_ENV=${n}`).toBe(expected)
+    }
   })
 })
 
