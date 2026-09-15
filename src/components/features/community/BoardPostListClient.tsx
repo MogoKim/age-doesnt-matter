@@ -37,7 +37,7 @@ function PostListSkeleton() {
           {/* 제목 1줄 */}
           <div className="h-[25px] w-3/4 rounded bg-muted" />
           {/* preview 2줄 */}
-          <div className="h-[48px] w-full rounded bg-muted mt-1.5" />
+          <div className="h-control-desktop w-full rounded bg-muted mt-1.5" />
           {/* 메타(출처·닉네임·시간) */}
           <div className="h-[26px] w-2/3 rounded bg-muted mt-4" />
           {/* 통계(공감·댓글·조회) */}
@@ -156,14 +156,14 @@ export default function BoardPostListClient({
           {q ? (
             <Link
               href={searchResetHref}
-              className="inline-flex items-center justify-center h-[52px] px-6 rounded-xl bg-primary text-white text-body font-bold no-underline hover:bg-primary/90"
+              className="inline-flex items-center justify-center h-control px-6 rounded-xl bg-primary text-white text-body font-bold no-underline hover:bg-primary/90"
             >
               검색 초기화
             </Link>
           ) : (
             <Link
               href={`/community/write?board=${encodeURIComponent(boardSlug)}`}
-              className="inline-flex items-center justify-center h-[52px] px-6 rounded-xl bg-primary text-white text-body font-bold no-underline hover:bg-primary/90"
+              className="inline-flex items-center justify-center h-control px-6 rounded-xl bg-primary text-white text-body font-bold no-underline hover:bg-primary/90"
             >
               ✏️ 글쓰기
             </Link>

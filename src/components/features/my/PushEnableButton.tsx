@@ -88,7 +88,7 @@ export default function PushEnableButton() {
           type="button"
           onClick={handleDisable}
           disabled={busy}
-          className="h-[52px] w-full rounded-xl border border-border bg-background text-[17px] font-semibold text-muted-foreground active:opacity-80 disabled:opacity-50"
+          className="h-control w-full rounded-xl border border-border bg-background text-[17px] font-semibold text-muted-foreground active:opacity-80 disabled:opacity-50"
         >
           {busy ? '끄는 중…' : '🔕 알림 끄기'}
         </button>
@@ -107,7 +107,7 @@ export default function PushEnableButton() {
         type="button"
         onClick={handleEnable}
         disabled={busy || hasSub === null}
-        className="h-[52px] w-full rounded-xl bg-primary text-white text-[17px] font-semibold active:opacity-80 disabled:opacity-50"
+        className="h-control w-full rounded-xl bg-primary text-white text-[17px] font-semibold active:opacity-80 disabled:opacity-50"
       >
         {busy ? '켜는 중…' : '📱 휴대폰 알림 받기'}
       </button>

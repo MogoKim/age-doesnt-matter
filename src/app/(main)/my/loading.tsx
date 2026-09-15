@@ -21,7 +21,7 @@ export default function MyLoading() {
       {/* 메뉴 */}
       <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-3 min-h-[56px] px-6 border-b border-border last:border-b-0">
+          <div key={i} className="flex items-center gap-3 min-h-control-lg px-6 border-b border-border last:border-b-0">
             <div className="h-5 w-5 rounded bg-muted animate-pulse shrink-0" />
             <div className="h-4 w-24 rounded bg-muted animate-pulse flex-1" />
           </div>

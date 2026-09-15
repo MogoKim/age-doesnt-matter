@@ -32,7 +32,7 @@ export default function FooterFontSizeToggle() {
           aria-label={`글씨 ${FONT_SIZE_LABELS[s.key]}`}
           onClick={() => setFontSize(s.key)}
           className={cn(
-            'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full px-2 transition-all',
+            'flex min-h-control-sm min-w-control-sm items-center justify-center rounded-full px-2 transition-all',
             fontSize === s.key ? 'bg-white font-bold text-primary-text shadow-sm' : 'text-muted-foreground hover:bg-white/60'
           )}
         >

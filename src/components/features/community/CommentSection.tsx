@@ -462,7 +462,7 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
         )}
         <div className="flex gap-1">
           <button
-            className={`px-4 py-2 rounded-full text-caption font-bold cursor-pointer min-h-[52px] transition-colors ${
+            className={`px-4 py-2 rounded-full text-caption font-bold cursor-pointer min-h-control transition-colors ${
               sort === 'oldest'
                 ? 'bg-primary/5 border border-primary text-primary-text'
                 : 'bg-none border border-transparent text-foreground hover:bg-background'
@@ -472,7 +472,7 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
             등록순
           </button>
           <button
-            className={`px-4 py-2 rounded-full text-caption font-bold cursor-pointer min-h-[52px] transition-colors ${
+            className={`px-4 py-2 rounded-full text-caption font-bold cursor-pointer min-h-control transition-colors ${
               sort === 'likes'
                 ? 'bg-primary/5 border border-primary text-primary-text'
                 : 'bg-none border border-transparent text-foreground hover:bg-background'
@@ -554,7 +554,7 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
                   onClick={requestClose}
                   aria-label="댓글 입력 닫기"
                   data-testid="comment-compose-close"
-                  className="flex min-h-[52px] min-w-[52px] items-center justify-center rounded-full text-muted-foreground transition-colors active:bg-muted"
+                  className="flex min-h-control min-w-control items-center justify-center rounded-full text-muted-foreground transition-colors active:bg-muted"
                 >
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
                     <path d="M18 6 6 18M6 6l12 12" />
@@ -634,7 +634,7 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
                     type="button"
                     onClick={closeCompose}
                     data-testid="comment-close-confirm-close"
-                    className="min-h-[52px] flex-1 rounded-xl border border-border bg-card text-caption font-bold text-muted-foreground transition-colors active:bg-muted"
+                    className="min-h-control flex-1 rounded-xl border border-border bg-card text-caption font-bold text-muted-foreground transition-colors active:bg-muted"
                   >
                     닫기
                   </button>
@@ -643,7 +643,7 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
                     type="button"
                     onClick={keepWriting}
                     data-testid="comment-close-confirm-keep"
-                    className="min-h-[52px] flex-1 rounded-xl bg-primary text-caption font-bold text-white transition-colors hover:bg-primary/90"
+                    className="min-h-control flex-1 rounded-xl bg-primary text-caption font-bold text-white transition-colors hover:bg-primary/90"
                   >
                     계속 쓰기
                   </button>

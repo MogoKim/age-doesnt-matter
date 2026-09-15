@@ -305,7 +305,7 @@ export default async function AboutPage() {
           {isLoggedIn ? (
             <Link
               href="/community/stories"
-              className="inline-flex items-center justify-center w-full h-[52px] bg-primary text-white rounded-xl text-body font-bold no-underline transition-colors hover:bg-primary/90 lg:w-auto lg:px-10"
+              className="inline-flex items-center justify-center w-full h-control bg-primary text-white rounded-xl text-body font-bold no-underline transition-colors hover:bg-primary/90 lg:w-auto lg:px-10"
             >
               커뮤니티 바로 가기
             </Link>
@@ -313,8 +313,8 @@ export default async function AboutPage() {
             <KakaoSignupButton
               callbackUrl="/community/stories"
               gtmFrom="about_bottom_cta"
-              className="inline-flex items-center justify-center gap-2 w-full h-[52px] rounded-xl text-body font-bold transition-opacity hover:opacity-90 lg:w-auto lg:px-10"
-              style={{ background: '#FEE500', color: '#191919' }}
+              className="inline-flex items-center justify-center gap-2 w-full h-control rounded-xl text-body font-bold transition-opacity hover:opacity-90 lg:w-auto lg:px-10"
+              style={{ background: 'var(--kakao-bg)', color: 'var(--kakao-text)' }}
             >
               <span className="text-[20px]">💬</span>
               카카오로 1초 가입

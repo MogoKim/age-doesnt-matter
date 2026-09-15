@@ -76,7 +76,6 @@ function bannerTelemetryProps(input: {
 }
 
 // ──────────────────────────────────────────────
-// 상수
 // ──────────────────────────────────────────────
 const MAX_SHOWS = 4
 
@@ -140,7 +139,6 @@ function incrementCount(): void {
 }
 
 // ──────────────────────────────────────────────
-// 상수
 // ──────────────────────────────────────────────
 // auto-trigger 카운트다운 초
 const AUTO_TRIGGER_COUNTDOWN_S = 5
@@ -152,7 +150,6 @@ const SESSION_AUTO_TRIGGERED = 'signup_auto_triggered'
 const INAPP_UTM_SOURCES = ['kakao-android', 'kakao-ios', 'naver-inapp', 'google-inapp'] as const
 
 // ──────────────────────────────────────────────
-// 컴포넌트
 // ──────────────────────────────────────────────
 export function SignupPromptBanner() {
   const pathname = usePathname()
@@ -503,7 +500,7 @@ export function SignupPromptBanner() {
                 data-testid="signup-auto-trigger-cta"
                 onClick={handleAutoTriggerNow}
                 disabled={isStarting}
-                className="mt-3 flex min-h-[52px] w-full items-center justify-center rounded-xl bg-[#FEE500] px-4 py-2 text-center text-[15px] font-bold leading-tight break-keep text-[#191919] transition-opacity disabled:opacity-70"
+                className="mt-3 flex min-h-control w-full items-center justify-center rounded-xl bg-[var(--kakao-bg)] px-4 py-2 text-center text-[15px] font-bold leading-tight break-keep text-[var(--kakao-text)] transition-opacity disabled:opacity-70"
               >
                 {isStarting ? '카카오로 이동 중...' : '💛 지금 바로 시작하기'}
               </button>
@@ -673,7 +670,7 @@ export function SignupPromptBanner() {
 
               {/* 앱 카드 — 홈 화면 아이콘 은유. 코랄은 아주 옅게(진한 블록은 광고로 읽힌다) */}
               <div className="mt-3 flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary/5 p-3">
-                <span className="flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-[13px] border border-primary/20 bg-white">
+                <span className="flex h-control w-control shrink-0 items-center justify-center overflow-hidden rounded-[13px] border border-primary/20 bg-white">
                   <Image src="/logo-symbol.png" alt="" width={52} height={52} className="h-full w-full object-contain" />
                 </span>
                 <span className="min-w-0">
@@ -685,7 +682,7 @@ export function SignupPromptBanner() {
               <button
                 data-testid="android-conversion-app-cta"
                 onClick={handleAppCardClick}
-                className="mt-3 flex min-h-[52px] w-full items-center justify-center rounded-xl bg-primary px-4 py-2 text-center text-[15px] font-bold leading-tight break-keep text-white transition-opacity hover:opacity-90"
+                className="mt-3 flex min-h-control w-full items-center justify-center rounded-xl bg-primary px-4 py-2 text-center text-[15px] font-bold leading-tight break-keep text-white transition-opacity hover:opacity-90"
               >
                 {c.cta}
               </button>
@@ -746,7 +743,7 @@ export function SignupPromptBanner() {
               data-testid="signup-banner-cta"
               onClick={handleCTAClick}
               disabled={isStarting}
-              className="mt-3 flex min-h-[52px] w-full items-center justify-center rounded-xl bg-[#FEE500] px-4 py-2 text-center text-[15px] font-bold leading-tight break-keep text-[#191919] transition-opacity disabled:opacity-70"
+              className="mt-3 flex min-h-control w-full items-center justify-center rounded-xl bg-[var(--kakao-bg)] px-4 py-2 text-center text-[15px] font-bold leading-tight break-keep text-[var(--kakao-text)] transition-opacity disabled:opacity-70"
             >
               {isStarting ? '카카오로 이동 중...' : ctaLabel}
             </button>

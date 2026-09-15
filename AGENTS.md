@@ -114,3 +114,13 @@
 - 무엇을 했는지, 어디에 기록/변경했는지, 앞으로 무엇이 달라지는지 간단히 보고한다.
 - 메인 서비스 변경 시 어드민 영향이 있는지 한 줄로 점검한다.
 - 외부 수동 작업이 필요하면 완료 보고에서 바로 명확히 요청한다.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

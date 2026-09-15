@@ -116,14 +116,14 @@ export default function VoteWidget({ voteEventId, initialVote }: VoteWidgetProps
             <button
               onClick={() => cast('A')}
               disabled={pending}
-              className="w-full min-h-[56px] rounded-xl border border-[#E3E7EC] bg-white text-[18px] font-bold text-foreground hover:border-primary hover:text-primary-text active:bg-primary/5 transition-colors disabled:opacity-60"
+              className="w-full min-h-control-lg rounded-xl border border-[#E3E7EC] bg-white text-[18px] font-bold text-foreground hover:border-primary hover:text-primary-text active:bg-primary/5 transition-colors disabled:opacity-60"
             >
               {optionLabel(vote.optionA)}
             </button>
             <button
               onClick={() => cast('B')}
               disabled={pending}
-              className="w-full min-h-[56px] rounded-xl border border-[#E3E7EC] bg-white text-[18px] font-bold text-foreground hover:border-primary hover:text-primary-text active:bg-primary/5 transition-colors disabled:opacity-60"
+              className="w-full min-h-control-lg rounded-xl border border-[#E3E7EC] bg-white text-[18px] font-bold text-foreground hover:border-primary hover:text-primary-text active:bg-primary/5 transition-colors disabled:opacity-60"
             >
               {optionLabel(vote.optionB)}
             </button>
@@ -146,7 +146,7 @@ export default function VoteWidget({ voteEventId, initialVote }: VoteWidgetProps
           </p>
           <button
             onClick={scrollToComment}
-            className="mt-4 w-full min-h-[52px] rounded-xl bg-primary text-white text-[17px] font-bold hover:bg-primary/90 transition-colors"
+            className="mt-4 w-full min-h-control rounded-xl bg-primary text-white text-[17px] font-bold hover:bg-primary/90 transition-colors"
           >
             {closed ? '결과 보고 한마디 남기기' : voted ? campPhrase(myOption, '한마디') : '한마디 남기기'}
           </button>

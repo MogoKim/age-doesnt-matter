@@ -21,7 +21,7 @@ export default function HumorSection({ posts }: Props) {
         </h2>
         <HomeCardLink
           href="/community/humor"
-          className="text-caption text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[52px] min-w-[52px] hover:text-primary-text"
+          className="text-caption text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-control min-w-control hover:text-primary-text"
           section="humor-hot"
           position={-1}
           contentId=""
@@ -35,7 +35,7 @@ export default function HumorSection({ posts }: Props) {
           <li key={post.id} className="group">
             <HomeCardLink
               href={buildPostPath(post)}
-              className="group block py-3.5 border-b border-border/60 no-underline text-inherit min-h-[52px] motion-safe:transition-[border-color] motion-safe:duration-[250ms] motion-reduce:transition-none [@media(hover:hover)]:hover:border-primary active:border-primary"
+              className="group block py-3.5 border-b border-border/60 no-underline text-inherit min-h-control motion-safe:transition-[border-color] motion-safe:duration-[250ms] motion-reduce:transition-none [@media(hover:hover)]:hover:border-primary active:border-primary"
               section="humor-hot"
               position={index}
               contentId={post.id}

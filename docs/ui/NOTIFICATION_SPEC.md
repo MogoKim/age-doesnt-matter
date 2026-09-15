@@ -31,8 +31,12 @@ model Notification {
 |-----|--------|------|
 | `/api/notifications` | GET | 알림 목록 조회 (최근 50개) |
 | `/api/notifications/unread-count` | GET | 미읽음 카운트 |
-| Server Action: `markNotificationRead` | — | 개별 읽음 처리 |
-| Server Action: `markAllNotificationsRead` | — | 전체 읽음 처리 |
+| `/api/notifications/[id]/click` | POST | 개별 알림 클릭·읽음 처리 |
+| `/api/notifications/read-all` | POST | 전체 읽음 처리 |
+
+> 🔴 **2026-09-15 정정**: 예전에 여기 적혀 있던 Server Action `markNotificationRead` ·
+> `markAllNotificationsRead`(`src/lib/actions/notifications.ts`)는 **소비처가 0이라 제거**됐다.
+> 실제 동작은 위 두 Route Handler 가 한다 — 목록 UI(`NotificationList`)가 이들을 호출한다.
 
 ## 4. UI 구현
 

@@ -92,7 +92,7 @@ export default function GateOnboardingSlides({ onSignup, onEscape, starting, onB
           type="button"
           onClick={onBack}
           aria-label="뒤로가기"
-          className="absolute left-2 top-[max(10px,env(safe-area-inset-top))] z-10 flex min-h-[52px] items-center gap-1 px-2 text-foreground transition-colors hover:text-primary-text"
+          className="absolute left-2 top-[max(10px,env(safe-area-inset-top))] z-10 flex min-h-control items-center gap-1 px-2 text-foreground transition-colors hover:text-primary-text"
         >
           <span className="text-[26px] leading-none" aria-hidden="true">‹</span>
           <span className="text-[18px] font-bold break-keep">뒤로가기</span>
@@ -156,7 +156,7 @@ export default function GateOnboardingSlides({ onSignup, onEscape, starting, onB
             aria-label={`${i + 1}번째 슬라이드로 이동`}
             aria-current={i === index}
             onClick={() => goTo(i)}
-            className="flex min-h-[36px] items-center px-1"
+            className="flex min-h-control-compact items-center px-1"
           >
             <span
               className={`block h-2 rounded-full transition-all duration-300 ${
@@ -182,7 +182,7 @@ export default function GateOnboardingSlides({ onSignup, onEscape, starting, onB
           disabled={starting}
           aria-busy={starting}
           className="flex min-h-[60px] w-full flex-wrap items-center justify-center gap-2 rounded-xl px-4 py-2 text-center font-bold leading-tight break-keep transition-all hover:brightness-95 disabled:opacity-70"
-          style={{ background: '#FEE500', color: '#191600', boxShadow: '0 2px 8px rgba(254,229,0,0.35)' }}
+          style={{ background: 'var(--kakao-bg)', color: '#191600', boxShadow: '0 2px 8px rgba(254,229,0,0.35)' }}
         >
           <svg className="shrink-0" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
             <path
@@ -197,7 +197,7 @@ export default function GateOnboardingSlides({ onSignup, onEscape, starting, onB
           <button
             type="button"
             onClick={onEscape}
-            className="min-h-[44px] text-[15px] text-muted-foreground underline underline-offset-2"
+            className="min-h-control-sm text-[15px] text-muted-foreground underline underline-offset-2"
           >
             먼저 둘러볼게요
           </button>

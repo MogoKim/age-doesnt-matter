@@ -47,7 +47,7 @@ export default function JobSearchBar({ defaultValue }: JobSearchBarProps) {
         role="search"
         aria-label="일자리 검색"
         onSubmit={handleSubmit}
-        className="flex min-h-[52px] items-center gap-2 rounded-xl border border-border bg-card px-4 py-1 transition-colors focus-within:border-primary"
+        className="flex min-h-control items-center gap-2 rounded-xl border border-border bg-card px-4 py-1 transition-colors focus-within:border-primary"
       >
         <input
           type="search"
@@ -55,12 +55,12 @@ export default function JobSearchBar({ defaultValue }: JobSearchBarProps) {
           onChange={(e) => { setQuery(e.target.value); setError('') }}
           placeholder="직종, 지역, 급여 조건 검색"
           aria-label="일자리 검색어"
-          className="flex-1 border-none bg-transparent outline-none text-body placeholder:text-muted-foreground min-h-[48px]"
+          className="flex-1 border-none bg-transparent outline-none text-body placeholder:text-muted-foreground min-h-control-desktop"
         />
         <button
           type="submit"
           aria-label="검색"
-          className="shrink-0 flex items-center justify-center w-[52px] h-[52px] -mr-4 rounded-r-xl text-muted-foreground hover:text-primary-text transition-colors"
+          className="shrink-0 flex items-center justify-center w-control h-control -mr-4 rounded-r-xl text-muted-foreground hover:text-primary-text transition-colors"
         >
           <IconSearch size={20} />
         </button>

@@ -92,7 +92,7 @@ export default function NextPostsInline({
               rank={rank}
               reason={reason}
               sourcePostId={postId}
-              className="flex items-center gap-2.5 py-3 no-underline text-inherit min-h-[52px] hover:bg-primary/5 transition-colors -mx-2 px-2 rounded-lg"
+              className="flex items-center gap-2.5 py-3 no-underline text-inherit min-h-control hover:bg-primary/5 transition-colors -mx-2 px-2 rounded-lg"
             >
               <span className="text-body font-bold text-primary shrink-0">{idx + 1}</span>
               <span className="flex-1 min-w-0">

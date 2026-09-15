@@ -116,12 +116,16 @@ Google AdSense 및 쿠팡 파트너스 기반의 다채널 광고 노출 시스�
 - `popupId` DB 존재 여부 검증 후 카운터 증가
 - `GET` 요청 시 `path` 파라미터로 경로 필터링된 활성 팝업 목록 반환
 
-### CPS 클릭 추적 (`CoupangCPS` + `CpsClickTracker`)
+### CPS 클릭 추적 (`CpsClickTracker`)
+
+> 🔴 **2026-09-15 정정**: `CoupangCPS` 는 **제거**됐다(소비처 0). `CpsClickTracker` 는 유지된다.
 - 게시글에 연결된 CPS 링크 최대 3건 최신순 표시
 - 클릭 시 GTM 이벤트(`gtmCpsClick`) 전송 (서버 측 카운터 증가 없음)
 - 별점은 `Math.round(rating)` 기준 ★/☆ 문자로 렌더링
 
-### AdBanner 클릭 추적 (`AdClickTracker` + `/api/ad-click`)
+### AdBanner 클릭 추적 (`DetailHeaderBannerClient`·`ListBannerClient` + `/api/ad-click`)
+
+> 🔴 **2026-09-15 정정**: `AdClickTracker` 는 **제거**됐다(중복 구현). API 는 그대로다.
 - 클릭 시 GTM 이벤트(`gtmAdClick`) 전송 + `/api/ad-click` 비동기 호출 (실패 무시)
 - API에서 `adId`로 `AdBanner.clicks +1`
 
@@ -137,6 +141,6 @@ Google AdSense 및 쿠팡 파트너스 기반의 다채널 광고 노출 시스�
 |----------|------|------|
 | `AdSenseUnit` | Client | Google AdSense `<ins>` 태그 동적 생성·관리; unfilled 시 쿠팡 폴백 |
 | `AdSlot` | Server | DB 기반 AdBanner 조회 및 adType별 렌더링 |
-| `AdClickTracker` | Client | 자식 요소 클릭 시 GTM 이벤트 + `/api/ad-click` 호출 래퍼 |
+| ~~`AdClickTracker`~~ | — | 🔴 **2026-09-15 제거** — 같은 일을 `DetailHeaderBannerClient`·`ListBannerClient` 가 직접 한다 |
 | `CoupangBanner` | Server | 쿠팡 카테고리 배너 일별 로테이션 (320×100, 300×100) |
 | `CoupangCategoryB

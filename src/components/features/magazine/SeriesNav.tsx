@@ -48,7 +48,7 @@ export default async function SeriesNav({ seriesId, seriesTitle, seriesOrder, se
         {prev ? (
           <Link
             href={buildPostPath({ id: prev.id, boardType: 'MAGAZINE', slug: prev.slug })}
-            className="flex-1 flex flex-col gap-1 rounded-lg bg-background border border-border p-3 no-underline min-h-[52px] transition-colors hover:border-primary/40 hover:bg-primary/5"
+            className="flex-1 flex flex-col gap-1 rounded-lg bg-background border border-border p-3 no-underline min-h-control transition-colors hover:border-primary/40 hover:bg-primary/5"
           >
             <span className="text-[17px] text-muted-foreground">← 이전 편</span>
             <span className="text-[17px] font-medium text-foreground line-clamp-1">{prev.title}</span>
@@ -60,7 +60,7 @@ export default async function SeriesNav({ seriesId, seriesTitle, seriesOrder, se
         {next ? (
           <Link
             href={buildPostPath({ id: next.id, boardType: 'MAGAZINE', slug: next.slug })}
-            className="flex-1 flex flex-col gap-1 rounded-lg bg-background border border-border p-3 no-underline min-h-[52px] text-right transition-colors hover:border-primary/40 hover:bg-primary/5"
+            className="flex-1 flex flex-col gap-1 rounded-lg bg-background border border-border p-3 no-underline min-h-control text-right transition-colors hover:border-primary/40 hover:bg-primary/5"
           >
             <span className="text-[17px] text-muted-foreground">다음 편 →</span>
             <span className="text-[17px] font-medium text-foreground line-clamp-1">{next.title}</span>

@@ -1,5 +1,8 @@
 # Handoff — F17 네이버 유입자 락인 + 글상세 정리 (2026-06-12)
 
+> 🕘 **역사 문서 — 작성 시점(2026-06-12) 기록이며 현재 구현이 아니다.** 이후 변경은 `docs/operations/` 의 실행 기록을 본다.
+>  (2026-09-15 System Foundation 2.0 에서 여기 적힌 일부 모듈이 제거됐다.)
+
 > 이 세션에서 한 작업 전부 + 진행 중/미결 항목. 다음 세션이 컨텍스트 없이 이어받기 위한 문서.
 > 단일 진실: 코드 + `docs/features/F17-naver-lockin.md` + `.claude/plans/lovely-seeking-moth.md`
 

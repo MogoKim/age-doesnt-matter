@@ -185,7 +185,7 @@ function CloseButton({ onClose, className }: { onClose: () => void; className?: 
       onClick={onClose}
       aria-label="닫기"
       className={cn(
-        'flex items-center justify-center w-[52px] h-[52px] rounded-full bg-black/50 text-white shadow-md hover:bg-black/70 transition-colors [-webkit-tap-highlight-color:transparent]',
+        'flex items-center justify-center w-control h-control rounded-full bg-black/50 text-white shadow-md hover:bg-black/70 transition-colors [-webkit-tap-highlight-color:transparent]',
         className,
       )}
     >
@@ -318,7 +318,7 @@ function PopupFooter({ popup, onClose, onHide }: { popup: PopupData; onClose: ()
         <button
           type="button"
           onClick={onHide}
-          className="text-caption text-muted-foreground min-h-[52px] px-2"
+          className="text-caption text-muted-foreground min-h-control px-2"
         >
           {hideLabel}
         </button>
@@ -328,7 +328,7 @@ function PopupFooter({ popup, onClose, onHide }: { popup: PopupData; onClose: ()
       <button
         type="button"
         onClick={onClose}
-        className="min-h-[52px] px-6 bg-primary text-white rounded-xl font-bold text-body transition-colors hover:bg-primary/90"
+        className="min-h-control px-6 bg-primary text-white rounded-xl font-bold text-body transition-colors hover:bg-primary/90"
       >
         {popup.buttonText ?? '확인'}
       </button>

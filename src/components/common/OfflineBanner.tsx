@@ -22,7 +22,7 @@ export default function OfflineBanner() {
   if (!isOffline) return null
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-[300] bg-[#FFC107] text-[#191919] text-center py-3 px-4 text-sm font-bold shadow-md">
+    <div className="fixed top-0 left-0 right-0 z-[300] bg-[#FFC107] text-[var(--kakao-text)] text-center py-3 px-4 text-sm font-bold shadow-md">
       인터넷 연결을 확인해주세요
     </div>
   )

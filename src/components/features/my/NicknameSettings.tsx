@@ -103,7 +103,7 @@ export default function NicknameSettings({ currentNickname, canChange, lastChang
             autoCorrect="off"
             spellCheck={false}
             className={cn(
-              'w-full h-[52px] px-3 md:px-4 pr-10 border rounded-xl text-body text-foreground bg-background outline-none transition-colors disabled:bg-muted disabled:text-muted-foreground lg:h-12',
+              'w-full h-control px-3 md:px-4 pr-10 border rounded-xl text-body text-foreground bg-background outline-none transition-colors disabled:bg-muted disabled:text-muted-foreground lg:h-control-desktop',
               nicknameStatus === 'valid'
                 ? 'border-success focus:border-success'
                 : nicknameStatus === 'error'
@@ -122,7 +122,7 @@ export default function NicknameSettings({ currentNickname, canChange, lastChang
           type="button"
           onClick={handleSave}
           disabled={saveDisabled}
-          className="shrink-0 whitespace-nowrap h-[52px] px-5 bg-primary text-white rounded-xl text-body font-bold transition-colors hover:bg-primary/90 disabled:bg-border disabled:cursor-not-allowed lg:h-12 lg:px-5"
+          className="shrink-0 whitespace-nowrap h-control px-5 bg-primary text-white rounded-xl text-body font-bold transition-colors hover:bg-primary/90 disabled:bg-border disabled:cursor-not-allowed lg:h-control-desktop lg:px-5"
         >
           {isPending ? '변경 중...' : '변경'}
         </button>

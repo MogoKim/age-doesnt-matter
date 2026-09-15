@@ -57,7 +57,7 @@ export default function CommentInput({ postId, parentId, onCancel, placeholder, 
       )}
       <div className="flex items-end gap-2 p-4 bg-card border border-border rounded-2xl mt-2 shadow-sm max-md:sticky max-md:bottom-[72px] max-md:z-50 max-md:rounded-none max-md:border-x-0 max-md:border-b-0 max-md:shadow-[0_-2px_10px_rgba(0,0,0,0.08)]">
         <AutoResizeTextarea
-          className="flex-1 min-h-[52px] px-4 py-2.5 border border-border rounded-xl text-body text-foreground bg-background outline-none transition-colors focus:border-primary focus:shadow-[0_0_0_3px_rgba(255,111,97,0.1)] placeholder:text-muted-foreground"
+          className="flex-1 min-h-control px-4 py-2.5 border border-border rounded-xl text-body text-foreground bg-background outline-none transition-colors focus:border-primary focus:shadow-[0_0_0_3px_rgba(255,111,97,0.1)] placeholder:text-muted-foreground"
           placeholder={placeholder || '댓글을 남겨주세요...'}
           value={value}
           onFocus={funnel.onInputFocus}
@@ -73,7 +73,7 @@ export default function CommentInput({ postId, parentId, onCancel, placeholder, 
         <div className="flex gap-1.5">
           {onCancel && (
             <button
-              className="min-h-[52px] min-w-[52px] px-3 py-2.5 bg-card text-muted-foreground border border-border rounded-xl text-caption font-bold cursor-pointer transition-colors hover:text-foreground"
+              className="min-h-control min-w-control px-3 py-2.5 bg-card text-muted-foreground border border-border rounded-xl text-caption font-bold cursor-pointer transition-colors hover:text-foreground"
               onClick={onCancel}
               type="button"
             >
@@ -81,7 +81,7 @@ export default function CommentInput({ postId, parentId, onCancel, placeholder, 
             </button>
           )}
           <button
-            className="min-h-[52px] min-w-[72px] px-4 py-2.5 bg-primary text-white border-none rounded-xl text-caption font-bold cursor-pointer transition-colors whitespace-nowrap hover:bg-primary/90 hover:shadow-[0_2px_8px_rgba(255,111,97,0.3)] disabled:bg-border disabled:cursor-not-allowed disabled:shadow-none"
+            className="min-h-control min-w-[72px] px-4 py-2.5 bg-primary text-white border-none rounded-xl text-caption font-bold cursor-pointer transition-colors whitespace-nowrap hover:bg-primary/90 hover:shadow-[0_2px_8px_rgba(255,111,97,0.3)] disabled:bg-border disabled:cursor-not-allowed disabled:shadow-none"
             disabled={!value.trim() || isPending}
             onClick={handleSubmit}
           >

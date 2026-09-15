@@ -66,7 +66,7 @@ export default function CategorySearchBar() {
             aria-label="검색 범위"
             value={field}
             onChange={(e) => setField(e.target.value as SearchField)}
-            className="h-[52px] appearance-none rounded-xl border border-border bg-background pl-3.5 pr-9 text-base font-medium text-foreground outline-none transition-colors focus:border-primary/60"
+            className="h-control appearance-none rounded-xl border border-border bg-background pl-3.5 pr-9 text-base font-medium text-foreground outline-none transition-colors focus:border-primary/60"
           >
             {FIELD_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -88,7 +88,7 @@ export default function CategorySearchBar() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="검색어"
-            className="h-[52px] w-full min-w-0 rounded-xl border border-border bg-background pl-4 pr-11 text-base text-foreground outline-none transition-colors placeholder:text-foreground/50 focus:border-primary/60"
+            className="h-control w-full min-w-0 rounded-xl border border-border bg-background pl-4 pr-11 text-base text-foreground outline-none transition-colors placeholder:text-foreground/50 focus:border-primary/60"
           />
           {currentQ && (
             <button
@@ -108,7 +108,7 @@ export default function CategorySearchBar() {
         <button
           type="submit"
           aria-label="검색"
-          className="flex h-[52px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl bg-primary px-4 text-base font-bold text-white transition-colors hover:bg-primary/90"
+          className="flex h-control shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl bg-primary px-4 text-base font-bold text-white transition-colors hover:bg-primary/90"
         >
           <svg className="h-[19px] w-[19px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.4}>
             <circle cx="11" cy="11" r="7" />

@@ -67,7 +67,7 @@ export default function ReportModal({ targetId, targetType, onClose }: ReportMod
               key={opt.value}
               type="button"
               onClick={() => setReason(opt.value)}
-              className={`w-full text-left px-4 py-3 rounded-xl border text-sm font-medium transition-all min-h-[52px] ${
+              className={`w-full text-left px-4 py-3 rounded-xl border text-sm font-medium transition-all min-h-control ${
                 reason === opt.value
                   ? 'border-primary bg-primary/5 text-primary-text'
                   : 'border-border bg-background text-foreground hover:border-primary/30'
@@ -99,7 +99,7 @@ export default function ReportModal({ targetId, targetType, onClose }: ReportMod
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 min-h-[52px] px-4 py-3 bg-card text-muted-foreground border border-border rounded-xl text-sm font-bold cursor-pointer transition-all hover:text-foreground"
+            className="flex-1 min-h-control px-4 py-3 bg-card text-muted-foreground border border-border rounded-xl text-sm font-bold cursor-pointer transition-all hover:text-foreground"
           >
             취소
           </button>
@@ -107,7 +107,7 @@ export default function ReportModal({ targetId, targetType, onClose }: ReportMod
             type="button"
             onClick={handleSubmit}
             disabled={!reason}
-            className="flex-1 min-h-[52px] px-4 py-3 bg-destructive text-white border-none rounded-xl text-sm font-bold cursor-pointer transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 min-h-control px-4 py-3 bg-destructive text-white border-none rounded-xl text-sm font-bold cursor-pointer transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             신고하기
           </button>

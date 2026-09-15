@@ -74,7 +74,7 @@ export default function NotificationBadge({ initialCount = 0 }: NotificationBadg
   return (
     <Link
       href="/my/notifications"
-      className="icon-hover relative flex items-center justify-center w-[52px] h-[52px] rounded-xl text-muted-foreground [-webkit-tap-highlight-color:transparent] hover:bg-primary/5 hover:text-primary-text"
+      className="icon-hover relative flex items-center justify-center w-control h-control rounded-xl text-muted-foreground [-webkit-tap-highlight-color:transparent] hover:bg-primary/5 hover:text-primary-text"
       aria-label={count > 0 ? `알림 ${count}개` : '알림'}
     >
       <IconBell size={22} />

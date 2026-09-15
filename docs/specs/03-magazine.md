@@ -122,7 +122,7 @@
 | `CommentSection` | community/CommentSection | 댓글 목록 + 입력 |
 | `GTMEventOnMount` | common/GTMEventOnMount | 클라이언트 측 GTM 이벤트 트리거 |
 | `AdSenseUnit` | ad/AdSenseUnit | 인아티클 Google AdSense 광고 (`IN_ARTICLE` 슬롯) |
-| `CoupangSearchWidget` | ad/CoupangSearchWidget | 쿠팡 검색형 위젯 광고 |
+| ~~`CoupangSearchWidget`~~ | — | 🔴 **2026-09-15 제거** (소비처 0). 매거진 상세의 쿠팡 노출은 `CoupangBanner` 계열이 담당한다 |
 | `FeedAd` | ad/FeedAd | 피처 카드 하단 피드 광고 |
 | `CoupangBanner` | ad/CoupangBanner | 목록 8번째 카드 이후 쿠팡 배너 (`mobile` preset) |
 | `MagazineLoading` | `magazine/loading.tsx` | 목록 Suspense 스켈레톤 (4개 카드 pulse) |
@@ -138,4 +138,4 @@
 | **`getMagazineList` 무한 스크롤 미구현** | API는 `cursor` 파라미터를 지원하나, 목록 페이지(`/magazine`)는 `limit: 20` 고정으로 단일 페이지 렌더링만 수행; 클라이언트 측 무한 스크롤·페이지네이션 UI 없음 |
 | **`seoTitle` / `seoDescription` 필드 미활용** | DB 모델에 존재하지만 `generateMetadata`에서 사용하지 않고 `post.preview`(summary)를 직접 사용 |
 | **조회수(`viewCount`) 증가 로직 미확인** | 상세 페이지 코드 내에 viewCount 증가 API 호출 없음 (`getPostDetail` 내부 처리 여부 불명) |
-| **`CoupangSearchWidget` 상세 페이지 배치 미확인** | import는 존재하나 코드 잘림으로 실제 렌더링 위치 불명
+| ~~**`CoupangSearchWidget` 상세 페이지 배치 미확인**~~ | 🔴 **2026-09-15 해소** — 실제로 어디서도 import 되지 않았고 컴포넌트를 제거했다

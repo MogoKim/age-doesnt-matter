@@ -74,14 +74,14 @@ export default function GuestPasswordModal({
           maxLength={8}
           onKeyDown={(e) => { if (e.key === 'Enter' && !isPending) handleConfirm() }}
           autoFocus
-          className="w-full px-4 py-3 min-h-[52px] border border-border rounded-xl text-body text-foreground bg-background outline-none focus:border-primary transition-colors mb-4"
+          className="w-full px-4 py-3 min-h-control border border-border rounded-xl text-body text-foreground bg-background outline-none focus:border-primary transition-colors mb-4"
         />
 
         <div className="flex gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 flex items-center justify-center min-h-[52px] px-4 border border-border rounded-xl text-caption font-bold text-muted-foreground hover:text-foreground transition-colors"
+            className="flex-1 flex items-center justify-center min-h-control px-4 border border-border rounded-xl text-caption font-bold text-muted-foreground hover:text-foreground transition-colors"
           >
             취소
           </button>
@@ -89,7 +89,7 @@ export default function GuestPasswordModal({
             type="button"
             onClick={handleConfirm}
             disabled={isPending || !password}
-            className={`flex-1 flex items-center justify-center min-h-[52px] px-4 rounded-xl text-caption font-bold text-white transition-colors disabled:bg-border disabled:cursor-not-allowed ${
+            className={`flex-1 flex items-center justify-center min-h-control px-4 rounded-xl text-caption font-bold text-white transition-colors disabled:bg-border disabled:cursor-not-allowed ${
               mode === 'delete'
                 ? 'bg-destructive hover:bg-red-600'
                 : 'bg-primary hover:bg-primary/90'

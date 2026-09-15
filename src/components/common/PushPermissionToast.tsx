@@ -131,13 +131,13 @@ export function PushPermissionToast() {
         <div className="flex flex-col gap-2 mt-0.5">
           <button
             onClick={handleAllow}
-            className="h-[52px] w-full rounded-xl bg-primary text-white text-[17px] font-semibold active:opacity-80"
+            className="h-control w-full rounded-xl bg-primary text-white text-[17px] font-semibold active:opacity-80"
           >
             받을게요
           </button>
           <button
             onClick={handleLater}
-            className="h-[44px] w-full text-[15px] text-muted-foreground active:opacity-70"
+            className="h-control-sm w-full text-[15px] text-muted-foreground active:opacity-70"
           >
             나중에
           </button>

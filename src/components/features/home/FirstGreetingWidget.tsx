@@ -107,7 +107,7 @@ export default function FirstGreetingWidget() {
         onClick={handleSubmit}
         disabled={submitting || text.trim().length < MIN_LEN}
         className={cn(
-          'mt-3 h-[52px] w-full rounded-xl bg-primary text-[18px] font-bold text-white transition-opacity',
+          'mt-3 h-control w-full rounded-xl bg-primary text-[18px] font-bold text-white transition-opacity',
           (submitting || text.trim().length < MIN_LEN) && 'opacity-50',
         )}
       >

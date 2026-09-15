@@ -226,7 +226,7 @@ export default async function PostDetailPage({ params }: PageProps) {
       {/* 뒤로가기 */}
       <div className="flex items-center justify-between">
         {/* lg:hidden: 데스크탑은 Breadcrumbs의 breadcrumb nav가 내비게이션 담당 */}
-        <Link href={backHref} className="lg:hidden inline-flex items-center gap-1 text-[17px] font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-colors hover:text-primary-text hover:bg-primary/5">
+        <Link href={backHref} className="lg:hidden inline-flex items-center gap-1 text-[17px] font-medium text-muted-foreground no-underline min-h-control mb-4 px-2 py-1 rounded-lg transition-colors hover:text-primary-text hover:bg-primary/5">
           ← {backLabel}
         </Link>
         <PostOwnerActions authorId={post.author.id} boardSlug={boardSlug} postId={resolvedId} />

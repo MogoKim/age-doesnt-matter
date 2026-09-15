@@ -38,7 +38,7 @@ function HeroChoice({
       disabled={disabled}
       aria-label={`${label}에 투표`}
       className={cn(
-        'flex-1 min-h-[52px] rounded-xl font-bold text-[16px] lg:text-[18px] transition-colors duration-150 disabled:opacity-80',
+        'flex-1 min-h-control rounded-xl font-bold text-[16px] lg:text-[18px] transition-colors duration-150 disabled:opacity-80',
         active ? 'bg-primary/90 text-white' : 'bg-white text-foreground',
       )}
     >
@@ -109,7 +109,7 @@ export function VoteHeroSlideView({
   return (
     <div
       className="absolute inset-0 text-white"
-      style={{ background: 'linear-gradient(135deg, #FF6F61 0%, #FF8E7A 100%)' }}
+      style={{ background: 'linear-gradient(135deg, hsl(var(--primary)) 0%, #FF8E7A 100%)' }}
     >
       {/* 배경 전체 클릭 → 투표 없이 게시글로 이동 (버튼은 위에서 pointer-events로 가로챔) */}
       <Link href={postUrl} prefetch={false} aria-label="오늘의 투표 게시글 보기" className="absolute inset-0 z-0" />
