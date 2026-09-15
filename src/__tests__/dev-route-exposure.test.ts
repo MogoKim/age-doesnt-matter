@@ -138,7 +138,7 @@ describe('🔴 noindex 를 접근 통제로 쓰지 않는다', () => {
     for (const bad of ['robots', 'noindex', 'metadata']) {
       expect(code, `${bad} 에 의존하면 접근 통제가 아니다`).not.toContain(bad)
     }
-    // 실제 판단 근거는 VERCEL_ENV 하나뿐이어야 한다
+    // 판단 근거는 배포 환경 변수뿐이다 — VERCEL_ENV 우선, 없거나 알 수 없으면 NODE_ENV fallback
     expect(code).toContain('vercel_env')
   })
 
