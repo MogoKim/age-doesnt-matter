@@ -1,8 +1,8 @@
 # 네이버 한글 URL 수집 실패 — RFC 호환 ASCII URL 전환 (2026-09-15)
 
 > PR [#481](https://github.com/MogoKim/age-doesnt-matter/pull/481) merge `45e74616` · production `2026.09.15-45e7461` 배포 완료
-> **기술 배포 검증 PASS** (HTTP·HTML·sitemap 실측) · **Search Advisor 운영 검증 대기** (§6 — 창업자 몫)
-> 네이버가 실제로 수집하는지는 아직 확인되지 않았다. 배포된 표기가 규격에 맞다는 것까지만 확인됐다.
+> **기술 배포 검증 PASS** (HTTP·HTML·sitemap 실측) · **Search Advisor URL 검사 3/3 PASS** (§6 — 창업자 실측)
+> 여기까지가 **네이버 로봇이 접근할 수 있다**는 확인이다. **색인·검색 노출 회복은 별개이고 관찰 중**이다(§6).
 
 ## 1. 문제 — 콘텐츠가 아니라 URL 표기였다
 
@@ -85,7 +85,8 @@ topic 허브 2종 · 시리즈 허브(canonical·OG·JSON-LD·breadcrumb·글 �
 `2026.09.15-45e7461` 배포 확인 후 실측(2026-09-15).
 
 🔴 **여기서 PASS 한 것은 "우리가 내보내는 URL 표기가 규격에 맞다"까지다.**
-네이버가 그 URL 을 실제로 수집하는지는 §6 의 Search Advisor 검사로만 확인할 수 있고, **아직 대기 중**이다.
+네이버 쪽에서 실제로 접근되는지는 §6 의 Search Advisor URL 검사로 확인했고 **3/3 PASS** 다.
+단, 그것도 **접근 가능**까지다 — 색인·노출은 §6 의 관찰 항목이다.
 
 | 항목 | 배포 전 | 배포 후 |
 |---|---|---|
@@ -118,12 +119,29 @@ topic 허브 2종 · 시리즈 허브(canonical·OG·JSON-LD·breadcrumb·글 �
 tsc 0 · eslint error 0 · CI fail 0(E2E Smoke·Lighthouse·quality·Vercel·seo-guard 전부 pass).
 `seo-guard` 는 `sitemap.ts` 변경이라 `seo-reviewed` 라벨로 통과했다.
 
-## 6. 남은 창업자 액션 — 네이버 URL 검사
+## 6. 네이버 Search Advisor URL 검사 — **3/3 PASS · 종결**
 
-서치어드바이저 URL 검사는 **로그인이 필요한 웹 UI**다. 자격증명이 없고
-`agents/cmo/seo-snapshot.ts` 에도 "네이버는 측정 대상이 아니다 — 서치어드바이저에서 창업자가 별도 확인"으로 적혀 있다.
+**2026-09-15 창업자 실측.** 아래 3개(= 당시 sitemap 에 실린 한글 매거진 URL **전부**)를
+인코딩된 형태로 URL 검사한 결과 **전부 PASS** 했다.
 
-아래 3개는 **현재 sitemap 에 실린 한글 매거진 URL 전부**다. 그대로 복사해 검사하면 된다.
+| 검사 항목 | 결과 |
+|---|---|
+| 페이지 접속 | **200 OK** |
+| `robots.txt` | 정상 |
+| 서버 응답 | 정상 |
+| 로봇 메타 태그 | 정상 |
+| `title` · `description` · Open Graph | 정상 |
+
+🔴 **이것은 "네이버 로봇이 이 URL 에 접근할 수 있다"는 확인이다.**
+**색인 완료나 검색 노출 회복이 아니다** — 그 둘은 아래 §6-2 의 관찰 항목으로 남는다.
+
+배포 전에는 **같은 글의 raw 한글 URL 이 접근 실패**였다. 즉 이번 전환으로
+**막혀 있던 수집 경로가 열린 것까지** 확인됐다.
+
+서치어드바이저는 로그인이 필요한 웹 UI라 Claude 가 직접 검증할 수 없다
+(`agents/cmo/seo-snapshot.ts` 에도 "네이버는 측정 대상이 아니다 — 서치어드바이저에서 창업자가 별도 확인"으로 적혀 있다).
+
+### 검사한 URL
 
 ```
 https://age-doesnt-matter.com/magazine/%EC%B9%9C%EA%B5%AC%EA%B0%80-%EA%B7%B8%EB%A6%AC%EC%9A%B4%EB%8D%B0-%EC%99%9C-%EB%AA%BB-%EB%8B%A4%EA%B0%80%EA%B0%88%EA%B9%8C
@@ -132,6 +150,19 @@ https://age-doesnt-matter.com/magazine/50%EB%8C%80-%EC%9D%B4%EB%A0%A5%EC%84%9C-%
 ```
 
 각각 `/magazine/친구가-그리운데-왜-못-다가갈까` · `/magazine/IRP연금저축ISA-내-돈-그릇-순서` · `/magazine/50대-이력서-이렇게-쓰세요` 다.
+
+## 6-2. 색인·노출 — **관찰 중** (종결 아님)
+
+🚫 **URL 검사 PASS 를 색인·노출 회복으로 확대 해석하지 마라.** 세 가지는 서로 다른 단계다.
+
+| 단계 | 상태 | 근거 |
+|---|---|---|
+| ① 로봇이 URL 에 **접근 가능** | ✅ **확인**(2026-09-15) | Search Advisor URL 검사 3/3 PASS |
+| ② 네이버가 **색인** | ⏳ **관찰 중** | 최근 창업자 증거 기준 색인 0. 이번 전환 이후 값은 아직 없다 |
+| ③ 검색 **노출 회복** | ⏳ **관찰 중** | ②가 전제다 |
+
+②·③ 은 시간이 필요하다. **조작하지 말고 기다린다** — 색인 재요청·sitemap 재제출·재등록은 하지 않는다(재등록 조건은 아래).
+다음 확인은 창업자의 Search Advisor 수집·색인 현황 재조회로 한다.
 
 ### sitemap 재등록 — 지금은 하지 않는다 (영구 금지가 아니다)
 
