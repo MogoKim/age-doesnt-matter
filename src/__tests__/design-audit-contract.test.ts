@@ -291,11 +291,37 @@ describe('🔴 baseline 자체의 증가를 막는다', () => {
     expect(r.out).toContain('제거')
   })
 
-  it('기준 브랜치에 baseline 이 없으면 PASS — 최초 도입 1회', () => {
+  // ── 🔴 기준 파일 처리는 **fail-closed** 다 ─────────────────────
+  //  "못 읽었으니 그냥 넘어가자" 로 두면 CI 에서 ref 추출이 조용히 실패했을 때
+  //  baseline 증가 차단이 통째로 무력화된다 — 막으려던 상황에서 정확히 실패한다.
+  //  "최초 도입" 판정은 **CI 가** 한다(ref 는 정상인데 그 안에 baseline 파일이 없을 때).
+  //  스크립트에 없는 경로가 넘어왔다는 건 추출이 실패했다는 뜻이므로 통과시키지 않는다.
+
+  it('🔴 없는 파일을 넘기면 exit 1 — fail-closed', () => {
     const dir = makeFixture({ 'src/components/M.tsx': ONE_LINE }, { [KEY]: 1 })
     const r = runAudit([`--root=${dir}`, '--compare-baseline=/tmp/__no_such_baseline__.json'])
-    expect(r.code).toBe(0)
-    expect(r.out).toContain('최초 도입')
+    expect(r.code, '못 읽은 기준을 통과시켰다').toBe(1)
+    expect(r.out).toContain('찾을 수 없다')
+  })
+
+  it('🔴 malformed JSON 을 넘기면 exit 1', () => {
+    const dir = makeFixture({ 'src/components/M.tsx': ONE_LINE }, { [KEY]: 1 })
+    const bad = join(mkdtempSync(join(tmpdir(), 'audit-bad-')), 'bad.json')
+    writeFileSync(bad, '{"broken": ')
+    const r = runAudit([`--root=${dir}`, `--compare-baseline=${bad}`])
+    expect(r.code, '깨진 기준을 통과시켰다').toBe(1)
+    expect(r.out).toContain('파싱 실패')
+  })
+
+  it('🔴 최상위가 객체가 아니면 exit 1 — 배열·숫자도 막는다', () => {
+    const dir = makeFixture({ 'src/components/M.tsx': ONE_LINE }, { [KEY]: 1 })
+    const tmp = mkdtempSync(join(tmpdir(), 'audit-shape-'))
+    for (const [name, body] of [['arr.json', '[]'], ['num.json', '3'], ['null.json', 'null']]) {
+      const f = join(tmp, name)
+      writeFileSync(f, body)
+      const r = runAudit([`--root=${dir}`, `--compare-baseline=${f}`])
+      expect(r.code, `${name} 을 통과시켰다`).toBe(1)
+    }
   })
 
   it('🔴 **새 R11 + 갱신된 baseline 을 같은 PR 에 넣어도 실패한다**', () => {
@@ -321,10 +347,20 @@ describe('CI 가 baseline 증가를 차단한다', () => {
     expect(ci).toContain('scripts/design-audit-baseline.json')
   })
 
-  it('기준 브랜치에 baseline 이 없을 때만 건너뛴다', () => {
+  it('🔴 CI 가 4경우를 구분한다 — ref 실패 / baseline 없음 / 추출 실패 / 정상', () => {
     const step = ci.slice(ci.indexOf('baseline 증가 차단'), ci.indexOf('design audit (strict)'))
-    expect(step).toContain('git show')
+    // ① 기준 ref 자체 검증 — 없으면 FAIL
+    expect(step, 'ref 존재 확인이 없다').toContain('git rev-parse --verify')
+    // ② ref 안에 baseline 이 있는지 — 없을 때만 최초 도입 통과
+    expect(step, 'baseline 존재 확인이 없다').toContain('git cat-file -e')
     expect(step).toContain('최초 도입')
+    // ③ 있으면 추출 성공이 필수
+    expect(step).toContain('git show')
+    expect(step).toContain('추출에 실패')
+    // ④ 실패 경로가 실제로 exit 1 이어야 한다
+    expect((step.match(/exit 1/g) ?? []).length, 'FAIL 경로가 부족하다').toBeGreaterThanOrEqual(2)
+    // 조용한 무시(`2>/dev/null` 로 삼키고 통과)가 없어야 한다
+    expect(step).toContain('set -euo pipefail')
   })
 })
 

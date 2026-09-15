@@ -103,3 +103,63 @@ describe('기존 필터 계약은 그대로다', () => {
     expect(m).not.toContain('frontend')
   })
 })
+
+describe('🔴 디자인 감사 전용 filter — 감사 도구가 자기 변경을 검사한다', () => {
+  // ── 왜 필요한가 ──────────────────────────────────────────────
+  //  `design-audit` job 이 `frontend` 필터로 돌면 **감사 도구 자신의 변경을 놓친다.**
+  //  `frontend` 는 `src/**`·`public/**`·`e2e/**` 뿐이라
+  //  audit 스크립트·baseline·tailwind 설정은 거기 안 걸린다 —
+  //  **baseline 만 몰래 올리는 PR 이 검사 없이 통과**한다.
+
+  const REQUIRED = [
+    'src/**',
+    'scripts/design-token-audit.ts',
+    'scripts/design-audit-baseline.json',
+    'tailwind.config.ts',
+    '.github/workflows/ci.yml',
+  ]
+
+  it('design 필터가 존재하고 필수 경로를 전부 담는다', () => {
+    const design = filters().design
+    expect(design, 'design 필터가 없다').toBeDefined()
+    for (const p of REQUIRED) expect(design, `${p} 누락`).toContain(p)
+  })
+
+  it('detect-changes 가 design 을 output 으로 내보낸다', () => {
+    const outputs = (workflow.jobs['detect-changes'] as unknown as { outputs?: Record<string, string> }).outputs
+    expect(outputs?.design, 'outputs.design 이 없으면 job 조건이 항상 빈 값이다').toBeTruthy()
+  })
+
+  it('🔴 design-audit job 이 frontend 가 아니라 design 조건으로 돈다', () => {
+    const job = workflow.jobs['design-audit']
+    expect(job, 'design-audit job 이 없다').toBeDefined()
+    expect(job.if).toContain("outputs.design == 'true'")
+    expect(job.if, 'frontend 조건이 남아 있다').not.toContain("outputs.frontend == 'true'")
+  })
+
+  it.each([
+    ['scripts/design-token-audit.ts', 'audit 스크립트만 변경'],
+    ['scripts/design-audit-baseline.json', 'baseline 만 변경'],
+    ['tailwind.config.ts', 'tailwind 설정만 변경'],
+    ['.github/workflows/ci.yml', 'CI 자신만 변경'],
+    ['src/components/ui/Button.tsx', '화면 코드 변경'],
+  ])('%s 단독 변경 → design-audit 실행 (%s)', (path) => {
+    expect(matchedFilters(path), `${path} 가 design 에 안 걸린다`).toContain('design')
+  })
+
+  it.each([
+    'docs/operations/2026-09-15-system-foundation-2.md',
+    'docs/features/R02-coupang-cps.md',
+    'README.md',
+  ])('%s 같은 일반 문서만 변경 → design-audit 실행 안 함', (path) => {
+    expect(matchedFilters(path), `${path} 가 design 에 잘못 걸린다`).not.toContain('design')
+  })
+
+  it('🔴 frontend 필터로는 audit 도구 변경을 못 잡는다 — 전용 filter 가 필요한 이유', () => {
+    // 이 단언이 깨지면(= frontend 가 scripts 를 담게 되면) 전용 filter 의 근거를 다시 본다.
+    for (const p of ['scripts/design-token-audit.ts', 'scripts/design-audit-baseline.json', 'tailwind.config.ts']) {
+      expect(matchedFilters(p), `${p}`).not.toContain('frontend')
+    }
+  })
+})
+

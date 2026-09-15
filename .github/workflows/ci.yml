@@ -22,6 +22,7 @@ jobs:
       prisma:   ${{ steps.filter.outputs.prisma }}
       seo:      ${{ steps.filter.outputs.seo }}
       scripts:  ${{ steps.filter.outputs.scripts }}
+      design:   ${{ steps.filter.outputs.design }}
       docs-only: ${{ steps.filter.outputs.docs-only }}
     steps:
       - uses: actions/checkout@v4
@@ -60,6 +61,15 @@ jobs:
               - 'src/app/**/layout.tsx'
               - 'src/lib/seo/**'
               - 'scripts/check-seo-guard.ts'
+            # 🔴 디자인 토큰 계약 전용 — `frontend` 를 쓰면 **감사 도구 자신의 변경을 놓친다.**
+            #    audit 스크립트·baseline·tailwind 설정·이 workflow 는 `src/**` 가 아니라서
+            #    frontend 필터에 안 걸린다. baseline 만 몰래 올리는 PR 이 검사 없이 통과한다.
+            design:
+              - 'src/**'
+              - 'scripts/design-token-audit.ts'
+              - 'scripts/design-audit-baseline.json'
+              - 'tailwind.config.ts'
+              - '.github/workflows/ci.yml'
             # ⚠️ 이름과 달리 "문서가 **포함**되면 true"다. dorny/paths-filter의 기본
             # predicate-quantifier가 'some'(하나라도 매치)이기 때문 — "문서만 변경"이 아니다.
             # 따라서 이 값을 게이트 skip 조건에 쓰면 코드+문서 동시 변경 PR이 통째로 skip된다.
@@ -205,16 +215,20 @@ jobs:
         run: npx tsx scripts/check-seo-guard.ts
 
   # Step 5-2: 디자인 토큰 계약 — 하드코딩 색·컨트롤 크기·토큰 우회를 막는다.
-  #   🔴 기존 부채를 한 번에 red 로 만들지 않는다. **baseline + 변경 파일 strict** 다.
-  #      · 이번 PR 이 건드린 파일의 위반 → exit 1
-  #      · baseline 보다 늘어난 위반(새 부채) → exit 1
-  #      · 그 외 기존 부채는 report 만 남기고 통과시킨다
-  #   부채를 갚으면 `--update-baseline` 으로 줄인다(늘리는 방향은 리뷰가 본다).
+  #   기존 부채를 한 번에 red 로 만들지 않는다. 규칙마다 **판정 방식이 다르다**:
+  #      · error(R01·R02·R03·R08~R10) — **변경 파일에 존재**하거나 baseline 증가 → FAIL
+  #      · R11(raw 표준 컨트롤)        — **baseline 증가만** FAIL (변경 파일 존재는 통과)
+  #      · 리포트 전용 warn(R04~R07)   — 리포트만, 게이트 아님
+  #   🔴 **baseline 파일 자체의 증가**도 막는다 — 기준 브랜치 baseline 과 CI 가 자동 비교한다.
+  #      새 위반을 만들고 baseline 도 같이 올려 커밋하는 우회를 수동 리뷰로는 못 잡는다.
   design-audit:
     name: 디자인 토큰 계약
     runs-on: ubuntu-latest
     needs: [detect-changes]
-    if: github.event_name == 'pull_request' && needs.detect-changes.outputs.frontend == 'true'
+    # 🔴 `frontend` 가 아니라 **전용 `design` 필터**를 쓴다.
+    #    frontend 는 `src/**`·`public/**`·`e2e/**` 뿐이라 audit 스크립트·baseline·
+    #    tailwind 설정 변경을 못 본다 — 감사 도구가 자기 변경을 검사하지 못하는 구멍이다.
+    if: github.event_name == 'pull_request' && needs.detect-changes.outputs.design == 'true'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -236,12 +250,34 @@ jobs:
       #    부채가 조용히 는다. 기준 브랜치의 baseline 을 꺼내 직접 비교한다.
       #    값 감소·키 제거는 통과(부채 갚는 방향), 기준에 baseline 이 없으면 통과(최초 도입).
       - name: baseline 증가 차단
+        env:
+          BASE_REF: origin/${{ github.base_ref }}
         run: |
-          if git show "origin/${{ github.base_ref }}:scripts/design-audit-baseline.json" > /tmp/base-baseline.json 2>/dev/null; then
-            npx tsx scripts/design-token-audit.ts --compare-baseline=/tmp/base-baseline.json
-          else
-            echo "기준 브랜치에 baseline 이 없다 — 최초 도입이라 통과시킨다."
+          set -euo pipefail
+          # 🔴 **fail-closed 다.** "못 읽었으니 넘어가자" 로 두면 ref 추출이 조용히 실패했을 때
+          #    baseline 증가 차단이 통째로 무력화된다 — 막으려던 상황에서 정확히 실패한다.
+          #    통과시키는 경우는 **단 하나**: ref 는 정상인데 그 안에 baseline 파일이 아직 없을 때(최초 도입).
+
+          # ① 기준 ref 자체가 읽히는가 — 여기서 실패하면 FAIL
+          if ! git rev-parse --verify --quiet "$BASE_REF^{commit}" > /dev/null; then
+            echo "🔴 기준 ref 를 읽을 수 없다: $BASE_REF"
+            exit 1
           fi
+
+          # ② ref 안에 baseline 파일이 있는가 — 없으면 최초 도입이라 통과
+          if ! git cat-file -e "$BASE_REF:scripts/design-audit-baseline.json" 2>/dev/null; then
+            echo "기준 브랜치에 baseline 이 없다 — 최초 도입이라 통과시킨다."
+            exit 0
+          fi
+
+          # ③ 있으면 반드시 추출에 성공해야 한다 — 실패는 FAIL
+          if ! git show "$BASE_REF:scripts/design-audit-baseline.json" > /tmp/base-baseline.json; then
+            echo "🔴 기준 baseline 추출에 실패했다."
+            exit 1
+          fi
+
+          # ④ 비교 — JSON 파싱 실패도 스크립트가 fail-closed 로 막는다
+          npx tsx scripts/design-token-audit.ts --compare-baseline=/tmp/base-baseline.json
       # 🔴 파일 목록을 셸에 직접 펼치지 않는다 — `(main)` 같은 라우트 그룹 괄호가
       #    `syntax error near unexpected token '('` 을 냈다(2026-09-15 실측).
       #    env 로 넘기고 따옴표로 감싼다.

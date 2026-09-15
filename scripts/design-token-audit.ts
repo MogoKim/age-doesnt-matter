@@ -11,20 +11,37 @@
  *  그래서 admin 터치규칙 5%·하드코딩 HEX 203회가 한 번도 잡히지 않았다.
  *
  * ── 게이트 방식 ─────────────────────────────────────────────────
- *  기존 부채를 한 번에 red 로 만들지 않는다. **baseline + changed-file strict** 다.
- *   · 기본 실행(`npm run design:audit`)은 report-only · exit 0 — 전체 현황 파악용
- *   · `--strict` 는 아래 둘 중 하나라도 있으면 **exit 1**
- *       ① 변경된 파일 안의 위반 (`--changed=a.tsx,b.tsx`)
- *       ② baseline 보다 늘어난 위반 (새 위반)
- *   · baseline 갱신은 `--update-baseline` — 부채를 갚으면 줄어든다(늘릴 때는 리뷰가 본다)
+ *  기존 부채를 한 번에 red 로 만들지 않는다. **규칙마다 판정 방식이 다르다.**
+ *
+ *   | 규칙                          | 변경 파일에 존재 | baseline 증가 |
+ *   |------------------------------|-----------------|--------------|
+ *   | error (R01·R02·R03·R08~R10)  | **FAIL**        | **FAIL**     |
+ *   | R11 (raw 표준 컨트롤)          | 통과            | **FAIL**     |
+ *   | 리포트 전용 warn (R04~R07)     | 통과            | 통과(미집계)  |
+ *
+ *   · error 는 고치기 싸고 국소적이라 **손댄 파일에서는 그냥 고치게** 한다.
+ *   · R11 은 화면마다 스킨이 달라 한 번에 못 바꾼다 — **새로 늘리는 것만** 막는다.
+ *     존재만으로 막으면 무관한 한 줄 수정에도 CI 가 멈춘다.
+ *   · 기본 실행(`npm run design:audit`)은 report-only · exit 0 — 전체 현황 파악용.
+ *
+ * ── 🔴 baseline 파일 **자체의 증가**도 막는다 ────────────────────
+ *  strict 는 "현재 위반 vs 커밋된 baseline" 만 본다. 새 위반을 만들고 baseline 도 같이 올려
+ *  커밋하면 통과한다 — 부채가 조용히 는다. 100줄 넘는 JSON 의 숫자 하나를 사람이 놓치므로
+ *  수동 리뷰로는 못 막는다. 그래서 CI 가 **기준 브랜치 baseline 과 자동 비교**한다
+ *  (`--compare-baseline=`). 값 감소·키 제거는 통과, 증가·신규 키는 FAIL.
+ *
+ *  기준 파일 처리는 **fail-closed** 다 — 없거나 JSON 이 깨졌으면 통과시키지 않는다.
+ *  "기준 브랜치에 baseline 이 아직 없다"(최초 도입) 판정은 **CI 가** 한다.
  *
  * 사용:
  *   npm run design:audit
  *   npx tsx scripts/design-token-audit.ts --output=json
  *   npx tsx scripts/design-token-audit.ts --strict --changed=src/a.tsx,src/b.tsx
+ *   npx tsx scripts/design-token-audit.ts --compare-baseline=/tmp/base.json
  *   npx tsx scripts/design-token-audit.ts --update-baseline
+ *   npx tsx scripts/design-token-audit.ts --root=/tmp/fixture   # 테스트용
  */
-import { readFileSync, readdirSync, writeFileSync } from 'fs'
+import { existsSync, readFileSync, readdirSync, writeFileSync } from 'fs'
 import { join, relative, resolve } from 'path'
 import ts from 'typescript'
 
@@ -409,16 +426,37 @@ function readBaseline(): Baseline {
  */
 function compareBaseline(basePath: string): number {
   const current = readBaseline()
-  let base: Baseline | null = null
-  try {
-    base = JSON.parse(readFileSync(basePath, 'utf8')) as Baseline
-  } catch {
-    base = null
+
+  // 🔴 **fail-closed 다.** 기준 파일을 못 읽거나 JSON 이 깨졌으면 **통과시키지 않는다.**
+  //    "못 읽었으니 그냥 넘어가자" 로 두면 CI 에서 git ref 추출이 조용히 실패했을 때
+  //    baseline 증가 차단이 통째로 무력화된다 — 막으려던 상황에서 정확히 실패한다.
+  //    "기준 브랜치에 baseline 이 아직 없다" 는 **호출자(CI)가 판단**해 이 함수를 아예 부르지 않는다.
+  if (!existsSync(basePath)) {
+    console.log(`\n🔴 기준 baseline 파일을 찾을 수 없다: ${basePath}`)
+    console.log('   기준 브랜치에 baseline 이 없는 최초 도입이라면 CI 가 이 단계를 건너뛴다.')
+    console.log('   여기까지 왔다는 건 추출이 실패했다는 뜻이다 — 통과시키지 않는다.')
+    return 1
   }
 
-  if (base === null) {
-    console.log(`\nbaseline 최초 도입 — 기준 브랜치에 ${BASELINE_PATH} 이 없다. 통과시킨다.`)
-    return 0
+  let raw: string
+  try {
+    raw = readFileSync(basePath, 'utf8')
+  } catch (e) {
+    console.log(`\n🔴 기준 baseline 을 읽지 못했다: ${(e as Error).message}`)
+    return 1
+  }
+
+  let base: Baseline
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new Error('최상위가 객체가 아니다')
+    }
+    base = parsed as Baseline
+  } catch (e) {
+    console.log(`\n🔴 기준 baseline JSON 파싱 실패: ${(e as Error).message}`)
+    console.log('   깨진 기준으로 비교하면 어떤 증가도 못 잡는다 — 통과시키지 않는다.')
+    return 1
   }
 
   const increased = Object.entries(current).filter(([k, n]) => k in base && n > base[k])
@@ -427,6 +465,7 @@ function compareBaseline(basePath: string): number {
   const removed = Object.keys(base).filter((k) => !(k in current))
 
   console.log('\n── baseline 비교 (기준 브랜치 대비) ──────────────')
+  console.log(`   기준 ${Object.keys(base).length}항목 · 현재 ${Object.keys(current).length}항목`)
   console.log(`   증가 ${increased.length} · 신규 ${added.length} · 감소 ${decreased.length} · 제거 ${removed.length}`)
   for (const [k, n] of decreased) console.log(`   ✅ 감소 ${k}  ${base[k]} → ${n}`)
   for (const k of removed) console.log(`   ✅ 제거 ${k}  (${base[k]} → 0)`)

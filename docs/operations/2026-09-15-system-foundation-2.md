@@ -357,3 +357,35 @@ strict 게이트는 "현재 위반 vs 커밋된 baseline" 을 본다. 새 위반
 | R11 실제 위반 | **479건** |
 | audit | 540파일 · ERROR **72** · WARN **821** |
 | 테스트 | **103파일 1,968건** |
+
+
+## 11. CI 자기보호 보정 (2026-09-15)
+
+| # | finding | 처리 |
+|---|---|---|
+| 1 | 디자인 감사 전용 path filter | `design-audit` job 이 `frontend` 로 돌면 **감사 도구 자신의 변경을 놓친다** — `src/**`·`public/**`·`e2e/**` 뿐이라 audit 스크립트·baseline·tailwind 설정이 안 걸린다. **전용 `design` 필터**를 만들고 job 조건을 바꿨다 |
+| 2 | baseline 기준 파일 **fail-closed** | "못 읽었으니 넘어가자" 로 두면 ref 추출이 조용히 실패했을 때 증가 차단이 통째로 무력화된다. 없는 파일·깨진 JSON·객체 아님 → **전부 exit 1**. 최초 도입 판정은 **CI 가** 한다(ref 정상 + baseline 파일만 없음) |
+| 3 | stale 주석 | 스크립트 상단과 `ci.yml` 을 실제 정책표로 갱신 |
+
+### 왜 전용 filter 가 필요했나
+
+| 가상 변경 | `frontend` | `design` | design-audit |
+|---|---|---|---|
+| `scripts/design-audit-baseline.json` 만 | false | **true** | **실행** |
+| `scripts/design-token-audit.ts` 만 | false | **true** | **실행** |
+| `tailwind.config.ts` 만 | false | **true** | **실행** |
+| `.github/workflows/ci.yml` 만 | false | **true** | **실행** |
+| `docs/**` · `README.md` 만 | false | false | skip |
+
+🔴 위 네 줄이 전부 **이전 구조에서는 skip** 됐다 — baseline 만 몰래 올리는 PR 이 검사 없이 통과할 수 있었다.
+
+### baseline 기준 파일 — 4경우
+
+| 경우 | 판정 | 누가 |
+|---|---|---|
+| 기준 ref 자체를 못 읽음 | **FAIL** | CI (`git rev-parse --verify`) |
+| ref 정상 + baseline 파일 없음 | **PASS**(최초 도입) | CI (`git cat-file -e`) |
+| baseline 있는데 추출 실패 | **FAIL** | CI (`git show`) |
+| 추출됐는데 JSON 파싱 실패·객체 아님 | **FAIL** | 스크립트 |
+
+`set -euo pipefail` 로 중간 실패가 조용히 삼켜지지 않게 했다.
