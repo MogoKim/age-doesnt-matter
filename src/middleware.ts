@@ -4,6 +4,7 @@ import { getToken } from 'next-auth/jwt'
 import { Redis } from '@upstash/redis'
 import { verifyAdminToken } from '@/lib/admin-auth'
 import { BOT_UA_PATTERN } from '@/lib/bot-patterns'
+import { isDevRoute, isDevRouteAllowed } from '@/lib/dev-routes'
 import { getMovedPostRedirect } from '@/lib/moved-posts'
 import { buildReturnTo } from '@/lib/return-to'
 
@@ -98,6 +99,16 @@ async function resolveSlug(cuid: string): Promise<string | null> {
 
 export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  // ── `/dev/*` 는 production 에 존재하지 않는다 (2026-09-15) ──
+  // 내부 미리보기(디자인 쇼케이스·QA 리포트·이벤트 프리뷰)가 production 에서 200 이었다.
+  // 🔴 페이지의 `noindex` 는 접근 통제가 아니다 — 검색엔진에 대한 요청일 뿐 URL 을 아는 사람은 그대로 들어왔다.
+  //    그래서 렌더링·인증·Redis 이전에 **여기서** 끊는다. preview·로컬은 그대로 열어 둔다
+  //    (Preview E2E 가 `/dev/event-preview` 를 쓴다 — e2e/qa/24-participation-events.spec.ts).
+  // redirect 가 아니라 404 다. 없는 경로처럼 보여야 한다.
+  if (isDevRoute(pathname) && !isDevRouteAllowed()) {
+    return new NextResponse(null, { status: 404 })
+  }
 
   // ── 구 아임웹 레거시 "개별 글/검색결과" URL → 410 Gone (legacy imweb parameter URLs only) ──
   // 대상: /Humor·/Free-Board·/blog·/job·/magazine 경로 + query에 idx 또는 bmode 또는 q 존재.
