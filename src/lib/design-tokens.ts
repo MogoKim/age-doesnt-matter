@@ -50,6 +50,7 @@ export const LITERAL_VALUE_TOKENS = [
   '--elevation-1', '--elevation-2', '--elevation-3',
   '--control-h-touch', '--control-h-desktop', '--control-h-sm', '--control-h-lg', '--control-h-compact',
   '--space-row-y', '--content-max', '--content-max-wide',
+  '--state-disabled-opacity', '--state-focus-ring-width', '--state-focus-ring-offset',
 ] as const
 
 // ──────────────────────────────────────────────────────────────
@@ -59,9 +60,9 @@ export const LITERAL_VALUE_TOKENS = [
 /**
  * reference — 원자값. 화면 코드에서 직접 참조하면 계약 위반이다.
  *
- * 🔴 지금은 비어 있다. 카카오 색은 reference 로 뒀다가 **component 로 내렸다** —
- *    카카오 로그인 버튼이라는 **특정 컴포넌트 전용 색**이고, 화면이 직접 써야 의미가 있다.
- *    reference 로 두면 "직접 쓰지 마라" 와 "이 버튼은 이 색이어야 한다" 가 모순된다.
+ * 🔴 지금은 비어 있다. **카카오 색은 component 다** — 카카오 로그인 버튼 전용이고
+ *    화면이 직접 써야 의미가 있다. reference 로 두면 "직접 쓰지 마라" 와
+ *    "이 버튼은 이 색이어야 한다" 가 모순된다. (이 문장이 카카오 분류의 **유일한 설명**이다.)
  */
 export const REFERENCE_TOKENS = [] as const
 
@@ -127,13 +128,11 @@ export const NO_CSS_VAR_CONTEXTS = [
     paths: ['opengraph-image'],
   },
   {
-    id: 'svg-attribute',
-    reason: 'SVG presentation attribute(fill·stroke)는 CSS 변수를 못 받는 경우가 있다',
-    paths: ['src/components/icons/'],
-  },
-  {
     id: 'external-brand',
-    reason: '카카오 등 외부 브랜드 규정색은 우리가 바꿀 수 없다 — reference 토큰으로만 둔다',
+    reason:
+      '외부 브랜드 규정색(카카오)은 우리가 정할 수 없다. ' +
+      'CSS 변수를 못 읽는 문맥(OG 이미지)에서는 HEX 를 그대로 적어야 한다 — ' +
+      '화면 안에서는 component 토큰(--kakao-bg·--kakao-text)을 쓴다.',
     paths: [],
   },
 ] as const

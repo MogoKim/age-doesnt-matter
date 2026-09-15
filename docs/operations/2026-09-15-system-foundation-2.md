@@ -45,8 +45,8 @@ Material 3 는 **계층 원칙(reference → system → component)만** 참고�
 | 구분 | 내용 |
 |---|---|
 | 제거 **11** | `--font-size-xs/sm/base/lg`(연결된 CSS 모듈이 **존재하지 않음**) · `--hero-slide-1~3`(`--hero-N-*` 로 대체됨) · `--pulse-dot-*` · `--shadow-fab` · `--badge-editors` |
-| 추가 **19** | control-size 5 · spacing/layout 3 · shape 1 · elevation 3 · state 3 + tailwind 노출 |
-| 총계 | 112 → **120** |
+| 추가 **15** | control-size 5 · spacing/layout 3 · shape 1 · elevation 3 · state 3 |
+| 총계 | 112 → **116** |
 
 ### 계약 정본 — `src/lib/design-tokens.ts`
 
@@ -155,11 +155,12 @@ R08 은 **스타일 문맥에서만** 잡는다 — 안내 카피 안의 색 코
 
 ### baseline + changed-file strict
 
-- 기본 실행은 report-only(exit 0) — 전체 부채를 보여준다(**ERROR 72 · WARN 369**)
+- 기본 실행은 report-only(exit 0) — 전체 부채를 보여준다(**ERROR 72 · WARN 822**)
 - `--strict` 는 ① **변경한 파일의 위반** ② **baseline 초과(새 부채)** 둘 중 하나라도 있으면 exit 1
-- 🔴 **게이트는 error 만**이다. `warn`(R11 raw 컨트롤)은 기존 화면을 한 번에 못 바꾸는 부채라,
-  게이트로 삼으면 파일을 한 줄만 고쳐도 CI 가 막힌다. warn 은 리포트에 남아 리뷰가 본다.
-- baseline 은 `파일::규칙` 단위(**error 28항목**) — 줄 번호에 흔들리지 않는다
+- 🔴 게이트 대상은 **error 전부 + R11**(raw 표준 컨트롤)이다. R11 은 severity 가 warn 이지만
+  **개수 증가를 막는다** — 기존 부채는 baseline 으로 허용하고 **새 raw 컨트롤만** exit 1.
+  나머지 warn(R04~R07)은 리포트 전용이다. 게이트로 삼으면 파일을 한 줄만 고쳐도 CI 가 막힌다.
+- baseline 은 `파일::규칙` 단위(**118항목** — R11 90 · R08 20 · R09 6 · R03 2)
 - 테스트는 `--root=` 로 **임시 fixture** 를 검사한다. 실제 소스를 임시 수정하는 방식은
   vitest 병렬 실행에서 다른 테스트를 깨뜨렸다(CI 실패로 드러났다)
 - CI 는 `git diff --diff-filter=ACMR origin/<base>...HEAD` 로 변경 파일을 넘긴다
@@ -196,15 +197,15 @@ R08 은 **스타일 문맥에서만** 잡는다 — 안내 카피 안의 색 코
 | 항목 | 이전 | 이후 |
 |---|---|---|
 | 삭제 파일 | — | **16** |
-| `:root` 토큰 | 112 | **120** (제거 11 · 추가 19) |
-| tailwind 노출 토큰 | 37 | **60+** |
+| `:root` 토큰 | 112 | **116** (제거 11 · 추가 15) |
+| tailwind 노출 토큰 | 37 | **52** |
 | 공개면 하드코딩 컨트롤 크기 | 306 | **0** |
 | audit 검사 파일 | 278 | **540** |
 | audit 제외율 | 25% | 생성물·테스트·정본만 |
-| audit 규칙 | 7 | **11** (+ R02 오탐 수정) |
+| audit 규칙 | 7 | **10 + AST 규칙 1**(R11) · R02 오탐 수정 |
 | audit ERROR | 104 | **72** |
 | audit 게이트 | 없음(항상 exit 0) | baseline + changed-file strict |
-| 테스트 | 100파일 1,890건 | **102파일 1,922건** |
+| 테스트 | 100파일 1,890건 | **103파일 1,949건** |
 | 카카오 색 토큰 채택 | 0곳 | **24곳** |
 
 ### 디자인 계약 채택률
@@ -227,3 +228,25 @@ R08 은 **스타일 문맥에서만** 잡는다 — 안내 카피 안의 색 코
 - 소란소란 저장소 접근 — **없음**
 - 증거 없는 패키지 삭제 — package.json **무변경**(미사용 의존성 0)
 - 제품 기능 · URL · SEO 동작 변경 — 없음
+
+
+---
+
+## 8. Codex 리뷰 보정 (2026-09-15)
+
+| # | finding | 처리 |
+|---|---|---|
+| 1 | audit 의 즉시 `process.exit()` | **전부 제거.** `main()` 이 exit code 를 **반환**하고 최상단이 `process.exitCode` 에 담는다. 파이프로 나가는 stdout 은 비동기라 `process.exit()` 가 미완료 버퍼를 버렸고 — CI 에서 요약 줄이 통째로 사라졌다. **재현 테스트 4건**으로 고정했다(즉시 종료 부재 · report 마지막 줄 · strict 요약 · `--output=json` 파이프 전체 파싱). "재실행 성공" 으로 종결하지 않았다 |
+| 2 | R11 을 실질 게이트로 | **TypeScript JSX AST** 로 재구현(`findRawControls`). multiline JSX 를 잡는다. baseline 으로 기존 부채(90파일)는 허용하되 **개수 증가는 exit 1**. 테스트 6건: multiline · baseline 유지 · 1건 추가 실패 · 1건 제거 통과 · 공용 Button/Input 예외 · 4종 태그 전수 |
+| 3 | 폼 id | 명시적 id 가 없으면 **항상 `React.useId()`**. label 문자열 기반 id 는 같은 라벨 2개에서 충돌해 `htmlFor` 가 엉뚱한 입력을 가리켰다. 렌더 테스트 7건 |
+| 4 | 삭제 모듈을 현행으로 적은 문서 | active 8개 갱신(R01·R02·F03·F07·specs/03·specs/10·SERVICE_ARCHITECTURE·UNAO_RESCUE_STATUS). 역사 문서 5개에는 **역사 배너**를 달았다. `NOTIFICATION_SPEC` 은 삭제 모듈 참조가 없어 무변경 |
+| 5 | `visual-run.mjs` | **삭제.** 일회성 진단 도구였고 정식 편입할 만큼의 계약(인자 검증·문서·npm script)을 갖출 이유가 없었다 |
+| 6 | 카카오 설명 · icons 예외 · state 토큰 | 카카오 분류 설명을 **한 곳**으로 통일 · `icons/` 전체 예외는 **하드코딩 색 0건**이라 근거가 없어 제거 · state 토큰 3개가 `LITERAL_VALUE_TOKENS` 에서 빠져 있던 것을 추가하고 **전수 검증 테스트**를 넣었다 |
+| 7 | PR·문서 stale 수치 | 최종 실측으로 갱신(위 표) |
+
+### 검증
+
+- Node **v24.14.0** · vitest **1,949건 3회 연속 PASS**
+- `--output=json` 파이프 파싱 PASS
+- audit strict 양성/음성 대조 PASS
+- typecheck 0 · ops-typecheck 0 · lint 0

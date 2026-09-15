@@ -307,7 +307,9 @@ Prisma **SELECT(count/findFirst)만** 사용해 측정했다. raw SQL·export·d
   `content-quality-rules` · `coupang` · `google-api` · `intelligence` · `medical-advice-blocklist` · `political-blocklist` · `slug`.
   전부 runtime importer 0 이었다(테스트만 참조). **호출 경로가 없으면 안전 기능이 아니다** — 이름만 보고 남기지 않는다.
   `coo:moderator` 로 옮기는 것은 신규 정책·동작 추가라 이번 범위가 아니었다. 필요하면 별도 판정으로 새로 설계한다.
-  사용자 기능인 `src/lib/coupang.ts` 와 쿠팡 컴포넌트는 보존했다.
+  사용자 기능인 쿠팡 컴포넌트는 보존했다.
+  🔴 **2026-09-15 정정**: `src/lib/coupang.ts` 는 이후 **소비처 0으로 확인돼 제거**됐다 —
+  살아 있는 쿠팡 컴포넌트는 `ad-slots.ts` 의 `COUPANG` 상수를 쓴다.
   (B-3 이전부터 고아였던 `approval-helper` · `locks` · `trending` 은 별건으로 남아 있다 — 후속 R6.)
 - **persona SSoT 는 B-3 범위 밖이다.** `agents/core/persona-registry.ts` → `cafe/curator-personas` ·
   `cafe/curator-shared` · `seed/persona-data` 사슬은 `coo/persona-matcher-*` 가 계속 쓰므로 보존했다.

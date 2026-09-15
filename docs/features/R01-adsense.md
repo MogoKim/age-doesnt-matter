@@ -113,7 +113,10 @@ pathname 변경 감지 (useEffect)
 
 ---
 
-### 클릭 추적 (`src/components/ad/AdClickTracker.tsx`)
+### 클릭 추적 — `DetailHeaderBannerClient` · `ListBannerClient`
+
+> 🔴 **2026-09-15 정정**: `AdClickTracker.tsx` 는 **제거됐다**(소비처 0, 중복 구현).
+> `/api/ad-click` 엔드포인트는 그대로 살아 있고, 위 두 배너 컴포넌트가 직접 호출한다.
 
 - **GTM 이벤트**: `ad_click` (ad_slot, ad_type 파라미터)
 - **DB 카운터**: `POST /api/ad-click` → `AdBanner.clicks +1`
@@ -177,7 +180,7 @@ pathname 변경 감지 (useEffect)
 - 핵심 컴포넌트: `src/components/ad/AdSenseUnit.tsx`
 - 전역 스크립트 로더: `src/components/ad/AdSenseScriptLoader.tsx`
 - 슬롯 설정: `src/components/ad/ad-slots.ts`
-- 클릭 추적: `src/components/ad/AdClickTracker.tsx`
+- 클릭 추적: `src/components/ad/DetailHeaderBannerClient.tsx` · `src/components/ad/ListBannerClient.tsx` (→ `/api/ad-click`)
 - 반응형 분기: `src/components/ad/ResponsiveAd.tsx`
 - DB 기반 슬롯: `src/components/ad/ListBanner.tsx`(목록 3:1) · `src/components/ad/DetailHeaderBanner.tsx`(상세 5:1)
 - 클릭 API: `src/app/api/ad-click/route.ts`

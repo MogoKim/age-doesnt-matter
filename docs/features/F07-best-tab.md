@@ -18,7 +18,7 @@ HOT/HALL_OF_FAME 승격 게시글을 탭별로 모아보는 베스트 페이지.
 | `src/app/(main)/best/page.tsx` | RSC 메인 페이지 — 탭별 데이터 로드 + 페이지네이션 |
 | `src/lib/queries/posts/posts.trending.ts` | getDailyTrendingPosts / getWeeklyTrendingPosts / getHallOfFamePosts |
 | `src/app/api/best/route.ts` | 클라이언트용 API (getHotPosts + getHallOfFamePosts) |
-| `src/components/features/best/PaginationBar.tsx` | 페이지 번호 네비게이션 컴포넌트 |
+| `src/components/features/common/PaginationBar.tsx` | 페이지 번호 네비게이션 컴포넌트 *(2026-09-15: 동명 `features/best/PaginationBar.tsx` 는 소비처 0이라 제거 — 실사용은 `common` 쪽이다)* |
 | `src/components/features/community/CategorySearchBar.tsx` | 검색창 (page 파라미터 초기화 로직 포함) |
 
 ## 기능 명세

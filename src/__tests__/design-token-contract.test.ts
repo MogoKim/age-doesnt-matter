@@ -87,6 +87,33 @@ describe('토큰 값과 계약이 일치한다', () => {
   })
 })
 
+describe('🔴 system 토큰이 표기 계약에서 빠지지 않는다 — 전수 검증', () => {
+  // state 토큰 3개가 `LITERAL_VALUE_TOKENS` 에서 통째로 빠져 있었다(2026-09-15).
+  // 계약에 없으면 "이건 hsl() 로 감싸야 하나" 를 아무도 판정할 수 없다.
+  const declared = new Set<string>([...HSL_TRIPLET_TOKENS, ...LITERAL_VALUE_TOKENS])
+
+  /** component 계층(색 세트·아이콘·등급 등)은 전부 완성값이라 개별 나열하지 않는다. */
+  const COMPONENT_PREFIXES = ['--icon-', '--cat-', '--grade-', '--hero-', '--gradient-', '--surface-', '--border-coral']
+
+  it.each(['--control-h-', '--state-', '--elevation-', '--content-max', '--space-', '--radius', '--text-', '--font-family'])(
+    '%s 계열 system 토큰이 전부 계약에 있다',
+    (prefix) => {
+      const missing = [...TOKENS.keys()].filter(
+        (t) => t.startsWith(prefix) && !declared.has(t) && !COMPONENT_PREFIXES.some((c) => t.startsWith(c)),
+      )
+      // 타이포·폰트는 길이/문자열이라 색 표기 계약 대상이 아니다 — 예외를 명시적으로 적는다.
+      const TYPO_EXEMPT = prefix === '--text-' || prefix === '--font-family'
+      if (TYPO_EXEMPT) return
+      expect(missing, `계약에 없는 토큰: ${missing.join(', ')}`).toEqual([])
+    },
+  )
+
+  it('계약에 적힌 토큰은 전부 globals.css 에 실재한다 — 죽은 계약 금지', () => {
+    const ghosts = [...declared].filter((t) => !TOKENS.has(t))
+    expect(ghosts, `globals.css 에 없는 토큰: ${ghosts.join(', ')}`).toEqual([])
+  })
+})
+
 describe('화면 코드가 표기 계약을 지킨다', () => {
   it('🔴 HSL 토큰을 `hsl()` 없이 쓰지 않는다 — 그러면 색이 안 나온다', () => {
     const bad: string[] = []
@@ -159,12 +186,20 @@ describe('죽은 토큰이 없다', () => {
 })
 
 describe('CSS 변수를 못 쓰는 문맥이 문서화돼 있다', () => {
-  it('OG·SVG·외부 브랜드가 사유와 함께 분류돼 있다', () => {
+  it('OG·외부 브랜드가 사유와 함께 분류돼 있다', () => {
     const ids = NO_CSS_VAR_CONTEXTS.map((c) => c.id)
     expect(ids).toContain('og-satori')
-    expect(ids).toContain('svg-attribute')
     expect(ids).toContain('external-brand')
     for (const c of NO_CSS_VAR_CONTEXTS) expect(c.reason.length, c.id).toBeGreaterThan(10)
+  })
+
+  it('🔴 근거 없는 예외를 두지 않는다 — `icons/` 전체 예외는 제거했다', () => {
+    // `src/components/icons/` 에 하드코딩 색이 **0건**이라 예외를 둘 이유가 없었다.
+    // 근거 없는 예외는 나중에 진짜 위반을 숨긴다.
+    expect(NO_CSS_VAR_CONTEXTS.map((c) => c.id)).not.toContain('svg-attribute')
+    const iconFiles = SRC.filter((f) => f.startsWith('src/components/icons/'))
+    const hardcoded = iconFiles.filter((f) => /(?:fill|stroke)="#[0-9a-fA-F]{6}"/.test(read(f)))
+    expect(hardcoded, `icons/ 에 하드코딩 색이 생겼다: ${hardcoded.join(', ')}`).toEqual([])
   })
 
   it('OG 이미지 파일이 실제로 존재한다 — 죽은 예외 금지', () => {

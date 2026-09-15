@@ -111,7 +111,7 @@ GA4 실시간 → 이벤트 → `home_card_click` 에서 확인 가능.
 | CommunitySection 다음 | AdSense HOME_SECTION (horizontal) |
 | CommunitySection 다음 (모바일) | 쿠팡 배너 mobile preset |
 | Life2Section 다음 | FeedAd (IN_FEED) |
-| MagazineSection 다음 (모바일) | CoupangCarousel |
+| MagazineSection 다음 (모바일) | `CoupangHome1`·`CoupangHome2` *(2026-09-15: `CoupangCarousel` 제거 — 소비처 0)* |
 
 ---
 

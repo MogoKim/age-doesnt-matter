@@ -7,7 +7,7 @@
 > ## ⚠️ 2026-09-05 실측 배너 — 이 문서의 "가동 중" 서술은 현재 상태가 아니다
 > - 2026-05-11(v11) 시점 문서다. "93핸들러·17GHA" 등 수치는 당시 값이며, 현재 실측은 runner HANDLERS **36개** · GitHub Actions **16개 중 12개 `disabled_manually`, 활성 4개**(ci · lighthouse · quarantine-check · agents-moderation). 2026-09-08~09 Gate 2 제거와 R4 에이전트 정리(ORG_THEATER 10 · SUPERSEDED 4 · qa-verify · GROWTH_LEGACY 13)를 반영한 값이다. **SNS 자동 게시·메트릭·토큰 갱신과 `agents-social.yml` 은 제거됐다.** launchd 콘텐츠 발행 12개는 2026-09-06 04:09 KST unload 완료(4개 유지/관찰). production `/api/health`는 2026-09-05 감사 당시 503(DB 28P01)이었으나 R1-A로 복구돼 현재 healthy.
 > - §1 "제2의 인생 플랫폼 — 일자리 + 커뮤니티 + 매거진" 정의는 헌법 v5.0(`docs/constitution/NORTH_STAR.md` §2·§14 "일자리 플랫폼이 아니라 커뮤니티")과 충돌한다. Rescue R5에서 REWRITE 대상.
-> - 시드봇 글쓰기는 2026-06-03 retired, `CoupangSearchWidget`은 2026-06-12 제거됐으나 본문에 미반영.
+> - 시드봇 글쓰기는 2026-06-03 retired. `CoupangSearchWidget` 컴포넌트 파일은 2026-09-15 실제로 제거됐다(본문 반영 완료).
 > - 근거: `docs/operations/2026-09-05-claude-foundation-reset-audit-report.md` §3 A-06·C-07·D-05.
 
 ---
@@ -684,9 +684,9 @@ Slack Workspace: 우나어-ops (14개 채널)
 | **검색** | 3개 | SearchForm, SearchResults, SearchTabs |
 | **마이페이지** | 8개 | NicknameSettings, FontSizeSettings, BlockedUserList, WithdrawSection |
 | **인증** | 3개 | LoginForm, LoginPromptModal, OnboardingForm |
-| **광고** | 10개 | AdSenseUnit, AdSlot, CoupangCPS/Banner/CategoryBanner/SearchWidget, FeedAd, MobileStickyAd + ad-slots.ts |
+| **광고** | 17개 | AdSenseUnit, AdSenseScriptLoader, AdMobBanner, CoupangBanner/Home1/Home2/DesktopBanner, CpsClickTracker, DetailHeaderBanner(+Client), ListBanner(+Client), FeedAd, LazyAd, NativeAdSlot, ResponsiveAd + ad-slots.ts *(2026-09-15: CoupangCPS·CoupangCarousel·CoupangCategoryBanner·CoupangSearchWidget·AdClickTracker 제거 — 소비처 0)* |
 | **어드민** | 11개 | MemberTable, ContentTable, ReportTable, BannerManager |
-| **공통** | 10개 | UserAvatar, ShareButton, OfflineBanner, PageViewTracker, GoogleTagManager, Breadcrumbs |
+| **공통** | 10개 | UserAvatar, OfflineBanner, PageViewTracker, GoogleTagManager, Breadcrumbs *(2026-09-15: `ShareButton` 제거 — 공유는 `features/community/ActionBar` + `lib/kakao-share` 가 담당)* |
 
 ---
 

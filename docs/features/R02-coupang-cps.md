@@ -93,10 +93,13 @@ BotLog details.cpsMatched 기록
 | 페이지 | 컴포넌트 | 배치 위치 |
 |--------|---------|---------|
 | 홈 (`/`) | `CoupangBanner` (mobile) | CommunitySection 다음 |
-| 홈 (`/`) | `CoupangCarousel` | MagazineSection 다음 |
-| 커뮤니티 상세 | `CoupangSearchWidget` | AdSense 다음 |
-| 매거진 상세 | `CoupangCPS` (상품 링크 최대 3건 표시) | 본문 아래 |
-| 매거진 상세 | `CoupangSearchWidget` | CPS 링크 다음 |
+| 홈 (`/`) | `CoupangHome1` · `CoupangHome2` | 홈 섹션 사이 |
+| 데스크탑 | `CoupangDesktopBanner` | 사이드 |
+| 공통 | `CoupangBanner` | 배치별 |
+
+> 🔴 **2026-09-15 정정**: `CoupangCarousel` · `CoupangSearchWidget` · `CoupangCPS` · `CoupangCategoryBanner` 와
+> `src/lib/coupang.ts` 는 **제거됐다**. 소비처가 0이었고, 살아 있는 쿠팡 컴포넌트는
+> `src/components/ad/ad-slots.ts` 의 `COUPANG` 상수를 쓴다 — **수익 경로에는 영향이 없다.**
 | 일자리 목록 | `CoupangBanner` (mobile) | 8번째 항목 다음 (`idx % 8 === 0`) |
 | 베스트 | `CoupangBanner` (mobile) | 피드 사이 |
 | 매거진 목록 | `CoupangBanner` (mobile) | 피드 사이 |

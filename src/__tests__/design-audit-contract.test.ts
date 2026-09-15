@@ -105,13 +105,52 @@ describe('게이트 — false-green 이 아니다', () => {
     expect(r.out).toContain('변경한 파일에 위반')
   })
 
-  it('🔴 warn 은 게이트가 아니다 — raw 컨트롤만 있는 파일은 통과한다', () => {
-    // R11 을 게이트로 삼으면 기존 화면 파일을 한 줄만 고쳐도 CI 가 막힌다.
+  it('🔴 리포트 전용 warn(R04~R07)은 게이트가 아니다', () => {
+    // R11 은 개수 증가를 막지만, 나머지 warn 은 리포트로만 남는다.
+    // 이것까지 게이트로 삼으면 기존 화면 파일을 한 줄만 고쳐도 CI 가 막힌다.
     const dir = makeFixture({
-      'src/components/Warnish.tsx': 'export const X = () => <button className="px-2">go</button>\n',
+      'src/components/Warnish.tsx': 'export const X = () => { confirm("go") }\n', // R07
     })
     const r = runAudit(['--strict', `--root=${dir}`, '--changed=src/components/Warnish.tsx'])
-    expect(r.code, 'warn 이 게이트가 됐다').toBe(0)
+    expect(r.code, 'report-only warn 이 게이트가 됐다').toBe(0)
+  })
+})
+
+describe('🔴 stdout 파이프에서 출력이 잘리지 않는다', () => {
+  // ── CI 실패 재현 고정 (2026-09-15) ────────────────────────────
+  //  `process.exit()` 는 파이프로 나가는 stdout 의 **미완료 버퍼를 버린다**.
+  //  그래서 CI 에서 리포트 뒷부분(`strict PASS` 요약)이 통째로 사라졌고
+  //  `toContain('strict PASS')` 가 깨졌다. "재실행하니 됐다" 로 끝내면 다시 난다.
+  //  main 이 exit code 를 **반환만** 하고 최상단이 `process.exitCode` 를 쓰게 고쳤다.
+
+  it('스크립트에 즉시 종료(`process.exit`) 호출이 없다', () => {
+    const code = read(SCRIPT)
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/^\s*\/\/.*$/gm, '')
+    expect(code, 'process.exit() 가 남아 있으면 파이프 출력이 잘린다').not.toContain('process.exit(')
+    expect(code).toContain('process.exitCode = main()')
+  })
+
+  it('report-only 실행의 **마지막 줄**까지 파이프로 나온다', () => {
+    const r = runAudit()
+    expect(r.out).toContain('총')
+    expect(r.out.trimEnd().endsWith('건') || r.out.includes('WARN:')).toBe(true)
+  })
+
+  it('strict 실행의 요약 줄이 파이프로 나온다', () => {
+    expect(runAudit(['--strict']).out).toContain('strict PASS')
+  })
+
+  it('🔴 `--output=json` 이 파이프에서 **끝까지 유효한 JSON** 이다', () => {
+    // 잘리면 여기서 JSON.parse 가 던진다.
+    const r = runAudit(['--output=json'])
+    expect(r.code).toBe(0)
+    const parsed = JSON.parse(r.out) as {
+      summary: { files: number; error: number; warn: number }
+      violations: unknown[]
+    }
+    expect(parsed.summary.files).toBeGreaterThan(400)
+    expect(parsed.violations.length).toBe(parsed.summary.error + parsed.summary.warn)
   })
 })
 
@@ -127,11 +166,14 @@ describe('baseline', () => {
     for (const k of keys.slice(0, 10)) expect(k).toMatch(/^src\/.+::R\d+$/)
   })
 
-  it('🔴 baseline 에는 error 만 담긴다 — warn 은 게이트가 아니다', () => {
+  it('🔴 baseline 에는 error 와 R11 만 담긴다', () => {
+    // R11 은 severity 가 warn 이지만 **개수 증가를 막는** 게이트라 baseline 에 들어간다.
+    // 리포트 전용 warn(R04~R07)은 들어가면 안 된다 — 게이트가 아닌데 baseline 을 흔든다.
     const b = JSON.parse(read(BASELINE)) as Record<string, number>
-    const warnRules = ['R04', 'R05', 'R06', 'R07', 'R11']
-    const bad = Object.keys(b).filter((k) => warnRules.includes(k.split('::')[1]))
-    expect(bad, `warn 규칙이 baseline 에 있다: ${bad.join(', ')}`).toEqual([])
+    const reportOnly = ['R04', 'R05', 'R06', 'R07']
+    const bad = Object.keys(b).filter((k) => reportOnly.includes(k.split('::')[1]))
+    expect(bad, `리포트 전용 warn 이 baseline 에 있다: ${bad.join(', ')}`).toEqual([])
+    expect(Object.keys(b).some((k) => k.endsWith('::R11')), 'R11 이 baseline 에 없다').toBe(true)
   })
 })
 
@@ -141,15 +183,90 @@ describe('규칙 — 계약이 실제로 검사된다', () => {
     ['R08', 'hardcoded-tokenized-color'],
     ['R09', 'hardcoded-control-size'],
     ['R10', 'hsl-token-misuse'],
-    ['R11', 'raw-standard-control'],
   ])('%s %s 규칙이 있다', (id, name) => {
     expect(src).toContain(`id: '${id}'`)
     expect(src).toContain(name)
   })
 
-  it('raw 표준 컨트롤은 warn 이다 — 기존 화면을 한 번에 red 로 만들지 않는다', () => {
-    const r11 = src.slice(src.indexOf("id: 'R11'"), src.indexOf("id: 'R11'") + 400)
-    expect(r11).toContain("severity: 'warn'")
+  it('R11 은 라인 규칙이 아니라 AST 검사다', () => {
+    expect(src).toContain('raw-standard-control')
+    expect(src).not.toContain("id: 'R11'") // RULES 배열이 아니라 findRawControls 가 담당
+  })
+
+  it('R11 은 JSX AST 로 센다 — 줄 단위 정규식은 multiline JSX 를 놓친다', () => {
+    expect(src).toContain("import ts from 'typescript'")
+    expect(src).toContain('ts.ScriptKind.TSX')
+    expect(src).toContain('findRawControls')
+  })
+})
+
+describe('🔴 R11 raw 표준 컨트롤 — 신규 부채 게이트', () => {
+  /** 한 줄짜리 raw 컨트롤 */
+  const ONE_LINE = 'export const A = () => <button className="px-2">go</button>\n'
+  /** 🔴 여러 줄에 걸친 JSX — 줄 단위 정규식이 놓치던 형태 */
+  const MULTILINE = [
+    'export const B = () => (',
+    '  <input',
+    '    type="text"',
+    '    className="px-2"',
+    '  />',
+    ')',
+    '',
+  ].join('\n')
+
+  it('multiline JSX 도 잡는다', () => {
+    const dir = makeFixture({ 'src/components/M.tsx': MULTILINE })
+    const r = runAudit(['--strict', `--root=${dir}`])
+    expect(r.code, 'multiline input 을 놓쳤다').toBe(1)
+    expect(r.out).toContain('R11')
+  })
+
+  it('기존 baseline 개수는 그대로 통과한다', () => {
+    const dir = makeFixture(
+      { 'src/components/M.tsx': ONE_LINE },
+      { 'src/components/M.tsx::R11': 1 },
+    )
+    expect(runAudit(['--strict', `--root=${dir}`]).code).toBe(0)
+  })
+
+  it('🔴 1건 늘면 exit 1 이다', () => {
+    const dir = makeFixture(
+      { 'src/components/M.tsx': ONE_LINE + MULTILINE },
+      { 'src/components/M.tsx::R11': 1 },
+    )
+    const r = runAudit(['--strict', `--root=${dir}`])
+    expect(r.code).toBe(1)
+    expect(r.out).toContain('1 → 2')
+  })
+
+  it('1건 줄면 통과한다 — 부채를 갚는 방향은 막지 않는다', () => {
+    const dir = makeFixture(
+      { 'src/components/M.tsx': ONE_LINE },
+      { 'src/components/M.tsx::R11': 2 },
+    )
+    expect(runAudit(['--strict', `--root=${dir}`]).code).toBe(0)
+  })
+
+  it('🔴 공용 Button/Input 자신은 예외다 — 표준 컨트롤의 유일한 출처다', () => {
+    const dir = makeFixture({
+      'src/components/ui/Button.tsx': ONE_LINE,
+      'src/components/ui/Input.tsx': MULTILINE,
+    })
+    const r = runAudit(['--strict', `--root=${dir}`])
+    expect(r.code, '공용 컴포넌트가 자기 규칙에 걸렸다').toBe(0)
+    expect(r.out).not.toContain('R11')
+  })
+
+  it('button·input·select·textarea 를 모두 센다', () => {
+    const dir = makeFixture({
+      'src/components/All.tsx':
+        'export const C = () => (<div>' +
+        '<button/><input/><select/><textarea/>' +
+        '</div>)\n',
+    })
+    const r = runAudit(['--output=json', `--root=${dir}`])
+    const j = JSON.parse(r.out) as { violations: Array<{ ruleId: string }> }
+    expect(j.violations.filter((v) => v.ruleId === 'R11').length).toBe(4)
   })
 })
 

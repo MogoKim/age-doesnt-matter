@@ -64,10 +64,17 @@ function FieldShell({ id, label, error, success, density, children }: FieldShell
   )
 }
 
-/** label 이 없으면 호출부의 id 를, 그것도 없으면 안정적인 자동 id 를 쓴다. */
-function useFieldId(id: string | undefined, label: string | undefined) {
+/**
+ * 필드 id — **명시적 id 가 없으면 항상 `React.useId()`**.
+ *
+ * 🔴 label 에서 id 를 만들면 **같은 라벨이 두 번 나올 때 id 가 충돌한다.**
+ *    (예: 폼 두 개에 각각 "닉네임" 입력이 있는 화면) 충돌하면 `htmlFor` 가
+ *    엉뚱한 입력을 가리키고, 클릭 포커스와 스크린리더 읽기가 서로 뒤바뀐다.
+ *    `useId` 는 렌더마다 고유하고 SSR/CSR 간에도 일치한다.
+ */
+function useFieldId(id: string | undefined) {
   const auto = React.useId()
-  return id ?? (label ? label.replace(/\s/g, '-').toLowerCase() : auto)
+  return id ?? auto
 }
 
 export interface InputProps extends React.ComponentProps<'input'> {
@@ -79,7 +86,7 @@ export interface InputProps extends React.ComponentProps<'input'> {
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, label, error, success, id, density = 'touch', ...props }, ref) => {
-    const inputId = useFieldId(id, label)
+    const inputId = useFieldId(id)
     return (
       <FieldShell id={inputId} label={label} error={error} success={success} density={density}>
         <input
@@ -106,7 +113,7 @@ export interface TextareaProps extends React.ComponentProps<'textarea'> {
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ className, label, error, success, id, density = 'touch', rows = 4, ...props }, ref) => {
-    const fieldId = useFieldId(id, label)
+    const fieldId = useFieldId(id)
     return (
       <FieldShell id={fieldId} label={label} error={error} success={success} density={density}>
         <textarea
@@ -132,7 +139,7 @@ export interface SelectProps extends React.ComponentProps<'select'> {
 
 const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
   ({ className, label, error, id, density = 'touch', children, ...props }, ref) => {
-    const fieldId = useFieldId(id, label)
+    const fieldId = useFieldId(id)
     return (
       <FieldShell id={fieldId} label={label} error={error} density={density}>
         <select

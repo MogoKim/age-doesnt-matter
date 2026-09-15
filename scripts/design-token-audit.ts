@@ -26,6 +26,7 @@
  */
 import { readFileSync, readdirSync, writeFileSync } from 'fs'
 import { join, relative, resolve } from 'path'
+import ts from 'typescript'
 
 /**
  * 검사 루트. 기본은 cwd 지만 `--root=` 로 바꿀 수 있다 —
@@ -56,8 +57,9 @@ const EXCLUDE_MATCHERS: Array<(rel: string) => boolean> = [
  * 분류 근거는 `src/lib/design-tokens.ts` 의 `NO_CSS_VAR_CONTEXTS` 에 있다.
  */
 const NO_CSS_VAR_FILES: Array<(rel: string) => boolean> = [
-  (p) => p.includes('opengraph-image'),        // next/og·Satori 는 CSS 변수를 해석하지 않는다
-  (p) => p.startsWith('src/components/icons/'), // SVG presentation attribute
+  (p) => p.includes('opengraph-image'), // next/og·Satori 는 CSS 변수를 해석하지 않는다
+  // 🔴 `src/components/icons/` 전체 예외는 **근거가 없어 제거했다** — 하드코딩 색 0건이었다.
+  //    근거 없는 예외는 나중에 진짜 위반을 숨긴다.
 ]
 
 type Severity = 'error' | 'warn'
@@ -207,15 +209,6 @@ const RULES: Rule[] = [
     // 실제로 TipTapEditor 에서 이 형태로 색이 죽어 있었다(2026-09-15).
     check: (l) => /(?<!hsl\()var\(--(?:background|foreground|card|popover|primary|secondary|muted|accent|destructive|border|input|ring|success|warning|info)(?:-[a-z]+)?\)/.test(l),
   },
-  {
-    id: 'R11',
-    name: 'raw-standard-control',
-    severity: 'warn',
-    // 공용 컴포넌트가 있는데 표준 컨트롤을 직접 만들었다.
-    // 🔴 error 가 아니라 warn 이다 — 기존 화면은 컨트롤마다 스킨이 달라서
-    //    한 번에 바꾸면 외형이 바뀐다. **새로 만드는 것**만 막는 게 목적이다.
-    check: (l) => /<(?:button|input|select|textarea)\b[^>]*className=/.test(l),
-  },
 ]
 
 const COMMENT_RE = /^\s*(?:\/\/|\/\*|\*)/
@@ -261,6 +254,59 @@ function collectFiles(dir: string): string[] {
   return results
 }
 
+
+// ──────────────────────────────────────────────────────────────
+// R11 — raw standard control (JSX AST)
+// ──────────────────────────────────────────────────────────────
+
+/**
+ * 공용 컴포넌트가 있는데 표준 컨트롤을 직접 만든 곳.
+ *
+ * 🔴 **줄 단위 정규식으로는 못 잡는다.** JSX 는 여러 줄에 걸쳐 쓰이고
+ *    `<button\n  type="submit"\n  className=...>` 같은 형태가 흔하다.
+ *    그래서 TypeScript 의 JSX 파서로 **엘리먼트 단위**로 센다.
+ *
+ * 게이트 방식: 기존 부채는 baseline 으로 허용하되 **개수가 늘면 exit 1** 이다.
+ * 기존 화면은 컨트롤마다 스킨이 달라 한 번에 못 바꾼다 — 막아야 하는 건 **새 부채**다.
+ */
+const RAW_CONTROL_TAGS = new Set(['button', 'input', 'select', 'textarea'])
+
+/** 공용 컴포넌트 자신은 표준 컨트롤을 만들어야 한다 — 여기가 유일한 출처다. */
+const RAW_CONTROL_EXEMPT = [
+  'src/components/ui/Button.tsx',
+  'src/components/ui/Input.tsx',
+]
+
+function findRawControls(rel: string, content: string): Violation[] {
+  if (RAW_CONTROL_EXEMPT.includes(rel)) return []
+  if (!/\.tsx$/.test(rel)) return []
+
+  const sf = ts.createSourceFile(rel, content, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX)
+  const out: Violation[] = []
+
+  const visit = (node: ts.Node): void => {
+    const tagNode =
+      ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node) ? node : undefined
+    if (tagNode) {
+      const tag = tagNode.tagName.getText(sf)
+      if (RAW_CONTROL_TAGS.has(tag)) {
+        const { line } = sf.getLineAndCharacterOfPosition(tagNode.getStart(sf))
+        out.push({
+          ruleId: 'R11',
+          ruleName: 'raw-standard-control',
+          severity: 'warn',
+          file: rel,
+          line: line + 1,
+          code: `<${tag} …> — 공용 ${tag === 'button' ? 'Button' : 'Input/Textarea/Select'} 대신 직접 구현`,
+        })
+      }
+    }
+    ts.forEachChild(node, visit)
+  }
+  visit(sf)
+  return out
+}
+
 function checkFile(absPath: string): Violation[] {
   const violations: Violation[] = []
   let content: string
@@ -291,12 +337,22 @@ function checkFile(absPath: string): Violation[] {
     }
   }
 
+  violations.push(...findRawControls(rel, content))
+
   return violations
+}
+
+/** 🔴 baseline·게이트 대상 — `error` 전부 + **R11**(raw 표준 컨트롤). */
+function isGating(v: Violation): boolean {
+  return v.severity === 'error' || v.ruleId === 'R11'
 }
 
 /**
  * 파일별 위반 수 — baseline 비교 단위. 줄 번호는 쉽게 흔들려서 쓰지 않는다.
- * 🔴 **error 만** 담는다. warn 은 게이트가 아니라 리포트라 baseline 에 넣으면 혼란만 준다.
+ *
+ * 🔴 담는 것: `error` 전부 + **R11**.
+ *    R11 은 severity 가 warn 이지만 **개수 증가는 막는다** — 기존 부채는 baseline 으로
+ *    허용하되 새 raw 컨트롤은 통과시키지 않는다. 나머지 warn(R04~R07)은 리포트 전용이다.
  */
 type Baseline = Record<string, number>
 
@@ -314,7 +370,15 @@ function readBaseline(): Baseline {
   }
 }
 
-function main(): void {
+/**
+ * 🔴 **`process.exit()` 를 쓰지 않는다.**
+ *  stdout 이 파이프일 때 `console.log` 는 **비동기**로 쓰인다.
+ *  `process.exit()` 는 아직 못 쓴 버퍼를 버리고 즉시 끝내서 **출력이 잘린다** —
+ *  CI 에서 리포트 뒷부분(`strict PASS` 요약)이 통째로 사라져 테스트가 깨졌다(2026-09-15 실측).
+ *  그래서 main 은 **exit code 를 반환만** 하고, 최상단이 `process.exitCode` 에 담는다.
+ *  Node 는 stdout 을 다 비운 뒤 그 코드로 종료한다.
+ */
+function main(): number {
   const outputJson = process.argv.includes('--output=json')
   const strict = process.argv.includes('--strict')
   const updateBaseline = process.argv.includes('--update-baseline')
@@ -346,7 +410,7 @@ function main(): void {
       violations: allViolations,
     }
     process.stdout.write(JSON.stringify(report, null, 2) + '\n')
-    process.exit(0)
+    return 0
   }
 
   for (const v of allViolations) {
@@ -363,24 +427,24 @@ function main(): void {
   console.log(`ERROR: ${errorCount}건`)
   console.log(`WARN:  ${warnCount}건`)
 
-  const currentErrors = toBaseline(allViolations.filter((v) => v.severity === 'error'))
+  const currentErrors = toBaseline(allViolations.filter(isGating))
 
   if (updateBaseline) {
     writeFileSync(join(ROOT, BASELINE_PATH), JSON.stringify(currentErrors, null, 2) + '\n')
-    console.log(`\nbaseline 갱신: ${BASELINE_PATH} (error ${Object.keys(currentErrors).length}항목 · warn 은 담지 않는다)`)
-    process.exit(0)
+    console.log(`\nbaseline 갱신: ${BASELINE_PATH} (${Object.keys(currentErrors).length}항목 — error + R11)`)
+    return 0
   }
 
   if (!strict) {
     // 기본 실행은 report-only 다 — 전체 부채를 보여주되 게이트하지 않는다.
-    process.exit(0)
+    return 0
   }
 
   // ── strict: ① 변경 파일의 위반 ② baseline 초과 ────────────────────
   // 🔴 게이트는 **error 만**이다. `warn`(R11 raw 컨트롤)은 기존 화면이 컨트롤마다 스킨이 달라
   //    한 번에 못 바꾸는 부채라, 게이트로 삼으면 파일을 한 줄만 고쳐도 CI 가 막힌다.
   //    warn 은 리포트에 남아 리뷰가 본다.
-  const gating = allViolations.filter((v) => v.severity === 'error')
+  const gating = allViolations.filter(isGating)
   const inChanged = gating.filter((v) => changed.has(v.file))
   const base = readBaseline()
   const regressions = Object.entries(currentErrors).filter(([k, n]) => n > (base[k] ?? 0))
@@ -396,9 +460,10 @@ function main(): void {
 
   if (inChanged.length === 0 && regressions.length === 0) {
     console.log('\n✅ strict PASS — 변경 파일 위반 0 · baseline 초과 0')
-    process.exit(0)
+    return 0
   }
-  process.exit(1)
+  return 1
 }
 
-main()
+// exit code 만 담는다 — 출력이 다 나간 뒤 Node 가 이 코드로 끝낸다.
+process.exitCode = main()
