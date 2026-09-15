@@ -193,13 +193,10 @@ describe('CSS 변수를 못 쓰는 문맥이 문서화돼 있다', () => {
     for (const c of NO_CSS_VAR_CONTEXTS) expect(c.reason.length, c.id).toBeGreaterThan(10)
   })
 
-  it('🔴 근거 없는 예외를 두지 않는다 — `icons/` 전체 예외는 제거했다', () => {
-    // `src/components/icons/` 에 하드코딩 색이 **0건**이라 예외를 둘 이유가 없었다.
-    // 근거 없는 예외는 나중에 진짜 위반을 숨긴다.
+  it('예외 목록에 `svg-attribute` 가 없다 — 근거(하드코딩 색)가 0건이었다', () => {
+    // 🔴 이 단언은 **선언**만 본다. 실제 동작은 `design-audit-contract.test.ts` 의
+    //    fixture 행동 테스트가 검증한다 — 문자열 검사만으로 끝내면 false-green 이다.
     expect(NO_CSS_VAR_CONTEXTS.map((c) => c.id)).not.toContain('svg-attribute')
-    const iconFiles = SRC.filter((f) => f.startsWith('src/components/icons/'))
-    const hardcoded = iconFiles.filter((f) => /(?:fill|stroke)="#[0-9a-fA-F]{6}"/.test(read(f)))
-    expect(hardcoded, `icons/ 에 하드코딩 색이 생겼다: ${hardcoded.join(', ')}`).toEqual([])
   })
 
   it('OG 이미지 파일이 실제로 존재한다 — 죽은 예외 금지', () => {

@@ -204,7 +204,8 @@ COUPANG_ACCESS_KEY 미설정
 - ~~AI 매칭 에이전트~~: `agents/cafe/cps-matcher.ts` — 제거됨(2026-09-09). **배너 노출은 `src/components/ad/CoupangBanner.tsx` 로 계속 동작한다**
 - 쿠팡 API 클라이언트: `agents/core/coupang.ts`
 - 배너 컴포넌트: `src/components/ad/CoupangBanner.tsx`
-- 상품 링크 컴포넌트: `src/components/ad/CoupangCPS.tsx`
+- ~~상품 링크 컴포넌트~~: `src/components/ad/CoupangCPS.tsx` — **제거됨(2026-09-15, 소비처 0)**.
+  상품 노출은 `src/components/ad/CoupangBanner.tsx` 와 `CoupangHome1`·`CoupangHome2`·`CoupangDesktopBanner` 가 담당한다
 - 클릭 추적: `src/components/ad/CpsClickTracker.tsx`
 - 슬롯 설정: `src/components/ad/ad-slots.ts`
 - ~~매거진 파이프라인~~: `agents/cafe/magazine-generator.ts` — 제거됨(2026-09-09)

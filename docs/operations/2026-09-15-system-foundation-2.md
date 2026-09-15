@@ -273,3 +273,44 @@ Preview 320·390·1440 × 5화면(home·community·magazine·jobs·login) 실측
 가로 넘침 **0→0** · 텍스트 넘침 **0→0** · 44px 미만 컨트롤 **동일** · 전 페이지 200.
 홈 컨트롤 수가 44→43 으로 보였으나 대기 시간을 늘려 재측정하니 **컨트롤 집합이 완전히 동일**했다 —
 광고 슬롯 렌더 타이밍 차이였다.
+
+
+## 9. Codex 재리뷰 보정 (2026-09-15)
+
+| # | finding | 처리 |
+|---|---|---|
+| 1 | R11 changed-file 게이트 | 로직은 앞 커밋(`80f0c3b2`)에 이미 반영. 남아 있던 **"게이트는 error 만" stale 주석**을 실제 정책표로 교체했다 |
+| 2 | CI 조합 재현 테스트 | `--changed` 없이만 검증하면 CI 가 실제로 도는 형태를 못 본다. **4+1 조합**을 고정했다 |
+| 3 | icons 예외 false-green | 소스 문자열 검사를 버리고 **fixture 행동 테스트**로 바꿨다 |
+| 4 | 현행 문서 잔존 | `R02:207` CoupangCPS 안내 · `NOTIFICATION_SPEC` 의 Server Action 2개를 실제 API 로 교체 |
+
+### strict 게이트 판정표 (정본)
+
+| 규칙 | 변경 파일에 존재 | baseline 초과 |
+|---|---|---|
+| error (R01·R02·R03·R08~R10) | **FAIL** | FAIL |
+| R11 (raw 표준 컨트롤) | 통과 | **FAIL** |
+| 리포트 전용 warn (R04~R07) | 통과 | 통과(미집계) |
+
+### CI 조합 재현 테스트
+
+| baseline | 현재 | `--changed` | 기대 | 결과 |
+|---|---|---|---|---|
+| R11 1 | 1 | 포함 | exit 0 | PASS |
+| R11 1 | **2** | 포함 | **exit 1** (`1 → 2`) | PASS |
+| R11 1 | 0 | 포함 | exit 0 (부채 갚기) | PASS |
+| **R08 1** | 1 | 포함 | **exit 1** | PASS |
+| R08 1 | 1 | 미포함 | exit 0 | PASS |
+
+### 예외는 선언이 아니라 행동으로 검증한다
+
+"소스에 `icons/` 문자열이 없다" 는 검사는 **false-green** 이다 — 예외가 다른 이름·다른 경로로 살아 있어도 통과한다.
+fixture 에 실제 위반을 넣고 잡히는지/통과하는지로 본다.
+
+| fixture | 기대 | 결과 |
+|---|---|---|
+| `src/components/icons/Heart.tsx` 에 `#FF6F61`·`#FEE500` | **R08 검출 · strict exit 1** | PASS |
+| `opengraph-image.tsx` 에 같은 HEX | **R08 0건 · strict exit 0** (Satori 는 CSS 변수를 못 읽는다) | PASS |
+| 둘을 같이 두기 | OG 만 빠지고 나머지는 잡힘 — 예외가 경로 한정임을 확인 | PASS |
+
+**red→green**: `icons/` 예외를 되살리면 행동 테스트 **2건 red**.

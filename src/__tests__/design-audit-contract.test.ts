@@ -154,6 +154,96 @@ describe('🔴 stdout 파이프에서 출력이 잘리지 않는다', () => {
   })
 })
 
+describe('🔴 CI 조합 재현 — `--changed` 가 걸린 상태의 판정', () => {
+  // ── 왜 이 조합이 필요한가 ────────────────────────────────────
+  //  `--changed` 없이만 검증하면 CI 가 실제로 도는 형태를 못 본다.
+  //  실제로 이 PR 이 CI 에서 막혔던 원인이 **`--changed` 가 걸렸을 때의 R11 판정**이었다.
+  //  CI 는 항상 `--strict --changed=<변경파일>` 로 돈다 — 그 조합을 그대로 고정한다.
+
+  const FILE = 'src/components/M.tsx'
+  const TWO = ONE_LINE + MULTILINE // raw 컨트롤 2개
+
+  it('R11 baseline 1 · 현재 1 · --changed 포함 → exit 0', () => {
+    const dir = makeFixture({ [FILE]: ONE_LINE }, { [`${FILE}::R11`]: 1 })
+    const r = runAudit(['--strict', `--root=${dir}`, `--changed=${FILE}`])
+    expect(r.code, 'R11 이 변경 파일 존재만으로 막았다').toBe(0)
+    expect(r.out).toContain('strict PASS')
+  })
+
+  it('🔴 R11 baseline 1 · 현재 2 · --changed 포함 → exit 1', () => {
+    const dir = makeFixture({ [FILE]: TWO }, { [`${FILE}::R11`]: 1 })
+    const r = runAudit(['--strict', `--root=${dir}`, `--changed=${FILE}`])
+    expect(r.code, '새 raw 컨트롤을 놓쳤다').toBe(1)
+    expect(r.out).toContain('1 → 2')
+  })
+
+  it('R11 baseline 1 · 현재 0 · --changed 포함 → exit 0 (부채 갚기)', () => {
+    const dir = makeFixture({ [FILE]: 'export const A = () => <div/>\n' }, { [`${FILE}::R11`]: 1 })
+    const r = runAudit(['--strict', `--root=${dir}`, `--changed=${FILE}`])
+    expect(r.code, '부채를 갚는 방향을 막았다').toBe(0)
+  })
+
+  it('🔴 ERROR baseline 1 · --changed 포함 → exit 1 (R11 과 다르다)', () => {
+    const f = 'src/lib/debt.ts'
+    const dir = makeFixture({ [f]: 'export const OLD = "bg-[#FF6F61]"\n' }, { [`${f}::R08`]: 1 })
+    const r = runAudit(['--strict', `--root=${dir}`, `--changed=${f}`])
+    expect(r.code, 'error 가 변경 파일에서 통과했다').toBe(1)
+    expect(r.out).toContain('변경한 파일에 위반')
+  })
+
+  it('ERROR baseline 1 · --changed **미포함** → exit 0', () => {
+    // 손대지 않은 파일의 기존 error 는 baseline 이 흡수한다.
+    const f = 'src/lib/debt.ts'
+    const dir = makeFixture({ [f]: 'export const OLD = "bg-[#FF6F61]"\n' }, { [`${f}::R08`]: 1 })
+    expect(runAudit(['--strict', `--root=${dir}`]).code).toBe(0)
+  })
+})
+
+describe('🔴 CSS 변수 예외는 **행동**으로 검증한다', () => {
+  // ── 왜 행동 테스트인가 ────────────────────────────────────────
+  //  "소스에 `icons/` 문자열이 없다" 는 검사는 false-green 이다 —
+  //  예외가 다른 이름·다른 경로로 살아 있어도 통과한다.
+  //  fixture 에 실제 위반을 넣고 **잡히는가/통과하는가**로 본다.
+
+  const TOKENIZED = 'export const Icon = () => <svg fill="#FF6F61" stroke="#FEE500" />\n'
+
+  it('🔴 `src/components/icons/` 는 예외가 아니다 — 토큰화 대상 HEX 가 R08 로 잡힌다', () => {
+    const dir = makeFixture({ 'src/components/icons/Heart.tsx': TOKENIZED })
+    const r = runAudit(['--output=json', `--root=${dir}`])
+    const j = JSON.parse(r.out) as { violations: Array<{ ruleId: string; file: string }> }
+    const r08 = j.violations.filter((v) => v.ruleId === 'R08')
+    expect(r08.length, 'icons/ 가 여전히 예외로 빠져 있다').toBeGreaterThan(0)
+    expect(r08[0].file).toBe('src/components/icons/Heart.tsx')
+  })
+
+  it('icons/ 위반이 strict 게이트에도 실제로 걸린다', () => {
+    const dir = makeFixture({ 'src/components/icons/Heart.tsx': TOKENIZED })
+    expect(runAudit(['--strict', `--root=${dir}`]).code).toBe(1)
+  })
+
+  it('🔴 `opengraph-image` 는 예외가 **실제로 통과**한다 — Satori 는 CSS 변수를 못 읽는다', () => {
+    const dir = makeFixture({
+      'src/app/(main)/jobs/[id]/opengraph-image.tsx': TOKENIZED,
+    })
+    const r = runAudit(['--output=json', `--root=${dir}`])
+    const j = JSON.parse(r.out) as { violations: Array<{ ruleId: string }> }
+    expect(j.violations.filter((v) => v.ruleId === 'R08'), 'OG 예외가 동작하지 않는다').toEqual([])
+    expect(runAudit(['--strict', `--root=${dir}`]).code).toBe(0)
+  })
+
+  it('같은 HEX 라도 OG 밖이면 잡힌다 — 예외가 경로 한정인지 확인', () => {
+    const dir = makeFixture({
+      'src/app/(main)/jobs/[id]/opengraph-image.tsx': TOKENIZED,
+      'src/components/Other.tsx': TOKENIZED,
+    })
+    const r = runAudit(['--output=json', `--root=${dir}`])
+    const j = JSON.parse(r.out) as { violations: Array<{ ruleId: string; file: string }> }
+    const files = new Set(j.violations.filter((v) => v.ruleId === 'R08').map((v) => v.file))
+    expect(files.has('src/components/Other.tsx')).toBe(true)
+    expect([...files].some((f) => f.includes('opengraph-image'))).toBe(false)
+  })
+})
+
 describe('baseline', () => {
   it('baseline 파일이 커밋돼 있다', () => {
     expect(existsSync(resolve(ROOT, BASELINE))).toBe(true)
@@ -200,19 +290,20 @@ describe('규칙 — 계약이 실제로 검사된다', () => {
   })
 })
 
+/** 한 줄짜리 raw 컨트롤 */
+const ONE_LINE = 'export const A = () => <button className="px-2">go</button>\n'
+/** 🔴 여러 줄에 걸친 JSX — 줄 단위 정규식이 놓치던 형태 */
+const MULTILINE = [
+  'export const B = () => (',
+  '  <input',
+  '    type="text"',
+  '    className="px-2"',
+  '  />',
+  ')',
+  '',
+].join('\n')
+
 describe('🔴 R11 raw 표준 컨트롤 — 신규 부채 게이트', () => {
-  /** 한 줄짜리 raw 컨트롤 */
-  const ONE_LINE = 'export const A = () => <button className="px-2">go</button>\n'
-  /** 🔴 여러 줄에 걸친 JSX — 줄 단위 정규식이 놓치던 형태 */
-  const MULTILINE = [
-    'export const B = () => (',
-    '  <input',
-    '    type="text"',
-    '    className="px-2"',
-    '  />',
-    ')',
-    '',
-  ].join('\n')
 
   it('multiline JSX 도 잡는다', () => {
     const dir = makeFixture({ 'src/components/M.tsx': MULTILINE })
@@ -245,29 +336,6 @@ describe('🔴 R11 raw 표준 컨트롤 — 신규 부채 게이트', () => {
       { 'src/components/M.tsx::R11': 2 },
     )
     expect(runAudit(['--strict', `--root=${dir}`]).code).toBe(0)
-  })
-
-  it('🔴 R11 은 "변경 파일에 있으면 실패" 대상이 **아니다** — 개수 증가만 막는다', () => {
-    // R11 의 계약은 개수 증가 금지다. 존재만으로 막으면 raw 컨트롤이 있는 화면 파일을
-    // 토큰 치환 같은 무관한 이유로 한 줄만 고쳐도 CI 가 멈춘다 —
-    // "기존 부채를 한 번에 red 로 만들지 않는다" 는 전제와 정면으로 어긋난다.
-    const dir = makeFixture(
-      { 'src/components/M.tsx': ONE_LINE },
-      { 'src/components/M.tsx::R11': 1 },
-    )
-    const r = runAudit(['--strict', `--root=${dir}`, '--changed=src/components/M.tsx'])
-    expect(r.code, 'R11 이 변경 파일 존재만으로 막았다').toBe(0)
-  })
-
-  it('🔴 error 는 변경 파일에 있으면 baseline 안이라도 막는다 — R11 과 다르다', () => {
-    // error(R08 등)는 고치기 싸고 국소적이라 손댄 파일에서는 그냥 고치게 한다.
-    const dir = makeFixture(
-      { 'src/lib/debt.ts': 'export const OLD = "bg-[#FF6F61]"\n' },
-      { 'src/lib/debt.ts::R08': 1 },
-    )
-    const r = runAudit(['--strict', `--root=${dir}`, '--changed=src/lib/debt.ts'])
-    expect(r.code).toBe(1)
-    expect(r.out).toContain('변경한 파일에 위반')
   })
 
   it('🔴 공용 ui/ primitive 는 예외다 — 표준 컨트롤의 유일한 출처다', () => {
