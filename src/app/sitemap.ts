@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next'
 import { unstable_cache } from 'next/cache'
-import { buildPostPath, encodePathSegment } from '@/lib/post-url'
+import { buildGuidePath, buildPostPath, buildSeriesPath } from '@/lib/post-url'
 import { prisma } from '@/lib/prisma'
 import { JOB_SIDO_LIST } from '@/lib/jobs-regions'
 import { EXCLUDE_GREETING } from '@/lib/greeting'
@@ -47,14 +47,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/terms`, changeFrequency: 'yearly', priority: 0.2 },
     { url: `${BASE_URL}/privacy`, changeFrequency: 'yearly', priority: 0.2 },
     { url: `${BASE_URL}/rules`, changeFrequency: 'yearly', priority: 0.2 },
-    ...BOARD_SLUGS.map((slug) => ({
-      url: `${BASE_URL}/community/${slug}`,
+    ...BOARD_SLUGS.map((boardSlug) => ({
+      url: `${BASE_URL}/community/${boardSlug}`,
       changeFrequency: 'daily' as const,
       priority: 0.8,
     })),
     // 생활형 대표 가이드(정적 /guide) — 파일럿부터 자동 반영
     ...GUIDE_SLUGS.map((slug) => ({
-      url: `${BASE_URL}/guide/${encodeURI(slug)}`,
+      url: `${BASE_URL}${buildGuidePath(slug)}`,
       changeFrequency: 'weekly' as const,
       priority: 0.7,
     })),
@@ -106,7 +106,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const seriesHubPages: MetadataRoute.Sitemap = seriesGroups
     .filter((g) => g.seriesId != null && g._count >= 3)
     .map((g) => ({
-      url: `${BASE_URL}/magazine/series/${encodePathSegment(String(g.seriesId))}`,
+      url: `${BASE_URL}${buildSeriesPath(String(g.seriesId))}`,
       changeFrequency: 'weekly' as const,
       priority: 0.6,
     }))

@@ -1,4 +1,4 @@
-import { buildPostPath, encodePathSegment } from '@/lib/post-url'
+import { buildPostPath, buildSeriesPath } from '@/lib/post-url'
 import { notFound, permanentRedirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -269,7 +269,7 @@ export default async function MagazineDetailPage({ params }: PageProps) {
           {/* 시리즈 허브 역링크 — 이전/다음(SeriesNav)과 별개로 전체 묶음 랜딩으로 이동 */}
           <div className="mb-6 -mt-2">
             <Link
-              href={`/magazine/series/${encodePathSegment(String(post.seriesId))}`}
+              href={buildSeriesPath(String(post.seriesId))}
               className="text-caption text-primary-text no-underline hover:underline"
             >
               이 시리즈 전체 보기 →

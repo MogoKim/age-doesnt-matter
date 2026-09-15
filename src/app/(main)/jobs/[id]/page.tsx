@@ -1,3 +1,4 @@
+import { buildPostPath } from '@/lib/post-url'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -44,7 +45,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     .filter(Boolean).join(' · ').slice(0, 155)
   const description = job.seoDescription ?? baseDescription
   const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'
-  const url = `${BASE_URL}/jobs/${id}`
+  const url = `${BASE_URL}${buildPostPath({ id, boardType: 'JOB' })}`
 
   return {
     title,
@@ -138,7 +139,7 @@ export default async function JobDetailPage({ params }: PageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(buildBreadcrumbJsonLd([
           { name: '홈', path: '/' },
           { name: '일자리', path: '/jobs' },
-          { name: job.title, path: `/jobs/${id}` },
+          { name: job.title, path: buildPostPath({ id, boardType: 'JOB' }) },
         ])) }}
       />
 

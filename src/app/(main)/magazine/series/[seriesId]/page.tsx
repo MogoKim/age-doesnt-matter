@@ -1,3 +1,4 @@
+import { buildPostPath, buildSeriesPath } from '@/lib/post-url'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
@@ -52,7 +53,8 @@ export async function generateMetadata({
   const [posts, seriesTitle] = await Promise.all([getSeriesPosts(seriesId), getSeriesTitle(seriesId)])
   if (posts.length === 0 || !seriesTitle) return {}
 
-  const url = `${BASE_URL}/magazine/series/${seriesId}`
+  // 🔴 허브 URL 도 글 링크와 **같은 규칙**을 쓴다 — canonical·OG·JSON-LD·breadcrumb 이 서로 달라지면 안 된다.
+  const url = `${BASE_URL}${buildSeriesPath(seriesId)}`
   const indexable = posts.length >= INDEX_MIN_POSTS
   return {
     title: `${seriesTitle} — 우나어 매거진 연재 ${posts.length}편`,
@@ -79,13 +81,13 @@ export default async function MagazineSeriesHub({
 
   if (posts.length === 0 || !seriesTitle) notFound()
 
-  const magHref = (p: SeriesPost) => `/magazine/${p.slug ?? p.id}`
+  const magHref = (p: SeriesPost) => buildPostPath({ id: p.id, boardType: 'MAGAZINE', slug: p.slug })
 
   const collectionJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
     name: seriesTitle,
-    url: `${BASE_URL}/magazine/series/${seriesId}`,
+    url: `${BASE_URL}${buildSeriesPath(seriesId)}`,
     inLanguage: 'ko-KR',
     isPartOf: { '@type': 'WebSite', name: '우리 나이가 어때서', url: BASE_URL },
     mainEntity: {
@@ -113,7 +115,7 @@ export default async function MagazineSeriesHub({
             buildBreadcrumbJsonLd([
               { name: '홈', path: '/' },
               { name: '매거진', path: '/magazine' },
-              { name: seriesTitle, path: `/magazine/series/${seriesId}` },
+              { name: seriesTitle, path: buildSeriesPath(seriesId) },
             ]),
           ),
         }}

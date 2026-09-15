@@ -37,13 +37,74 @@ describe('encodePathSegment — segment 하나만 정확히 한 번', () => {
     expect(encodePathSegment(once)).not.toContain('%25')
   })
 
-  it('🔴 slash 를 인코딩하지 않는다 — segment 에 들어오면 그대로 둔다', () => {
-    // segment 함수는 slash 를 받지 않는 게 정상이지만, 받아도 경로를 깨지 않는다.
-    expect(encodePathSegment('a/b')).toBe('a/b')
+  it('🔴 slash 를 인코딩한다 — segment 하나가 경로 segment 둘로 쪼개지면 라우팅이 바뀐다', () => {
+    // 2026-09-15 Codex 리뷰: 예전 구현은 `a/b` 를 그대로 둬서 segment 가 2개가 됐다.
+    // 경로 구분자 보존은 `encodePathname` 의 책임이지 segment 함수의 책임이 아니다.
+    expect(encodePathSegment('a/b')).toBe('a%2Fb')
+    expect(encodePathSegment('a/b').split('/')).toHaveLength(1)
   })
 
   it('빈 문자열은 빈 문자열', () => {
     expect(encodePathSegment('')).toBe('')
+  })
+
+  // ── 🔴 Codex 리뷰(2026-09-15) 로 드러난 구멍들 ──────────────
+  describe('부분·비정상 인코딩 입력에서도 ASCII 계약을 지킨다', () => {
+    const ASCII_ONLY = (v: string) => expect(/[^\x20-\x7E]/.test(v), v).toBe(false)
+
+    it('🔴 혼합 인코딩 — `%XX` 가 섞여 있어도 raw 한글을 남기지 않는다', () => {
+      // 예전 구현은 `%XX` 가 하나라도 보이면 segment 전체를 그대로 반환했다.
+      const out = encodePathSegment('한글-%20-test')
+      ASCII_ONLY(out)
+      expect(out).toBe('%ED%95%9C%EA%B8%80-%20-test')
+      expect(out).not.toContain('%25')
+    })
+
+    it('🔴 encoded slash 가 섞여도 ASCII 한 segment 다', () => {
+      const out = encodePathSegment('한글-%2F-경로')
+      ASCII_ONLY(out)
+      expect(out).toBe('%ED%95%9C%EA%B8%80-%2F-%EA%B2%BD%EB%A1%9C')
+      // `%2F` 는 경로 구분자가 **아니다** — segment 안에 남아야 한다
+      expect(out.split('/')).toHaveLength(1)
+    })
+
+    it('🔴 malformed percent — decode 가 실패하면 날것으로 보고 인코딩한다', () => {
+      // `%` 뒤에 hex 가 없다 → 유효한 인코딩이 아니다 → 리터럴 `%` 이므로 `%25` 가 맞다.
+      // 이건 이중 인코딩이 아니라 정상 표기다.
+      const out = encodePathSegment('50%-할인')
+      ASCII_ONLY(out)
+      expect(out).toBe('50%25-%ED%95%A0%EC%9D%B8')
+      expect(decodeURIComponent(out)).toBe('50%-할인')
+    })
+
+    it('🔴 잘린 percent(`%E0`·`%`)도 ASCII 로 떨어진다', () => {
+      for (const bad of ['%', '%E', '%E0', '끝-%', '%ZZ-한글']) {
+        ASCII_ONLY(encodePathSegment(bad))
+      }
+    })
+
+    it('🔴 어떤 입력이 와도 결과는 항상 ASCII 다', () => {
+      const inputs = [
+        '점심', '%EC%A0%90%EC%8B%AC', '한글-%20-test', '한글-%2F-경로', '50%-할인',
+        'a/b', '%', '이모지-😀', 'plain-ascii', '공백 있는 슬러그', '물음표?와#샵',
+      ]
+      for (const i of inputs) ASCII_ONLY(encodePathSegment(i))
+    })
+
+    it('🔴 멱등 — 두 번, 세 번 넣어도 `%25` 로 부풀지 않는다', () => {
+      for (const i of ['점심', '한글-%20-test', '한글-%2F-경로', 'a/b', '50%-할인']) {
+        const once = encodePathSegment(i)
+        const twice = encodePathSegment(once)
+        expect(twice, `입력: ${i}`).toBe(once)
+        expect(encodePathSegment(twice)).toBe(once)
+      }
+    })
+
+    it('`?`·`#` 처럼 경로를 끊는 문자도 인코딩한다', () => {
+      const out = encodePathSegment('물음표?와#샵')
+      expect(out).not.toContain('?')
+      expect(out).not.toContain('#')
+    })
   })
 
   it('decodeURIComponent 하면 원래 값으로 돌아온다', () => {
@@ -63,6 +124,13 @@ describe('encodePathname — 경로 전체', () => {
     expect(out.split('/').length).toBe(4)
     expect(out.startsWith('/community/stories/')).toBe(true)
   })
+  it('🔴 경로 구분자 보존은 여기 책임이다 — segment 안의 `/` 는 `%2F` 로 지킨다', () => {
+    // 경로: `/magazine/series/<한글>` → segment 3개 유지
+    expect(encodePathname('/magazine/series/한글-시리즈').split('/')).toHaveLength(4)
+    // segment 로 넘기면 하나로 유지
+    expect(encodePathSegment('한글/시리즈').split('/')).toHaveLength(1)
+  })
+
   it('이미 인코딩된 경로는 그대로다 — 멱등', () => {
     const once = encodePathname('/magazine/한글')
     expect(encodePathname(once)).toBe(once)

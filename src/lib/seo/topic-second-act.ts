@@ -15,7 +15,7 @@
  *     대신 지역 랜딩(/jobs/region/{시도})만 연결한다.
  *   - Google noindex 대상 글(PR-B3 미통과)은 앵커로 쓰지 않는다.
  */
-import { encodePathSegment } from '@/lib/post-url'
+import { buildGuidePath, encodePathSegment } from '@/lib/post-url'
 import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { stripHtmlTags } from '@/lib/sanitize'
@@ -223,7 +223,7 @@ function guideLink(slug: string): HubLink | null {
   if (!guide) return null
   return {
     title: guide.breadcrumbLabel,
-    href: `/guide/${guide.slug}`,
+    href: buildGuidePath(guide.slug),
     excerpt: toExcerpt(guide.description),
   }
 }

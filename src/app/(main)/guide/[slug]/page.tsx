@@ -1,3 +1,4 @@
+import { buildGuidePath } from '@/lib/post-url'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -22,7 +23,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params
   const guide = GUIDES[decodeURIComponent(slug)]
   if (!guide) return {}
-  const url = `${BASE_URL}/guide/${guide.slug}`
+  const url = `${BASE_URL}${buildGuidePath(guide.slug)}`
   return {
     title: guide.title,
     description: guide.description,
@@ -45,7 +46,7 @@ export default async function GuidePage({ params }: PageProps) {
   const guide = GUIDES[decodeURIComponent(slug)]
   if (!guide) notFound()
 
-  const url = `${BASE_URL}/guide/${guide.slug}`
+  const url = `${BASE_URL}${buildGuidePath(guide.slug)}`
 
   // JSON-LD 3종 — Article / FAQPage / BreadcrumbList
   const articleLd = {
@@ -71,7 +72,7 @@ export default async function GuidePage({ params }: PageProps) {
   const breadcrumbLd = buildBreadcrumbJsonLd([
     { name: '홈', path: '/' },
     { name: '생활 가이드', path: '/guide' },
-    { name: guide.breadcrumbLabel, path: `/guide/${guide.slug}` },
+    { name: guide.breadcrumbLabel, path: buildGuidePath(guide.slug) },
   ])
 
   return (

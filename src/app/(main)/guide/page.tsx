@@ -1,3 +1,4 @@
+import { buildGuidePath } from '@/lib/post-url'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 
@@ -66,7 +67,7 @@ export default function GuideIndexPage() {
         '@type': 'ListItem',
         position: index + 1,
         name: guide.title,
-        url: `${BASE_URL}/guide/${guide.slug}`,
+        url: `${BASE_URL}${buildGuidePath(guide.slug)}`,
       })),
     },
   }
@@ -114,7 +115,7 @@ export default function GuideIndexPage() {
                   {groupGuides.map((guide) => (
                     <Link
                       key={guide.slug}
-                      href={`/guide/${guide.slug}`}
+                      href={buildGuidePath(guide.slug)}
                       className="block rounded-lg border border-border bg-card p-4 no-underline shadow-sm transition-colors hover:border-primary/40 hover:bg-primary/5"
                     >
                       <h3 className="m-0 text-body font-bold leading-[1.45] text-foreground">{guide.breadcrumbLabel}</h3>
