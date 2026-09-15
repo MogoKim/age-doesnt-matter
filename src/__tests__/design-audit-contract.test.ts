@@ -67,10 +67,11 @@ describe('검사 범위 — 빠뜨린 곳이 없다', () => {
     expect(excludeBlock).not.toContain("src/components/admin/")
   })
 
-  it('CSS 변수를 못 쓰는 문맥만 색 규칙에서 빠진다', () => {
-    expect(src).toContain('opengraph-image')
-    expect(src).toContain('src/components/icons/')
-  })
+  // CSS 변수 예외의 검증은 **행동 테스트**가 정본이다
+  //   → `describe('🔴 CSS 변수 예외는 **행동**으로 검증한다')`
+  // 소스에 특정 문자열이 있는지 보는 검사는 false-green 이다:
+  // 예외가 다른 이름·다른 경로로 살아 있어도 통과하고, 지금처럼 예외를 **제거**했을 때는
+  // 오히려 "문자열이 있어야 한다" 고 주장하게 된다(정책과 정반대).
 })
 
 describe('게이트 — false-green 이 아니다', () => {
@@ -244,6 +245,89 @@ describe('🔴 CSS 변수 예외는 **행동**으로 검증한다', () => {
   })
 })
 
+describe('🔴 baseline 자체의 증가를 막는다', () => {
+  // ── 왜 필요한가 ──────────────────────────────────────────────
+  //  strict 게이트는 "현재 위반 vs 커밋된 baseline" 을 본다. 그런데 새 위반을 만들고
+  //  **baseline 도 같이 올려서** 커밋하면 그 게이트는 통과한다 — 부채가 조용히 는다.
+  //  수동 리뷰만으로는 못 막는다(100줄 넘는 JSON 의 숫자 하나가 늘어난 걸 사람이 놓친다).
+  //  그래서 기준 브랜치 baseline 과 **직접 비교**한다.
+
+  const KEY = 'src/components/M.tsx::R11'
+  /** 기준 브랜치 baseline 을 임시 파일로 만든다. */
+  function baseFile(obj: Record<string, number>): string {
+    const dir = mkdtempSync(join(tmpdir(), 'audit-base-'))
+    FIXTURES.push(dir)
+    const f = join(dir, 'base.json')
+    writeFileSync(f, JSON.stringify(obj, null, 2))
+    return f
+  }
+
+  it('🔴 기존 키의 값이 늘면 FAIL', () => {
+    const dir = makeFixture({ 'src/components/M.tsx': ONE_LINE }, { [KEY]: 2 })
+    const r = runAudit([`--root=${dir}`, `--compare-baseline=${baseFile({ [KEY]: 1 })}`])
+    expect(r.code).toBe(1)
+    expect(r.out).toContain('1 → 2')
+    expect(r.out).toContain('baseline 이 늘었다')
+  })
+
+  it('🔴 신규 키가 추가되면 FAIL', () => {
+    const dir = makeFixture({ 'src/components/M.tsx': ONE_LINE }, { [KEY]: 1 })
+    const r = runAudit([`--root=${dir}`, `--compare-baseline=${baseFile({})}`])
+    expect(r.code).toBe(1)
+    expect(r.out).toContain('신규')
+  })
+
+  it('값이 줄면 PASS — 부채를 갚는 방향', () => {
+    const dir = makeFixture({ 'src/components/M.tsx': ONE_LINE }, { [KEY]: 1 })
+    const r = runAudit([`--root=${dir}`, `--compare-baseline=${baseFile({ [KEY]: 5 })}`])
+    expect(r.code).toBe(0)
+    expect(r.out).toContain('감소')
+  })
+
+  it('키가 사라지면 PASS', () => {
+    const dir = makeFixture({ 'src/components/M.tsx': ONE_LINE }, {})
+    const r = runAudit([`--root=${dir}`, `--compare-baseline=${baseFile({ [KEY]: 1 })}`])
+    expect(r.code).toBe(0)
+    expect(r.out).toContain('제거')
+  })
+
+  it('기준 브랜치에 baseline 이 없으면 PASS — 최초 도입 1회', () => {
+    const dir = makeFixture({ 'src/components/M.tsx': ONE_LINE }, { [KEY]: 1 })
+    const r = runAudit([`--root=${dir}`, '--compare-baseline=/tmp/__no_such_baseline__.json'])
+    expect(r.code).toBe(0)
+    expect(r.out).toContain('최초 도입')
+  })
+
+  it('🔴 **새 R11 + 갱신된 baseline 을 같은 PR 에 넣어도 실패한다**', () => {
+    // 이게 이 게이트의 존재 이유다. strict 만 있으면 아래가 통과해 버린다.
+    const TWO = ONE_LINE + MULTILINE // raw 컨트롤 2개
+    const dir = makeFixture({ 'src/components/M.tsx': TWO }, { [KEY]: 2 }) // baseline 도 2로 올림
+
+    // ① strict 는 통과한다 — 현재 위반이 baseline 과 같으니까
+    expect(runAudit(['--strict', `--root=${dir}`]).code, 'strict 는 통과하는 게 맞다').toBe(0)
+
+    // ② 그래서 baseline 비교가 막아야 한다
+    const r = runAudit([`--root=${dir}`, `--compare-baseline=${baseFile({ [KEY]: 1 })}`])
+    expect(r.code, 'baseline 을 같이 올려 부채가 통과했다').toBe(1)
+    expect(r.out).toContain('1 → 2')
+  })
+})
+
+describe('CI 가 baseline 증가를 차단한다', () => {
+  const ci = read('.github/workflows/ci.yml')
+
+  it('CI 가 기준 브랜치 baseline 과 비교한다', () => {
+    expect(ci).toContain('--compare-baseline=')
+    expect(ci).toContain('scripts/design-audit-baseline.json')
+  })
+
+  it('기준 브랜치에 baseline 이 없을 때만 건너뛴다', () => {
+    const step = ci.slice(ci.indexOf('baseline 증가 차단'), ci.indexOf('design audit (strict)'))
+    expect(step).toContain('git show')
+    expect(step).toContain('최초 도입')
+  })
+})
+
 describe('baseline', () => {
   it('baseline 파일이 커밋돼 있다', () => {
     expect(existsSync(resolve(ROOT, BASELINE))).toBe(true)
@@ -338,16 +422,43 @@ describe('🔴 R11 raw 표준 컨트롤 — 신규 부채 게이트', () => {
     expect(runAudit(['--strict', `--root=${dir}`]).code).toBe(0)
   })
 
-  it('🔴 공용 ui/ primitive 는 예외다 — 표준 컨트롤의 유일한 출처다', () => {
-    // Button·Input 뿐 아니라 Chip·BottomSheet 같은 primitive 전부가 해당한다.
+  it('허용된 primitive × 허용된 태그는 통과한다', () => {
     const dir = makeFixture({
-      'src/components/ui/Button.tsx': ONE_LINE,
-      'src/components/ui/Input.tsx': MULTILINE,
-      'src/components/ui/Chip.tsx': ONE_LINE,
+      'src/components/ui/Input.tsx': MULTILINE, // input — 허용
+      'src/components/ui/Chip.tsx': ONE_LINE,   // button — 허용
     })
     const r = runAudit(['--strict', `--root=${dir}`])
-    expect(r.code, '공용 컴포넌트가 자기 규칙에 걸렸다').toBe(0)
-    expect(r.out).not.toContain('R11')
+    expect(r.code, '허용된 primitive 가 자기 규칙에 걸렸다').toBe(0)
+  })
+
+  it('🔴 `ui/` 아래 **새 파일**의 raw button 은 검출된다 — 디렉터리 통째 면제 금지', () => {
+    // 디렉터리 prefix 로 면제하면 여기 생기는 아무 파일이나 raw 컨트롤을 자유롭게 만든다.
+    const dir = makeFixture({ 'src/components/ui/AccidentalFeature.tsx': ONE_LINE })
+    const r = runAudit(['--output=json', `--root=${dir}`])
+    const j = JSON.parse(r.out) as { violations: Array<{ ruleId: string; file: string }> }
+    const hit = j.violations.filter((v) => v.ruleId === 'R11')
+    expect(hit.length, 'ui/ 새 파일이 통째로 면제됐다').toBe(1)
+    expect(hit[0].file).toBe('src/components/ui/AccidentalFeature.tsx')
+    expect(runAudit(['--strict', `--root=${dir}`]).code).toBe(1)
+  })
+
+  it('🔴 허용 파일이라도 **허용하지 않은 태그**는 검출된다', () => {
+    // `Chip.tsx` 는 button 만 허용된다 — input 을 만들면 잡혀야 한다.
+    const dir = makeFixture({
+      'src/components/ui/Chip.tsx': ONE_LINE + MULTILINE, // button(허용) + input(불허)
+    })
+    const r = runAudit(['--output=json', `--root=${dir}`])
+    const j = JSON.parse(r.out) as { violations: Array<{ ruleId: string; code: string }> }
+    const hit = j.violations.filter((v) => v.ruleId === 'R11')
+    expect(hit.length, 'Chip.tsx 의 input 이 면제됐다').toBe(1)
+    expect(hit[0].code).toContain('<input')
+  })
+
+  it('🔴 `Button.tsx` 는 allowlist 에 없다 — button 은 Chip 만 직접 만든다', () => {
+    // Button 컴포넌트는 `Slot`/`Comp` 로 렌더하므로 raw `<button>` 리터럴이 없다.
+    // allowlist 에 넣어두면 나중에 raw 를 넣어도 안 잡힌다.
+    const dir = makeFixture({ 'src/components/ui/Button.tsx': ONE_LINE })
+    expect(runAudit(['--strict', `--root=${dir}`]).code, 'Button.tsx 가 면제됐다').toBe(1)
   })
 
   it('button·input·select·textarea 를 모두 센다', () => {

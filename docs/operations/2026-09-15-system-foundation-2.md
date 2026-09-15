@@ -155,12 +155,12 @@ R08 은 **스타일 문맥에서만** 잡는다 — 안내 카피 안의 색 코
 
 ### baseline + changed-file strict
 
-- 기본 실행은 report-only(exit 0) — 전체 부채를 보여준다(**ERROR 72 · WARN 822**)
+- 기본 실행은 report-only(exit 0) — 전체 부채를 보여준다(**ERROR 72 · WARN 821** · R11 **479**)
 - `--strict` 는 ① **변경한 파일의 위반** ② **baseline 초과(새 부채)** 둘 중 하나라도 있으면 exit 1
 - 🔴 게이트 대상은 **error 전부 + R11**(raw 표준 컨트롤)이다. R11 은 severity 가 warn 이지만
   **개수 증가를 막는다** — 기존 부채는 baseline 으로 허용하고 **새 raw 컨트롤만** exit 1.
   나머지 warn(R04~R07)은 리포트 전용이다. 게이트로 삼으면 파일을 한 줄만 고쳐도 CI 가 막힌다.
-- baseline 은 `파일::규칙` 단위(**118항목** — R11 90 · R08 20 · R09 6 · R03 2)
+- baseline 은 `파일::규칙` 단위(**117항목** — R11 89 · R08 20 · R09 6 · R03 2)
 - 테스트는 `--root=` 로 **임시 fixture** 를 검사한다. 실제 소스를 임시 수정하는 방식은
   vitest 병렬 실행에서 다른 테스트를 깨뜨렸다(CI 실패로 드러났다)
 - CI 는 `git diff --diff-filter=ACMR origin/<base>...HEAD` 로 변경 파일을 넘긴다
@@ -203,9 +203,9 @@ R08 은 **스타일 문맥에서만** 잡는다 — 안내 카피 안의 색 코
 | audit 검사 파일 | 278 | **540** |
 | audit 제외율 | 25% | 생성물·테스트·정본만 |
 | audit 규칙 | 7 | **10 + AST 규칙 1**(R11) · R02 오탐 수정 |
-| audit ERROR | 104 | **72** |
+| audit ERROR | 104 | **72** · WARN 821 · R11 479 |
 | audit 게이트 | 없음(항상 exit 0) | baseline + changed-file strict |
-| 테스트 | 100파일 1,890건 | **103파일 1,949건** |
+| 테스트 | 100파일 1,890건 | **103파일 1,968건** |
 | 카카오 색 토큰 채택 | 0곳 | **24곳** |
 
 ### 디자인 계약 채택률
@@ -239,7 +239,7 @@ R08 은 **스타일 문맥에서만** 잡는다 — 안내 카피 안의 색 코
 | 1 | audit 의 즉시 `process.exit()` | **전부 제거.** `main()` 이 exit code 를 **반환**하고 최상단이 `process.exitCode` 에 담는다. 파이프로 나가는 stdout 은 비동기라 `process.exit()` 가 미완료 버퍼를 버렸고 — CI 에서 요약 줄이 통째로 사라졌다. **재현 테스트 4건**으로 고정했다(즉시 종료 부재 · report 마지막 줄 · strict 요약 · `--output=json` 파이프 전체 파싱). "재실행 성공" 으로 종결하지 않았다 |
 | 2 | R11 을 실질 게이트로 | **TypeScript JSX AST** 로 재구현(`findRawControls`). multiline JSX 를 잡는다. baseline 으로 기존 부채(89파일)는 허용하되 **개수 증가는 exit 1**. 테스트 8건: multiline · baseline 유지 · 1건 추가 실패 · 1건 제거 통과 · 공용 `ui/` primitive 예외 · 4종 태그 전수 · **R11 은 변경 파일 존재만으로는 막지 않는다** · error 는 막는다 |
 | 3 | 폼 id | 명시적 id 가 없으면 **항상 `React.useId()`**. label 문자열 기반 id 는 같은 라벨 2개에서 충돌해 `htmlFor` 가 엉뚱한 입력을 가리켰다. 렌더 테스트 7건 |
-| 4 | 삭제 모듈을 현행으로 적은 문서 | active 8개 갱신(R01·R02·F03·F07·specs/03·specs/10·SERVICE_ARCHITECTURE·UNAO_RESCUE_STATUS). 역사 문서 5개에는 **역사 배너**를 달았다. `NOTIFICATION_SPEC` 은 삭제 모듈 참조가 없어 무변경 |
+| 4 | 삭제 모듈을 현행으로 적은 문서 | active **9개** 갱신(R01·R02·F03·F07·specs/03·specs/10·SERVICE_ARCHITECTURE·UNAO_RESCUE_STATUS·**NOTIFICATION_SPEC**). 역사 문서 5개에는 **역사 배너** |
 | 5 | `visual-run.mjs` | **삭제.** 일회성 진단 도구였고 정식 편입할 만큼의 계약(인자 검증·문서·npm script)을 갖출 이유가 없었다 |
 | 6 | 카카오 설명 · icons 예외 · state 토큰 | 카카오 분류 설명을 **한 곳**으로 통일 · `icons/` 전체 예외는 **하드코딩 색 0건**이라 근거가 없어 제거 · state 토큰 3개가 `LITERAL_VALUE_TOKENS` 에서 빠져 있던 것을 추가하고 **전수 검증 테스트**를 넣었다 |
 | 7 | PR·문서 stale 수치 | 최종 실측으로 갱신(위 표) |
@@ -314,3 +314,46 @@ fixture 에 실제 위반을 넣고 잡히는지/통과하는지로 본다.
 | 둘을 같이 두기 | OG 만 빠지고 나머지는 잡힘 — 예외가 경로 한정임을 확인 | PASS |
 
 **red→green**: `icons/` 예외를 되살리면 행동 테스트 **2건 red**.
+
+
+## 10. Codex 재리뷰 잔여 4건 (2026-09-15)
+
+| # | finding | 처리 |
+|---|---|---|
+| 1 | R11 `ui/` 전체 예외 | **디렉터리 prefix 면제 제거.** `파일 × 허용 태그` allowlist 로 좁혔다 — `Input.tsx`(input·textarea·select) · `Chip.tsx`(button). 실측으로 이 둘이 전부였다 |
+| 2 | baseline 자체의 증가 차단 | `--compare-baseline=` 추가 + CI step. 기존 키 증가·신규 키 **FAIL**, 값 감소·키 제거 **PASS**, 기준 브랜치에 baseline 없으면 **PASS**(최초 도입) |
+| 3 | 문자열 기반 icons 테스트 | **제거.** fixture 행동 테스트가 정본이다 |
+| 4 | 문서·PR 실측 동기화 | §8 의 `NOTIFICATION_SPEC` 무변경 서술 정정(실제로는 갱신했다) + 아래 실측값 |
+
+### R11 allowlist — 디렉터리 통째 면제를 쓰지 않는 이유
+
+`src/components/ui/` 를 통째로 빼면 **거기 생기는 아무 파일이나** raw 컨트롤을 자유롭게 만들 수 있다. 규칙이 있으나 마나가 된다.
+
+| fixture | 기대 | 결과 |
+|---|---|---|
+| `ui/Input.tsx` 의 `input` · `ui/Chip.tsx` 의 `button` | 통과 | PASS |
+| **`ui/AccidentalFeature.tsx` 의 `button`** | **검출 · exit 1** | PASS |
+| `ui/Chip.tsx` 의 `input`(허용 태그 아님) | **검출** | PASS |
+| `ui/Button.tsx` 의 `button`(allowlist 밖) | **검출** | PASS |
+
+### baseline 증가 차단 — 왜 필요한가
+
+strict 게이트는 "현재 위반 vs 커밋된 baseline" 을 본다. 새 위반을 만들고 **baseline 도 같이 올려서** 커밋하면 그 게이트는 통과한다 — 부채가 조용히 는다. 100줄 넘는 JSON 의 숫자 하나가 늘어난 걸 사람이 놓치므로 **수동 리뷰만으로는 못 막는다.**
+
+| 시나리오 | 기대 | 결과 |
+|---|---|---|
+| 기존 키 값 증가 (1 → 2) | **FAIL** | PASS |
+| 신규 키 추가 | **FAIL** | PASS |
+| 값 감소 | 통과 | PASS |
+| 키 제거 | 통과 | PASS |
+| 기준 브랜치에 baseline 없음 | 통과(최초 도입) | PASS |
+| **새 R11 + 갱신된 baseline 을 같은 PR 에** | strict 는 통과하지만 **비교가 FAIL** | PASS |
+
+### 최종 실측
+
+| 항목 | 값 |
+|---|---|
+| baseline | **117항목** — R11 **89** · R08 **20** · R09 **6** · R03 **2** |
+| R11 실제 위반 | **479건** |
+| audit | 540파일 · ERROR **72** · WARN **821** |
+| 테스트 | **103파일 1,968건** |

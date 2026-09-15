@@ -272,16 +272,28 @@ function collectFiles(dir: string): string[] {
 const RAW_CONTROL_TAGS = new Set(['button', 'input', 'select', 'textarea'])
 
 /**
- * 공용 컴포넌트 자신은 표준 컨트롤을 **만들어야** 한다 — 여기가 유일한 출처다.
- * `Button`·`Input` 뿐 아니라 `Chip`·`BottomSheet` 처럼 `src/components/ui/` 의
- * primitive 전부가 해당한다. 이들을 규칙으로 막으면 만들 방법이 없어진다.
+ * 공용 primitive 가 **자기 역할상 만들어야 하는** 표준 컨트롤.
+ *
+ * 🔴 **디렉터리 통째 면제는 쓰지 않는다.** `src/components/ui/` 전체를 빼면
+ *    나중에 거기 생기는 아무 파일이나 raw 컨트롤을 자유롭게 만들 수 있다 —
+ *    규칙이 있으나 마나가 된다.
+ *    **파일 × 허용 태그** 단위로만 연다. 여기 없는 파일·태그는 전부 검출된다.
+ *
+ * 범위를 넓히려면 "이 primitive 가 왜 이 태그를 직접 만들어야 하는가" 를 여기 적는다.
  */
-function isRawControlExempt(rel: string): boolean {
-  return rel.startsWith('src/components/ui/')
+const RAW_CONTROL_ALLOWLIST: Record<string, ReadonlySet<string>> = {
+  // 폼 컨트롤 3종의 유일한 출처 — Button 은 `Button.tsx` 가 아니라 여기서 만들지 않는다.
+  'src/components/ui/Input.tsx': new Set(['input', 'textarea', 'select']),
+  // 칩(필터·태그) 자체가 버튼이다.
+  'src/components/ui/Chip.tsx': new Set(['button']),
+}
+
+/** 이 파일에서 이 태그를 직접 만들어도 되는가. */
+function isAllowedRawControl(rel: string, tag: string): boolean {
+  return RAW_CONTROL_ALLOWLIST[rel]?.has(tag) ?? false
 }
 
 function findRawControls(rel: string, content: string): Violation[] {
-  if (isRawControlExempt(rel)) return []
   if (!/\.tsx$/.test(rel)) return []
 
   const sf = ts.createSourceFile(rel, content, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX)
@@ -292,7 +304,7 @@ function findRawControls(rel: string, content: string): Violation[] {
       ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node) ? node : undefined
     if (tagNode) {
       const tag = tagNode.tagName.getText(sf)
-      if (RAW_CONTROL_TAGS.has(tag)) {
+      if (RAW_CONTROL_TAGS.has(tag) && !isAllowedRawControl(rel, tag)) {
         const { line } = sf.getLineAndCharacterOfPosition(tagNode.getStart(sf))
         out.push({
           ruleId: 'R11',
@@ -381,10 +393,60 @@ function readBaseline(): Baseline {
  *  그래서 main 은 **exit code 를 반환만** 하고, 최상단이 `process.exitCode` 에 담는다.
  *  Node 는 stdout 을 다 비운 뒤 그 코드로 종료한다.
  */
+/**
+ * 🔴 **baseline 파일 자체의 증가를 막는다.**
+ *
+ *  strict 게이트는 "현재 위반 vs 커밋된 baseline" 을 본다. 그런데 새 위반을 만들고
+ *  **baseline 도 같이 올려서** 커밋하면 그 게이트는 통과한다 — 부채가 조용히 늘어난다.
+ *  그래서 **기준 브랜치의 baseline 과 PR 의 baseline 을 직접 비교**한다.
+ *
+ *  · 기존 키의 값 **증가** → FAIL
+ *  · **신규 키** 추가 → FAIL
+ *  · 값 감소 · 키 제거 → PASS (부채를 갚는 방향)
+ *  · 기준 브랜치에 baseline 이 **없으면** PASS (최초 도입 1회)
+ *
+ *  수동 리뷰만으로는 못 막는다 — 173줄짜리 JSON 의 숫자 하나가 늘어난 걸 사람이 놓친다.
+ */
+function compareBaseline(basePath: string): number {
+  const current = readBaseline()
+  let base: Baseline | null = null
+  try {
+    base = JSON.parse(readFileSync(basePath, 'utf8')) as Baseline
+  } catch {
+    base = null
+  }
+
+  if (base === null) {
+    console.log(`\nbaseline 최초 도입 — 기준 브랜치에 ${BASELINE_PATH} 이 없다. 통과시킨다.`)
+    return 0
+  }
+
+  const increased = Object.entries(current).filter(([k, n]) => k in base && n > base[k])
+  const added = Object.keys(current).filter((k) => !(k in base))
+  const decreased = Object.entries(current).filter(([k, n]) => k in base && n < base[k])
+  const removed = Object.keys(base).filter((k) => !(k in current))
+
+  console.log('\n── baseline 비교 (기준 브랜치 대비) ──────────────')
+  console.log(`   증가 ${increased.length} · 신규 ${added.length} · 감소 ${decreased.length} · 제거 ${removed.length}`)
+  for (const [k, n] of decreased) console.log(`   ✅ 감소 ${k}  ${base[k]} → ${n}`)
+  for (const k of removed) console.log(`   ✅ 제거 ${k}  (${base[k]} → 0)`)
+
+  if (increased.length === 0 && added.length === 0) {
+    console.log('   ✅ baseline 증가 없음')
+    return 0
+  }
+  console.log('\n🔴 baseline 이 늘었다 — 새 위반을 baseline 에 담아 통과시키려는 변경이다.')
+  for (const [k, n] of increased) console.log(`   증가 ${k}  ${base[k]} → ${n}`)
+  for (const k of added) console.log(`   신규 ${k}  0 → ${current[k]}`)
+  console.log('   부채를 늘리려면 baseline 이 아니라 코드를 고쳐라.')
+  return 1
+}
+
 function main(): number {
   const outputJson = process.argv.includes('--output=json')
   const strict = process.argv.includes('--strict')
   const updateBaseline = process.argv.includes('--update-baseline')
+  const compareArg = process.argv.find((a) => a.startsWith('--compare-baseline='))
   const changedArg = process.argv.find((a) => a.startsWith('--changed='))
   const changed = new Set(
     (changedArg?.slice('--changed='.length) ?? '')
@@ -431,6 +493,10 @@ function main(): number {
   console.log(`WARN:  ${warnCount}건`)
 
   const currentErrors = toBaseline(allViolations.filter(isGating))
+
+  if (compareArg) {
+    return compareBaseline(resolve(process.cwd(), compareArg.slice('--compare-baseline='.length)))
+  }
 
   if (updateBaseline) {
     writeFileSync(join(ROOT, BASELINE_PATH), JSON.stringify(currentErrors, null, 2) + '\n')
