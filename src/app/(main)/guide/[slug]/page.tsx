@@ -1,4 +1,4 @@
-import { buildGuidePath } from '@/lib/post-url'
+import { buildGuidePath, encodePathname } from '@/lib/post-url'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -111,9 +111,12 @@ export default async function GuidePage({ params }: PageProps) {
         <section className="mt-8 rounded-2xl border border-primary/20 bg-primary/5 p-5">
           <h2 className="text-body font-bold text-primary-text m-0 mb-3">📖 우리 또래 이야기</h2>
           <ul className="list-none m-0 p-0 space-y-2">
-            {guide.communityLinks.map((l) => (
+            {/* 🔴 href 는 `guides/index.ts` 에 **사람이 읽는 한글 경로**로 적혀 있다.
+              데이터를 percent-encode 해두면 유지보수가 어려워지므로 **렌더 시점에** 인코딩한다.
+              네이버 크롤러(Yeti)는 raw 한글 URL 을 못 가져온다(2026-09-15 실측). */}
+          {guide.communityLinks.map((l) => (
               <li key={l.href}>
-                <Link href={l.href} className="flex items-center gap-2 py-2.5 no-underline text-body font-medium text-foreground min-h-[52px] hover:text-primary-text transition-colors">
+                <Link href={encodePathname(l.href)} className="flex items-center gap-2 py-2.5 no-underline text-body font-medium text-foreground min-h-[52px] hover:text-primary-text transition-colors">
                   <span className="text-primary">→</span>{l.label}
                 </Link>
               </li>
@@ -140,7 +143,7 @@ export default async function GuidePage({ params }: PageProps) {
           <ul className="list-none m-0 p-0 space-y-1">
             {guide.relatedLinks.map((l) => (
               <li key={l.href}>
-                <Link href={l.href} className="flex items-center gap-2 py-2.5 no-underline text-body text-muted-foreground min-h-[52px] hover:text-primary-text transition-colors">
+                <Link href={encodePathname(l.href)} className="flex items-center gap-2 py-2.5 no-underline text-body text-muted-foreground min-h-[52px] hover:text-primary-text transition-colors">
                   <span className="text-primary/60">·</span>{l.label}
                 </Link>
               </li>

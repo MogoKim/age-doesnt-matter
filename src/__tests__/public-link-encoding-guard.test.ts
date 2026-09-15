@@ -77,10 +77,44 @@ const EXEMPT: Record<string, string> = {
   'src/app/api/internal/prewarm-details/route.ts': 'ISR prewarm 캐시 키 — 실제 요청 경로와 같아야 한다',
 }
 
+/**
+ * raw 한글 경로 **데이터**가 허용되는 곳.
+ * 사람이 읽고 고치는 데이터라 percent-encode 해두면 유지보수가 어렵다.
+ * 대신 **렌더 시점에** `encodePathname` 으로 인코딩한다 — 아래 테스트가 그걸 강제한다.
+ */
+const RAW_DATA_EXEMPT: Record<string, { renderedBy: string }> = {
+  'src/lib/guides/index.ts': { renderedBy: 'src/app/(main)/guide/[slug]/page.tsx' },
+}
+
 const read = (f: string) => readFileSync(f, 'utf8')
 const rel = (f: string) => relative(process.cwd(), f).split(sep).join('/')
 
 /** 파일에서 "인코딩 없이 사용자 값을 경로에 붙인" 지점을 모은다. */
+/**
+ * 🔴 **하드코딩된 raw 한글 경로 리터럴.**
+ *  템플릿 리터럴만 보던 스캐너는 이걸 통째로 놓쳤다 — preview 실측에서
+ *  `/guide/<slug>` 상세의 관련글 href 5개가 raw 한글로 남아 있었다(2026-09-15).
+ *  출처는 `src/lib/guides/index.ts` 의 **문자열 상수**였다.
+ */
+const RAW_PATH_LITERAL = /(['"`])(\/(?:magazine|jobs|community|guide|topic|best|search)\/[^'"`\s]*)/g
+
+/**
+ * 주석은 링크가 아니다 — 문서에 한글 경로를 예시로 적는 건 위반이 아니다.
+ * 🔴 블록 주석(JSX `{/* … *\/}` 포함)은 **여러 줄**이라 줄 단위로는 못 지운다.
+ *    줄 번호는 살려야 하므로 주석 자리를 공백으로 바꾼다.
+ */
+function stripComments(source: string): string {
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' ')) // 블록 주석
+    .replace(/^\s*\/\/.*$/gm, '')                                      // 한 줄 주석
+}
+
+function rawPathLiterals(line: string): string[] {
+  return [...line.matchAll(RAW_PATH_LITERAL)]
+    .map(([, , path]) => path)
+    .filter((path) => /[^\x00-\x7F]/.test(path))
+}
+
 /** 한 줄에서 위반 템플릿을 뽑는다. 양성 대조 테스트가 이 함수를 그대로 쓴다. */
 function scanLine(line: string): string[] {
   if (NOT_A_LINK_LINE.test(line)) return []
@@ -97,9 +131,15 @@ function scanLine(line: string): string[] {
 }
 
 function violations(file: string): string[] {
-  return read(file)
+  return stripComments(read(file))
     .split('\n')
     .flatMap((line, i) => scanLine(line).map((tpl) => `${i + 1}: ${tpl}`))
+}
+
+function rawLiteralViolations(file: string): string[] {
+  return stripComments(read(file))
+    .split('\n')
+    .flatMap((line, i) => rawPathLiterals(line).map((path) => `${i + 1}: ${path}`))
 }
 
 describe('공개 URL 은 경로 segment 를 인코딩해서 만든다 (src 전역 스캔)', () => {
@@ -131,6 +171,14 @@ describe('공개 URL 은 경로 segment 를 인코딩해서 만든다 (src 전�
       'revalidatePath(`/community/${boardSlug}/${post.slug}`)',  // 링크가 아니다
     ]
     for (const line of good) expect(scanLine(line), line).toEqual([])
+
+    // 하드코딩 리터럴 스캐너 — 이쪽도 죽지 않았는지 본다
+    expect(rawPathLiterals("{ href: '/community/stories/한글-슬러그' }")).toHaveLength(1)
+    expect(rawPathLiterals("{ href: '/community/stories/ascii-slug' }")).toEqual([])
+    expect(rawPathLiterals("placeholder=\"/community/stories 또는 예시\"")).toEqual([]) // 경로에 공백 없음
+    // 주석은 stripComments 가 걷어낸다 — 한 줄·블록·JSX 전부
+    expect(stripComments("// 예시: /community/stories/한글").trim()).toBe('')
+    expect(stripComments("{/* /community/stories/한글 */}")).not.toContain('한글')
   })
 
   it('🔴 인코딩 없이 slug·id 를 경로에 붙이는 곳이 없다', () => {
@@ -144,6 +192,26 @@ describe('공개 URL 은 경로 segment 를 인코딩해서 만든다 (src 전�
   it('면제 목록은 실제로 위반이 있는 파일만 담는다 — 죽은 면제 금지', () => {
     for (const [file, reason] of Object.entries(EXEMPT)) {
       expect(violations(resolve(process.cwd(), file)).length, `${file}: ${reason}`).toBeGreaterThan(0)
+    }
+  })
+
+  it('🔴 하드코딩된 raw 한글 경로 리터럴이 없다', () => {
+    // 템플릿 리터럴만 보던 스캐너가 놓쳤던 부류다(preview 실측 5건).
+    const bad = files
+      .map((f) => ({ file: rel(f), hits: rawLiteralViolations(f) }))
+      .filter(({ file, hits }) => hits.length > 0 && !(file in RAW_DATA_EXEMPT))
+    const report = bad.map(({ file, hits }) => `${file}\n    ${hits.join('\n    ')}`).join('\n')
+    expect(bad, `raw 한글 경로 리터럴:\n${report}`).toEqual([])
+  })
+
+  it('🔴 raw 데이터 면제는 렌더 시점 인코딩이 실제로 걸려 있을 때만 유효하다', () => {
+    for (const [dataFile, { renderedBy }] of Object.entries(RAW_DATA_EXEMPT)) {
+      // 면제한 데이터 파일에 실제로 raw 경로가 있어야 한다(죽은 면제 금지)
+      expect(rawLiteralViolations(resolve(process.cwd(), dataFile)).length, dataFile).toBeGreaterThan(0)
+      // 그리고 렌더하는 쪽이 반드시 인코딩을 통과시켜야 한다
+      const renderer = read(resolve(process.cwd(), renderedBy))
+      expect(renderer, `${renderedBy} 가 인코딩 없이 ${dataFile} 의 href 를 렌더한다`).toContain('encodePathname(l.href)')
+      expect(renderer).not.toMatch(/<Link href=\{l\.href\}/)
     }
   })
 
