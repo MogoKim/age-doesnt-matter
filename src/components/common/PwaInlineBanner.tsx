@@ -62,7 +62,7 @@ export default function PwaInlineBanner() {
       </button>
       <button
         onClick={handleDismiss}
-        className="min-w-[36px] min-h-[36px] flex items-center justify-center text-muted-foreground flex-shrink-0"
+        className="min-w-control-compact min-h-control-compact flex items-center justify-center text-muted-foreground flex-shrink-0"
         aria-label="닫기"
       >
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none">

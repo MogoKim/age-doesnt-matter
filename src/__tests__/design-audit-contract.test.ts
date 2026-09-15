@@ -10,9 +10,10 @@
  *  검사 도구가 조용히 아무것도 안 하는 사고는 검사 대상보다 위험하다. 여기서 고정한다.
  */
 import { execFileSync } from 'node:child_process'
-import { existsSync, readFileSync, writeFileSync, appendFileSync } from 'node:fs'
-import { resolve } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join, resolve } from 'node:path'
+import { afterAll, describe, expect, it } from 'vitest'
 
 const ROOT = process.cwd()
 const SCRIPT = 'scripts/design-token-audit.ts'
@@ -29,6 +30,29 @@ function runAudit(args: string[] = []): { code: number; out: string } {
     return { code: err.status ?? -1, out: err.stdout ?? '' }
   }
 }
+
+/**
+ * 🔴 **실제 소스를 건드리지 않는다.** 예전 판은 `board-registry.ts` 에 위반을 덧붙였다가
+ *    되돌렸는데, vitest 는 테스트 **파일**을 병렬로 돌려서 그 사이 다른 테스트가
+ *    오염된 파일을 읽을 수 있었다(CI 에서 실제로 깨졌다).
+ *    지금은 임시 디렉터리에 최소 fixture 를 만들고 `--root=` 로 검사시킨다.
+ */
+const FIXTURES: string[] = []
+function makeFixture(files: Record<string, string>, baseline: Record<string, number> = {}): string {
+  const dir = mkdtempSync(join(tmpdir(), 'audit-fixture-'))
+  FIXTURES.push(dir)
+  for (const [rel, body] of Object.entries(files)) {
+    const abs = join(dir, rel)
+    mkdirSync(resolve(abs, '..'), { recursive: true })
+    writeFileSync(abs, body)
+  }
+  mkdirSync(join(dir, 'scripts'), { recursive: true })
+  writeFileSync(join(dir, BASELINE), JSON.stringify(baseline, null, 2))
+  return dir
+}
+afterAll(() => {
+  for (const d of FIXTURES) rmSync(d, { recursive: true, force: true })
+})
 
 describe('검사 범위 — 빠뜨린 곳이 없다', () => {
   const src = read(SCRIPT)
@@ -61,26 +85,33 @@ describe('게이트 — false-green 이 아니다', () => {
   })
 
   it('🔴 양성 대조 — 새 위반이 생기면 `--strict` 가 exit 1 이다', () => {
-    const victim = 'src/lib/board-registry.ts'
-    const before = read(victim)
-    try {
-      appendFileSync(resolve(ROOT, victim), '\nexport const __AUDIT_PROBE = "bg-[#FF6F61] min-h-[52px]"\n')
-      const r = runAudit(['--strict'])
-      expect(r.code, 'strict 가 새 위반을 놓쳤다').toBe(1)
-      expect(r.out).toContain('baseline 보다 늘어난 위반')
-    } finally {
-      writeFileSync(resolve(ROOT, victim), before)
-    }
+    const dir = makeFixture({
+      'src/lib/probe.ts': 'export const BAD = "bg-[#FF6F61] min-h-[52px]"\n',
+    })
+    const r = runAudit(['--strict', `--root=${dir}`])
+    expect(r.code, 'strict 가 새 위반을 놓쳤다').toBe(1)
+    expect(r.out).toContain('baseline 보다 늘어난 위반')
   })
 
   it('🔴 변경 파일에 위반이 있으면 baseline 안이라도 exit 1 이다', () => {
-    // baseline 에 이미 있는 부채 파일을 "이번에 고친 파일" 로 넘기면 막아야 한다.
-    const baseline = JSON.parse(read(BASELINE)) as Record<string, number>
-    const debtFile = Object.keys(baseline)[0]?.split('::')[0]
-    expect(debtFile, 'baseline 이 비어 있다').toBeTruthy()
-    const r = runAudit(['--strict', `--changed=${debtFile}`])
+    // baseline 에 이미 있는 부채라도 "이번에 고친 파일" 이면 막는다.
+    const dir = makeFixture(
+      { 'src/lib/debt.ts': 'export const OLD = "bg-[#FF6F61]"\n' },
+      { 'src/lib/debt.ts::R08': 1 },
+    )
+    expect(runAudit(['--strict', `--root=${dir}`]).code, 'baseline 안이면 통과해야 한다').toBe(0)
+    const r = runAudit(['--strict', `--root=${dir}`, '--changed=src/lib/debt.ts'])
     expect(r.code).toBe(1)
     expect(r.out).toContain('변경한 파일에 위반')
+  })
+
+  it('🔴 warn 은 게이트가 아니다 — raw 컨트롤만 있는 파일은 통과한다', () => {
+    // R11 을 게이트로 삼으면 기존 화면 파일을 한 줄만 고쳐도 CI 가 막힌다.
+    const dir = makeFixture({
+      'src/components/Warnish.tsx': 'export const X = () => <button className="px-2">go</button>\n',
+    })
+    const r = runAudit(['--strict', `--root=${dir}`, '--changed=src/components/Warnish.tsx'])
+    expect(r.code, 'warn 이 게이트가 됐다').toBe(0)
   })
 })
 
@@ -94,6 +125,13 @@ describe('baseline', () => {
     const keys = Object.keys(b)
     expect(keys.length).toBeGreaterThan(0)
     for (const k of keys.slice(0, 10)) expect(k).toMatch(/^src\/.+::R\d+$/)
+  })
+
+  it('🔴 baseline 에는 error 만 담긴다 — warn 은 게이트가 아니다', () => {
+    const b = JSON.parse(read(BASELINE)) as Record<string, number>
+    const warnRules = ['R04', 'R05', 'R06', 'R07', 'R11']
+    const bad = Object.keys(b).filter((k) => warnRules.includes(k.split('::')[1]))
+    expect(bad, `warn 규칙이 baseline 에 있다: ${bad.join(', ')}`).toEqual([])
   })
 })
 

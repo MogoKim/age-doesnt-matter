@@ -56,10 +56,14 @@ export const LITERAL_VALUE_TOKENS = [
 // 2. 계층
 // ──────────────────────────────────────────────────────────────
 
-/** reference — 원자값. 화면 코드에서 직접 참조하면 계약 위반이다. */
-export const REFERENCE_TOKENS = [
-  '--kakao-bg', '--kakao-text',
-] as const
+/**
+ * reference — 원자값. 화면 코드에서 직접 참조하면 계약 위반이다.
+ *
+ * 🔴 지금은 비어 있다. 카카오 색은 reference 로 뒀다가 **component 로 내렸다** —
+ *    카카오 로그인 버튼이라는 **특정 컴포넌트 전용 색**이고, 화면이 직접 써야 의미가 있다.
+ *    reference 로 두면 "직접 쓰지 마라" 와 "이 버튼은 이 색이어야 한다" 가 모순된다.
+ */
+export const REFERENCE_TOKENS = [] as const
 
 /**
  * 아직 화면에 없지만 **디자인상 확정된** 토큰.
@@ -73,8 +77,6 @@ export const RESERVED_TOKENS = [
   '--hero-3-from', '--hero-3-mid', '--hero-3-to',
   // 강조 보더 — surface-coral 세트의 형제
   '--border-coral-soft',
-  // 외부 브랜드 — 카카오 로그인 버튼 규정색
-  '--kakao-bg', '--kakao-text',
 ] as const
 
 /**

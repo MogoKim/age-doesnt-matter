@@ -37,7 +37,7 @@ function PostListSkeleton() {
           {/* 제목 1줄 */}
           <div className="h-[25px] w-3/4 rounded bg-muted" />
           {/* preview 2줄 */}
-          <div className="h-[48px] w-full rounded bg-muted mt-1.5" />
+          <div className="h-control-desktop w-full rounded bg-muted mt-1.5" />
           {/* 메타(출처·닉네임·시간) */}
           <div className="h-[26px] w-2/3 rounded bg-muted mt-4" />
           {/* 통계(공감·댓글·조회) */}

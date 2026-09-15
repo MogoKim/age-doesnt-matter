@@ -121,9 +121,9 @@ export default function PostCTA({ postId, postTitle, isLoggedIn }: PostCTAProps)
           disabled={isStartingSignup}
           aria-busy={isStartingSignup}
           className="shrink-0 min-h-control px-4 rounded-lg text-caption font-bold flex items-center gap-1.5 whitespace-nowrap transition-all hover:brightness-95"
-          style={{ background: '#FEE500', color: '#191919' }}
+          style={{ background: 'var(--kakao-bg)', color: 'var(--kakao-text)' }}
         >
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="#191919" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="var(--kakao-text)" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <path d="M10 2C5.58 2 2 5.02 2 8.75c0 2.34 1.39 4.4 3.5 5.6-.15.54-.55 1.97-.63 2.27-.1.37.14.37.3.27.12-.08 1.9-1.28 2.67-1.8.7.1 1.42.16 2.16.16 4.42 0 8-3.02 8-6.75C18 5.02 14.42 2 10 2Z" />
           </svg>
           {isStartingSignup ? '카카오로 이동 중...' : '1초 만에 가입하기'}

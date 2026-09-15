@@ -29,7 +29,7 @@ export default function SearchLoading() {
               {/* 제목 1줄 */}
               <div className="h-[25px] w-3/4 rounded bg-muted" />
               {/* preview 2줄 */}
-              <div className="h-[48px] w-full rounded bg-muted mt-1.5" />
+              <div className="h-control-desktop w-full rounded bg-muted mt-1.5" />
               {/* 메타(카테고리·작성자·시간) */}
               <div className="h-[26px] w-2/3 rounded bg-muted mt-4" />
               {/* 통계(좋아요·댓글) */}

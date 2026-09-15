@@ -231,8 +231,13 @@ jobs:
             | grep -E '^src/.*\.(ts|tsx)$' | grep -vE '\.(test|spec)\.tsx?$' | paste -sd, -)
           echo "files=$FILES" >> "$GITHUB_OUTPUT"
           echo "검사 대상: ${FILES:-(없음)}"
+      # 🔴 파일 목록을 셸에 직접 펼치지 않는다 — `(main)` 같은 라우트 그룹 괄호가
+      #    `syntax error near unexpected token '('` 을 냈다(2026-09-15 실측).
+      #    env 로 넘기고 따옴표로 감싼다.
       - name: design audit (strict)
-        run: npx tsx scripts/design-token-audit.ts --strict --changed=${{ steps.changed.outputs.files }}
+        env:
+          CHANGED_FILES: ${{ steps.changed.outputs.files }}
+        run: npx tsx scripts/design-token-audit.ts --strict --changed="$CHANGED_FILES"
 
   agents-check:
     name: 에이전트 크론 연결 검증

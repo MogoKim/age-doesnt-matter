@@ -55,7 +55,7 @@ export default function JobSearchBar({ defaultValue }: JobSearchBarProps) {
           onChange={(e) => { setQuery(e.target.value); setError('') }}
           placeholder="직종, 지역, 급여 조건 검색"
           aria-label="일자리 검색어"
-          className="flex-1 border-none bg-transparent outline-none text-body placeholder:text-muted-foreground min-h-[48px]"
+          className="flex-1 border-none bg-transparent outline-none text-body placeholder:text-muted-foreground min-h-control-desktop"
         />
         <button
           type="submit"

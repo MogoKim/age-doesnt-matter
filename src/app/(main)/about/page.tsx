@@ -314,7 +314,7 @@ export default async function AboutPage() {
               callbackUrl="/community/stories"
               gtmFrom="about_bottom_cta"
               className="inline-flex items-center justify-center gap-2 w-full h-control rounded-xl text-body font-bold transition-opacity hover:opacity-90 lg:w-auto lg:px-10"
-              style={{ background: '#FEE500', color: '#191919' }}
+              style={{ background: 'var(--kakao-bg)', color: 'var(--kakao-text)' }}
             >
               <span className="text-[20px]">💬</span>
               카카오로 1초 가입

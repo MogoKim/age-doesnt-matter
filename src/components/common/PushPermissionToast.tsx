@@ -137,7 +137,7 @@ export function PushPermissionToast() {
           </button>
           <button
             onClick={handleLater}
-            className="h-[44px] w-full text-[15px] text-muted-foreground active:opacity-70"
+            className="h-control-sm w-full text-[15px] text-muted-foreground active:opacity-70"
           >
             나중에
           </button>

@@ -132,7 +132,7 @@ export default function SurveyDetail({
                 <div className="flex flex-wrap gap-1.5">
                   {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
                     <button key={n} type="button" onClick={() => set(q.id, n)}
-                      className={`min-h-[48px] min-w-control-sm flex-1 rounded-lg border text-body font-bold transition-colors ${answers[q.id] === n ? 'border-primary bg-primary text-white' : 'border-border bg-background text-foreground'}`}>
+                      className={`min-h-control-desktop min-w-control-sm flex-1 rounded-lg border text-body font-bold transition-colors ${answers[q.id] === n ? 'border-primary bg-primary text-white' : 'border-border bg-background text-foreground'}`}>
                       {n}
                     </button>
                   ))}

@@ -174,7 +174,7 @@ export default function SearchForm({ initialQuery = '', popularKeywords = [] }: 
                   key={cat.query}
                   type="button"
                   onClick={() => handleKeywordClick(cat.query)}
-                  className="inline-flex items-center min-h-control px-4 rounded-full border border-border bg-background text-foreground transition-colors hover:border-primary hover:text-primary-text lg:min-h-[48px]"
+                  className="inline-flex items-center min-h-control px-4 rounded-full border border-border bg-background text-foreground transition-colors hover:border-primary hover:text-primary-text lg:min-h-control-desktop"
                 >
                   {cat.label}
                 </button>

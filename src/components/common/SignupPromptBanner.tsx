@@ -500,7 +500,7 @@ export function SignupPromptBanner() {
                 data-testid="signup-auto-trigger-cta"
                 onClick={handleAutoTriggerNow}
                 disabled={isStarting}
-                className="mt-3 flex min-h-control w-full items-center justify-center rounded-xl bg-[#FEE500] px-4 py-2 text-center text-[15px] font-bold leading-tight break-keep text-[#191919] transition-opacity disabled:opacity-70"
+                className="mt-3 flex min-h-control w-full items-center justify-center rounded-xl bg-[var(--kakao-bg)] px-4 py-2 text-center text-[15px] font-bold leading-tight break-keep text-[var(--kakao-text)] transition-opacity disabled:opacity-70"
               >
                 {isStarting ? '카카오로 이동 중...' : '💛 지금 바로 시작하기'}
               </button>
@@ -743,7 +743,7 @@ export function SignupPromptBanner() {
               data-testid="signup-banner-cta"
               onClick={handleCTAClick}
               disabled={isStarting}
-              className="mt-3 flex min-h-control w-full items-center justify-center rounded-xl bg-[#FEE500] px-4 py-2 text-center text-[15px] font-bold leading-tight break-keep text-[#191919] transition-opacity disabled:opacity-70"
+              className="mt-3 flex min-h-control w-full items-center justify-center rounded-xl bg-[var(--kakao-bg)] px-4 py-2 text-center text-[15px] font-bold leading-tight break-keep text-[var(--kakao-text)] transition-opacity disabled:opacity-70"
             >
               {isStarting ? '카카오로 이동 중...' : ctaLabel}
             </button>

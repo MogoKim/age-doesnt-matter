@@ -61,7 +61,7 @@ export default function JobFilterPanel({ onClose }: JobFilterPanelProps) {
           <h2 className="text-title font-bold text-foreground">필터</h2>
           <div className="flex items-center gap-2">
             <button
-              className="text-body font-medium text-muted-foreground cursor-pointer min-h-control lg:min-h-[44px] px-2 hover:text-primary-text transition-colors"
+              className="text-body font-medium text-muted-foreground cursor-pointer min-h-control lg:min-h-control-sm px-2 hover:text-primary-text transition-colors"
               onClick={handleReset}
             >
               초기화

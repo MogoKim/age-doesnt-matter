@@ -30,7 +30,7 @@ export default function SignupCard() {
           callbackUrl="/"
           gtmFrom="home_signup_card"
           className="inline-flex items-center justify-center gap-3 w-full max-w-[320px] min-h-control px-4 py-2 rounded-2xl font-bold text-body text-center leading-tight break-keep transition-opacity hover:opacity-90 active:scale-95"
-          style={{ background: '#FEE500', color: '#191919' }}
+          style={{ background: 'var(--kakao-bg)', color: 'var(--kakao-text)' }}
         >
           <svg className="shrink-0" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
             <path

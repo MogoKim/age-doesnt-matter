@@ -136,7 +136,11 @@ describe('P0. iOS 가입 CTA hotfix', () => {
     expect(banner).not.toContain("'카카오 밖에서 가입하기'")
     expect(banner).toContain('나만 이런 게 아니었네?')
     // 버튼 색·크기 무변경
-    expect(mainReturnBlock).toContain('bg-[#FEE500]')
+    // 카카오 규정색은 `--kakao-bg` 토큰으로 옮겼다(2026-09-15). 값은 그대로 #FEE500 이다 —
+    // 토큰 이름만 보면 값이 바뀌어도 통과하므로 **globals.css 의 값까지** 함께 고정한다.
+    expect(mainReturnBlock).toContain('bg-[var(--kakao-bg)]')
+    expect(readFileSync(resolve(process.cwd(), 'src/app/globals.css'), 'utf8'))
+      .toContain('--kakao-bg: #FEE500;')
     // 높이는 `--control-h-touch` 토큰으로 옮겼다(2026-09-15). 값은 그대로 52px 다.
     expect(mainReturnBlock).toContain('min-h-control')
     expect(CONTROL_HEIGHT.touch).toBe(52)

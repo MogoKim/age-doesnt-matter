@@ -785,7 +785,7 @@ export default function TipTapEditor({
         .tiptap {
           word-break: keep-all;
           line-height: 1.9;
-          caret-color: #FF6F61;
+          caret-color: hsl(var(--primary));
           font-size: var(--text-body);
         }
         .tiptap p {

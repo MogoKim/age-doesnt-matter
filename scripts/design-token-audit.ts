@@ -25,9 +25,15 @@
  *   npx tsx scripts/design-token-audit.ts --update-baseline
  */
 import { readFileSync, readdirSync, writeFileSync } from 'fs'
-import { join, relative } from 'path'
+import { join, relative, resolve } from 'path'
 
-const ROOT = process.cwd()
+/**
+ * 검사 루트. 기본은 cwd 지만 `--root=` 로 바꿀 수 있다 —
+ * 🔴 계약 테스트가 **실제 소스 파일을 수정하지 않고** fixture 로 양성 대조를 하기 위해서다.
+ *    소스를 임시로 고치는 테스트는 vitest 병렬 실행에서 다른 파일의 테스트를 깨뜨린다.
+ */
+const rootArg = process.argv.find((a) => a.startsWith('--root='))
+const ROOT = rootArg ? resolve(process.cwd(), rootArg.slice('--root='.length)) : process.cwd()
 /** 🔴 `src/lib` 포함 — 여기 색·크기가 흩어져 있어도 화면에 그대로 나간다. */
 const INCLUDE_DIRS = ['src/app', 'src/components', 'src/lib']
 
@@ -86,6 +92,17 @@ const HARDCODED_CONTROL_PX = /\b(?:min-h|h|min-w|w)-\[(?:36|44|48|52|56)px\]/
  * "foo bar baz" 또는 'foo bar baz' → ['foo', 'bar', 'baz']
  * variant prefix(hover:, md: 등)도 토큰 그대로 포함.
  */
+/** quoted string **별로** 나눈 class token 목록. 삼항의 분기를 섞지 않는다. */
+function getClassTokenGroups(line: string): string[][] {
+  const groups: string[][] = []
+  const re = /["']([^"'\n]+)["']/g
+  let m: RegExpExecArray | null
+  while ((m = re.exec(line)) !== null) {
+    groups.push(m[1].split(/\s+/).filter(Boolean))
+  }
+  return groups
+}
+
 function getClassTokens(line: string): string[] {
   const tokens: string[] = []
   const re = /["']([^"'\n]+)["']/g
@@ -115,13 +132,16 @@ const RULES: Rule[] = [
     // 조건 2: text-foreground 토큰 정확 일치 (text-muted-foreground 부분매칭 방지)
     // 예외: text-primary-text 토큰도 있으면 올바른 조합 → pass
     check: (l) => {
-      const tokens = getClassTokens(l)
-      const hasStaticBgPrimary = tokens.some(
-        (t) => /^bg-primary\/\d/.test(t) && !t.includes(':')
-      )
-      const hasTextForeground = tokens.some((t) => t === 'text-foreground')
-      if (!hasStaticBgPrimary || !hasTextForeground) return false
-      return !tokens.some((t) => t === 'text-primary-text')
+      // 🔴 **quoted string 하나 단위로** 본다. 줄 전체로 보면 삼항의 서로 다른 분기가 합쳐져
+      //    `active ? 'bg-primary/90 text-white' : 'bg-white text-foreground'` 가 위반으로 잡힌다
+      //    (2026-09-15 실측 오탐). 한 요소에 실제로 같이 붙는 조합만 위반이다.
+      for (const group of getClassTokenGroups(l)) {
+        const hasStaticBgPrimary = group.some((t) => /^bg-primary\/\d/.test(t) && !t.includes(':'))
+        const hasTextForeground = group.some((t) => t === 'text-foreground')
+        if (!hasStaticBgPrimary || !hasTextForeground) continue
+        if (!group.some((t) => t === 'text-primary-text')) return true
+      }
+      return false
     },
   },
   {
@@ -274,7 +294,10 @@ function checkFile(absPath: string): Violation[] {
   return violations
 }
 
-/** 파일별 위반 수 — baseline 비교 단위. 줄 번호는 쉽게 흔들려서 쓰지 않는다. */
+/**
+ * 파일별 위반 수 — baseline 비교 단위. 줄 번호는 쉽게 흔들려서 쓰지 않는다.
+ * 🔴 **error 만** 담는다. warn 은 게이트가 아니라 리포트라 baseline 에 넣으면 혼란만 준다.
+ */
 type Baseline = Record<string, number>
 
 function toBaseline(violations: Violation[]): Baseline {
@@ -340,11 +363,11 @@ function main(): void {
   console.log(`ERROR: ${errorCount}건`)
   console.log(`WARN:  ${warnCount}건`)
 
-  const current = toBaseline(allViolations)
+  const currentErrors = toBaseline(allViolations.filter((v) => v.severity === 'error'))
 
   if (updateBaseline) {
-    writeFileSync(join(ROOT, BASELINE_PATH), JSON.stringify(current, null, 2) + '\n')
-    console.log(`\nbaseline 갱신: ${BASELINE_PATH} (${Object.keys(current).length}항목)`)
+    writeFileSync(join(ROOT, BASELINE_PATH), JSON.stringify(currentErrors, null, 2) + '\n')
+    console.log(`\nbaseline 갱신: ${BASELINE_PATH} (error ${Object.keys(currentErrors).length}항목 · warn 은 담지 않는다)`)
     process.exit(0)
   }
 
@@ -354,9 +377,13 @@ function main(): void {
   }
 
   // ── strict: ① 변경 파일의 위반 ② baseline 초과 ────────────────────
-  const inChanged = allViolations.filter((v) => changed.has(v.file))
+  // 🔴 게이트는 **error 만**이다. `warn`(R11 raw 컨트롤)은 기존 화면이 컨트롤마다 스킨이 달라
+  //    한 번에 못 바꾸는 부채라, 게이트로 삼으면 파일을 한 줄만 고쳐도 CI 가 막힌다.
+  //    warn 은 리포트에 남아 리뷰가 본다.
+  const gating = allViolations.filter((v) => v.severity === 'error')
+  const inChanged = gating.filter((v) => changed.has(v.file))
   const base = readBaseline()
-  const regressions = Object.entries(current).filter(([k, n]) => n > (base[k] ?? 0))
+  const regressions = Object.entries(currentErrors).filter(([k, n]) => n > (base[k] ?? 0))
 
   if (inChanged.length > 0) {
     console.log(`\n🔴 변경한 파일에 위반 ${inChanged.length}건 — 고치고 다시 올려라.`)

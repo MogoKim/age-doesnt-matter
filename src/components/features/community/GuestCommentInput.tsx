@@ -278,7 +278,7 @@ export default function GuestCommentInput({
           callbackUrl={pathname}
           gtmFrom="guest_comment_success"
           className="flex items-center justify-center w-full min-h-control rounded-xl text-caption font-bold mb-2 transition-all hover:brightness-95"
-          style={{ background: '#FEE500', color: '#191919' }}
+          style={{ background: 'var(--kakao-bg)', color: 'var(--kakao-text)' }}
         >
           카카오로 1초 만에 시작하기
         </KakaoSignupButton>

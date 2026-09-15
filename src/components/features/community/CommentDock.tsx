@@ -132,7 +132,7 @@ export default function CommentDock({ targetRef, sectionRef, isFeedback, composi
           이전에는 흰 Dock(bg-card #FFF) 위에 bg-background(#F9FAFB) 버튼이라 명도차가 거의 없었고,
           글자도 muted-foreground여서 "누를 수 있는 것"이 아니라 안내 문구 한 줄로 읽혔다.
           bg-muted(#F1F3F5) + text-muted-strong으로 배경·글자 대비를 동시에 올린다.
-          ⚠️ min-h-[52px]와 바깥 패딩은 그대로다 — Dock 높이가 커지면 PR #333/#339에서 되돌린
+          ⚠️ min-h-control와 바깥 패딩은 그대로다 — Dock 높이가 커지면 PR #333/#339에서 되돌린
              광고 겹침(0/41)과 노출 타이밍이 다시 흔들린다.
           ⚠️ 코랄(primary)은 쓰지 않는다. 상시 노출되는 하단 띠에 브랜드색을 얹으면 가입 배너로 읽힌다.
         */

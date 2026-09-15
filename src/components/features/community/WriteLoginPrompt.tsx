@@ -57,14 +57,14 @@ export default function WriteLoginPrompt({
           <KakaoSignupButton
             callbackUrl={callbackUrl}
             gtmFrom="write_login_prompt"
-            className="flex min-h-control w-full flex-wrap items-center justify-center gap-2 break-keep rounded-xl bg-[#FEE500] px-4 py-2 text-center text-body font-bold leading-tight text-[#191919] transition-colors hover:bg-[#FDD800]"
+            className="flex min-h-control w-full flex-wrap items-center justify-center gap-2 break-keep rounded-xl bg-[var(--kakao-bg)] px-4 py-2 text-center text-body font-bold leading-tight text-[var(--kakao-text)] transition-colors hover:bg-[var(--kakao-bg)]/90"
           >
             <span className="min-w-0">💛 카카오로 계속하기</span>
           </KakaoSignupButton>
 
           <button
             type="button"
-            className="min-h-control cursor-pointer text-xs text-muted-foreground transition-colors hover:text-foreground lg:min-h-[44px]"
+            className="min-h-control cursor-pointer text-xs text-muted-foreground transition-colors hover:text-foreground lg:min-h-control-sm"
             onClick={onClose}
           >
             계속 작성하기

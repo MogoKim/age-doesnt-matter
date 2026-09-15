@@ -18,7 +18,7 @@ export function chipClassName({
   className,
 }: ChipClassOptions = {}) {
   return cn(
-    'inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full border px-4 py-2 text-sm font-medium leading-tight whitespace-nowrap transition-colors min-h-[48px] select-none',
+    'inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full border px-4 py-2 text-sm font-medium leading-tight whitespace-nowrap transition-colors min-h-control-desktop select-none',
     active
       ? tone === 'solid'
         ? 'border-primary bg-primary text-white font-bold'

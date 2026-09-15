@@ -45,13 +45,13 @@ export default function LoginPromptModal({ message, onClose, callbackUrl }: Logi
           <KakaoSignupButton
             callbackUrl={callbackUrl || '/'}
             gtmFrom="login_prompt_modal"
-            className="w-full flex min-h-control flex-wrap items-center justify-center gap-2 rounded-xl bg-[#FEE500] px-4 py-2 text-center text-body font-bold leading-tight break-keep text-[#191919] transition-colors hover:bg-[#FDD800]"
+            className="w-full flex min-h-control flex-wrap items-center justify-center gap-2 rounded-xl bg-[var(--kakao-bg)] px-4 py-2 text-center text-body font-bold leading-tight break-keep text-[var(--kakao-text)] transition-colors hover:bg-[var(--kakao-bg)]/90"
           >
             <span className="min-w-0">💛 카카오로 1초 가입하기</span>
           </KakaoSignupButton>
 
           <button
-            className="text-[17px] text-muted-foreground cursor-pointer min-h-control lg:min-h-[44px] hover:text-foreground transition-colors"
+            className="text-[17px] text-muted-foreground cursor-pointer min-h-control lg:min-h-control-sm hover:text-foreground transition-colors"
             onClick={onClose}
           >
             나중에
