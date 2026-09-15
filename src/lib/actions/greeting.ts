@@ -1,5 +1,6 @@
 'use server'
 
+import { buildPostPath } from '@/lib/post-url'
 import { revalidatePath, updateTag } from 'next/cache'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
@@ -111,7 +112,8 @@ export async function submitGreeting(message: string): Promise<SubmitGreetingRes
     updateTag('home-newcomers') // 홈 신입환영 섹션(Phase 3) 즉시 반영
     revalidatePath('/community/stories')
     revalidatePath('/')
-    return { postUrl: `/community/stories/${post.slug ?? post.id}` }
+    // 🔴 클라이언트가 이 값으로 이동한다 — slug 가 한글이면 인코딩된 경로여야 한다.
+    return { postUrl: buildPostPath({ id: post.id, boardType: 'STORY', slug: post.slug }) }
   } catch (e) {
     if (e instanceof Error && e.message === 'ALREADY_GREETED') {
       return { error: '이미 첫 인사를 남기셨어요' }

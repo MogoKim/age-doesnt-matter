@@ -1,3 +1,4 @@
+import { buildPostPath } from '@/lib/post-url'
 import HomeCardLink from '@/components/features/home/HomeCardLink'
 import { formatSalary } from '@/lib/format'
 
@@ -33,7 +34,7 @@ export default function JobSection({ jobs }: Props) {
         <div className="overflow-x-auto [-webkit-overflow-scrolling:touch] [scroll-snap-type:x_mandatory] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-4 pr-12 flex gap-3 lg:overflow-x-visible lg:[scroll-snap-type:none] lg:px-0 lg:pr-0 lg:grid lg:grid-cols-4 lg:gap-4">
         {jobs.map((job, index) => (
           <HomeCardLink
-            href={`/jobs/${job.id}`}
+            href={buildPostPath({ id: job.id, boardType: 'JOB' })}
             key={job.id}
             className="shrink-0 w-[220px] lg:w-auto bg-card rounded-xl p-4 lg:p-5 border border-border [scroll-snap-align:start] lg:[scroll-snap-align:none] cursor-pointer transition-shadow no-underline text-inherit block active:bg-background active:shadow-md lg:hover:shadow-md lg:hover:-translate-y-0.5 lg:hover:transition-all"
             section="jobs"

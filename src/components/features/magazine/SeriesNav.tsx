@@ -1,3 +1,4 @@
+import { buildPostPath } from '@/lib/post-url'
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 
@@ -46,7 +47,7 @@ export default async function SeriesNav({ seriesId, seriesTitle, seriesOrder, se
       <div className="flex gap-3">
         {prev ? (
           <Link
-            href={`/magazine/${prev.slug ?? prev.id}`}
+            href={buildPostPath({ id: prev.id, boardType: 'MAGAZINE', slug: prev.slug })}
             className="flex-1 flex flex-col gap-1 rounded-lg bg-background border border-border p-3 no-underline min-h-[52px] transition-colors hover:border-primary/40 hover:bg-primary/5"
           >
             <span className="text-[17px] text-muted-foreground">← 이전 편</span>
@@ -58,7 +59,7 @@ export default async function SeriesNav({ seriesId, seriesTitle, seriesOrder, se
 
         {next ? (
           <Link
-            href={`/magazine/${next.slug ?? next.id}`}
+            href={buildPostPath({ id: next.id, boardType: 'MAGAZINE', slug: next.slug })}
             className="flex-1 flex flex-col gap-1 rounded-lg bg-background border border-border p-3 no-underline min-h-[52px] text-right transition-colors hover:border-primary/40 hover:bg-primary/5"
           >
             <span className="text-[17px] text-muted-foreground">다음 편 →</span>

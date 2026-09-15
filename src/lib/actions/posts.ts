@@ -1,5 +1,6 @@
 'use server'
 
+import { encodePathSegment } from '@/lib/post-url'
 import { revalidatePath, updateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
@@ -148,7 +149,8 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
   updateTag('home-magazine')
   updateTag('home-jobs')
   updateTag('community-board-page')
-  return { postUrl: `/community/${boardSlugPath}/${communitySlug ?? post.id}` }
+  // 🔴 작성 직후 이동 경로 — slug 가 한글이면 인코딩된 경로여야 한다.
+  return { postUrl: `/community/${boardSlugPath}/${encodePathSegment(communitySlug ?? post.id)}` }
 }
 
 export async function updatePost(postId: string, formData: FormData): Promise<CreatePostResult> {
@@ -247,15 +249,16 @@ export async function updatePost(postId: string, formData: FormData): Promise<Cr
     },
   })
 
-  const slug = BOARD_TYPE_TO_SLUG[existing.boardType]
-  revalidatePath(`/community/${slug}/${postId}`)
-  revalidatePath(`/community/${slug}`)
+  // `boardSlug` — 글 slug 가 아니라 **보드** slug 다(ASCII 고정). 이름이 겹치면 인코딩 판단이 헷갈린다.
+  const boardSlug = BOARD_TYPE_TO_SLUG[existing.boardType]
+  revalidatePath(`/community/${boardSlug}/${postId}`)
+  revalidatePath(`/community/${boardSlug}`)
   updateTag('post-detail')
   updateTag('post-meta')
   updateTag('home-trending')
   updateTag('home-stories')
   updateTag('home-humor')
-  return { postUrl: `/community/${slug}/${postId}` }
+  return { postUrl: `/community/${boardSlug}/${encodePathSegment(postId)}` }
 }
 
 export async function deletePost(postId: string): Promise<{ error?: string }> {

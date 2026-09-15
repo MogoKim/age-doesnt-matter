@@ -1,12 +1,13 @@
 import type { MetadataRoute } from 'next'
 import { unstable_cache } from 'next/cache'
+import { buildGuidePath, buildPostPath, buildSeriesPath } from '@/lib/post-url'
 import { prisma } from '@/lib/prisma'
 import { JOB_SIDO_LIST } from '@/lib/jobs-regions'
 import { EXCLUDE_GREETING } from '@/lib/greeting'
 import { EXCLUDE_EVENT } from '@/lib/event-category'
 import { GUIDE_SLUGS } from '@/lib/guides'
-// 커뮤니티 목록 slug + BoardType→slug (SSoT: board-registry — 구 로컬 중복 정의 제거)
-import { COMMUNITY_SITEMAP_SLUGS, BOARD_TYPE_TO_SLUG_MAP } from '@/lib/board-registry'
+// 커뮤니티 목록 slug (SSoT: board-registry). BoardType→slug 매핑은 `buildPostPath` 안으로 옮겼다.
+import { COMMUNITY_SITEMAP_SLUGS } from '@/lib/board-registry'
 
 export const dynamic = 'force-dynamic'
 
@@ -46,14 +47,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/terms`, changeFrequency: 'yearly', priority: 0.2 },
     { url: `${BASE_URL}/privacy`, changeFrequency: 'yearly', priority: 0.2 },
     { url: `${BASE_URL}/rules`, changeFrequency: 'yearly', priority: 0.2 },
-    ...BOARD_SLUGS.map((slug) => ({
-      url: `${BASE_URL}/community/${slug}`,
+    ...BOARD_SLUGS.map((boardSlug) => ({
+      url: `${BASE_URL}/community/${boardSlug}`,
       changeFrequency: 'daily' as const,
       priority: 0.8,
     })),
     // 생활형 대표 가이드(정적 /guide) — 파일럿부터 자동 반영
     ...GUIDE_SLUGS.map((slug) => ({
-      url: `${BASE_URL}/guide/${encodeURI(slug)}`,
+      url: `${BASE_URL}${buildGuidePath(slug)}`,
       changeFrequency: 'weekly' as const,
       priority: 0.7,
     })),
@@ -69,9 +70,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // WEEKLY 제외: /community/weekly 라우트 없음 (LIFE2로 대체된 숨겨진 게시판) → 포함 시 404 대량 발생
   const posts = await getSitemapPosts()
 
-  // WEEKLY는 위 쿼리에서 제외되므로(boardType not WEEKLY) 전체 맵 사용해도 결과 동일
-  const BOARD_TYPE_TO_SLUG: Record<string, string> = BOARD_TYPE_TO_SLUG_MAP
-
   const postPages: MetadataRoute.Sitemap = posts
     .filter((post) => {
       // 커뮤니티 게시글(JOB·MAGAZINE 제외): slug 없으면 CUID URL → 슬러그 추가 시 308 리디렉션 유발
@@ -81,18 +79,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .map((post) => {
       const isJob = post.boardType === 'JOB'
       const isMagazine = post.boardType === 'MAGAZINE'
-      const slug = BOARD_TYPE_TO_SLUG[post.boardType]
 
-      let url: string
-      if (isJob) {
-        url = `${BASE_URL}/jobs/${post.id}`
-      } else if (isMagazine) {
-        url = post.slug
-          ? `${BASE_URL}/magazine/${post.slug}`
-          : `${BASE_URL}/magazine/${post.id}`
-      } else {
-        url = `${BASE_URL}/community/${slug}/${post.slug!}`
-      }
+      // 🔴 경로는 `buildPostPath` 하나로 만든다 — slug 가 한글이면 **percent-encode** 된다.
+      //    raw non-ASCII URL 은 네이버 크롤러(Yeti)가 못 가져온다(2026-09-15 실측:
+      //    같은 글이 encoded 로는 200, raw 로는 접근 실패 · sitemap 229개 중 138개가 raw).
+      //    가리키는 대상은 그대로다 — `decodeURI` 하면 이전 URL 과 정확히 같다.
+      //    보드별 slug 매핑도 `buildPostPath` 안에 있다(BOARD_TYPE_TO_SLUG_MAP 동일 SSoT).
+      const url = `${BASE_URL}${buildPostPath({ id: post.id, boardType: post.boardType, slug: post.slug })}`
 
       const isSeoOnly = post.status === 'SEO_ONLY'
 
@@ -113,7 +106,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const seriesHubPages: MetadataRoute.Sitemap = seriesGroups
     .filter((g) => g.seriesId != null && g._count >= 3)
     .map((g) => ({
-      url: `${BASE_URL}/magazine/series/${g.seriesId}`,
+      url: `${BASE_URL}${buildSeriesPath(String(g.seriesId))}`,
       changeFrequency: 'weekly' as const,
       priority: 0.6,
     }))

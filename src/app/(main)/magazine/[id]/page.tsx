@@ -1,3 +1,4 @@
+import { buildPostPath, buildSeriesPath } from '@/lib/post-url'
 import { notFound, permanentRedirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -268,7 +269,7 @@ export default async function MagazineDetailPage({ params }: PageProps) {
           {/* 시리즈 허브 역링크 — 이전/다음(SeriesNav)과 별개로 전체 묶음 랜딩으로 이동 */}
           <div className="mb-6 -mt-2">
             <Link
-              href={`/magazine/series/${post.seriesId}`}
+              href={buildSeriesPath(String(post.seriesId))}
               className="text-caption text-primary-text no-underline hover:underline"
             >
               이 시리즈 전체 보기 →
@@ -382,7 +383,7 @@ export default async function MagazineDetailPage({ params }: PageProps) {
               return (
                 <a
                   key={related.id}
-                  href={`/magazine/${related.slug ?? related.id}`}
+                  href={buildPostPath({ id: related.id, boardType: 'MAGAZINE', slug: related.slug })}
                   className="flex items-start gap-3 p-4 bg-card rounded-xl border border-border no-underline transition-colors hover:border-primary/30 hover:shadow-sm min-h-[52px]"
                 >
                   <div className="flex-1 min-w-0">

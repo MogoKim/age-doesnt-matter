@@ -15,6 +15,7 @@
  *     대신 지역 랜딩(/jobs/region/{시도})만 연결한다.
  *   - Google noindex 대상 글(PR-B3 미통과)은 앵커로 쓰지 않는다.
  */
+import { buildGuidePath, encodePathSegment } from '@/lib/post-url'
 import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { stripHtmlTags } from '@/lib/sanitize'
@@ -222,7 +223,7 @@ function guideLink(slug: string): HubLink | null {
   if (!guide) return null
   return {
     title: guide.breadcrumbLabel,
-    href: `/guide/${guide.slug}`,
+    href: buildGuidePath(guide.slug),
     excerpt: toExcerpt(guide.description),
   }
 }
@@ -278,7 +279,7 @@ export async function getSecondActSections(): Promise<ResolvedSection[]> {
     if (!bucket || bucket.magazine.length >= MAX_MAGAZINE) continue
     bucket.magazine.push({
       title: post.title,
-      href: `/magazine/${post.slug}`,
+      href: `/magazine/${encodePathSegment(post.slug)}`,
       excerpt: toExcerpt(post.seoDescription ?? ''),
     })
   }
@@ -305,7 +306,7 @@ export async function getSecondActSections(): Promise<ResolvedSection[]> {
       score: anchorScore({ title: post.title, text, viewCount: post.viewCount }),
       link: {
         title: post.title,
-        href: `/community/${boardSlug}/${post.slug}`,
+        href: `/community/${boardSlug}/${encodePathSegment(post.slug)}`,
         excerpt: toExcerpt(text),
         commentCount: post.commentCount,
       },

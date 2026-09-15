@@ -1,8 +1,8 @@
+import { buildPostPath } from '@/lib/post-url'
 import Link from 'next/link'
 import { unstable_cache } from 'next/cache'
 import { getTrendingCommunityPosts, getPostsByBoardPage } from '@/lib/queries/posts'
 import type { BoardType, PostSummary } from '@/types/api'
-import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import { formatTimeAgo } from './utils'
 import TrackedPostLink from './TrackedPostLink'
 
@@ -53,7 +53,7 @@ export default async function PostListBottom({ boardType, boardSlug, excludePost
       </div>
       <ol className="list-none m-0 p-0">
         {posts.map((post, idx) => {
-          const href = `/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${post.slug ?? post.id}`
+          const href = buildPostPath(post)
           const inner = (
             <>
               <span className="text-caption font-bold text-muted-foreground min-w-[24px] shrink-0 pt-0.5 text-right">

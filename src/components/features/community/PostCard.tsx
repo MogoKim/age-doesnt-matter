@@ -1,3 +1,4 @@
+import { encodePathSegment } from '@/lib/post-url'
 import { memo } from 'react'
 import Link from 'next/link'
 import type { PostSummary } from '@/types/api'
@@ -52,7 +53,8 @@ function PostCard({ post, boardSlug, showBoardBadge = false }: PostCardProps) {
 
   return (
     <Link
-      href={`/community/${boardSlug}/${post.slug ?? post.id}`}
+      // boardSlug 는 호출부가 정한다(보드 목록 페이지는 현재 보드를 넘긴다) — 경로는 그대로 두고 **인코딩만** 더한다.
+      href={`/community/${boardSlug}/${encodePathSegment(post.slug ?? post.id)}`}
       className="block border-b border-border py-[18px] no-underline text-inherit transition-colors last:border-b-0 hover:bg-muted/40"
     >
       <h2 className="text-body font-bold text-foreground m-0 line-clamp-2 leading-[1.4]">

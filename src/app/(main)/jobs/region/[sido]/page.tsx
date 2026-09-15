@@ -1,3 +1,4 @@
+import { buildPostPath } from '@/lib/post-url'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -47,7 +48,7 @@ function ItemListJsonLd({ region, jobs }: { region: string; jobs: JobCardItem[] 
     itemListElement: jobs.map((job, i) => ({
       '@type': 'ListItem',
       position: i + 1,
-      url: `${BASE_URL}/jobs/${job.id}`,
+      url: `${BASE_URL}${buildPostPath({ id: job.id, boardType: 'JOB' })}`,
       name: job.title,
     })),
   }

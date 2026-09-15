@@ -11,6 +11,7 @@
  *   - 게시글 원문을 복제하지 않는다 — 제목 + 짧은 발췌 + 링크만 쓴다(중복 콘텐츠 회피).
  *   - 한 글은 한 섹션에만 배치한다(섹션 간 중복 링크 방지).
  */
+import { encodePathSegment } from '@/lib/post-url'
 import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { stripHtmlTags } from '@/lib/sanitize'
@@ -170,7 +171,7 @@ export async function getMenopauseHubSections(): Promise<HubSection[]> {
     if (!bucket || bucket.magazine.length >= MAX_MAGAZINE_PER_SECTION) continue
     bucket.magazine.push({
       title: post.title,
-      href: `/magazine/${post.slug}`,
+      href: `/magazine/${encodePathSegment(post.slug)}`,
       excerpt: toExcerpt(post.seoDescription ?? ''),
     })
   }
@@ -185,7 +186,7 @@ export async function getMenopauseHubSections(): Promise<HubSection[]> {
     if (!bucket || bucket.community.length >= MAX_COMMUNITY_PER_SECTION) continue
     bucket.community.push({
       title: post.title,
-      href: `/community/menopause/${post.slug}`,
+      href: `/community/menopause/${encodePathSegment(post.slug)}`,
       excerpt: toExcerpt(toPlainText(post.content)),
       commentCount: post.commentCount,
     })

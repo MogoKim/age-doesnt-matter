@@ -1,3 +1,4 @@
+import { buildPostPath } from '@/lib/post-url'
 import Link from 'next/link'
 import type { JobCardItem } from '@/lib/queries/posts'
 import { formatTimeAgo } from '@/components/features/community/utils'
@@ -14,7 +15,7 @@ import { IconEye } from '@/components/icons'
 export default function JobCard({ job }: { job: JobCardItem }) {
   return (
     <Link
-      href={`/jobs/${job.id}`}
+      href={buildPostPath({ id: job.id, boardType: 'JOB' })}
       className="block p-4 bg-card rounded-xl border border-border no-underline transition-colors hover:border-primary/30"
     >
       <div className="flex flex-wrap items-center gap-1.5 mb-2">
