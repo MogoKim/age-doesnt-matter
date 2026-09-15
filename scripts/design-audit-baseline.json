@@ -115,6 +115,5 @@
   "src/components/features/vote/VotePopup.tsx::R11": 3,
   "src/components/features/vote/VoteWidget.tsx::R11": 3,
   "src/components/layouts/GNB.tsx::R11": 2,
-  "src/components/layouts/TopPromoBannerClient.tsx::R11": 3,
-  "src/components/ui/Chip.tsx::R11": 1
+  "src/components/layouts/TopPromoBannerClient.tsx::R11": 3
 }

@@ -237,7 +237,7 @@ R08 은 **스타일 문맥에서만** 잡는다 — 안내 카피 안의 색 코
 | # | finding | 처리 |
 |---|---|---|
 | 1 | audit 의 즉시 `process.exit()` | **전부 제거.** `main()` 이 exit code 를 **반환**하고 최상단이 `process.exitCode` 에 담는다. 파이프로 나가는 stdout 은 비동기라 `process.exit()` 가 미완료 버퍼를 버렸고 — CI 에서 요약 줄이 통째로 사라졌다. **재현 테스트 4건**으로 고정했다(즉시 종료 부재 · report 마지막 줄 · strict 요약 · `--output=json` 파이프 전체 파싱). "재실행 성공" 으로 종결하지 않았다 |
-| 2 | R11 을 실질 게이트로 | **TypeScript JSX AST** 로 재구현(`findRawControls`). multiline JSX 를 잡는다. baseline 으로 기존 부채(90파일)는 허용하되 **개수 증가는 exit 1**. 테스트 6건: multiline · baseline 유지 · 1건 추가 실패 · 1건 제거 통과 · 공용 Button/Input 예외 · 4종 태그 전수 |
+| 2 | R11 을 실질 게이트로 | **TypeScript JSX AST** 로 재구현(`findRawControls`). multiline JSX 를 잡는다. baseline 으로 기존 부채(89파일)는 허용하되 **개수 증가는 exit 1**. 테스트 8건: multiline · baseline 유지 · 1건 추가 실패 · 1건 제거 통과 · 공용 `ui/` primitive 예외 · 4종 태그 전수 · **R11 은 변경 파일 존재만으로는 막지 않는다** · error 는 막는다 |
 | 3 | 폼 id | 명시적 id 가 없으면 **항상 `React.useId()`**. label 문자열 기반 id 는 같은 라벨 2개에서 충돌해 `htmlFor` 가 엉뚱한 입력을 가리켰다. 렌더 테스트 7건 |
 | 4 | 삭제 모듈을 현행으로 적은 문서 | active 8개 갱신(R01·R02·F03·F07·specs/03·specs/10·SERVICE_ARCHITECTURE·UNAO_RESCUE_STATUS). 역사 문서 5개에는 **역사 배너**를 달았다. `NOTIFICATION_SPEC` 은 삭제 모듈 참조가 없어 무변경 |
 | 5 | `visual-run.mjs` | **삭제.** 일회성 진단 도구였고 정식 편입할 만큼의 계약(인자 검증·문서·npm script)을 갖출 이유가 없었다 |
@@ -250,3 +250,26 @@ R08 은 **스타일 문맥에서만** 잡는다 — 안내 카피 안의 색 코
 - `--output=json` 파이프 파싱 PASS
 - audit strict 양성/음성 대조 PASS
 - typecheck 0 · ops-typecheck 0 · lint 0
+
+
+### R11 게이트 범위 — 한 번 더 정정
+
+CI 가 이 PR 을 막았다. 원인은 R11 을 **변경 파일에 있으면 실패**로 적용한 것이었다.
+R11 의 계약은 **개수 증가 금지**다(baseline 비교). 존재만으로 막으면 raw 컨트롤이 있는 화면 파일을
+토큰 치환 같은 **무관한 이유로 한 줄만 고쳐도** CI 가 멈춘다 —
+"기존 부채를 한 번에 red 로 만들지 않는다" 는 전제와 정면으로 어긋난다.
+
+| 규칙 | 변경 파일에 존재 | baseline 초과 |
+|---|---|---|
+| error (R02·R03·R08·R09·R10) | **exit 1** — 고치기 싸고 국소적이다 | exit 1 |
+| R11 (raw 표준 컨트롤) | 통과 | **exit 1** |
+
+두 경우를 각각 테스트로 고정했다. 공용 예외도 `Button`·`Input` 에서
+**`src/components/ui/` 전체**로 넓혔다 — `Chip`·`BottomSheet` 도 표준 컨트롤을 만드는 게 일이다.
+
+### 시각 회귀 — production 대비 0건
+
+Preview 320·390·1440 × 5화면(home·community·magazine·jobs·login) 실측:
+가로 넘침 **0→0** · 텍스트 넘침 **0→0** · 44px 미만 컨트롤 **동일** · 전 페이지 200.
+홈 컨트롤 수가 44→43 으로 보였으나 대기 시간을 늘려 재측정하니 **컨트롤 집합이 완전히 동일**했다 —
+광고 슬롯 렌더 타이밍 차이였다.

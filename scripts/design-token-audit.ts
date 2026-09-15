@@ -271,14 +271,17 @@ function collectFiles(dir: string): string[] {
  */
 const RAW_CONTROL_TAGS = new Set(['button', 'input', 'select', 'textarea'])
 
-/** 공용 컴포넌트 자신은 표준 컨트롤을 만들어야 한다 — 여기가 유일한 출처다. */
-const RAW_CONTROL_EXEMPT = [
-  'src/components/ui/Button.tsx',
-  'src/components/ui/Input.tsx',
-]
+/**
+ * 공용 컴포넌트 자신은 표준 컨트롤을 **만들어야** 한다 — 여기가 유일한 출처다.
+ * `Button`·`Input` 뿐 아니라 `Chip`·`BottomSheet` 처럼 `src/components/ui/` 의
+ * primitive 전부가 해당한다. 이들을 규칙으로 막으면 만들 방법이 없어진다.
+ */
+function isRawControlExempt(rel: string): boolean {
+  return rel.startsWith('src/components/ui/')
+}
 
 function findRawControls(rel: string, content: string): Violation[] {
-  if (RAW_CONTROL_EXEMPT.includes(rel)) return []
+  if (isRawControlExempt(rel)) return []
   if (!/\.tsx$/.test(rel)) return []
 
   const sf = ts.createSourceFile(rel, content, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX)
@@ -445,7 +448,12 @@ function main(): number {
   //    한 번에 못 바꾸는 부채라, 게이트로 삼으면 파일을 한 줄만 고쳐도 CI 가 막힌다.
   //    warn 은 리포트에 남아 리뷰가 본다.
   const gating = allViolations.filter(isGating)
-  const inChanged = gating.filter((v) => changed.has(v.file))
+  // 🔴 **R11 은 "변경 파일에 있으면 실패" 대상이 아니다.**
+  //    R11 의 계약은 **개수 증가 금지**다(baseline 비교). 존재만으로 막으면,
+  //    raw 컨트롤이 있는 화면 파일을 토큰 치환 같은 무관한 이유로 한 줄만 고쳐도 CI 가 멈춘다.
+  //    그건 "기존 부채를 한 번에 red 로 만들지 않는다" 는 전제와 정면으로 어긋난다.
+  //    error(R08·R09·R10 등)는 고치기 싸고 국소적이라 존재만으로 막는다.
+  const inChanged = gating.filter((v) => v.ruleId !== 'R11' && changed.has(v.file))
   const base = readBaseline()
   const regressions = Object.entries(currentErrors).filter(([k, n]) => n > (base[k] ?? 0))
 

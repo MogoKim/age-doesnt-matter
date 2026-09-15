@@ -247,10 +247,35 @@ describe('🔴 R11 raw 표준 컨트롤 — 신규 부채 게이트', () => {
     expect(runAudit(['--strict', `--root=${dir}`]).code).toBe(0)
   })
 
-  it('🔴 공용 Button/Input 자신은 예외다 — 표준 컨트롤의 유일한 출처다', () => {
+  it('🔴 R11 은 "변경 파일에 있으면 실패" 대상이 **아니다** — 개수 증가만 막는다', () => {
+    // R11 의 계약은 개수 증가 금지다. 존재만으로 막으면 raw 컨트롤이 있는 화면 파일을
+    // 토큰 치환 같은 무관한 이유로 한 줄만 고쳐도 CI 가 멈춘다 —
+    // "기존 부채를 한 번에 red 로 만들지 않는다" 는 전제와 정면으로 어긋난다.
+    const dir = makeFixture(
+      { 'src/components/M.tsx': ONE_LINE },
+      { 'src/components/M.tsx::R11': 1 },
+    )
+    const r = runAudit(['--strict', `--root=${dir}`, '--changed=src/components/M.tsx'])
+    expect(r.code, 'R11 이 변경 파일 존재만으로 막았다').toBe(0)
+  })
+
+  it('🔴 error 는 변경 파일에 있으면 baseline 안이라도 막는다 — R11 과 다르다', () => {
+    // error(R08 등)는 고치기 싸고 국소적이라 손댄 파일에서는 그냥 고치게 한다.
+    const dir = makeFixture(
+      { 'src/lib/debt.ts': 'export const OLD = "bg-[#FF6F61]"\n' },
+      { 'src/lib/debt.ts::R08': 1 },
+    )
+    const r = runAudit(['--strict', `--root=${dir}`, '--changed=src/lib/debt.ts'])
+    expect(r.code).toBe(1)
+    expect(r.out).toContain('변경한 파일에 위반')
+  })
+
+  it('🔴 공용 ui/ primitive 는 예외다 — 표준 컨트롤의 유일한 출처다', () => {
+    // Button·Input 뿐 아니라 Chip·BottomSheet 같은 primitive 전부가 해당한다.
     const dir = makeFixture({
       'src/components/ui/Button.tsx': ONE_LINE,
       'src/components/ui/Input.tsx': MULTILINE,
+      'src/components/ui/Chip.tsx': ONE_LINE,
     })
     const r = runAudit(['--strict', `--root=${dir}`])
     expect(r.code, '공용 컴포넌트가 자기 규칙에 걸렸다').toBe(0)
