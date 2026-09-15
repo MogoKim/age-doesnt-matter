@@ -1,6 +1,6 @@
+import { buildPostPath } from '@/lib/post-url'
 import HomeCardLink from '@/components/features/home/HomeCardLink'
 import type { PostSummary } from '@/types/api'
-import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import { BOARD_DISPLAY_NAMES } from '@/lib/board-constants'
 import { IconComment, IconEye } from '@/components/icons'
 import CategoryBadge from '@/components/ui/CategoryBadge'
@@ -30,7 +30,7 @@ export default function TrendingSection({ posts }: Props) {
             className="group lg:border-b lg:border-border/60 lg:last:border-b-0 motion-safe:transition-[border-color] motion-safe:duration-[250ms] motion-reduce:transition-none [@media(hover:hover)]:hover:border-primary active:border-primary"
           >
             <HomeCardLink
-              href={`/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${post.slug ?? post.id}`}
+              href={buildPostPath(post)}
               className="group flex items-start gap-3 py-3.5 border-b border-border/60 no-underline text-inherit min-h-[52px] motion-safe:transition-[border-color] motion-safe:duration-[250ms] motion-reduce:transition-none [@media(hover:hover)]:hover:border-primary active:border-primary lg:border-b-0"
               section="trending"
               position={index}

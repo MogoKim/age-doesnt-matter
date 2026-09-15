@@ -1,3 +1,4 @@
+import { encodePathSegment } from '@/lib/post-url'
 import { cookies, headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { createHash, randomUUID } from 'crypto'
@@ -96,7 +97,9 @@ export async function resolveLinkedPostUrl(linkedPostId: string | null): Promise
   })
   if (!post || post.status !== 'PUBLISHED') return null
   const boardSlug = BOARD_TYPE_TO_SLUG[post.boardType] ?? post.boardType.toLowerCase()
-  return `/community/${boardSlug}/${post.slug ?? linkedPostId}`
+  // 🔴 slug 가 한글일 수 있다 — 홈 HERO 가 이 값을 그대로 href 로 쓴다.
+  //    boardSlug fallback 규칙은 여기 것을 유지하고 **마지막 segment 만** 인코딩한다.
+  return `/community/${boardSlug}/${encodePathSegment(post.slug ?? linkedPostId)}`
 }
 
 /**

@@ -1,8 +1,8 @@
 'use client'
 
+import { buildPostPath } from '@/lib/post-url'
 import { useEffect, useRef, useState } from 'react'
 import type { PostSummary, BoardType } from '@/types/api'
-import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import { trackEvent } from '@/lib/track'
 import {
   scoreRelatedV2,
@@ -84,7 +84,7 @@ export default function NextPostsInline({
         {scored.map(({ post, reason, rank }, idx) => (
           <li key={post.id} className="border-t border-primary/10 first:border-t-0">
             <TrackedPostLink
-              href={`/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${post.slug ?? post.id}`}
+              href={buildPostPath(post)}
               postId={post.id}
               position="inline"
               boardSlug={boardSlug}

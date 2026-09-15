@@ -1,3 +1,4 @@
+import { buildPostPath } from '@/lib/post-url'
 import Image from 'next/image'
 import HomeCardLink from '@/components/features/home/HomeCardLink'
 import type { PostSummary } from '@/types/api'
@@ -28,7 +29,7 @@ export default function MagazineSection({ posts }: Props) {
         <div className="flex gap-3 px-4 pr-12 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [scroll-snap-type:x_mandatory] lg:grid lg:grid-cols-4 lg:gap-4 lg:px-0 lg:pr-0 lg:overflow-x-visible lg:[scroll-snap-type:none]">
           {posts.map((article, index) => (
             <HomeCardLink
-              href={`/magazine/${article.slug ?? article.id}`}
+              href={buildPostPath({ id: article.id, boardType: 'MAGAZINE', slug: article.slug })}
               key={article.id}
               className="shrink-0 w-[200px] lg:w-auto bg-card rounded-xl overflow-hidden border border-border no-underline text-inherit block active:opacity-95 [scroll-snap-align:start] lg:hover:shadow-md lg:hover:-translate-y-0.5 lg:hover:transition-all"
               section="magazine"

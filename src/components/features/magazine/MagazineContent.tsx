@@ -1,5 +1,6 @@
 'use client'
 
+import { buildPostPath } from '@/lib/post-url'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -163,7 +164,7 @@ export default function MagazineContent({ initialPosts, initialTotal, initialQue
 function MagazineCard({ post, priority }: { post: PostSummary; priority?: boolean }) {
   return (
     <Link
-      href={`/magazine/${post.slug ?? post.id}`}
+      href={buildPostPath({ id: post.id, boardType: 'MAGAZINE', slug: post.slug })}
       className="flex items-start gap-3 p-3 md:p-4 bg-card rounded-xl border border-border overflow-hidden no-underline transition-colors hover:border-primary/30 min-h-[52px]"
     >
       {post.thumbnailUrl ? (

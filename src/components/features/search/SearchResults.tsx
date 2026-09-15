@@ -1,7 +1,7 @@
+import { buildPostPath } from '@/lib/post-url'
 import Link from 'next/link'
 import type { SearchResult, SearchTab } from '@/lib/queries/search'
 import type { PostSummary } from '@/types/api'
-import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import { formatTimeAgo } from '../community/utils'
 import { IconSearch, IconHeart, IconComment } from '@/components/icons'
 
@@ -139,12 +139,7 @@ const INFO_ONLY_BOARDS = new Set<string>(['JOB', 'MAGAZINE'])
  * 조회수는 넣지 않는다 — 검색은 찾기가 목적이라 정보 밀도를 늘리지 않는다.
  */
 function SearchResultCard({ post, query }: { post: PostSummary; query: string }) {
-  const boardSlug = BOARD_TYPE_TO_SLUG[post.boardType] ?? 'stories'
-  const href = post.boardType === 'JOB'
-    ? `/jobs/${post.id}`
-    : post.boardType === 'MAGAZINE'
-    ? `/magazine/${post.slug ?? post.id}`
-    : `/community/${boardSlug}/${post.slug ?? post.id}`
+  const href = buildPostPath(post)
 
   return (
     <Link
