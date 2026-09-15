@@ -1,7 +1,8 @@
 # 네이버 한글 URL 수집 실패 — RFC 호환 ASCII URL 전환 (2026-09-15)
 
-> 실행 완료 · PR [#481](https://github.com/MogoKim/age-doesnt-matter/pull/481) merge `45e74616`
-> production `2026.09.15-45e7461` 배포 후 재검증 **전체 PASS**
+> PR [#481](https://github.com/MogoKim/age-doesnt-matter/pull/481) merge `45e74616` · production `2026.09.15-45e7461` 배포 완료
+> **기술 배포 검증 PASS** (HTTP·HTML·sitemap 실측) · **Search Advisor 운영 검증 대기** (§6 — 창업자 몫)
+> 네이버가 실제로 수집하는지는 아직 확인되지 않았다. 배포된 표기가 규격에 맞다는 것까지만 확인됐다.
 
 ## 1. 문제 — 콘텐츠가 아니라 URL 표기였다
 
@@ -18,7 +19,8 @@
 - 서버 렌더링된 목록·허브의 일부 `href` 도 raw 한글 → **목록 → 상세 크롤 경로까지 끊김**
 - `canonical`·`og:url` 은 **이미 percent-encoded** 였다 → sitemap 과 내부 링크만 규칙이 달랐다
 
-🔴 **기존 sitemap 등록일 2026-08-19 는 원인이 아니다.** 네이버 등록 삭제·재등록은 하지 않았고, 앞으로도 하지 않는다.
+🔴 **기존 sitemap 등록일 2026-08-19 는 원인이 아니다.** 이번 작업에서 네이버 등록을 삭제하거나 재등록하지 않았다.
+`/sitemap.xml` endpoint 는 그대로이고 정상 응답하므로 **재등록은 지금 할 일이 아니다** — 자세한 조건은 §6.
 
 ## 2. 해결 — URL 생성을 한 곳으로
 
@@ -78,9 +80,12 @@ topic 허브 2종 · 시리즈 허브(canonical·OG·JSON-LD·breadcrumb·글 �
 부수 정리: 보드 slug 를 담은 지역변수 이름을 `slug` → `boardSlug` 로 바로잡았다(sitemap·`posts.ts`).
 글 slug 와 이름이 겹쳐 인코딩 판단이 헷갈렸다.
 
-## 5. 배포 후 production 재검증 — 전체 PASS
+## 5. 배포 후 production 재검증 — 기술 검증 PASS
 
 `2026.09.15-45e7461` 배포 확인 후 실측(2026-09-15).
+
+🔴 **여기서 PASS 한 것은 "우리가 내보내는 URL 표기가 규격에 맞다"까지다.**
+네이버가 그 URL 을 실제로 수집하는지는 §6 의 Search Advisor 검사로만 확인할 수 있고, **아직 대기 중**이다.
 
 | 항목 | 배포 전 | 배포 후 |
 |---|---|---|
@@ -91,10 +96,26 @@ topic 허브 2종 · 시리즈 허브(canonical·OG·JSON-LD·breadcrumb·글 �
 | `decodeURI` 경로 집합 | — | **배포 전과 동일** (가리키는 대상 불변) |
 | sitemap URL 전수 (Yeti UA) | — | **229/229 모두 200** |
 | sitemap == canonical == og:url | — | 대표 4건 **바이트 단위 일치** |
-| 공개면 raw 한글 `href` | `/guide` 8 · `/guide/<slug>` 5 · `/topic/second-act` 10 · `/magazine` 3 | **21곳 전수 합계 0** |
+| 공개면 raw 한글 `href` | 아래 별표 참조 | **21개 페이지 스캔 · 출현 0회** |
 | `/` `/community` `/magazine` `/jobs` `/api/health` | — | **전부 200** |
 
-게이트: tsc 0 · eslint error 0 · CI fail 0(E2E Smoke·Lighthouse·quality·Vercel·seo-guard 전부 pass).
+### 공개면 raw 한글 `href` — 분모를 나눠 적는다
+
+🔴 이전 판에서 `8 + 5 + 10 + 3` 과 "21곳"을 한 칸에 적었다. **둘은 단위도 측정 시점도 다르다.**
+`26` 은 **출현 횟수**, `21` 은 **스캔한 페이지 수**다. 게다가 `5` 는 배포 전 production 이 아니라 preview 중간 상태에서 잰 값이다.
+
+| 시점 | 스캔한 페이지 | raw 한글 `href` 출현 |
+|---|---|---|
+| **배포 전 production** (2026-09-15) | **3개** — `/guide` · `/topic/second-act` · `/magazine` | **21회** (8 · 10 · 3) |
+| preview 중간 상태 `83c0d1ac` | 1개 — `/guide/<slug>` 상세 | 5회 — 하드코딩 데이터(`guides/index.ts`)가 원인. **배포 전 production 에서는 직접 재지 않았다** |
+| **배포 후 production** | **21개** — 목록·허브 11 + 대표 상세 10(매거진 3 · 커뮤니티 3 · 가이드 2 · JOB 2) | **0회** |
+
+배포 전후의 페이지 집합이 다르므로 `21회 → 0회` 를 같은 분모의 감소로 읽으면 안 된다.
+배포 후 21개 페이지에는 배포 전에 쟀던 3개 페이지가 **모두 포함**되고, 그 3개에서도 출현 0회다.
+
+### 게이트
+
+tsc 0 · eslint error 0 · CI fail 0(E2E Smoke·Lighthouse·quality·Vercel·seo-guard 전부 pass).
 `seo-guard` 는 `sitemap.ts` 변경이라 `seo-reviewed` 라벨로 통과했다.
 
 ## 6. 남은 창업자 액션 — 네이버 URL 검사
@@ -112,7 +133,19 @@ https://age-doesnt-matter.com/magazine/50%EB%8C%80-%EC%9D%B4%EB%A0%A5%EC%84%9C-%
 
 각각 `/magazine/친구가-그리운데-왜-못-다가갈까` · `/magazine/IRP연금저축ISA-내-돈-그릇-순서` · `/magazine/50대-이력서-이렇게-쓰세요` 다.
 
-🚫 **sitemap 등록은 삭제하지도 재등록하지도 말 것.** 등록일 2026-08-19 는 이 문제의 원인이 아니었다.
+### sitemap 재등록 — 지금은 하지 않는다 (영구 금지가 아니다)
+
+등록일 2026-08-19 는 이 문제의 원인이 아니었고, `/sitemap.xml` 은 같은 경로에서 200 으로 정상 응답한다.
+**같은 endpoint 가 정상인 동안에는 삭제·재등록이 불필요하다** — 등록을 건드리면 수집 이력만 잃는다.
+
+**재검토해야 하는 경우:**
+
+| 조건 | 왜 |
+|---|---|
+| sitemap **endpoint 가 바뀜** — 도메인 변경, 경로 변경, sitemap index 분할 | 등록된 URL 이 더 이상 유효하지 않다 |
+| Search Advisor 가 **명시적 수집 오류**를 보고 — fetch 실패, parse 오류, 등록 상태 이상 | 등록 자체에 문제가 생긴 것이라 재등록이 해법일 수 있다 |
+
+위 조건이 아닌데 "색인이 안 늘어서" 같은 이유로 재등록하지는 않는다.
 
 ## 7. 기록해 둘 사실
 
