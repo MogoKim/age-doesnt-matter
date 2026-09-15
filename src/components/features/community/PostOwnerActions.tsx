@@ -18,7 +18,7 @@ export default function PostOwnerActions({ authorId, boardSlug, postId }: PostOw
     <div className="flex items-center gap-1">
       <Link
         href={`/community/${boardSlug}/${postId}/edit`}
-        className="text-[17px] text-muted-foreground min-h-[52px] px-3 py-1 rounded-lg hover:text-primary-text transition-colors no-underline flex items-center"
+        className="text-[17px] text-muted-foreground min-h-control px-3 py-1 rounded-lg hover:text-primary-text transition-colors no-underline flex items-center"
       >
         수정
       </Link>

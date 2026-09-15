@@ -37,11 +37,11 @@ export default function PaginationBar({ currentPage, totalPages, buildHref }: Pr
   const nextBunch = Math.min(totalPages, currentPage + 3)
 
   // v1.2 B3 구분 카드: 조작부를 연한 트레이로 묶고 버튼은 소프트칩(연회색 채움·테두리 0). 강조는 근처 줄 현재 페이지 코랄만.
-  const box = 'h-[52px] rounded-lg text-base font-medium transition-colors flex items-center justify-center'
+  const box = 'h-control rounded-lg text-base font-medium transition-colors flex items-center justify-center'
   const on = 'bg-muted text-foreground hover:bg-muted/80 active:bg-muted/60'
   // 간격은 고정 px(px-[11px]/gap-[4px])로 — rem이면 글씨 확대 시 간격까지 커져 오버플로. 폰트만 커지고 간격은 유지되게.
   const txt = 'px-[11px] shrink-0'
-  const sq = 'w-[52px] shrink-0'
+  const sq = 'w-control shrink-0'
 
   function handleJump(e: FormEvent) {
     e.preventDefault()
@@ -68,7 +68,7 @@ export default function PaginationBar({ currentPage, totalPages, buildHref }: Pr
           value={jump}
           onChange={(e) => setJump(e.target.value.replace(/[^0-9]/g, ''))}
           aria-label={`이동할 페이지 번호 (1부터 ${totalPages}). 현재 ${currentPage} 페이지`}
-          className="h-[52px] w-[52px] shrink-0 rounded-lg border border-border/70 bg-background text-center text-base font-medium text-foreground outline-none transition-colors focus:border-primary/50"
+          className="h-control w-control shrink-0 rounded-lg border border-border/70 bg-background text-center text-base font-medium text-foreground outline-none transition-colors focus:border-primary/50"
         />
 
         <button type="submit" className={`${box} ${txt} ${on}`}>이동</button>

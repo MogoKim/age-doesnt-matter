@@ -134,7 +134,7 @@ export default function BestContent({ initialPosts, initialTotal }: BestContentP
             {q && (
               <Link
                 href={`/best?tab=${currentTab}`}
-                className="inline-flex min-h-[52px] items-center justify-center rounded-xl bg-primary px-6 py-2 text-center text-body font-bold leading-tight break-keep text-white no-underline hover:bg-primary/90"
+                className="inline-flex min-h-control items-center justify-center rounded-xl bg-primary px-6 py-2 text-center text-body font-bold leading-tight break-keep text-white no-underline hover:bg-primary/90"
               >
                 검색 초기화
               </Link>
@@ -194,7 +194,7 @@ function FameEmptyState() {
     >
       <Link
         href="/best?tab=hot"
-        className="inline-flex min-h-[52px] items-center gap-1.5 rounded-xl bg-primary px-6 py-2 text-center text-base font-bold leading-tight break-keep text-white no-underline transition-colors hover:bg-primary/90"
+        className="inline-flex min-h-control items-center gap-1.5 rounded-xl bg-primary px-6 py-2 text-center text-base font-bold leading-tight break-keep text-white no-underline transition-colors hover:bg-primary/90"
       >
         🔥 뜨는 이야기 보러가기 →
       </Link>

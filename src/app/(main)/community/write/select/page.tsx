@@ -50,11 +50,11 @@ export default async function WriteBoardSelectPage() {
       `}</style>
 
       {/* 상단바 — 글쓰기 폼 헤더와 같은 높이(52px)·같은 토큰 */}
-      <div className="fixed left-0 right-0 top-0 z-40 flex h-[52px] items-center justify-center border-b border-border bg-card px-4">
+      <div className="fixed left-0 right-0 top-0 z-40 flex h-control items-center justify-center border-b border-border bg-card px-4">
         <Link
           href="/"
           aria-label="닫기"
-          className="absolute left-2 flex h-[52px] w-[52px] items-center justify-center text-muted-foreground no-underline [-webkit-tap-highlight-color:transparent]"
+          className="absolute left-2 flex h-control w-control items-center justify-center text-muted-foreground no-underline [-webkit-tap-highlight-color:transparent]"
         >
           <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden="true">
             <path d="M6 6l12 12M18 6L6 18" />

@@ -98,7 +98,7 @@ export default function SurveyDetail({
               <div className="flex flex-col gap-2">
                 {(q.options ?? []).map((o) => (
                   <button key={o} type="button" onClick={() => set(q.id, o)}
-                    className={`text-left w-full min-h-[52px] px-4 rounded-xl border text-body transition-colors ${answers[q.id] === o ? 'border-primary bg-primary/10 text-primary-text font-bold' : 'border-border bg-background text-foreground'}`}>
+                    className={`text-left w-full min-h-control px-4 rounded-xl border text-body transition-colors ${answers[q.id] === o ? 'border-primary bg-primary/10 text-primary-text font-bold' : 'border-border bg-background text-foreground'}`}>
                     {o}
                   </button>
                 ))}
@@ -110,7 +110,7 @@ export default function SurveyDetail({
                   const on = ((answers[q.id] as string[]) ?? []).includes(o)
                   return (
                     <button key={o} type="button" onClick={() => toggleMulti(q.id, o)}
-                      className={`text-left w-full min-h-[52px] px-4 rounded-xl border text-body transition-colors ${on ? 'border-primary bg-primary/10 text-primary-text font-bold' : 'border-border bg-background text-foreground'}`}>
+                      className={`text-left w-full min-h-control px-4 rounded-xl border text-body transition-colors ${on ? 'border-primary bg-primary/10 text-primary-text font-bold' : 'border-border bg-background text-foreground'}`}>
                       {on ? '☑' : '☐'} {o}
                     </button>
                   )
@@ -121,7 +121,7 @@ export default function SurveyDetail({
               <div className="flex gap-2">
                 {[1, 2, 3, 4, 5].map((n) => (
                   <button key={n} type="button" onClick={() => set(q.id, n)}
-                    className={`flex-1 min-h-[52px] rounded-xl border text-title font-bold transition-colors ${answers[q.id] === n ? 'border-primary bg-primary text-white' : 'border-border bg-background text-foreground'}`}>
+                    className={`flex-1 min-h-control rounded-xl border text-title font-bold transition-colors ${answers[q.id] === n ? 'border-primary bg-primary text-white' : 'border-border bg-background text-foreground'}`}>
                     {n}
                   </button>
                 ))}
@@ -132,7 +132,7 @@ export default function SurveyDetail({
                 <div className="flex flex-wrap gap-1.5">
                   {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
                     <button key={n} type="button" onClick={() => set(q.id, n)}
-                      className={`min-h-[48px] min-w-[44px] flex-1 rounded-lg border text-body font-bold transition-colors ${answers[q.id] === n ? 'border-primary bg-primary text-white' : 'border-border bg-background text-foreground'}`}>
+                      className={`min-h-[48px] min-w-control-sm flex-1 rounded-lg border text-body font-bold transition-colors ${answers[q.id] === n ? 'border-primary bg-primary text-white' : 'border-border bg-background text-foreground'}`}>
                       {n}
                     </button>
                   ))}
@@ -142,7 +142,7 @@ export default function SurveyDetail({
             )}
             {q.type === 'short_text' && (
               <input type="text" maxLength={200} value={(answers[q.id] as string) ?? ''} onChange={(e) => set(q.id, e.target.value)}
-                className="w-full min-h-[52px] px-3 rounded-xl border border-border bg-background text-body text-foreground outline-none focus:border-primary" placeholder="짧게 적어주세요" />
+                className="w-full min-h-control px-3 rounded-xl border border-border bg-background text-body text-foreground outline-none focus:border-primary" placeholder="짧게 적어주세요" />
             )}
             {q.type === 'long_text' && (
               <textarea maxLength={1000} rows={4} value={(answers[q.id] as string) ?? ''} onChange={(e) => set(q.id, e.target.value)}
@@ -166,7 +166,7 @@ export default function SurveyDetail({
       {error && <p className="mt-3 text-caption font-semibold text-red-600">{error}</p>}
 
       <button type="button" onClick={submit} disabled={pending}
-        className="mt-6 w-full min-h-[56px] rounded-2xl bg-primary text-title font-bold text-white shadow-sm disabled:opacity-60">
+        className="mt-6 w-full min-h-control-lg rounded-2xl bg-primary text-title font-bold text-white shadow-sm disabled:opacity-60">
         {pending ? '제출 중…' : '의견 제출하기'}
       </button>
     </Shell>

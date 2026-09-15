@@ -1,3 +1,4 @@
+import { CONTROL_HEIGHT } from '@/lib/design-tokens'
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -136,7 +137,9 @@ describe('P0. iOS 가입 CTA hotfix', () => {
     expect(banner).toContain('나만 이런 게 아니었네?')
     // 버튼 색·크기 무변경
     expect(mainReturnBlock).toContain('bg-[#FEE500]')
-    expect(mainReturnBlock).toContain('min-h-[52px]')
+    // 높이는 `--control-h-touch` 토큰으로 옮겼다(2026-09-15). 값은 그대로 52px 다.
+    expect(mainReturnBlock).toContain('min-h-control')
+    expect(CONTROL_HEIGHT.touch).toBe(52)
   })
 })
 

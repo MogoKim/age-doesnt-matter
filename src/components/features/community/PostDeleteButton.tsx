@@ -27,7 +27,7 @@ export default function PostDeleteButton({ postId }: { postId: string }) {
   return (
     <>
       <button
-        className="text-[17px] text-muted-foreground min-h-[52px] px-3 py-1 rounded-lg hover:text-destructive transition-colors"
+        className="text-[17px] text-muted-foreground min-h-control px-3 py-1 rounded-lg hover:text-destructive transition-colors"
         onClick={handleDelete}
         disabled={isPending}
       >

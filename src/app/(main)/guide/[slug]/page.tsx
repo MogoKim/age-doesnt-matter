@@ -116,7 +116,7 @@ export default async function GuidePage({ params }: PageProps) {
               네이버 크롤러(Yeti)는 raw 한글 URL 을 못 가져온다(2026-09-15 실측). */}
           {guide.communityLinks.map((l) => (
               <li key={l.href}>
-                <Link href={encodePathname(l.href)} className="flex items-center gap-2 py-2.5 no-underline text-body font-medium text-foreground min-h-[52px] hover:text-primary-text transition-colors">
+                <Link href={encodePathname(l.href)} className="flex items-center gap-2 py-2.5 no-underline text-body font-medium text-foreground min-h-control hover:text-primary-text transition-colors">
                   <span className="text-primary">→</span>{l.label}
                 </Link>
               </li>
@@ -143,7 +143,7 @@ export default async function GuidePage({ params }: PageProps) {
           <ul className="list-none m-0 p-0 space-y-1">
             {guide.relatedLinks.map((l) => (
               <li key={l.href}>
-                <Link href={encodePathname(l.href)} className="flex items-center gap-2 py-2.5 no-underline text-body text-muted-foreground min-h-[52px] hover:text-primary-text transition-colors">
+                <Link href={encodePathname(l.href)} className="flex items-center gap-2 py-2.5 no-underline text-body text-muted-foreground min-h-control hover:text-primary-text transition-colors">
                   <span className="text-primary/60">·</span>{l.label}
                 </Link>
               </li>

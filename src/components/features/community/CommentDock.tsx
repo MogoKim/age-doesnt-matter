@@ -136,7 +136,7 @@ export default function CommentDock({ targetRef, sectionRef, isFeedback, composi
              광고 겹침(0/41)과 노출 타이밍이 다시 흔들린다.
           ⚠️ 코랄(primary)은 쓰지 않는다. 상시 노출되는 하단 띠에 브랜드색을 얹으면 가입 배너로 읽힌다.
         */
-        className="flex min-h-[52px] w-full items-center gap-3 rounded-full border border-border bg-muted px-4 text-left text-body text-muted-strong transition-[filter,background-color] active:brightness-95"
+        className="flex min-h-control w-full items-center gap-3 rounded-full border border-border bg-muted px-4 text-left text-body text-muted-strong transition-[filter,background-color] active:brightness-95"
       >
         <svg
           width="22"

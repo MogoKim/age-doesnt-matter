@@ -127,7 +127,7 @@ export default function MagazineContent({ initialPosts, initialTotal, initialQue
           {(q || category) && (
             <Link
               href="/magazine"
-              className="inline-flex min-h-[52px] items-center justify-center rounded-xl bg-primary px-6 py-2 text-center text-body font-bold leading-tight break-keep text-white no-underline hover:bg-primary/90"
+              className="inline-flex min-h-control items-center justify-center rounded-xl bg-primary px-6 py-2 text-center text-body font-bold leading-tight break-keep text-white no-underline hover:bg-primary/90"
             >
               {q ? '검색 초기화' : '전체 매거진 보기'}
             </Link>
@@ -165,7 +165,7 @@ function MagazineCard({ post, priority }: { post: PostSummary; priority?: boolea
   return (
     <Link
       href={buildPostPath({ id: post.id, boardType: 'MAGAZINE', slug: post.slug })}
-      className="flex items-start gap-3 p-3 md:p-4 bg-card rounded-xl border border-border overflow-hidden no-underline transition-colors hover:border-primary/30 min-h-[52px]"
+      className="flex items-start gap-3 p-3 md:p-4 bg-card rounded-xl border border-border overflow-hidden no-underline transition-colors hover:border-primary/30 min-h-control"
     >
       {post.thumbnailUrl ? (
         <div className="relative flex-shrink-0 w-28 h-24 rounded-lg overflow-hidden">

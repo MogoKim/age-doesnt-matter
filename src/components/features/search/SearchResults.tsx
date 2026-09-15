@@ -101,7 +101,7 @@ function ResultSection({
       {moreHref && count > items.length && (
         <Link
           href={moreHref}
-          className="inline-flex items-center gap-1 mt-4 text-body text-primary-text font-medium no-underline min-h-[52px] px-2"
+          className="inline-flex items-center gap-1 mt-4 text-body text-primary-text font-medium no-underline min-h-control px-2"
         >
           더보기 →
         </Link>

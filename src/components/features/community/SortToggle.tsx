@@ -42,7 +42,7 @@ export default function SortToggle() {
                높이는 min-h-[52px]로 터치 타겟 규칙(52px)을 지킨다 — 이전 Chip은 48px였다.
                ⚠️ border-0을 먼저 둔다. globals.css의 button{border:none} 때문에 border-solid만
                주면 지정하지 않은 3면이 기본 굵기(medium)로 살아나 네모 박스가 된다(#238 함정). */
-            className={`inline-flex min-h-[52px] items-center px-3 text-caption transition-colors ${
+            className={`inline-flex min-h-control items-center px-3 text-caption transition-colors ${
               active
                 ? 'font-bold text-foreground border-0 border-b-2 border-solid border-primary'
                 : 'font-medium text-muted-subtle border-0 border-b-2 border-solid border-transparent hover:text-foreground'

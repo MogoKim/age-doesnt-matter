@@ -120,7 +120,7 @@ export default function PostCTA({ postId, postTitle, isLoggedIn }: PostCTAProps)
           onClick={handleClick}
           disabled={isStartingSignup}
           aria-busy={isStartingSignup}
-          className="shrink-0 min-h-[52px] px-4 rounded-lg text-caption font-bold flex items-center gap-1.5 whitespace-nowrap transition-all hover:brightness-95"
+          className="shrink-0 min-h-control px-4 rounded-lg text-caption font-bold flex items-center gap-1.5 whitespace-nowrap transition-all hover:brightness-95"
           style={{ background: '#FEE500', color: '#191919' }}
         >
           <svg width="18" height="18" viewBox="0 0 20 20" fill="#191919" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -143,7 +143,7 @@ export default function PostCTA({ postId, postTitle, isLoggedIn }: PostCTAProps)
       </p>
       <button
         onClick={handleClick}
-        className="shrink-0 min-h-[52px] px-4 rounded-lg bg-primary text-white text-caption font-semibold"
+        className="shrink-0 min-h-control px-4 rounded-lg bg-primary text-white text-caption font-semibold"
       >
         {isAndroid ? <>앱<br />다운받기</> : <>홈 화면에<br />추가하기</>}
       </button>

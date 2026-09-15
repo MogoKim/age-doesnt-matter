@@ -181,7 +181,6 @@ describe('normalizeKakaoClickSource — typed allowlist', () => {
     const files = [
       'app/(main)/about/page.tsx',
       'components/features/home/SignupCard.tsx',
-      'components/features/landing/LandingClient.tsx',
       'components/features/auth/LoginPromptModal.tsx',
       'components/features/community/GuestCommentInput.tsx',
       'components/features/community/WriteLoginPrompt.tsx',
@@ -192,7 +191,10 @@ describe('normalizeKakaoClickSource — typed allowlist', () => {
       for (const m of read(rel).matchAll(/gtmFrom=["']([a-z0-9_]+)["']/g)) found.add(m[1])
       for (const m of read(rel).matchAll(/from: '([a-z0-9_]+)'/g)) found.add(m[1])
     }
-    expect(found.size).toBeGreaterThanOrEqual(9)
+    // 8 = 현재 살아 있는 호출부의 gtmFrom 종류 수.
+    // `landing_modal`·`landing_sticky_bar` 는 `/landing` 이 홈 redirect 로 바뀌며 호출부가 사라졌다
+    // (LandingClient 제거, 2026-09-15). KAKAO_CLICK_SOURCES 상수는 과거 이벤트 해석을 위해 남긴다.
+    expect(found.size).toBeGreaterThanOrEqual(8)
     for (const v of found) expect(KAKAO_CLICK_SOURCES).toContain(v)
   })
 })

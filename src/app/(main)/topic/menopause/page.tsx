@@ -106,7 +106,7 @@ export default async function MenopauseTopicPage() {
               <li key={section.id} className="list-none">
                 <a
                   href={`#${section.id}`}
-                  className="inline-flex min-h-[52px] items-center rounded-full border border-border bg-background px-4 text-[17px] font-bold text-foreground no-underline transition-colors hover:border-primary/40 hover:bg-primary/5"
+                  className="inline-flex min-h-control items-center rounded-full border border-border bg-background px-4 text-[17px] font-bold text-foreground no-underline transition-colors hover:border-primary/40 hover:bg-primary/5"
                 >
                   {section.title}
                 </a>
@@ -161,19 +161,19 @@ export default async function MenopauseTopicPage() {
           <div className="mt-4 flex flex-wrap gap-3">
             <Link
               href="/community/menopause"
-              className="inline-flex min-h-[52px] items-center rounded-lg bg-primary px-5 text-[17px] font-bold text-white no-underline transition-colors hover:bg-primary/90"
+              className="inline-flex min-h-control items-center rounded-lg bg-primary px-5 text-[17px] font-bold text-white no-underline transition-colors hover:bg-primary/90"
             >
               갱년기톡에서 이야기 나누기
             </Link>
             <Link
               href="/community/life2"
-              className="inline-flex min-h-[52px] items-center rounded-lg border border-border bg-card px-5 text-[17px] font-bold text-foreground no-underline transition-colors hover:border-primary/40 hover:bg-primary/5"
+              className="inline-flex min-h-control items-center rounded-lg border border-border bg-card px-5 text-[17px] font-bold text-foreground no-underline transition-colors hover:border-primary/40 hover:bg-primary/5"
             >
               은퇴·노후를 준비하는 인생 2막 이야기
             </Link>
             <Link
               href="/magazine"
-              className="inline-flex min-h-[52px] items-center rounded-lg border border-border bg-card px-5 text-[17px] font-bold text-foreground no-underline transition-colors hover:border-primary/40 hover:bg-primary/5"
+              className="inline-flex min-h-control items-center rounded-lg border border-border bg-card px-5 text-[17px] font-bold text-foreground no-underline transition-colors hover:border-primary/40 hover:bg-primary/5"
             >
               건강·생활 매거진 전체 보기
             </Link>

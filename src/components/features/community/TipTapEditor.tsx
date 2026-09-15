@@ -567,7 +567,7 @@ export default function TipTapEditor({
               onMouseDown={(e) => e.preventDefault()}
               onClick={handleDeleteSelected}
               disabled={isUploading}
-              className="min-h-[52px] px-4 text-xs font-bold text-destructive hover:bg-destructive/10 rounded-xl transition-colors disabled:opacity-40"
+              className="min-h-control px-4 text-xs font-bold text-destructive hover:bg-destructive/10 rounded-xl transition-colors disabled:opacity-40"
             >
               삭제
             </button>
@@ -583,7 +583,7 @@ export default function TipTapEditor({
             onClick={() => { setMediaError(''); fileInputRef.current?.click() }}
             disabled={isUploadingImage}
             title="사진 추가"
-            className="flex items-center justify-center gap-1.5 min-h-[52px] px-3 rounded-xl bg-muted text-foreground transition-colors hover:bg-border disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-1.5 min-h-control px-3 rounded-xl bg-muted text-foreground transition-colors hover:bg-border disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isUploadingImage
               ? <Loader2 className="w-5 h-5 shrink-0 animate-spin" aria-hidden="true" />
@@ -597,7 +597,7 @@ export default function TipTapEditor({
             onClick={() => { setMediaError(''); setVideoSheet('picking') }}
             disabled={isUploadingVideo}
             title="동영상 추가"
-            className="flex items-center justify-center gap-1.5 min-h-[52px] px-3 rounded-xl bg-muted text-foreground transition-colors hover:bg-border disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-1.5 min-h-control px-3 rounded-xl bg-muted text-foreground transition-colors hover:bg-border disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isUploadingVideo
               ? <Loader2 className="w-5 h-5 shrink-0 animate-spin" aria-hidden="true" />
@@ -613,7 +613,7 @@ export default function TipTapEditor({
             aria-pressed={editor.isActive('bold')}
             onClick={() => editor.chain().focus().toggleBold().run()}
             className={cn(
-              'flex items-center justify-center gap-1.5 min-h-[52px] px-3 rounded-xl transition-colors',
+              'flex items-center justify-center gap-1.5 min-h-control px-3 rounded-xl transition-colors',
               editor.isActive('bold')
                 ? 'bg-primary/10 text-primary-text'
                 : 'bg-muted text-foreground hover:bg-border',
@@ -681,7 +681,7 @@ export default function TipTapEditor({
                   <button
                     type="button"
                     onClick={() => videoInputRef.current?.click()}
-                    className="w-full flex items-center gap-3 min-h-[52px] px-4 rounded-xl border-2 border-border bg-background text-body font-medium text-foreground text-left transition-colors hover:border-primary/40 hover:bg-primary/5"
+                    className="w-full flex items-center gap-3 min-h-control px-4 rounded-xl border-2 border-border bg-background text-body font-medium text-foreground text-left transition-colors hover:border-primary/40 hover:bg-primary/5"
                   >
                     <FileVideo className="w-6 h-6 shrink-0 text-muted-foreground" aria-hidden="true" />
                     <div>
@@ -693,7 +693,7 @@ export default function TipTapEditor({
                   <button
                     type="button"
                     onClick={() => setVideoSheet('youtube')}
-                    className="w-full flex items-center gap-3 min-h-[52px] px-4 rounded-xl border-2 border-border bg-background text-body font-medium text-foreground text-left transition-colors hover:border-primary/40 hover:bg-primary/5"
+                    className="w-full flex items-center gap-3 min-h-control px-4 rounded-xl border-2 border-border bg-background text-body font-medium text-foreground text-left transition-colors hover:border-primary/40 hover:bg-primary/5"
                   >
                     <YoutubeIcon className="w-6 h-6 shrink-0 text-muted-foreground" aria-hidden="true" />
                     <div>
@@ -705,7 +705,7 @@ export default function TipTapEditor({
                 <button
                   type="button"
                   onClick={() => setVideoSheet('closed')}
-                  className="w-full min-h-[52px] mt-3 border-2 border-border rounded-xl text-body font-bold text-muted-foreground hover:text-foreground transition-colors"
+                  className="w-full min-h-control mt-3 border-2 border-border rounded-xl text-body font-bold text-muted-foreground hover:text-foreground transition-colors"
                 >
                   취소
                 </button>
@@ -722,7 +722,7 @@ export default function TipTapEditor({
                   value={youtubeUrl}
                   onChange={(e) => { setYoutubeUrl(e.target.value); setYoutubeError('') }}
                   placeholder="https://youtube.com/watch?v=..."
-                  className="w-full min-h-[52px] px-4 border-2 border-border rounded-xl text-body text-foreground bg-background outline-none focus:border-primary transition-colors"
+                  className="w-full min-h-control px-4 border-2 border-border rounded-xl text-body text-foreground bg-background outline-none focus:border-primary transition-colors"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') { e.preventDefault(); handleYouTubeInsert() }
                   }}
@@ -733,14 +733,14 @@ export default function TipTapEditor({
                   <button
                     type="button"
                     onClick={() => { setVideoSheet('picking'); setYoutubeUrl(''); setYoutubeError('') }}
-                    className="min-h-[52px] px-5 border-2 border-border rounded-xl text-body font-bold text-muted-foreground hover:border-foreground hover:text-foreground transition-colors"
+                    className="min-h-control px-5 border-2 border-border rounded-xl text-body font-bold text-muted-foreground hover:border-foreground hover:text-foreground transition-colors"
                   >
                     ← 뒤로
                   </button>
                   <button
                     type="button"
                     onClick={handleYouTubeInsert}
-                    className="flex-1 min-h-[52px] bg-primary text-white rounded-xl text-body font-bold hover:bg-primary/90 transition-colors"
+                    className="flex-1 min-h-control bg-primary text-white rounded-xl text-body font-bold hover:bg-primary/90 transition-colors"
                   >
                     삽입
                   </button>
@@ -797,7 +797,7 @@ export default function TipTapEditor({
           margin: 1rem 0;
           background: rgba(255, 111, 97, 0.06);
           border-radius: 0 0.5rem 0.5rem 0;
-          color: var(--muted-foreground);
+          color: hsl(var(--muted-foreground));
         }
         .tiptap hr {
           border: none;

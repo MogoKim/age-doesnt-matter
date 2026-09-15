@@ -20,13 +20,13 @@ export default function NotFound() {
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link
             href="/"
-            className="inline-flex items-center justify-center min-h-[52px] px-8 py-3 bg-primary text-white font-bold text-body rounded-2xl no-underline transition-opacity hover:opacity-90"
+            className="inline-flex items-center justify-center min-h-control px-8 py-3 bg-primary text-white font-bold text-body rounded-2xl no-underline transition-opacity hover:opacity-90"
           >
             홈으로 가기
           </Link>
           <Link
             href="/search"
-            className="inline-flex items-center justify-center min-h-[52px] px-8 py-3 border-2 border-border bg-card text-foreground font-bold text-body rounded-2xl no-underline transition-colors hover:border-primary hover:text-primary-text"
+            className="inline-flex items-center justify-center min-h-control px-8 py-3 border-2 border-border bg-card text-foreground font-bold text-body rounded-2xl no-underline transition-colors hover:border-primary hover:text-primary-text"
           >
             검색하기
           </Link>

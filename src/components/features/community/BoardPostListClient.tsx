@@ -156,14 +156,14 @@ export default function BoardPostListClient({
           {q ? (
             <Link
               href={searchResetHref}
-              className="inline-flex items-center justify-center h-[52px] px-6 rounded-xl bg-primary text-white text-body font-bold no-underline hover:bg-primary/90"
+              className="inline-flex items-center justify-center h-control px-6 rounded-xl bg-primary text-white text-body font-bold no-underline hover:bg-primary/90"
             >
               검색 초기화
             </Link>
           ) : (
             <Link
               href={`/community/write?board=${encodeURIComponent(boardSlug)}`}
-              className="inline-flex items-center justify-center h-[52px] px-6 rounded-xl bg-primary text-white text-body font-bold no-underline hover:bg-primary/90"
+              className="inline-flex items-center justify-center h-control px-6 rounded-xl bg-primary text-white text-body font-bold no-underline hover:bg-primary/90"
             >
               ✏️ 글쓰기
             </Link>

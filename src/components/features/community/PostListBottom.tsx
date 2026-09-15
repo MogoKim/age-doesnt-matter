@@ -38,7 +38,7 @@ export default async function PostListBottom({ boardType, boardSlug, excludePost
   const title = mode === 'trending' ? '지금 뜨는 다른 글' : `${displayName} 다른 글`
   const moreHref = mode === 'trending' ? '/best' : `/community/${boardSlug}`
   const moreLabel = mode === 'trending' ? '베스트 →' : '목록 →'
-  const linkClass = 'flex items-start gap-3 py-3 no-underline text-inherit min-h-[52px] hover:bg-muted/40 transition-colors -mx-1 px-1 rounded-lg'
+  const linkClass = 'flex items-start gap-3 py-3 no-underline text-inherit min-h-control hover:bg-muted/40 transition-colors -mx-1 px-1 rounded-lg'
 
   return (
     <section className="mt-2 mb-8">
@@ -46,7 +46,7 @@ export default async function PostListBottom({ boardType, boardSlug, excludePost
         <span className="text-title font-bold text-foreground">{title}</span>
         <Link
           href={moreHref}
-          className="text-[17px] text-primary-text no-underline min-h-[52px] flex items-center px-2 hover:underline"
+          className="text-[17px] text-primary-text no-underline min-h-control flex items-center px-2 hover:underline"
         >
           {moreLabel}
         </Link>

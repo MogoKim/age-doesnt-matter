@@ -38,7 +38,7 @@ function HeroChoice({
       disabled={disabled}
       aria-label={`${label}에 투표`}
       className={cn(
-        'flex-1 min-h-[52px] rounded-xl font-bold text-[16px] lg:text-[18px] transition-colors duration-150 disabled:opacity-80',
+        'flex-1 min-h-control rounded-xl font-bold text-[16px] lg:text-[18px] transition-colors duration-150 disabled:opacity-80',
         active ? 'bg-primary/90 text-white' : 'bg-white text-foreground',
       )}
     >

@@ -71,7 +71,7 @@ export default function FontSizeSettings({ currentSize }: FontSizeSettingsProps)
             type="button"
             onClick={() => setSelected(option.value)}
             className={cn(
-              'flex items-center w-full min-h-[52px] px-4 rounded-xl border transition-colors text-left',
+              'flex items-center w-full min-h-control px-4 rounded-xl border transition-colors text-left',
               selected === option.value
                 ? 'border-primary bg-primary/5 text-primary-text font-medium'
                 : 'border-border bg-background text-foreground hover:border-primary/30',
@@ -93,7 +93,7 @@ export default function FontSizeSettings({ currentSize }: FontSizeSettingsProps)
         type="button"
         onClick={handleSave}
         disabled={isPending || !isDirty}
-        className="w-full h-[52px] bg-primary text-white rounded-xl text-body font-bold transition-colors hover:bg-primary/90 disabled:bg-border disabled:cursor-not-allowed lg:h-12"
+        className="w-full h-control bg-primary text-white rounded-xl text-body font-bold transition-colors hover:bg-primary/90 disabled:bg-border disabled:cursor-not-allowed lg:h-control-desktop"
       >
         {isPending ? '적용 중...' : '적용하기'}
       </button>

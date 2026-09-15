@@ -26,7 +26,7 @@ export default function WriteBoardSelectList({ items }: { items: WriteBoardItem[
             <Link
               href={`/community/write?board=${item.slug}`}
               aria-label={`${item.displayName}에 글쓰기`}
-              className="flex min-h-[52px] items-center gap-3.5 border-b border-border px-5 py-3.5 no-underline transition-colors hover:bg-muted active:bg-muted [-webkit-tap-highlight-color:transparent]"
+              className="flex min-h-control items-center gap-3.5 border-b border-border px-5 py-3.5 no-underline transition-colors hover:bg-muted active:bg-muted [-webkit-tap-highlight-color:transparent]"
             >
               {/* 아이콘 타일 — 색은 IconMenu와 같은 CSS 변수에서 온다(새 hex 없음) */}
               <span

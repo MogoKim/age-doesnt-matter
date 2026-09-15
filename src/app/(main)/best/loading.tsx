@@ -1,10 +1,10 @@
 export default function BestLoading() {
   return (
     <div className="max-w-[960px] mx-auto px-4 py-4">
-      {/* 탭 skeleton — 실제 탭 높이 h-[52px] */}
+      {/* 탭 skeleton — 실제 탭 높이 h-control */}
       <div className="flex gap-2 pt-4 pb-2 mb-2">
-        <div className="h-[52px] w-28 rounded-full bg-muted animate-pulse" />
-        <div className="h-[52px] w-32 rounded-full bg-muted animate-pulse" />
+        <div className="h-control w-28 rounded-full bg-muted animate-pulse" />
+        <div className="h-control w-32 rounded-full bg-muted animate-pulse" />
       </div>
 
       {/* 목록 행 skeleton — PostCard 실제 행 구조(제목/preview 2줄/메타/통계)와 높이 일치 */}

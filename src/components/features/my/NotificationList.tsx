@@ -77,7 +77,7 @@ export default function NotificationList({ notifications, initialUnreadCount }: 
           <button
             type="button"
             onClick={handleMarkAll}
-            className="text-[17px] text-primary-text font-medium min-h-[52px] px-3 disabled:opacity-50"
+            className="text-[17px] text-primary-text font-medium min-h-control px-3 disabled:opacity-50"
           >
             모두 읽음
           </button>

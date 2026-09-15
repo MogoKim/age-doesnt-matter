@@ -28,7 +28,7 @@ function TipTapEditorFallback() {
           <div className="h-4 w-3/4 rounded-full bg-muted/80" />
         </div>
       </div>
-      <div className="h-[56px] border-t border-border bg-background flex items-center gap-3 px-4">
+      <div className="h-control-lg border-t border-border bg-background flex items-center gap-3 px-4">
         <div className="h-9 w-9 rounded-full bg-muted" />
         <div className="h-9 w-9 rounded-full bg-muted" />
         <div className="h-9 w-9 rounded-full bg-muted" />
@@ -406,12 +406,12 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
   const writeHeader = (
     <div
       ref={setHeaderEl}
-      className="fixed top-0 left-0 right-0 z-40 bg-card border-b border-border h-[52px] flex items-center justify-between px-4 will-change-transform"
+      className="fixed top-0 left-0 right-0 z-40 bg-card border-b border-border h-control flex items-center justify-between px-4 will-change-transform"
     >
       <button
         type="button"
         onClick={handleCancel}
-        className="min-w-[52px] h-[52px] flex items-center justify-start text-body text-muted-foreground"
+        className="min-w-control h-control flex items-center justify-start text-body text-muted-foreground"
       >
         취소
       </button>
@@ -425,7 +425,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
         type="button"
         onClick={handleSubmit}
         disabled={!canSubmit || isPending}
-        className="min-w-[52px] h-[52px] flex items-center justify-end"
+        className="min-w-control h-control flex items-center justify-end"
       >
         <span
           className={cn(
@@ -452,7 +452,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
           {drafts.map((d) => (
             <div key={d.id} className="flex items-center justify-between gap-3 p-3 bg-background rounded-xl">
               <button
-                className="flex-1 text-left cursor-pointer min-h-[52px] flex flex-col justify-center"
+                className="flex-1 text-left cursor-pointer min-h-control flex flex-col justify-center"
                 onClick={() => loadDraft(d)}
               >
                 <span className="text-xs font-bold text-foreground line-clamp-1">
@@ -463,7 +463,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
                 </span>
               </button>
               <button
-                className="shrink-0 text-xs text-muted-foreground min-h-[52px] min-w-[44px] flex items-center justify-center hover:text-destructive transition-colors cursor-pointer"
+                className="shrink-0 text-xs text-muted-foreground min-h-control min-w-control-sm flex items-center justify-center hover:text-destructive transition-colors cursor-pointer"
                 onClick={() => handleDeleteDraft(d.id)}
               >
                 삭제
@@ -472,7 +472,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
           ))}
         </div>
         <button
-          className="w-full min-h-[52px] border-2 border-border rounded-xl text-body font-bold text-muted-foreground cursor-pointer hover:border-foreground hover:text-foreground transition-colors"
+          className="w-full min-h-control border-2 border-border rounded-xl text-body font-bold text-muted-foreground cursor-pointer hover:border-foreground hover:text-foreground transition-colors"
           onClick={() => setShowDraftList(false)}
         >
           새로 작성하기
@@ -512,7 +512,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
           <p className="flex-1 whitespace-nowrap text-caption text-foreground">쓰던 글이 있어요</p>
           <button
             type="button"
-            className="min-h-[52px] shrink-0 rounded-xl px-2 text-caption font-bold text-primary-text"
+            className="min-h-control shrink-0 rounded-xl px-2 text-caption font-bold text-primary-text"
             onClick={() => {
               setSelectedBoard(otherBoardDraft.board)
               setSelectedCategory(otherBoardDraft.category)
@@ -527,7 +527,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
           <button
             type="button"
             aria-label="안내 닫기"
-            className="min-h-[52px] min-w-[52px] shrink-0 text-caption text-muted-foreground"
+            className="min-h-control min-w-control shrink-0 text-caption text-muted-foreground"
             onClick={() => setOtherBoardDraft(null)}
           >
             ✕
@@ -542,7 +542,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
           <button
             type="button"
             onClick={() => setCategorySheetOpen(true)}
-            className="w-full min-h-[56px] flex items-center justify-between px-0 py-4 border-b-2 border-border mb-2"
+            className="w-full min-h-control-lg flex items-center justify-between px-0 py-4 border-b-2 border-border mb-2"
           >
             <span className={cn(
               'text-xs font-medium',
@@ -567,7 +567,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
                   type="button"
                   onClick={() => { setSelectedCategory(cat); setCategorySheetOpen(false) }}
                   className={cn(
-                    'w-full min-h-[52px] flex items-center px-4 rounded-xl text-body transition-colors',
+                    'w-full min-h-control flex items-center px-4 rounded-xl text-body transition-colors',
                     selectedCategory === cat
                       ? 'bg-primary/10 text-primary-text font-bold'
                       : 'text-foreground hover:bg-muted'
@@ -644,7 +644,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
             onClick={handleSubmit}
             disabled={!canSubmit || isPending}
             className={cn(
-              'w-full h-[56px] text-body font-bold transition-colors',
+              'w-full h-control-lg text-body font-bold transition-colors',
               canSubmit && !isPending
                 ? 'bg-primary text-white'
                 : 'bg-muted text-muted-foreground'

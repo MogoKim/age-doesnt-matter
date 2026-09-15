@@ -39,7 +39,7 @@ export default function SearchTabs({ activeTab, query }: SearchTabsProps) {
           type="button"
           onClick={() => handleTabClick(tab.key)}
           className={cn(
-            'flex-1 min-w-fit px-4 py-3 min-h-[52px] text-body font-medium whitespace-nowrap transition-colors',
+            'flex-1 min-w-fit px-4 py-3 min-h-control text-body font-medium whitespace-nowrap transition-colors',
             activeTab === tab.key
               ? 'text-primary-text border-b-2 border-primary font-bold'
               : 'text-muted-foreground hover:text-foreground',

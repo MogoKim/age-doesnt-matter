@@ -22,7 +22,7 @@ export default function HeaderFontSizeToggle() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          'flex items-center justify-center w-[52px] h-[52px] rounded-xl text-muted-foreground transition-colors [-webkit-tap-highlight-color:transparent]',
+          'flex items-center justify-center w-control h-control rounded-xl text-muted-foreground transition-colors [-webkit-tap-highlight-color:transparent]',
           'hover:bg-primary/5 hover:text-primary-text',
           open && 'bg-primary/10 text-primary-text'
         )}

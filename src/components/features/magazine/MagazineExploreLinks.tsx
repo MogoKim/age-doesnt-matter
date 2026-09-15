@@ -44,7 +44,7 @@ export default function MagazineExploreLinks({ postId, postTitle }: MagazineExpl
         <Link
           href="/community/stories"
           onClick={() => handleClick('community')}
-          className="inline-flex items-center gap-1.5 min-h-[52px] px-6 rounded-full border-2 border-primary bg-transparent text-primary-text font-bold text-body no-underline transition-colors hover:bg-primary/5"
+          className="inline-flex items-center gap-1.5 min-h-control px-6 rounded-full border-2 border-primary bg-transparent text-primary-text font-bold text-body no-underline transition-colors hover:bg-primary/5"
         >
           우나어 둘러보기 →
         </Link>
@@ -57,7 +57,7 @@ export default function MagazineExploreLinks({ postId, postTitle }: MagazineExpl
             key={target}
             href={href}
             onClick={() => handleClick(target)}
-            className="flex flex-col items-center justify-center gap-1 min-h-[52px] py-2 rounded-xl border border-border bg-card no-underline text-foreground text-caption font-bold transition-colors hover:border-primary/30"
+            className="flex flex-col items-center justify-center gap-1 min-h-control py-2 rounded-xl border border-border bg-card no-underline text-foreground text-caption font-bold transition-colors hover:border-primary/30"
           >
             <span className="text-lg" aria-hidden="true">{icon}</span>
             <span>{label}</span>

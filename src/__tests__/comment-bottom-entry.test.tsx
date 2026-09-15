@@ -8,6 +8,7 @@
  *  4. 탭하면 기존 입력창으로 데려가 포커스를 준다
  *  5. 배너 지연 신호는 **입력창의 실제 노출**에만 연동된다 (Dock 노출과 별개)
  */
+import { CONTROL_HEIGHT } from '@/lib/design-tokens'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import {
@@ -189,7 +190,10 @@ describe('CommentDock — 생김새', () => {
     // 바깥 패딩(pt-2 + safe-area)과 버튼 최소 높이가 Dock 전체 높이를 결정한다.
     expect(dockEl.className).toContain('pt-2')
     expect(dockEl.className).toContain('pb-[max(8px,env(safe-area-inset-bottom))]')
-    expect(dockEl.querySelector('button')!.className).toContain('min-h-[52px]')
+    // 높이는 `--control-h-touch` 토큰으로 옮겼다(2026-09-15). 값은 그대로 52px 다 —
+    // 토큰 이름만 확인하면 값이 바뀌어도 통과하므로 **값까지** 함께 고정한다.
+    expect(dockEl.querySelector('button')!.className).toContain('min-h-control')
+    expect(CONTROL_HEIGHT.touch).toBe(52)
   })
 
   it('Dock 안에 입력 필드를 만들지 않는다 — 진입점이지 입력창이 아니다', async () => {

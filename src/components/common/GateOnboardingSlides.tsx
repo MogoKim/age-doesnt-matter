@@ -92,7 +92,7 @@ export default function GateOnboardingSlides({ onSignup, onEscape, starting, onB
           type="button"
           onClick={onBack}
           aria-label="뒤로가기"
-          className="absolute left-2 top-[max(10px,env(safe-area-inset-top))] z-10 flex min-h-[52px] items-center gap-1 px-2 text-foreground transition-colors hover:text-primary-text"
+          className="absolute left-2 top-[max(10px,env(safe-area-inset-top))] z-10 flex min-h-control items-center gap-1 px-2 text-foreground transition-colors hover:text-primary-text"
         >
           <span className="text-[26px] leading-none" aria-hidden="true">‹</span>
           <span className="text-[18px] font-bold break-keep">뒤로가기</span>
@@ -197,7 +197,7 @@ export default function GateOnboardingSlides({ onSignup, onEscape, starting, onB
           <button
             type="button"
             onClick={onEscape}
-            className="min-h-[44px] text-[15px] text-muted-foreground underline underline-offset-2"
+            className="min-h-control-sm text-[15px] text-muted-foreground underline underline-offset-2"
           >
             먼저 둘러볼게요
           </button>

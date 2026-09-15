@@ -204,6 +204,36 @@ jobs:
           SEO_GUARD_APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'seo-reviewed') && '1' || '0' }}
         run: npx tsx scripts/check-seo-guard.ts
 
+  # Step 5-2: 디자인 토큰 계약 — 하드코딩 색·컨트롤 크기·토큰 우회를 막는다.
+  #   🔴 기존 부채를 한 번에 red 로 만들지 않는다. **baseline + 변경 파일 strict** 다.
+  #      · 이번 PR 이 건드린 파일의 위반 → exit 1
+  #      · baseline 보다 늘어난 위반(새 부채) → exit 1
+  #      · 그 외 기존 부채는 report 만 남기고 통과시킨다
+  #   부채를 갚으면 `--update-baseline` 으로 줄인다(늘리는 방향은 리뷰가 본다).
+  design-audit:
+    name: 디자인 토큰 계약
+    runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: github.event_name == 'pull_request' && needs.detect-changes.outputs.frontend == 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: 변경 파일 수집
+        id: changed
+        run: |
+          FILES=$(git diff --name-only --diff-filter=ACMR origin/${{ github.base_ref }}...HEAD \
+            | grep -E '^src/.*\.(ts|tsx)$' | grep -vE '\.(test|spec)\.tsx?$' | paste -sd, -)
+          echo "files=$FILES" >> "$GITHUB_OUTPUT"
+          echo "검사 대상: ${FILES:-(없음)}"
+      - name: design audit (strict)
+        run: npx tsx scripts/design-token-audit.ts --strict --changed=${{ steps.changed.outputs.files }}
+
   agents-check:
     name: 에이전트 크론 연결 검증
     runs-on: ubuntu-latest

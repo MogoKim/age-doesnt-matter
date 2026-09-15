@@ -100,12 +100,9 @@ async function resolveSlug(cuid: string): Promise<string | null> {
 export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // ── `/dev/*` 는 production 에 존재하지 않는다 (2026-09-15) ──
-  // 내부 미리보기(디자인 쇼케이스·QA 리포트·이벤트 프리뷰)가 production 에서 200 이었다.
-  // 🔴 페이지의 `noindex` 는 접근 통제가 아니다 — 검색엔진에 대한 요청일 뿐 URL 을 아는 사람은 그대로 들어왔다.
-  //    그래서 렌더링·인증·Redis 이전에 **여기서** 끊는다. preview·로컬은 그대로 열어 둔다
-  //    (Preview E2E 가 `/dev/event-preview` 를 쓴다 — e2e/qa/24-participation-events.spec.ts).
-  // redirect 가 아니라 404 다. 없는 경로처럼 보여야 한다.
+  // ── `/dev/*` 는 production 에 존재하지 않는다 ──
+  // 배경·환경 행렬·왜 noindex 로는 안 되는지는 `src/lib/dev-routes.ts` 에 있다(여기서 반복하지 않는다).
+  // 여기서 막는 이유만 남긴다: 렌더링·인증·Redis **이전**이라 차단 요청이 DB 를 건드리지 않는다.
   if (isDevRoute(pathname) && !isDevRouteAllowed()) {
     return new NextResponse(null, { status: 404 })
   }

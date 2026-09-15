@@ -23,7 +23,7 @@ export default function AppInstallFaqAnswer() {
         target="_blank"
         rel="noopener noreferrer"
         onClick={() => gtmPlayStoreClick('home_faq_android')}
-        className="flex min-h-[56px] items-center justify-between gap-3 rounded-xl border border-border bg-card px-5 py-3 no-underline transition-colors hover:border-primary/40"
+        className="flex min-h-control-lg items-center justify-between gap-3 rounded-xl border border-border bg-card px-5 py-3 no-underline transition-colors hover:border-primary/40"
       >
         <span className="flex flex-col text-left leading-tight">
           <span className="text-body font-bold text-foreground">삼성/안드로이드폰이세요?</span>

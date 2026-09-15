@@ -26,7 +26,7 @@ export default function WithdrawSection() {
   if (!showConfirm) {
     return (
       <button
-        className="text-[17px] text-muted-foreground underline cursor-pointer hover:text-destructive transition-colors min-h-[52px] px-2"
+        className="text-[17px] text-muted-foreground underline cursor-pointer hover:text-destructive transition-colors min-h-control px-2"
         onClick={() => setShowConfirm(true)}
       >
         회원 탈퇴
@@ -46,14 +46,14 @@ export default function WithdrawSection() {
       </div>
       <div className="flex gap-3">
         <button
-          className="flex-1 px-4 py-3 rounded-xl border border-border bg-card text-foreground font-bold text-body min-h-[52px] cursor-pointer hover:bg-accent transition-colors"
+          className="flex-1 px-4 py-3 rounded-xl border border-border bg-card text-foreground font-bold text-body min-h-control cursor-pointer hover:bg-accent transition-colors"
           onClick={() => setShowConfirm(false)}
           disabled={isPending}
         >
           취소
         </button>
         <button
-          className="flex-1 px-4 py-3 rounded-xl bg-destructive text-white font-bold text-body min-h-[52px] cursor-pointer hover:bg-destructive/90 transition-colors disabled:opacity-50"
+          className="flex-1 px-4 py-3 rounded-xl bg-destructive text-white font-bold text-body min-h-control cursor-pointer hover:bg-destructive/90 transition-colors disabled:opacity-50"
           onClick={handleWithdraw}
           disabled={isPending}
         >

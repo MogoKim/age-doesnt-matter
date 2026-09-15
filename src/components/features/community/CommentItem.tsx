@@ -201,14 +201,14 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
           <div className="ml-auto flex items-center gap-1">
             {comment.canEdit && (
               <button
-                className="text-caption text-muted-foreground px-3 py-2 min-h-[52px] hover:text-primary-text transition-colors"
+                className="text-caption text-muted-foreground px-3 py-2 min-h-control hover:text-primary-text transition-colors"
                 onClick={() => { setIsEditing(!isEditing); setEditValue(comment.content) }}
               >
                 수정
               </button>
             )}
             <button
-              className="text-caption text-muted-foreground px-3 py-2 min-h-[52px] hover:text-destructive transition-colors"
+              className="text-caption text-muted-foreground px-3 py-2 min-h-control hover:text-destructive transition-colors"
               onClick={handleDelete}
               disabled={isPending}
             >
@@ -221,13 +221,13 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
         {comment.isGuest && (
           <div className="ml-auto flex items-center gap-1">
             <button
-              className="text-caption text-muted-foreground px-3 py-2 min-h-[52px] hover:text-primary-text transition-colors"
+              className="text-caption text-muted-foreground px-3 py-2 min-h-control hover:text-primary-text transition-colors"
               onClick={() => setGuestModal('edit')}
             >
               수정
             </button>
             <button
-              className="text-caption text-muted-foreground px-3 py-2 min-h-[52px] hover:text-destructive transition-colors"
+              className="text-caption text-muted-foreground px-3 py-2 min-h-control hover:text-destructive transition-colors"
               onClick={() => setGuestModal('delete')}
             >
               삭제
@@ -247,13 +247,13 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
           />
           <div className="flex justify-end gap-2 mt-2">
             <button
-              className="px-4 py-2 text-caption font-bold text-muted-foreground min-h-[52px] rounded-lg hover:text-foreground transition-colors"
+              className="px-4 py-2 text-caption font-bold text-muted-foreground min-h-control rounded-lg hover:text-foreground transition-colors"
               onClick={() => setIsEditing(false)}
             >
               취소
             </button>
             <button
-              className="px-4 py-2 text-caption font-bold text-white bg-primary rounded-lg min-h-[52px] hover:bg-primary/90 disabled:bg-border disabled:cursor-not-allowed transition-colors"
+              className="px-4 py-2 text-caption font-bold text-white bg-primary rounded-lg min-h-control hover:bg-primary/90 disabled:bg-border disabled:cursor-not-allowed transition-colors"
               onClick={handleEdit}
               disabled={isPending || !editValue.trim()}
             >
@@ -268,7 +268,7 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
       <div className="flex items-center gap-4">
         <button
           className={cn(
-            'flex items-center gap-1 bg-none border-none text-muted-foreground text-xs cursor-pointer min-h-[52px] px-2 py-1 rounded-lg transition-colors hover:text-primary-text hover:bg-primary/5',
+            'flex items-center gap-1 bg-none border-none text-muted-foreground text-xs cursor-pointer min-h-control px-2 py-1 rounded-lg transition-colors hover:text-primary-text hover:bg-primary/5',
             isLiked && 'text-primary-text font-bold'
           )}
           onClick={handleLike}
@@ -279,7 +279,7 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
         </button>
         {!isReply && (
           <button
-            className="flex items-center gap-1 bg-none border-none text-muted-foreground text-xs cursor-pointer min-h-[52px] px-2 py-1 rounded-lg transition-colors hover:text-primary-text hover:bg-primary/5"
+            className="flex items-center gap-1 bg-none border-none text-muted-foreground text-xs cursor-pointer min-h-control px-2 py-1 rounded-lg transition-colors hover:text-primary-text hover:bg-primary/5"
             onClick={() => setShowReplyInput(!showReplyInput)}
             aria-label="답글"
           >

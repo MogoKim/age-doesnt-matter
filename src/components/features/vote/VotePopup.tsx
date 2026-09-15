@@ -103,7 +103,7 @@ export function VotePopupView({
       )}
       <button
         onClick={onClose}
-        className="mt-2 w-full min-h-[44px] bg-transparent text-[15px] text-muted-foreground"
+        className="mt-2 w-full min-h-control-sm bg-transparent text-[15px] text-muted-foreground"
       >
         오늘은 그만 보기
       </button>

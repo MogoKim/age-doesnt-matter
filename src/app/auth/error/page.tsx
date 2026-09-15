@@ -46,7 +46,7 @@ export default async function AuthErrorPage(props: Props) {
 
           <Link
             href="/"
-            className="flex items-center justify-center w-full h-[52px] rounded-xl bg-primary text-white text-lg font-bold transition-colors"
+            className="flex items-center justify-center w-full h-control rounded-xl bg-primary text-white text-lg font-bold transition-colors"
           >
             홈으로 돌아가기
           </Link>
@@ -74,7 +74,7 @@ export default async function AuthErrorPage(props: Props) {
 
         <Link
           href="/login"
-          className="flex items-center justify-center w-full h-[52px] rounded-xl bg-[#FEE500] text-[#191919] text-lg font-bold hover:bg-[#F5DC00] transition-colors"
+          className="flex items-center justify-center w-full h-control rounded-xl bg-[#FEE500] text-[#191919] text-lg font-bold hover:bg-[#F5DC00] transition-colors"
         >
           카카오로 다시 로그인
         </Link>
