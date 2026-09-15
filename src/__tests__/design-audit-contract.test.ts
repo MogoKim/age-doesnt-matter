@@ -339,6 +339,102 @@ describe('🔴 baseline 자체의 증가를 막는다', () => {
   })
 })
 
+describe('🔴 baseline 스키마 — 값 타입 우회를 막는다', () => {
+  // ── 재현 (2026-09-15) ────────────────────────────────────────
+  //  현재 baseline `{"src/components/Bad.tsx::R11": "not-a-number"}` ·
+  //  기준 `{"...::R11": 1}` · 실제 raw button 2개.
+  //  최상위가 객체인지만 봤더니 `2 > "not-a-number"` 가 **false** 라
+  //  compare 도 strict 도 전부 exit 0 으로 통과했다.
+  //  key 형식과 값 타입을 **기준·현재 같은 파서로** 강제한다.
+
+  const FILE = 'src/components/Bad.tsx'
+  const KEY = `${FILE}::R11`
+  const TWO = ONE_LINE + MULTILINE
+
+  function refFile(obj: unknown): string {
+    const dir = mkdtempSync(join(tmpdir(), 'audit-ref-'))
+    FIXTURES.push(dir)
+    const f = join(dir, 'ref.json')
+    writeFileSync(f, JSON.stringify(obj))
+    return f
+  }
+  /** baseline 을 **원문 그대로** 심는다 — JSON.stringify 로는 못 만드는 값도 넣기 위해. */
+  function fixtureRaw(files: Record<string, string>, baselineRaw: string): string {
+    const dir = mkdtempSync(join(tmpdir(), 'audit-raw-'))
+    FIXTURES.push(dir)
+    for (const [rel, body] of Object.entries(files)) {
+      const abs = join(dir, rel)
+      mkdirSync(resolve(abs, '..'), { recursive: true })
+      writeFileSync(abs, body)
+    }
+    mkdirSync(join(dir, 'scripts'), { recursive: true })
+    writeFileSync(join(dir, BASELINE), baselineRaw)
+    return dir
+  }
+
+  it('🔴 Codex 재현 — 비수치 baseline 이 compare·strict 양쪽에서 막힌다', () => {
+    const dir = fixtureRaw({ [FILE]: TWO }, `{"${KEY}": "not-a-number"}`)
+    expect(runAudit([`--root=${dir}`, `--compare-baseline=${refFile({ [KEY]: 1 })}`]).code,
+      'compare 가 값 타입 우회를 통과시켰다').toBe(1)
+    expect(runAudit(['--strict', `--root=${dir}`, `--changed=${FILE}`]).code,
+      'strict 가 값 타입 우회를 통과시켰다').toBe(1)
+  })
+
+  it.each([
+    ['문자열', '"x"'],
+    ['객체', '{}'],
+    ['배열', '[]'],
+    ['null', 'null'],
+    ['불리언', 'true'],
+    ['0', '0'],
+    ['음수', '-1'],
+    ['소수', '1.5'],
+    ['안전정수 밖', '9007199254740993'],
+  ])('value 가 %s 이면 strict·compare 둘 다 exit 1', (_label, raw) => {
+    const dir = fixtureRaw({ [FILE]: ONE_LINE }, `{"${KEY}": ${raw}}`)
+    expect(runAudit(['--strict', `--root=${dir}`]).code).toBe(1)
+    expect(runAudit([`--root=${dir}`, `--compare-baseline=${refFile({ [KEY]: 1 })}`]).code).toBe(1)
+  })
+
+  it('value 가 1 이상 정수면 통과한다', () => {
+    const dir = fixtureRaw({ [FILE]: ONE_LINE }, `{"${KEY}": 1}`)
+    expect(runAudit(['--strict', `--root=${dir}`]).code).toBe(0)
+  })
+
+  it.each([
+    ['형식 아님', 'bad-key'],
+    ['규칙 번호 없음', 'src/a.tsx::X'],
+    ['src 밖', 'lib/a.tsx::R11'],
+  ])('key 가 %s 이면 exit 1', (_label, key) => {
+    const dir = fixtureRaw({ [FILE]: ONE_LINE }, JSON.stringify({ [key]: 1 }))
+    expect(runAudit(['--strict', `--root=${dir}`]).code).toBe(1)
+  })
+
+  it('🔴 **기준** baseline 이 비수치여도 compare 가 exit 1', () => {
+    const dir = makeFixture({ [FILE]: ONE_LINE }, { [KEY]: 1 })
+    const bad = join(mkdtempSync(join(tmpdir(), 'audit-badref-')), 'ref.json')
+    writeFileSync(bad, `{"${KEY}": "not-a-number"}`)
+    const r = runAudit([`--root=${dir}`, `--compare-baseline=${bad}`])
+    expect(r.code).toBe(1)
+    expect(r.out).toContain('기준 baseline')
+  })
+
+  it('🔴 새 R11 + 비수치 baseline 을 같이 올려도 양쪽에서 실패한다', () => {
+    // 부채를 늘리면서 baseline 값을 문자열로 비틀어 빠져나가려는 시도.
+    const dir = fixtureRaw({ [FILE]: TWO }, `{"${KEY}": "2"}`) // 숫자처럼 보이는 문자열
+    expect(runAudit(['--strict', `--root=${dir}`, `--changed=${FILE}`]).code).toBe(1)
+    expect(runAudit([`--root=${dir}`, `--compare-baseline=${refFile({ [KEY]: 1 })}`]).code).toBe(1)
+  })
+
+  it('기준·현재에 **같은 파서**를 쓴다 — 소스 고정', () => {
+    const src = read(SCRIPT)
+    expect(src).toContain('function parseBaseline(')
+    expect(src).toContain("parseBaseline(raw, '기준 baseline')")
+    expect(src).toContain("parseBaseline(raw, '현재 baseline')")
+    expect(src).toContain('Number.isSafeInteger')
+  })
+})
+
 describe('CI 가 baseline 증가를 차단한다', () => {
   const ci = read('.github/workflows/ci.yml')
 

@@ -394,12 +394,62 @@ function toBaseline(violations: Violation[]): Baseline {
   return Object.fromEntries(Object.entries(out).sort(([a], [b]) => a.localeCompare(b)))
 }
 
-function readBaseline(): Baseline {
+/** baseline key 형식 — `src/<경로>::R<숫자>`. */
+const BASELINE_KEY_RE = /^src\/.+::R\d+$/
+
+/**
+ * baseline 스키마 검증 — **기준·현재 양쪽에 같은 파서를 쓴다.**
+ *
+ * 🔴 최상위가 객체인지만 보면 **값 타입으로 우회된다.**
+ *    `{"a::R11": "not-a-number"}` 를 넣으면 `2 > "not-a-number"` 가 `false` 라
+ *    증가 판정도, strict 비교도 전부 통과해 버린다(2026-09-15 재현).
+ *    key 형식과 값 타입을 **여기 한 곳에서** 강제한다.
+ *
+ * @returns 검증된 baseline, 또는 실패 사유 목록
+ */
+function parseBaseline(raw: string, label: string): { ok: true; value: Baseline } | { ok: false; errors: string[] } {
+  let parsed: unknown
   try {
-    return JSON.parse(readFileSync(join(ROOT, BASELINE_PATH), 'utf8')) as Baseline
-  } catch {
-    return {}
+    parsed = JSON.parse(raw)
+  } catch (e) {
+    return { ok: false, errors: [`${label}: JSON 파싱 실패 — ${(e as Error).message}`] }
   }
+  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    return { ok: false, errors: [`${label}: 최상위가 객체가 아니다 (${Array.isArray(parsed) ? 'array' : typeof parsed})`] }
+  }
+
+  const errors: string[] = []
+  for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
+    if (!BASELINE_KEY_RE.test(k)) {
+      errors.push(`${label}: key 형식이 아니다 — "${k}" (기대: src/...::R<숫자>)`)
+    }
+    // 위반 **횟수**다. 정수이고 1 이상이어야 한다 —
+    // 문자열·객체·배열·null·0·음수·소수는 전부 부정한 값이다.
+    if (typeof v !== 'number' || !Number.isSafeInteger(v) || v < 1) {
+      errors.push(`${label}: value 가 1 이상 정수가 아니다 — "${k}" = ${JSON.stringify(v)}`)
+    }
+  }
+  if (errors.length > 0) return { ok: false, errors }
+  return { ok: true, value: parsed as Baseline }
+}
+
+/** 현재 baseline 을 읽는다. 파일이 없으면 빈 baseline(최초 상태)이다. */
+function readBaselineOrErrors(): { ok: true; value: Baseline } | { ok: false; errors: string[] } {
+  const path = join(ROOT, BASELINE_PATH)
+  if (!existsSync(path)) return { ok: true, value: {} }
+  let raw: string
+  try {
+    raw = readFileSync(path, 'utf8')
+  } catch (e) {
+    return { ok: false, errors: [`현재 baseline 읽기 실패 — ${(e as Error).message}`] }
+  }
+  return parseBaseline(raw, '현재 baseline')
+}
+
+/** 검증을 통과한 현재 baseline. 실패하면 빈 값 — 호출부가 `readBaselineOrErrors` 로 따로 막는다. */
+function readBaseline(): Baseline {
+  const r = readBaselineOrErrors()
+  return r.ok ? r.value : {}
 }
 
 /**
@@ -425,7 +475,13 @@ function readBaseline(): Baseline {
  *  수동 리뷰만으로는 못 막는다 — 173줄짜리 JSON 의 숫자 하나가 늘어난 걸 사람이 놓친다.
  */
 function compareBaseline(basePath: string): number {
-  const current = readBaseline()
+  const parsedCurrent = readBaselineOrErrors()
+  if (!parsedCurrent.ok) {
+    console.log('\n🔴 현재 baseline 이 스키마를 어긴다 — 통과시키지 않는다.')
+    for (const e of parsedCurrent.errors) console.log(`   ${e}`)
+    return 1
+  }
+  const current = parsedCurrent.value
 
   // 🔴 **fail-closed 다.** 기준 파일을 못 읽거나 JSON 이 깨졌으면 **통과시키지 않는다.**
   //    "못 읽었으니 그냥 넘어가자" 로 두면 CI 에서 git ref 추출이 조용히 실패했을 때
@@ -446,18 +502,14 @@ function compareBaseline(basePath: string): number {
     return 1
   }
 
-  let base: Baseline
-  try {
-    const parsed: unknown = JSON.parse(raw)
-    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      throw new Error('최상위가 객체가 아니다')
-    }
-    base = parsed as Baseline
-  } catch (e) {
-    console.log(`\n🔴 기준 baseline JSON 파싱 실패: ${(e as Error).message}`)
-    console.log('   깨진 기준으로 비교하면 어떤 증가도 못 잡는다 — 통과시키지 않는다.')
+  const parsedBase = parseBaseline(raw, '기준 baseline')
+  if (!parsedBase.ok) {
+    console.log('\n🔴 기준 baseline 이 스키마를 어긴다 — 통과시키지 않는다.')
+    for (const e of parsedBase.errors) console.log(`   ${e}`)
+    console.log('   깨진 기준으로 비교하면 어떤 증가도 못 잡는다.')
     return 1
   }
+  const base = parsedBase.value
 
   const increased = Object.entries(current).filter(([k, n]) => k in base && n > base[k])
   const added = Object.keys(current).filter((k) => !(k in base))
@@ -561,6 +613,15 @@ function main(): number {
   //    토큰 치환 같은 **무관한 이유로 한 줄만 고쳐도** CI 가 멈춘다 —
   //    "기존 부채를 한 번에 red 로 만들지 않는다" 는 전제와 정면으로 어긋난다.
   //    개수가 같거나 줄면 그 파일을 변경했더라도 통과한다.
+  // 🔴 strict 도 **현재 baseline 스키마**를 먼저 본다.
+  //    값 타입을 비틀면(`"not-a-number"`) 비교 연산이 전부 false 가 되어 게이트가 통째로 무력해진다.
+  const parsedCurrent = readBaselineOrErrors()
+  if (!parsedCurrent.ok) {
+    console.log('\n🔴 현재 baseline 이 스키마를 어긴다 — strict 를 통과시키지 않는다.')
+    for (const e of parsedCurrent.errors) console.log(`   ${e}`)
+    return 1
+  }
+
   const gating = allViolations.filter(isGating)
   const inChanged = gating.filter((v) => v.ruleId !== 'R11' && changed.has(v.file))
   const base = readBaseline()

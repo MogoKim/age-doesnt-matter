@@ -389,3 +389,46 @@ strict 게이트는 "현재 위반 vs 커밋된 baseline" 을 본다. 새 위반
 | 추출됐는데 JSON 파싱 실패·객체 아님 | **FAIL** | 스크립트 |
 
 `set -euo pipefail` 로 중간 실패가 조용히 삼켜지지 않게 했다.
+
+
+## 12. baseline 값 타입 우회 차단 (2026-09-15)
+
+### 재현
+
+| 입력 | 값 |
+|---|---|
+| 현재 baseline | `{"src/components/Bad.tsx::R11": "not-a-number"}` |
+| 기준 baseline | `{"src/components/Bad.tsx::R11": 1}` |
+| 실제 raw button | **2개** |
+
+결과: `--compare-baseline` **exit 0** · `--strict --changed=...` **exit 0** — 둘 다 통과했다.
+
+**원인**: 최상위가 객체인지만 확인하고 key/value 스키마를 검증하지 않았다.
+`2 > "not-a-number"` 는 **false** 라 증가 판정이 통째로 무력해진다.
+
+### 수정 — 기준·현재에 **같은 파서**
+
+`parseBaseline(raw, label)` 하나를 만들어 양쪽에 쓴다.
+
+| 검사 | 규칙 |
+|---|---|
+| key | `src/...::R<숫자>` 형식 |
+| value | `Number.isSafeInteger(v) && v >= 1` |
+
+문자열·객체·배열·null·불리언·0·음수·소수·안전정수 밖은 **전부 exit 1**.
+strict 경로도 실행 전에 현재 baseline 스키마를 먼저 본다.
+
+### 음성 대조 (13건 전부 기대대로)
+
+| value | strict | compare |
+|---|---|---|
+| 문자열 · 객체 · 배열 · null · 불리언 | **1** | **1** |
+| 0 · 음수 · 소수 · 안전정수 밖 | **1** | **1** |
+| 정상 `1` | 0 | 0 |
+
+| key | strict |
+|---|---|
+| `bad-key` · `src/a.tsx::X` · `lib/a.tsx::R11` | **1** |
+
+**새 R11 + 비수치 baseline 동시 변경**(부채를 늘리며 값을 `"2"` 문자열로 비트는 시도)도
+compare·strict **양쪽에서 실패**한다.
