@@ -1,5 +1,6 @@
 'use client'
 
+import { AdminButton, AdminInlineButton, AdminInput, AdminSelect } from '@/components/admin/ui/AdminControls'
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { adminCreateBanner, adminUpdateBanner, adminDeleteBanner } from '@/lib/actions/admin'
@@ -256,12 +257,11 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
           히어로 배너 최대 5장. 표시순서(낮은 숫자가 먼저)로 정렬됩니다.
         </p>
         {!showForm && (
-          <button
+          <AdminButton
             onClick={() => setShowForm(true)}
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
           >
             + 배너 추가
-          </button>
+          </AdminButton>
         )}
       </div>
 
@@ -302,11 +302,10 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
             {/* 제목 */}
             <div>
               <label className="mb-1 block text-xs font-medium text-zinc-600">제목 *</label>
-              <input
+              <AdminInput
                 required
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
-                className="h-10 w-full rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
                 placeholder="인생 2막, 지금 시작해요"
               />
             </div>
@@ -314,10 +313,9 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
             {/* 부제목 */}
             <div>
               <label className="mb-1 block text-xs font-medium text-zinc-600">부제목</label>
-              <input
+              <AdminInput
                 value={form.subtitle}
                 onChange={(e) => setForm({ ...form, subtitle: e.target.value })}
-                className="h-10 w-full rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
                 placeholder="우리 또래 이야기"
               />
             </div>
@@ -382,19 +380,17 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
             {/* CTA */}
             <div>
               <label className="mb-1 block text-xs font-medium text-zinc-600">CTA 버튼 텍스트</label>
-              <input
+              <AdminInput
                 value={form.ctaText}
                 onChange={(e) => setForm({ ...form, ctaText: e.target.value })}
-                className="h-10 w-full rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
                 placeholder="지금 시작하기"
               />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-zinc-600">CTA 링크 URL</label>
-              <input
+              <AdminInput
                 value={form.ctaUrl}
                 onChange={(e) => setForm({ ...form, ctaUrl: e.target.value })}
-                className="h-10 w-full rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
                 placeholder="/community/stories 또는 https://example.com"
               />
               <p className="mt-1 text-xs text-zinc-500">
@@ -453,25 +449,24 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
               <label className="mb-1 block text-xs font-medium text-zinc-600">
                 표시순서 <HelpTip text={HELP.BANNER_PRIORITY} />
               </label>
-              <input
+              <AdminInput
                 type="number"
                 min={0}
                 value={form.displayOrder}
                 onChange={(e) => setForm({ ...form, displayOrder: Number(e.target.value) })}
-                className="h-10 w-full rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
               />
             </div>
 
             {/* 슬롯 */}
             <div>
               <label className="mb-1 block text-xs font-medium text-zinc-600">슬롯</label>
-              <select
+              <AdminSelect
                 value={form.slot}
                 onChange={(e) => setForm({ ...form, slot: e.target.value })}
-                className="h-10 w-full rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500 bg-white"
+                className="bg-white"
               >
                 <option value="HERO">HERO (홈 메인)</option>
-              </select>
+              </AdminSelect>
             </div>
 
             {/* 노출 기간 */}
@@ -479,22 +474,20 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
               <label className="mb-1 block text-xs font-medium text-zinc-600">
                 노출 시작일 <span className="text-zinc-400">(비워두면 즉시)</span>
               </label>
-              <input
+              <AdminInput
                 type="date"
                 value={form.startsAt}
                 onChange={(e) => setForm({ ...form, startsAt: e.target.value })}
-                className="h-10 w-full rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
               />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-zinc-600">
                 노출 종료일 <span className="text-zinc-400">(비워두면 무기한)</span>
               </label>
-              <input
+              <AdminInput
                 type="date"
                 value={form.endsAt}
                 onChange={(e) => setForm({ ...form, endsAt: e.target.value })}
-                className="h-10 w-full rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
               />
             </div>
 
@@ -552,20 +545,19 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
           </div>
 
           <div className="flex gap-2">
-            <button
+            <AdminButton
               type="submit"
               disabled={isPending}
-              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
+              className="disabled:opacity-50"
             >
               {isPending ? '저장 중...' : editId ? '수정' : '등록'}
-            </button>
-            <button
+            </AdminButton>
+            <AdminButton tone="secondary"
               type="button"
               onClick={resetForm}
-              className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50"
             >
               취소
-            </button>
+            </AdminButton>
           </div>
         </form>
       )}
@@ -645,19 +637,19 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
                   {banner.isActive ? '● 활성' : '○ 비활성'}
                 </button>
                 <HelpTip text={HELP.BANNER_ACTIVE} />
-                <button
+                <AdminInlineButton
                   onClick={() => startEdit(banner)}
-                  className="rounded px-2 py-1 text-xs font-medium text-zinc-600 hover:bg-zinc-100"
+                  className="text-zinc-600 hover:bg-zinc-100"
                 >
                   수정
-                </button>
-                <button
+                </AdminInlineButton>
+                <AdminInlineButton tone="danger"
                   onClick={() => handleDelete(banner.id)}
                   disabled={isPending}
-                  className="rounded px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                  className="disabled:opacity-50"
                 >
                   삭제
-                </button>
+                </AdminInlineButton>
               </div>
             </div>
           )
