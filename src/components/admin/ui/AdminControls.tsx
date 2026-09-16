@@ -10,10 +10,18 @@ import { cn } from '@/lib/utils'
  * 어드민 컨트롤 — **공용 primitive 위에 어드민 스킨 하나**.
  *
  * ── 왜 만들었나 ──────────────────────────────────────────────
- *  어드민 5개 화면에서 똑같은 클래스 문자열이 반복되고 있었다(2026-09-16 실측):
+ *  어드민 화면들에서 똑같은 클래스 문자열이 반복되고 있었다(2026-09-16 실측):
  *    `h-10 w-full rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500`
  *  → 입력 필드에서만 **20회**. 한 글자 다른 변종도 섞여 있었다.
  *  스킨을 여기 한 곳에 두고, 나머지는 공용 `Input`·`Select`·`Textarea`·`Button` 이 맡는다.
+ *
+ * ── 현재 적용 범위 (완료 범위 ≠ 후보 범위) ────────────────────
+ *  후보 5개 중 **4개 전환 · PopupManager 1개 보류**.
+ *   · 전환: `AdBannerTable` · `BannerManager` · `ContentTable` · `MemberTable`
+ *   · 보류: `PopupManager` — 스킨이 실제로 다르다(강조 버튼 `bg-primary` 코랄 vs `bg-zinc-900`,
+ *     테두리 Tailwind 기본 gray-200 vs `border-zinc-300`, `py-2`≈42px vs `h-10` 40px).
+ *     여기 스킨을 씌우면 **색이 바뀐다** — 이 배치는 리디자인이 아니므로 제외했다.
+ *     이 예외는 `admin-controls-contract.test.tsx` 가 살아있는 계약으로 고정한다.
  *
  * ── 🔴 이 배치는 리디자인이 아니다 ────────────────────────────
  *  크기·색·문구를 **그대로** 유지한다.
@@ -51,7 +59,7 @@ export function AdminSelect({ className, ...props }: SelectProps) {
  * 🔴 `AdminButton` 과 따로 두는 이유: 행 높이다.
  *    compact 최소 높이(36px)를 적용하면 표가 세로로 벌어져 한 화면에 보이는 행 수가 준다.
  *    어드민은 고밀도 표가 목적이라 그건 기능 저하다. 그래서 **높이를 콘텐츠가 정한다.**
- *    `rounded px-2 py-1 text-xs` 는 5개 화면에 반복되던 조합이다 — 여기 한 곳으로 모은다.
+ *    `rounded px-2 py-1 text-xs` 는 어드민 표마다 반복되던 조합이다 — 여기 한 곳으로 모은다.
  */
 export interface AdminInlineButtonProps extends Omit<ButtonProps, 'variant' | 'density' | 'size'> {
   /** 위험 동작(삭제 등)은 `danger` — 빨강 계열을 쓴다. */
