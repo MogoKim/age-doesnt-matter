@@ -45,27 +45,47 @@ export const BOARD_CACHE_NEGATIVE_TTL_S = 300
 
 const key = (slug: string) => `${BOARD_CACHE_PREFIX}${slug}`
 
+/** "없는 글" 을 기록하는 sentinel. Redis 에 빈 문자열로 들어간다. */
+const ABSENT_SENTINEL = ''
+
 /**
- * 캐시된 BoardType. 반환값 의미:
- *  · `string`  — 캐시된 보드 타입
- *  · `null`    — 캐시 미스이거나, "없는 글"로 기록된 값(`''`)이거나, Redis 장애
+ * 캐시 조회 결과. **세 상태를 구분한다.**
  *
- * 🔴 이 값으로 **redirect 를 결정하지 마라.** "URL 보드와 같으니 교정이 필요 없다"를
- *    판단하는 데만 써라(호출부 주석 참조).
+ * 🔴 왜 tri-state 인가: 이전 구현은 `string | null` 이라 "캐시 없음"과 "없는 글로 캐시됨"이
+ *    똑같이 `null` 이었다. 그래서 **negative 캐시가 실질적으로 죽어 있었다** — 존재하지 않는
+ *    slug 로 들어오는 요청마다 Supabase REST 를 다시 쳤다(봇이 만들어내는 쓰레기 URL 이
+ *    그대로 REST 부하가 된다). 상태를 나눠야 "없는 걸 안다"를 쓸 수 있다.
  */
-export async function readCachedBoardType(slug: string): Promise<string | null> {
+export type CachedBoardLookup =
+  /** 캐시에 없다 — 또는 Redis 장애(구분하지 않는다. 둘 다 "새로 읽어라"다) */
+  | { kind: 'miss' }
+  /** "그런 slug 없음" 이 캐시돼 있다 — REST 를 다시 칠 필요가 없다 */
+  | { kind: 'absent' }
+  /** 캐시된 보드 타입 */
+  | { kind: 'found'; boardType: string }
+
+/**
+ * 캐시를 읽는다.
+ *
+ * 🔴 `found.boardType` 으로 **redirect 를 결정하지 마라.** "URL 보드와 같으니 교정이
+ *    필요 없다"를 판단하는 데만 써라(호출부 주석 참조).
+ */
+export async function readCachedBoardType(slug: string): Promise<CachedBoardLookup> {
   try {
     const cached = await redis.get<string>(key(slug))
-    return cached ? cached : null
+    if (cached === null || cached === undefined) return { kind: 'miss' }
+    if (cached === ABSENT_SENTINEL) return { kind: 'absent' }
+    return { kind: 'found', boardType: cached }
   } catch {
-    return null
+    // Redis 장애는 miss 와 같이 다룬다 — 권위 있는 소스를 새로 읽으면 된다(fail-open)
+    return { kind: 'miss' }
   }
 }
 
-/** 갓 읽은 값을 기록한다. `null`(없는 글)은 짧은 TTL 로만. */
+/** 갓 읽은 값을 기록한다. `null`(없는 글)은 sentinel + 짧은 TTL 로만. */
 export async function writeCachedBoardType(slug: string, boardType: string | null): Promise<void> {
   try {
-    await redis.set(key(slug), boardType ?? '', {
+    await redis.set(key(slug), boardType ?? ABSENT_SENTINEL, {
       ex: boardType ? BOARD_CACHE_TTL_S : BOARD_CACHE_NEGATIVE_TTL_S,
     })
   } catch {

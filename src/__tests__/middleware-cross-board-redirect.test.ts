@@ -15,7 +15,7 @@
  *     → 조회가 성공했을 때의 응답 계약을 여기서 고정한다.
  *
  * ── 🔴 P1: 글 이동 후 stale 캐시 ──────────────────────────────
- *  `board:<slug>` 는 24시간 캐시다. 글이 STORY → MENOPAUSE 로 이동하면 캐시는
+ *  `board:<slug>` 는 positive 1시간 캐시다. 글이 STORY → MENOPAUSE 로 이동하면 캐시는
  *  한동안 STORY 를 들고 있다. 캐시로 redirect 를 만들면 **새 정본 URL 을 옛 주소로
  *  308** 하는 최악의 사고가 난다. 그래서 설계를 바꿨다:
  *    · 캐시는 "URL 보드와 같으니 교정 불필요" 판정에만 쓴다
@@ -217,9 +217,96 @@ describe('캐시 사용 계약 — 308 은 절대 캐시로 만들지 않는다'
     expect(redisSet).toHaveBeenCalledWith(CACHE_KEY, '', { ex: 300 })
   })
 
-  it('찾은 보드 캐시 TTL 은 1시간 — 무효화 실패 시 수렴 상한이다', async () => {
+  it('🔴 찾은 보드 캐시 TTL 은 1시간(3600s) — 무효화 실패 시 수렴 상한이다', async () => {
     mockDb('STORY')
     await run(`/community/humor/${ENC}`)
     expect(redisSet).toHaveBeenCalledWith(CACHE_KEY, 'STORY', { ex: 3600 })
+  })
+})
+
+describe('🔴 negative 캐시 — 없는 slug 는 REST 를 반복해서 치지 않는다', () => {
+  const MISSING = '존재하지-않는-슬러그-abc'
+  const MISSING_KEY = `board:${MISSING}`
+  const MISSING_ENC = encodeURIComponent(MISSING)
+
+  /**
+   * 🔴 이 계약이 없으면 negative 캐시가 **죽는다.**
+   *    이전 구현은 `''`(없는 글 sentinel)을 cache miss 와 같은 `null` 로 돌려줘,
+   *    존재하지 않는 slug 로 들어오는 요청마다 Supabase REST 를 다시 쳤다.
+   *    봇이 만들어내는 쓰레기 URL 이 그대로 REST 부하가 된다.
+   */
+  it('🔴 없는 slug 첫 요청은 REST 를 1회 친다', async () => {
+    const fetchSpy = vi.fn(async () => ({ ok: true, json: async () => [] }))
+    vi.stubGlobal('fetch', fetchSpy)
+    const res = await run(`/community/humor/${MISSING_ENC}`)
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+    expect(res.status, '없는 글로 redirect 하면 안 된다').not.toBe(308)
+  })
+
+  it('🔴 첫 요청이 "없음"을 negative TTL 로 기록한다', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => [] })))
+    await run(`/community/humor/${MISSING_ENC}`)
+    expect(redisSet).toHaveBeenCalledWith(MISSING_KEY, '', { ex: 300 })
+    expect(store.get(MISSING_KEY)).toBe('')
+  })
+
+  it('🔴 같은 slug 두 번째 요청은 negative TTL 동안 REST 를 추가로 치지 않는다', async () => {
+    const fetchSpy = vi.fn(async () => ({ ok: true, json: async () => [] }))
+    vi.stubGlobal('fetch', fetchSpy)
+    await run(`/community/humor/${MISSING_ENC}`)
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+
+    await run(`/community/humor/${MISSING_ENC}`)
+    await run(`/community/stories/${MISSING_ENC}`)
+    await run(`/community/life2/${MISSING_ENC}`)
+    expect(fetchSpy, 'negative 캐시가 죽어 REST 를 반복해서 쳤다').toHaveBeenCalledTimes(1)
+  })
+
+  it('negative 캐시 적중이어도 redirect 는 만들지 않는다', async () => {
+    store.set(MISSING_KEY, '')
+    const fetchSpy = vi.fn()
+    vi.stubGlobal('fetch', fetchSpy)
+    const res = await run(`/community/humor/${MISSING_ENC}`)
+    expect(res.status).not.toBe(308)
+    expect(res.headers.get('location')).toBeNull()
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
+  it('🔴 Redis 장애는 fail-open — miss 로 보고 권위 있는 값을 새로 읽는다', async () => {
+    redisGet.mockRejectedValue(new Error('redis down'))
+    const fetchSpy = vi.fn(async () => ({ ok: true, json: async () => [{ boardType: 'STORY' }] }))
+    vi.stubGlobal('fetch', fetchSpy)
+    const res = await run(`/community/humor/${ENC}`)
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+    // 갓 읽은 값으로 정상 교정된다
+    expect(res.status).toBe(308)
+    expect(res.headers.get('location')).toBe(`${ORIGIN}/community/stories/${ENC}`)
+  })
+
+  it('Redis 가 죽은 채 없는 slug 면 REST 만 치고 통과한다 (500 아님)', async () => {
+    redisGet.mockRejectedValue(new Error('redis down'))
+    redisSet.mockRejectedValue(new Error('redis down'))
+    const fetchSpy = vi.fn(async () => ({ ok: true, json: async () => [] }))
+    vi.stubGlobal('fetch', fetchSpy)
+    const res = await run(`/community/humor/${MISSING_ENC}`)
+    expect(res.status).toBeLessThan(400)
+    expect(res.status).not.toBe(308)
+  })
+})
+
+describe('캐시 tri-state 계약', () => {
+  it('🔴 miss · absent · found 를 구분한다 — 이전 string|null 계약은 negative 를 죽였다', async () => {
+    const { readCachedBoardType } = await import('@/lib/seo/board-slug-cache')
+    expect(await readCachedBoardType('없는키')).toEqual({ kind: 'miss' })
+    store.set('board:없는글', '')
+    expect(await readCachedBoardType('없는글')).toEqual({ kind: 'absent' })
+    store.set('board:있는글', 'STORY')
+    expect(await readCachedBoardType('있는글')).toEqual({ kind: 'found', boardType: 'STORY' })
+  })
+
+  it('Redis 장애는 miss 로 본다 — absent 로 착각하면 교정이 통째로 멈춘다', async () => {
+    redisGet.mockRejectedValue(new Error('redis down'))
+    const { readCachedBoardType } = await import('@/lib/seo/board-slug-cache')
+    expect(await readCachedBoardType('아무거나')).toEqual({ kind: 'miss' })
   })
 })

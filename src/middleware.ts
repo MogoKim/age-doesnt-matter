@@ -250,12 +250,18 @@ export default async function middleware(request: NextRequest) {
     // CUID 는 위 블록이 이미 처리했다(거기서 못 풀면 여기서도 못 푼다)
     if (!CUID_PATTERN.test(segment)) {
       const urlBoardType = BOARD_SLUG_TO_TYPE[urlBoardSlug as keyof typeof BOARD_SLUG_TO_TYPE] as string | undefined
-      const cachedBoardType = await readCachedBoardType(segment)
+      const cached = await readCachedBoardType(segment)
 
-      // 캐시와 URL 보드가 같다 → 교정할 게 없다. 여기서 끝내고 REST 를 아낀다.
-      const agreesWithUrl = Boolean(urlBoardType && cachedBoardType && cachedBoardType === urlBoardType)
+      // REST 를 건너뛰어도 되는 두 경우:
+      //  · found + URL 보드와 일치 → 교정할 게 없다(stale 이어도 최악은 교정 누락)
+      //  · absent → 그런 slug 가 없다. 교정할 대상 자체가 없으므로 REST 를 칠 이유가 없다.
+      //             (봇이 만들어내는 쓰레기 URL 이 그대로 REST 부하가 되는 것을 막는다.
+      //              negative TTL 이 짧아 새 글이 오래 묻히지 않는다.)
+      const skipLookup =
+        cached.kind === 'absent' ||
+        (cached.kind === 'found' && Boolean(urlBoardType) && cached.boardType === urlBoardType)
 
-      if (!agreesWithUrl) {
+      if (!skipLookup) {
         const boardType = await fetchBoardType(segment)
         if (boardType) {
           // slug 는 URL 세그먼트 그대로다 → `resolveCommunityCanonicalPath` 는 보드만 비교한다

@@ -411,7 +411,7 @@ export async function adminMovePost(
   })
 
   // 🔴 slug → 정본 보드 캐시를 **즉시 버린다**(Batch A).
-  //    middleware 가 크로스보드 URL 을 308 로 교정할 때 쓰는 캐시다(TTL 24h).
+  //    middleware 가 크로스보드 URL 을 308 로 교정할 때 쓰는 캐시다(positive TTL 1시간).
   //    여기서 지우지 않으면 이동 직후 캐시가 옛 보드를 들고 있어, 최악의 경우
   //    새 정본 URL(`/community/menopause/<slug>`)을 옛 주소로 되돌리려 든다.
   //    ※ 실패해도 던지지 않는다. middleware 는 **갓 읽은 값으로만 308 을 만들기** 때문에
