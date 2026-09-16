@@ -7,6 +7,8 @@ import { BOT_UA_PATTERN } from '@/lib/bot-patterns'
 import { isDevRoute, isDevRouteAllowed } from '@/lib/dev-routes'
 import { getMovedPostRedirect } from '@/lib/moved-posts'
 import { resolveCommunityCanonicalPath } from '@/lib/community-canonical'
+import { BOARD_SLUG_TO_TYPE } from '@/lib/board-registry'
+import { readCachedBoardType, writeCachedBoardType } from '@/lib/seo/board-slug-cache'
 import { buildReturnTo } from '@/lib/return-to'
 
 /**
@@ -98,33 +100,20 @@ async function resolveSlug(cuid: string): Promise<string | null> {
   }
 }
 
-const BOARD_REDIS_TTL_S = 86400  // 24시간 — 글의 보드는 거의 바뀌지 않고, 바뀌면 옛 URL 이 하루 안에 정본으로 수렴한다
 /**
- * "그런 slug 없음"은 **짧게만** 기억한다.
- * 방금 발행된 글이 24시간 동안 "없는 글"로 캐시되면 그동안 정본 교정이 죽는다.
- */
-const BOARD_NEGATIVE_TTL_S = 300
-const BOARD_REDIS_PREFIX = 'board:'
-
-/**
- * slug 로 글의 **정본 보드 타입**을 찾는다. `resolveSlug` 와 같은 2단 구조(Redis → Supabase REST).
+ * slug 의 정본 BoardType 을 **권위 있는 소스에서 새로 읽는다**(Supabase REST).
  *
- * 왜 middleware 인가: 상세 라우트가 `dynamic = 'force-static'` 이라
- * `generateMetadata` 안의 `permanentRedirect()` 가 정적 생성 중 redirect 가 되어 **HTTP 500** 이 난다
- * (2026-09-16 production 실측 9/9, `x-matched-path: /500`). middleware 는 렌더 전에 돌기 때문에
- * 진짜 HTTP 308 을 보낼 수 있다 — CUID→slug 교정이 이미 같은 이유로 여기 있다.
+ * 🔴 308 은 오직 이 함수의 반환값으로만 낸다. 캐시된 값으로 redirect 하면
+ *    글 이동 직후 **정본 URL 을 옛 주소로 밀어내는** 사고가 난다
+ *    (근거·시나리오: `lib/seo/board-slug-cache.ts` 상단 주석).
  *
- * 실패하면 `null` 을 돌려주고 **조용히 통과**시킨다. 그 경우 페이지가 200 으로 렌더되며
- * 정본 canonical 을 달아 중복 신호를 정리한다(500 보다 낫다).
+ * 실패하면 `null` 을 돌려주고 조용히 통과시킨다(fail-open). 그 경우 페이지가 200 으로
+ * 렌더되며 DB 를 새로 읽어 정본 canonical 을 단다 — 500 보다 낫다.
+ *
+ * 🔴 전송 실패(401·5xx·네트워크)는 **캐시하지 않는다.** 한 번의 일시 장애를
+ *    '없는 글'로 굳히면 그동안 정본 교정이 통째로 죽는다(2026-09-16 Preview 실측).
  */
-async function resolveBoardType(slug: string): Promise<string | null> {
-  const key = `${BOARD_REDIS_PREFIX}${slug}`
-  try {
-    const cached = await redis.get<string>(key)
-    if (cached !== null && cached !== undefined) return cached === '' ? null : cached
-  } catch {
-    // Redis 장애 → REST fallback
-  }
+async function fetchBoardType(slug: string): Promise<string | null> {
   try {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/Post` +
@@ -136,18 +125,11 @@ async function resolveBoardType(slug: string): Promise<string | null> {
         },
       },
     )
-    // 🔴 전송 실패(401·5xx·네트워크)는 **캐시하지 않는다.**
-    //    한 번의 일시 장애를 '없는 글'로 24시간 굳히면 그동안 정본 교정이 통째로 죽는다.
-    //    (2026-09-16 Preview 실측에서 실제로 이 함정을 밟았다 — 첫 요청 실패가 캐시돼
-    //     이후 요청이 REST 를 시도조차 하지 않았다.)
     if (!res.ok) return null
 
     const data = (await res.json()) as { boardType: string }[]
     const boardType = data[0]?.boardType ?? null
-    // 조회가 **성공**했을 때만 캐시한다. 없음(null)은 짧게만 기억한다.
-    redis
-      .set(key, boardType ?? '', { ex: boardType ? BOARD_REDIS_TTL_S : BOARD_NEGATIVE_TTL_S })
-      .catch(() => {})
+    await writeCachedBoardType(slug, boardType)
     return boardType
   } catch {
     return null
@@ -252,27 +234,43 @@ export default async function middleware(request: NextRequest) {
   // 상세 라우트에서 교정하려던 `permanentRedirect()` 는 force-static 정적 생성과 충돌해
   // **HTTP 500** 을 냈다(2026-09-16 실측). 그래서 렌더 전 여기서 진짜 308 을 보낸다.
   //
-  // 비용: 커뮤니티 상세 요청마다 Redis GET 1회(캐시 적중 시). 24시간 TTL 이라
-  // 같은 글의 두 번째 요청부터는 REST 왕복이 없다. 실패는 전부 통과(fail-open)다.
+  // 🔴 **캐시는 "교정 불필요" 판정에만 쓴다.** 캐시된 값으로 redirect 를 만들면
+  //    글 이동 직후(`adminMovePost`) 캐시가 옛 보드를 들고 있어
+  //    **새 정본 URL 을 옛 주소로 308** 하는 최악의 사고가 난다.
+  //    그래서 URL 보드와 캐시가 **일치할 때만** 캐시를 믿고 통과시키고,
+  //    어긋나거나 모르면 권위 있는 값을 새로 읽어 그 값으로만 308 을 만든다.
+  //    stale 캐시가 만들 수 있는 최악은 "교정 누락"이고, 그때도 페이지가
+  //    DB 를 새로 읽어 정본 canonical 을 달기 때문에 중복 신호는 남지 않는다.
+  //
+  // 비용: 정상 트래픽(URL 보드 = 실제 보드, 캐시 워밍)은 **Redis GET 1회**로 끝난다.
+  //       REST 왕복은 실제로 어긋난 요청에서만 일어난다.
   if (communityMatch) {
     const urlBoardSlug = communityMatch[1]
     const segment = decodeURIComponent(communityMatch[2])
     // CUID 는 위 블록이 이미 처리했다(거기서 못 풀면 여기서도 못 푼다)
     if (!CUID_PATTERN.test(segment)) {
-      const boardType = await resolveBoardType(segment)
-      if (boardType) {
-        // slug 는 URL 세그먼트 그대로다 → `resolveCommunityCanonicalPath` 는 보드만 비교한다
-        const canonicalPath = resolveCommunityCanonicalPath({
-          boardSlug: urlBoardSlug,
-          postId: segment,
-          post: { boardType, slug: segment },
-        })
-        if (canonicalPath) {
-          // `new URL` 이 한글 세그먼트를 percent-encode 한다 → Location 헤더가 ASCII 로 나간다
-          return addAnonSession(
-            NextResponse.redirect(new URL(canonicalPath, request.url), 308),
-            request,
-          )
+      const urlBoardType = BOARD_SLUG_TO_TYPE[urlBoardSlug as keyof typeof BOARD_SLUG_TO_TYPE] as string | undefined
+      const cachedBoardType = await readCachedBoardType(segment)
+
+      // 캐시와 URL 보드가 같다 → 교정할 게 없다. 여기서 끝내고 REST 를 아낀다.
+      const agreesWithUrl = Boolean(urlBoardType && cachedBoardType && cachedBoardType === urlBoardType)
+
+      if (!agreesWithUrl) {
+        const boardType = await fetchBoardType(segment)
+        if (boardType) {
+          // slug 는 URL 세그먼트 그대로다 → `resolveCommunityCanonicalPath` 는 보드만 비교한다
+          const canonicalPath = resolveCommunityCanonicalPath({
+            boardSlug: urlBoardSlug,
+            postId: segment,
+            post: { boardType, slug: segment },
+          })
+          if (canonicalPath) {
+            // `new URL` 이 한글 세그먼트를 percent-encode 한다 → Location 헤더가 ASCII 로 나간다
+            return addAnonSession(
+              NextResponse.redirect(new URL(canonicalPath, request.url), 308),
+              request,
+            )
+          }
         }
       }
     }
