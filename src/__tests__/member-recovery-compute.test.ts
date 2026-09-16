@@ -25,6 +25,8 @@ vi.mock('@/lib/queries/admin/admin.retention', () => ({
 }))
 vi.mock('next/cache', () => ({ unstable_cache: (fn: unknown) => fn }))
 
+import type { VisitorSpan as OldVisitorSpan } from '@/lib/queries/admin/admin.member-recovery'
+import type { VisitorSpan as NewVisitorSpan } from '@/lib/queries/admin/admin.member-recovery.compute'
 import {
   DAY, HOUR, isRealProviderId, rateOf, median,
   addSpan, advancedAfter, unionSpans, computeActivation, computeRetentionView,
@@ -242,6 +244,18 @@ describe('4단계 재방문 — 채널 합산', () => {
 })
 
 describe('기존 import 경로 호환', () => {
+  it('🔴 옛 경로에서 VisitorSpan 타입을 그대로 가져올 수 있다', () => {
+    // 타입은 compute 로 옮겼지만, 원래 `admin.member-recovery` 에서 export 되던 타입이다.
+    // 재수출이 빠지면 옛 경로로 가져오던 코드가 조용히 깨진다.
+    const span: OldVisitorSpan = { first: 1, last: 2 }
+    expect(span.first).toBe(1)
+    expect(span.last).toBe(2)
+    // 두 경로의 타입이 같은 것인지도 고정한다 — 서로 대입되면 같은 타입이다.
+    const viaCompute: NewVisitorSpan = span
+    const viaOld: OldVisitorSpan = viaCompute
+    expect(viaOld).toBe(span)
+  })
+
   it('본체에서 타입과 계산 단위를 모두 계속 가져올 수 있다', async () => {
     const mod = await import('@/lib/queries/admin/admin.member-recovery')
     expect(mod.MEMBER_RECOVERY_WINDOWS).toEqual([7, 30])

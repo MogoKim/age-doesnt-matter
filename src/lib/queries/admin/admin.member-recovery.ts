@@ -41,7 +41,7 @@ export * from './admin.member-recovery.types'
 export {
   DAY, isRealProviderId, rateOf, addSpan, visitorSpans, advancedAfter, unionSpans,
   computeActivation, computeRetentionView,
-  type SpanMap,
+  type SpanMap, type VisitorSpan,
 } from './admin.member-recovery.compute'
 
 import type {

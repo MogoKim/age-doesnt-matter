@@ -47,6 +47,8 @@ vi.mock('@/lib/prisma', () => ({
 vi.mock('next/cache', () => ({
   revalidatePath: (p: string) => { revalidateCalls.push(p) },
   revalidateTag: (t: string) => { revalidateCalls.push(`tag:${t}`) },
+  // 🔴 updateTag 도 감시한다 — 댓글 경로가 이걸 쓴다. 빠뜨리면 캐시 부수효과를 놓친다.
+  updateTag: (t: string) => { revalidateCalls.push(`updateTag:${t}`) },
   unstable_cache: (fn: (...a: unknown[]) => unknown) => fn,
 }))
 
@@ -73,26 +75,120 @@ beforeEach(() => {
 })
 afterEach(() => vi.unstubAllGlobals())
 
-/* ── B-2. 인증 실패 시 부수효과 0 (모듈별) ────────────────────── */
-const CASES: Array<[string, string, () => Promise<unknown>]> = [
-  ['admin.automation', 'adminSetAutomationStatus', async () => (await import('@/lib/actions/admin/admin.automation')).adminSetAutomationStatus(true)],
-  ['admin.banners', 'adminDeleteBanner', async () => (await import('@/lib/actions/admin/admin.banners')).adminDeleteBanner('b1')],
-  ['admin.config', 'adminDeleteBannedWord', async () => (await import('@/lib/actions/admin/admin.config')).adminDeleteBannedWord('w1')],
-  ['admin.content', 'adminSetPostLikeCount', async () => (await import('@/lib/actions/admin/admin.content')).adminSetPostLikeCount('p1', 5)],
-  ['admin.experiments-web', 'adminSaveExperimentState', async () => (await import('@/lib/actions/admin/admin.experiments-web')).adminSaveExperimentState('k', 'v' as never)],
-  ['admin.home-curation', 'deactivateHomeCurationOverride', async () => (await import('@/lib/actions/admin/admin.home-curation')).deactivateHomeCurationOverride('o1')],
-  ['admin.members', 'adminUpdateUserGrade', async () => (await import('@/lib/actions/admin/admin.members')).adminUpdateUserGrade('u1', 'SPROUT' as never)],
-  ['admin.queue', 'adminApproveQueueItem', async () => (await import('@/lib/actions/admin/admin.queue')).adminApproveQueueItem('q1')],
-  ['admin.reports', 'adminProcessReport', async () => (await import('@/lib/actions/admin/admin.reports')).adminProcessReport('r1', 'DISMISS' as never)],
-  ['popups', 'createPopup', async () => (await import('@/lib/actions/popups')).createPopup({} as never)],
+/* ── B-2. 인증 실패 시 부수효과 0 — **변경한 액션 전수** ────── */
+
+/**
+ * 공유 가드로 바꾼 10개 모듈의 **exported 액션 42개 전부**를 안전한 인자로 실행한다.
+ * 모듈당 하나만 돌리면 "첫 await 이 인증인가"를 문자열로 짐작하는 데 그친다 —
+ * 그건 나머지 액션의 부수효과 0을 **증명하지 못한다.**
+ */
+type Mod = Record<string, (...a: never[]) => Promise<unknown>>
+type ActionCase = [module: string, name: string, run: (m: Mod) => Promise<unknown>]
+
+const MODULES: Record<string, () => Promise<Mod>> = {
+  'admin.automation': () => import('@/lib/actions/admin/admin.automation') as unknown as Promise<Mod>,
+  'admin.banners': () => import('@/lib/actions/admin/admin.banners') as unknown as Promise<Mod>,
+  'admin.config': () => import('@/lib/actions/admin/admin.config') as unknown as Promise<Mod>,
+  'admin.content': () => import('@/lib/actions/admin/admin.content') as unknown as Promise<Mod>,
+  'admin.experiments-web': () => import('@/lib/actions/admin/admin.experiments-web') as unknown as Promise<Mod>,
+  'admin.home-curation': () => import('@/lib/actions/admin/admin.home-curation') as unknown as Promise<Mod>,
+  'admin.members': () => import('@/lib/actions/admin/admin.members') as unknown as Promise<Mod>,
+  'admin.queue': () => import('@/lib/actions/admin/admin.queue') as unknown as Promise<Mod>,
+  'admin.reports': () => import('@/lib/actions/admin/admin.reports') as unknown as Promise<Mod>,
+  popups: () => import('@/lib/actions/popups') as unknown as Promise<Mod>,
+}
+
+/** 인자는 형태만 맞춘 더미다 — 인증에서 막히므로 값이 쓰이지 않는다. */
+const CASES: ActionCase[] = [
+  ['admin.automation', 'adminSetAutomationStatus', (m) => m.adminSetAutomationStatus(true as never)],
+
+  ['admin.banners', 'adminCreateBanner', (m) => m.adminCreateBanner({ title: 't', themeColor: '#FF6F61', displayOrder: 0, slot: 'HERO', isActive: true, showOverlay: true } as never)],
+  ['admin.banners', 'adminUpdateBanner', (m) => m.adminUpdateBanner('b1' as never, { title: 't' } as never)],
+  ['admin.banners', 'adminDeleteBanner', (m) => m.adminDeleteBanner('b1' as never)],
+  ['admin.banners', 'adminCreateAdBanner', (m) => m.adminCreateAdBanner({ slot: 'LIST_HEADER', adType: 'SELF', startDate: '2026-09-01T00:00:00+09:00', endDate: '', priority: 0 } as never)],
+  ['admin.banners', 'adminUpdateAdBanner', (m) => m.adminUpdateAdBanner('a1' as never, { isActive: false } as never)],
+  ['admin.banners', 'adminDeleteAdBanner', (m) => m.adminDeleteAdBanner('a1' as never)],
+
+  ['admin.config', 'adminCreateBannedWord', (m) => m.adminCreateBannedWord('말' as never, 'ABUSE' as never)],
+  ['admin.config', 'adminDeleteBannedWord', (m) => m.adminDeleteBannedWord('w1' as never)],
+  ['admin.config', 'adminToggleBannedWord', (m) => m.adminToggleBannedWord('w1' as never, true as never)],
+  ['admin.config', 'adminUpdateBoardConfig', (m) => m.adminUpdateBoardConfig('c1' as never, { displayName: 'n' } as never)],
+  ['admin.config', 'adminUpdateTopPromoBanner', (m) => m.adminUpdateTopPromoBanner({ type: 'guest', enabled: false, tag: 't', text: 'x' } as never)],
+
+  ['admin.content', 'adminSetPostPromotionLevel', (m) => m.adminSetPostPromotionLevel('p1' as never, 'NORMAL' as never)],
+  ['admin.content', 'adminSetPostLikeCount', (m) => m.adminSetPostLikeCount('p1' as never, 5 as never)],
+  ['admin.content', 'adminBulkDeleteExpiredJobs', (m) => m.adminBulkDeleteExpiredJobs()],
+  ['admin.content', 'adminUpdatePostStatus', (m) => m.adminUpdatePostStatus('p1' as never, 'HIDDEN' as never)],
+  ['admin.content', 'adminTogglePin', (m) => m.adminTogglePin('p1' as never, true as never)],
+  ['admin.content', 'adminToggleFeatured', (m) => m.adminToggleFeatured('p1' as never, true as never)],
+  ['admin.content', 'adminBulkAction', (m) => m.adminBulkAction(['p1'] as never, 'HIDDEN' as never)],
+  ['admin.content', 'adminUpdatePostContent', (m) => m.adminUpdatePostContent('p1' as never, { title: 't', content: 'c' } as never)],
+  ['admin.content', 'adminUpdateComment', (m) => m.adminUpdateComment('c1' as never, '내용' as never)],
+  ['admin.content', 'adminDeleteComment', (m) => m.adminDeleteComment('c1' as never)],
+  ['admin.content', 'adminMovePost', (m) => m.adminMovePost('p1' as never, 'STORY' as never, null as never)],
+
+  ['admin.experiments-web', 'adminSaveExperimentState', (m) => m.adminSaveExperimentState('e1' as never, { status: 'RUNNING' } as never)],
+
+  ['admin.home-curation', 'createHomeCurationOverride', (m) => m.createHomeCurationOverride({ section: 'BEST', postId: 'p1' } as never)],
+  ['admin.home-curation', 'deactivateHomeCurationOverride', (m) => m.deactivateHomeCurationOverride('o1' as never)],
+  ['admin.home-curation', 'searchCurationPostsAction', (m) => m.searchCurationPostsAction('갱년기' as never, 'BEST' as never)],
+  ['admin.home-curation', 'reorderHomeCurationPin', (m) => m.reorderHomeCurationPin('BEST' as never, ['p1'] as never)],
+  ['admin.home-curation', 'setBestPinOrder', (m) => m.setBestPinOrder('BEST' as never, ['p1'] as never, 'DAY' as never)],
+  ['admin.home-curation', 'clearBestPins', (m) => m.clearBestPins('BEST' as never)],
+
+  ['admin.members', 'adminUpdateUserStatus', (m) => m.adminUpdateUserStatus('u1' as never, 'ACTIVE' as never)],
+  ['admin.members', 'adminUpdateUserGrade', (m) => m.adminUpdateUserGrade('u1' as never, 'SPROUT' as never)],
+  ['admin.members', 'adminGetUserPosts', (m) => m.adminGetUserPosts('u1' as never)],
+  ['admin.members', 'adminGetUserComments', (m) => m.adminGetUserComments('u1' as never)],
+
+  ['admin.queue', 'adminApproveQueueItem', (m) => m.adminApproveQueueItem('q1' as never)],
+  ['admin.queue', 'adminRejectQueueItem', (m) => m.adminRejectQueueItem('q1' as never, '사유' as never)],
+
+  ['admin.reports', 'adminProcessReport', (m) => m.adminProcessReport('r1' as never, 'DISMISS' as never)],
+
+  ['popups', 'createPopup', (m) => m.createPopup({ title: 't', content: 'c' } as never)],
+  ['popups', 'updatePopup', (m) => m.updatePopup('p1' as never, { title: 't' } as never)],
+  ['popups', 'togglePopupActive', (m) => m.togglePopupActive('p1' as never, true as never)],
+  ['popups', 'deletePopup', (m) => m.deletePopup('p1' as never)],
+  ['popups', 'getPopupList', (m) => m.getPopupList()],
 ]
 
-describe('🔴 B-2 — 인증 실패 시 DB·캐시·외부 호출이 0이다', () => {
-  it.each(CASES)('%s / %s', async (_mod, _fn, run) => {
-    await expect(run()).rejects.toThrow('관리자 인증이 필요합니다.')
+async function runCase(mod: string, run: ActionCase[2]) {
+  return run(await MODULES[mod]())
+}
+
+describe('🔴 B-2 — 쿠키 없음: 모든 액션에서 DB·캐시·외부 호출 0', () => {
+  it.each(CASES)('%s / %s', async (mod, _name, run) => {
+    await expect(runCase(mod, run)).rejects.toThrow('관리자 인증이 필요합니다.')
     expect(prismaCalls, `DB 를 건드렸다: ${prismaCalls.join(', ')}`).toEqual([])
-    expect(revalidateCalls, `캐시를 무효화했다: ${revalidateCalls.join(', ')}`).toEqual([])
+    expect(revalidateCalls, `캐시를 건드렸다: ${revalidateCalls.join(', ')}`).toEqual([])
     expect(fetchCalls, `외부를 호출했다: ${fetchCalls.join(', ')}`).toEqual([])
+  })
+})
+
+describe('🔴 B-2 — 잘못된 토큰: 같은 계약', () => {
+  it.each(CASES)('%s / %s', async (mod, _name, run) => {
+    process.env.ADMIN_JWT_SECRET = 'x'.repeat(40)
+    cookieValue = 'not.a.valid.jwt'
+    await expect(runCase(mod, run)).rejects.toThrow('관리자 인증이 필요합니다.')
+    expect(prismaCalls).toEqual([])
+    expect(revalidateCalls).toEqual([])
+    expect(fetchCalls).toEqual([])
+  })
+})
+
+describe('🔴 B-2 — 실행 목록이 변경 액션 전부를 덮는다', () => {
+  it.each(Object.keys(MODULES))('%s 의 exported 액션이 모두 실행 목록에 있다', (mod) => {
+    const file = mod === 'popups' ? 'lib/actions/popups.ts' : `lib/actions/admin/${mod}.ts`
+    const exported = [...read(file).matchAll(/export async function (\w+)\s*\(/g)].map((m) => m[1]).sort()
+    const covered = CASES.filter((c) => c[0] === mod).map((c) => c[1]).sort()
+    expect(covered, `${mod} 에서 빠진 액션: ${exported.filter((e) => !covered.includes(e)).join(', ')}`).toEqual(exported)
+  })
+
+  it('공유 가드를 쓰는 모듈이 10개 그대로다 (늘면 실행 목록도 늘려야 한다)', () => {
+    const users = ADMIN_ACTION_FILES.filter((f) => /requireAdminSession as requireAdmin/.test(read(f)))
+    expect(users).toHaveLength(10)
+    expect(Object.keys(MODULES)).toHaveLength(10)
   })
 })
 

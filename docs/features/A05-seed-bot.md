@@ -218,7 +218,7 @@ Constitution 상한 $50/월 대비 여유 있음.
 
 ## 관련 링크
 
-- ~~메인 스케줄러 `scripts/ops-board/engine/scheduler.ts`~~ — **삭제됨(2026-09-09)**
+- ~~메인 스케줄러 `agents/seed/scheduler.ts`~~ — **삭제됨(2026-09-09, #438)**
 - ~~마이크로 스케줄러 `agents/seed/micro-scheduler.ts`~~ — **삭제됨**
 - ~~Runner 핸들러 `seed:scheduler` · `seed:micro`~~ — **삭제됨**
 - ~~GHA 워크플로우 `agents-seed.yml` · `agents-seed-micro.yml`~~ — **삭제됨**

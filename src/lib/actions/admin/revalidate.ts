@@ -23,7 +23,7 @@ const BOARD_PATHS: Record<string, string> = BOARD_URL_PREFIX
  *   2. 글 상세   (위 + postIdentifier 가 있는 경우에만)
  *   3. `/` · `/best` · `/search` — 항상
  *
- * `admin-revalidate-paths.test.ts` 가 경로·순서·횟수를 고정한다.
+ * `src/__tests__/admin-revalidate-and-real-user.test.ts` 가 경로·순서·횟수를 고정한다.
  */
 export function revalidateServicePaths(
   boardType?: string | null,

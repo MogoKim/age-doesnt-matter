@@ -21,7 +21,7 @@ export const DELETED_USER: UserSummary = {
  * 🔴 여기에 마스킹을 넣지 마라. 탈퇴/익명 처리는 **글 목록만의 계약**이고
  *    (`toUserSummary` 참조), 나머지 세 곳은 저장된 값을 그대로 보여준다.
  *    그 차이는 개인정보·표시 **정책**이라 리팩토링으로 바꾸지 않는다.
- *    `query-summary-mappers.test.ts` 가 양쪽을 다 고정한다.
+ *    `src/__tests__/query-summary-mappers.test.ts` 가 양쪽을 다 고정한다.
  */
 export function toUserSummaryBase(user: {
   id: string
