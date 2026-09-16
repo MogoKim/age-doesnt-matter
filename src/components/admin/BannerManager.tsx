@@ -306,7 +306,6 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
                 required
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
-                
                 placeholder="인생 2막, 지금 시작해요"
               />
             </div>
@@ -317,7 +316,6 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
               <AdminInput
                 value={form.subtitle}
                 onChange={(e) => setForm({ ...form, subtitle: e.target.value })}
-                
                 placeholder="우리 또래 이야기"
               />
             </div>
@@ -385,7 +383,6 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
               <AdminInput
                 value={form.ctaText}
                 onChange={(e) => setForm({ ...form, ctaText: e.target.value })}
-                
                 placeholder="지금 시작하기"
               />
             </div>
@@ -394,7 +391,6 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
               <AdminInput
                 value={form.ctaUrl}
                 onChange={(e) => setForm({ ...form, ctaUrl: e.target.value })}
-                
                 placeholder="/community/stories 또는 https://example.com"
               />
               <p className="mt-1 text-xs text-zinc-500">
@@ -458,7 +454,6 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
                 min={0}
                 value={form.displayOrder}
                 onChange={(e) => setForm({ ...form, displayOrder: Number(e.target.value) })}
-                
               />
             </div>
 
@@ -483,7 +478,6 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
                 type="date"
                 value={form.startsAt}
                 onChange={(e) => setForm({ ...form, startsAt: e.target.value })}
-                
               />
             </div>
             <div>
@@ -494,7 +488,6 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
                 type="date"
                 value={form.endsAt}
                 onChange={(e) => setForm({ ...form, endsAt: e.target.value })}
-                
               />
             </div>
 

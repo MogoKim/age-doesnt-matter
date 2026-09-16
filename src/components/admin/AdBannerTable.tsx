@@ -331,7 +331,6 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
               <AdminInput
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
-                
               />
             </div>
             <div>
@@ -339,7 +338,6 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
               <AdminInput
                 value={form.clickUrl}
                 onChange={(e) => setForm({ ...form, clickUrl: e.target.value })}
-                
               />
             </div>
             {(form.adType === 'GOOGLE' || form.adType === 'COUPANG') ? (
@@ -429,7 +427,6 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
                 type="number"
                 value={form.priority}
                 onChange={(e) => setForm({ ...form, priority: Number(e.target.value) })}
-                
               />
             </div>
             <div>
@@ -439,7 +436,6 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
                 type="datetime-local"
                 value={form.startDate}
                 onChange={(e) => setForm({ ...form, startDate: e.target.value })}
-                
               />
             </div>
             <div>
@@ -449,7 +445,6 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
                 type="datetime-local"
                 value={form.endDate}
                 onChange={(e) => setForm({ ...form, endDate: e.target.value })}
-                
               />
             </div>
           </div>
