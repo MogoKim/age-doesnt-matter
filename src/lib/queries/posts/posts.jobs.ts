@@ -232,6 +232,16 @@ export interface JobDetailItem {
   workDays: string | null
   tags: string[]
   applyUrl: string | null
+  /**
+   * `JobDetail.jobType` — 스크래퍼가 "고용형태/근무형태" 라벨에서 긁은 **자유 한국어**.
+   * JobPosting 구조화 데이터의 `employmentType` 판정에만 쓴다(매핑 실패 시 생략).
+   */
+  jobType: string | null
+  /**
+   * `JobDetail.expiresAt` — ISO 8601. **현재 쓰는 코드가 없어 항상 null 이다.**
+   * Google 지침상 만료를 모르면 `validThrough` 를 생략하는 것이 맞다 — 지어내지 않는다.
+   */
+  expiresAt: string | null
   pickPoints: Array<{ point: string; icon: string }>
   viewCount: number
   likeCount: number
@@ -270,6 +280,9 @@ async function _getJobDetailPublic(postId: string): Promise<JobDetailPublicItem 
           quickTags: true,
           applyUrl: true,
           pickPoints: true,
+          // JobPosting 구조화 데이터용 — 화면 렌더에는 쓰지 않는다
+          jobType: true,
+          expiresAt: true,
         },
       },
     },
@@ -293,6 +306,8 @@ async function _getJobDetailPublic(postId: string): Promise<JobDetailPublicItem 
     workDays: post.jobDetail?.workDays ?? null,
     tags: post.jobDetail?.quickTags ?? [],
     applyUrl: post.jobDetail?.applyUrl ?? null,
+    jobType: post.jobDetail?.jobType ?? null,
+    expiresAt: post.jobDetail?.expiresAt?.toISOString() ?? null,
     pickPoints,
     viewCount: post.viewCount,
     likeCount: post.likeCount,
@@ -344,6 +359,9 @@ export const getJobDetail = cache(async function getJobDetail(
           quickTags: true,
           applyUrl: true,
           pickPoints: true,
+          // 타입 계약(JobDetailItem) 유지 — 화면 렌더에는 쓰지 않는다
+          jobType: true,
+          expiresAt: true,
         },
       },
     },
@@ -383,6 +401,8 @@ export const getJobDetail = cache(async function getJobDetail(
     salary: post.jobDetail?.salary ?? '',
     workHours: post.jobDetail?.workHours ?? null,
     workDays: post.jobDetail?.workDays ?? null,
+    jobType: post.jobDetail?.jobType ?? null,
+    expiresAt: post.jobDetail?.expiresAt?.toISOString() ?? null,
     tags: post.jobDetail?.quickTags ?? [],
     applyUrl: post.jobDetail?.applyUrl ?? null,
     pickPoints,
