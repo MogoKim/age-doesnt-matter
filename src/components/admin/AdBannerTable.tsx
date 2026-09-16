@@ -1,5 +1,6 @@
 'use client'
 
+import { AdminButton, AdminInlineButton, AdminInput, AdminSelect, AdminTextarea } from '@/components/admin/ui/AdminControls'
 import { useState, useTransition } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { adminCreateAdBanner, adminUpdateAdBanner, adminDeleteAdBanner } from '@/lib/actions/admin'
@@ -288,12 +289,12 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
         </select>
 
         {!showForm && (
-          <button
+          <AdminButton
             onClick={() => { setForm(EMPTY_FORM); setEditingId(null); setShowForm(true) }}
-            className="ml-auto rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+            className="ml-auto"
           >
             + 광고 추가
-          </button>
+          </AdminButton>
         )}
       </div>
 
@@ -305,53 +306,51 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-medium text-zinc-600">슬롯 * <HelpTip text={HELP.AD_SLOT} /></label>
-              <select
+              <AdminSelect
                 value={form.slot}
                 onChange={(e) => setForm({ ...form, slot: e.target.value as AdSlot })}
-                className="h-10 w-full rounded-lg border border-zinc-300 px-3 text-sm"
               >
                 {ACTIVE_SLOTS.map((key) => (
                   <option key={key} value={key}>{SLOT_LABELS[key]}</option>
                 ))}
-              </select>
+              </AdminSelect>
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-zinc-600">광고 유형 * <HelpTip text={HELP.AD_TYPE} /></label>
-              <select
+              <AdminSelect
                 value={form.adType}
                 onChange={(e) => setForm({ ...form, adType: e.target.value as AdType })}
-                className="h-10 w-full rounded-lg border border-zinc-300 px-3 text-sm"
               >
                 {Object.entries(TYPE_LABELS).map(([key, { label }]) => (
                   <option key={key} value={key}>{label}</option>
                 ))}
-              </select>
+              </AdminSelect>
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-zinc-600">제목 <HelpTip text={HELP.AD_TITLE} /></label>
-              <input
+              <AdminInput
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
-                className="h-10 w-full rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
+                
               />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-zinc-600">클릭 URL <HelpTip text={HELP.AD_CLICK_URL} /></label>
-              <input
+              <AdminInput
                 value={form.clickUrl}
                 onChange={(e) => setForm({ ...form, clickUrl: e.target.value })}
-                className="h-10 w-full rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
+                
               />
             </div>
             {(form.adType === 'GOOGLE' || form.adType === 'COUPANG') ? (
               <div className="sm:col-span-2">
                 <label className="mb-1 block text-xs font-medium text-zinc-600">광고 HTML 코드 <HelpTip text={HELP.AD_HTML_CODE} /></label>
-                <textarea
+                <AdminTextarea
                   value={form.htmlCode}
                   onChange={(e) => setForm({ ...form, htmlCode: e.target.value })}
                   rows={4}
                   placeholder="구글 애드센스 / 쿠팡 광고 HTML 코드 붙여넣기"
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 font-mono text-xs outline-none focus:border-zinc-500"
+                  className="px-3 py-2 font-mono text-xs"
                 />
                 <p className="mt-1 text-[11px] text-zinc-500">&lt;script&gt; 등 위험 태그는 저장 시 자동 제거됩니다.</p>
               </div>
@@ -372,11 +371,11 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
                     {form.slot === 'LIST_HEADER' && ' 홈 상단 구좌용 2400×800도 같은 3:1이라 여기 올릴 수 있습니다.'}
                   </p>
                 )}
-                <input
+                <AdminInput
                   value={form.imageUrl}
                   onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
                   placeholder="또는 이미지 URL 직접 입력"
-                  className="mt-2 h-10 w-full rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
+                  className="mt-2"
                 />
                 {form.imageUrl && (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -426,50 +425,49 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
             )}
             <div>
               <label className="mb-1 block text-xs font-medium text-zinc-600">우선순위 <HelpTip text={HELP.AD_PRIORITY} /></label>
-              <input
+              <AdminInput
                 type="number"
                 value={form.priority}
                 onChange={(e) => setForm({ ...form, priority: Number(e.target.value) })}
-                className="h-10 w-full rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
+                
               />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-zinc-600">시작일시 (KST) * <HelpTip text={HELP.AD_PERIOD} /></label>
-              <input
+              <AdminInput
                 required
                 type="datetime-local"
                 value={form.startDate}
                 onChange={(e) => setForm({ ...form, startDate: e.target.value })}
-                className="h-10 w-full rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
+                
               />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-zinc-600">종료일시 (KST) *</label>
-              <input
+              <AdminInput
                 required
                 type="datetime-local"
                 value={form.endDate}
                 onChange={(e) => setForm({ ...form, endDate: e.target.value })}
-                className="h-10 w-full rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
+                
               />
             </div>
           </div>
 
           <div className="flex gap-2">
-            <button
+            <AdminButton
               type="submit"
               disabled={isPending || uploading}
-              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
+              className="disabled:opacity-50"
             >
               {editingId ? '수정 저장' : '등록'}
-            </button>
-            <button
+            </AdminButton>
+            <AdminButton tone="secondary"
               type="button"
               onClick={handleCancel}
-              className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50"
             >
               취소
-            </button>
+            </AdminButton>
           </div>
         </form>
       )}
@@ -533,13 +531,13 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
                   </td>
                   <td className="px-3 py-3">
                     <div className="flex items-center justify-center gap-1">
-                      <button
+                      <AdminInlineButton
                         onClick={() => handleEdit(ad)}
                         disabled={isPending}
-                        className="rounded px-2 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100 disabled:opacity-50"
+                        className="text-zinc-700 hover:bg-zinc-100 disabled:opacity-50"
                       >
                         수정
-                      </button>
+                      </AdminInlineButton>
                       <button
                         onClick={() => handleToggle(ad)}
                         disabled={isPending}
@@ -551,13 +549,13 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
                       >
                         {ad.isActive ? 'OFF' : 'ON'}
                       </button>
-                      <button
+                      <AdminInlineButton tone="danger"
                         onClick={() => handleDelete(ad.id)}
                         disabled={isPending}
-                        className="rounded px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                        className="disabled:opacity-50"
                       >
                         삭제
-                      </button>
+                      </AdminInlineButton>
                     </div>
                   </td>
                 </tr>

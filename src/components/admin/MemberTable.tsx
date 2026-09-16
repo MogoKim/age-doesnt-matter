@@ -1,5 +1,6 @@
 'use client'
 
+import { AdminButton, AdminInlineButton, AdminInput, AdminSelect } from '@/components/admin/ui/AdminControls'
 import { useState, useTransition } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { adminUpdateUserStatus, adminUpdateUserGrade } from '@/lib/actions/admin'
@@ -140,17 +141,18 @@ export default function MemberTable({ users, hasMore, page, sort, order, filters
     <>
       {/* 필터 바 */}
       <div className="flex flex-wrap items-center gap-3">
-        <select
+        <AdminSelect
+          aria-label="상태 필터"
           value={filters.status || ''}
           onChange={(e) => updateFilter('status', e.target.value)}
-          className="h-10 rounded-lg border border-zinc-300 px-3 text-sm text-zinc-700"
+          className="w-auto text-zinc-700"
         >
           <option value="">전체 상태</option>
           <option value="ACTIVE">정상</option>
           <option value="SUSPENDED">정지</option>
           <option value="BANNED">차단</option>
           <option value="WITHDRAWN">탈퇴</option>
-        </select>
+        </AdminSelect>
 
         {/* 봇 계정 필터 */}
         <div className="flex gap-1">
@@ -174,19 +176,17 @@ export default function MemberTable({ users, hasMore, page, sort, order, filters
         </div>
 
         <form onSubmit={handleSearch} className="flex gap-2">
-          <input
+          <AdminInput
             type="text"
+            aria-label="닉네임/이메일 검색"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="닉네임/이메일 검색"
-            className="h-10 w-48 rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
+            className="w-48"
           />
-          <button
-            type="submit"
-            className="h-10 rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white hover:bg-zinc-800"
-          >
+          <AdminButton type="submit" className="h-10">
             검색
-          </button>
+          </AdminButton>
         </form>
       </div>
 
@@ -318,12 +318,13 @@ export default function MemberTable({ users, hasMore, page, sort, order, filters
                   </td>
                   <td className="px-3 py-3">
                     <div className="relative flex items-center justify-center">
-                      <button
+                      <AdminInlineButton
                         onClick={() => setActionUserId(actionUserId === user.id ? null : user.id)}
-                        className="rounded px-2 py-1 text-xs font-medium text-zinc-600 hover:bg-zinc-100 min-h-[44px]"
+                        aria-expanded={actionUserId === user.id}
+                        className="min-h-control-sm text-zinc-600"
                       >
                         제재 ▾
-                      </button>
+                      </AdminInlineButton>
                       {actionUserId === user.id && (
                         <div className="absolute right-0 top-full z-10 mt-1 w-36 rounded-lg border border-zinc-200 bg-white py-1 shadow-lg">
                           {user.status !== 'ACTIVE' && (
@@ -376,21 +377,23 @@ export default function MemberTable({ users, hasMore, page, sort, order, filters
 
       {(page > 1 || hasMore) && (
         <div className="flex items-center justify-center gap-3">
-          <button
+          <AdminButton
+            tone="secondary"
             onClick={() => goToPage(page - 1)}
             disabled={page <= 1}
-            className="rounded-lg border border-zinc-300 px-5 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
+            className="px-5 text-zinc-700 disabled:cursor-not-allowed disabled:opacity-40"
           >
             ← 이전
-          </button>
+          </AdminButton>
           <span className="text-sm font-medium text-zinc-500">{page}페이지</span>
-          <button
+          <AdminButton
+            tone="secondary"
             onClick={() => goToPage(page + 1)}
             disabled={!hasMore}
-            className="rounded-lg border border-zinc-300 px-5 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
+            className="px-5 text-zinc-700 disabled:cursor-not-allowed disabled:opacity-40"
           >
             다음 →
-          </button>
+          </AdminButton>
         </div>
       )}
 

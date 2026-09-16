@@ -1,5 +1,6 @@
 'use client'
 
+import { AdminButton, AdminInlineButton, AdminInput, AdminSelect } from '@/components/admin/ui/AdminControls'
 import { useState, useTransition } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -125,32 +126,32 @@ export default function ContentTable({ posts, hasMore, filters, boardConfigs }: 
     <>
       {/* 필터 바 */}
       <div className="flex flex-wrap items-center gap-3">
-        <select
+        <AdminSelect
           value={filters.board || ''}
           onChange={(e) => updateFilter('board', e.target.value)}
-          className="h-10 rounded-lg border border-zinc-300 px-3 text-sm text-zinc-700"
+          className="text-zinc-700"
         >
           <option value="">전체 게시판</option>
           {Object.entries(BOARD_LABELS).map(([key, label]) => (
             <option key={key} value={key}>{label}</option>
           ))}
-        </select>
+        </AdminSelect>
 
-        <select
+        <AdminSelect
           value={filters.status || ''}
           onChange={(e) => updateFilter('status', e.target.value)}
-          className="h-10 rounded-lg border border-zinc-300 px-3 text-sm text-zinc-700"
+          className="text-zinc-700"
         >
           <option value="">전체 상태</option>
           <option value="PUBLISHED">게시</option>
           <option value="HIDDEN">숨김</option>
           <option value="DELETED">삭제</option>
-        </select>
+        </AdminSelect>
 
-        <select
+        <AdminSelect
           value={filters.botType || ''}
           onChange={(e) => updateBotType(e.target.value)}
-          className="h-10 rounded-lg border border-zinc-300 px-3 text-sm text-zinc-700"
+          className="text-zinc-700"
         >
           <option value="">전체 소스</option>
           <option value="user">실고객</option>
@@ -158,33 +159,31 @@ export default function ContentTable({ posts, hasMore, filters, boardConfigs }: 
           <option value="curate">큐레이션봇</option>
           <option value="sheet">스크래퍼봇</option>
           <option value="admin">NNN</option>
-        </select>
+        </AdminSelect>
 
-        <select
+        <AdminSelect
           value={filters.sort || ''}
           onChange={(e) => updateFilter('sort', e.target.value)}
-          className="h-10 rounded-lg border border-zinc-300 px-3 text-sm text-zinc-700"
+          className="text-zinc-700"
         >
           <option value="">최신순</option>
           <option value="likes">공감순</option>
           <option value="comments">댓글순</option>
           <option value="views">조회순</option>
-        </select>
+        </AdminSelect>
 
         <form onSubmit={handleSearch} className="flex gap-2">
-          <input
+          <AdminInput
             type="text"
+            aria-label="제목/본문/작성자 검색"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="제목/본문/작성자 검색"
-            className="h-10 w-48 rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
+            className="w-48"
           />
-          <button
-            type="submit"
-            className="h-10 rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white hover:bg-zinc-800"
-          >
+          <AdminButton type="submit" className="h-10">
             검색
-          </button>
+          </AdminButton>
         </form>
       </div>
 
@@ -269,7 +268,7 @@ export default function ContentTable({ posts, hasMore, filters, boardConfigs }: 
                     {SOURCE_BADGE[post.source]}
                     <Link
                       href={`/admin/content/${post.id}`}
-                      className="hover:text-[#FF6F61] hover:underline"
+                      className="hover:text-primary-text hover:underline"
                     >
                       {post.title}
                     </Link>
@@ -277,7 +276,7 @@ export default function ContentTable({ posts, hasMore, filters, boardConfigs }: 
                   <td className="whitespace-nowrap px-3 py-3 text-zinc-600">
                     <Link
                       href={`/admin/members?search=${encodeURIComponent(post.author.nickname)}`}
-                      className="hover:text-[#FF6F61] hover:underline"
+                      className="hover:text-primary-text hover:underline"
                     >
                       {post.author.nickname}
                     </Link>
@@ -451,7 +450,7 @@ function ActionButton({
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`rounded-md px-3 py-2 text-sm font-medium transition-colors disabled:opacity-50 min-h-[44px] ${variants[variant]}`}
+      className={`rounded-md px-3 py-2 text-sm font-medium transition-colors disabled:opacity-50 min-h-control-sm ${variants[variant]}`}
     >
       {label}
     </button>
@@ -490,7 +489,7 @@ function LikeCountCell({ postId, initialCount }: { postId: string; initialCount:
         }}
         disabled={isPending}
         autoFocus
-        className="w-16 rounded border border-zinc-300 px-1 py-0.5 text-center text-sm focus:outline-none focus:ring-1 focus:ring-[#FF6F61]"
+        className="w-16 rounded border border-zinc-300 px-1 py-0.5 text-center text-sm focus:outline-none focus:ring-1 focus:ring-primary"
       />
     )
   }
@@ -499,7 +498,7 @@ function LikeCountCell({ postId, initialCount }: { postId: string; initialCount:
     <button
       onClick={() => setEditing(true)}
       title="클릭하여 편집"
-      className="rounded px-2 py-0.5 text-zinc-600 hover:bg-zinc-100 hover:text-[#FF6F61]"
+      className="rounded px-2 py-0.5 text-zinc-600 hover:bg-zinc-100 hover:text-primary-text"
     >
       {initialCount}
     </button>
@@ -530,7 +529,7 @@ function PromotionButton({
       <button
         onClick={() => setOpen(!open)}
         disabled={isPending}
-        className="min-h-[44px] rounded-md px-3 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 disabled:opacity-50"
+        className="min-h-control-sm rounded-md px-3 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 disabled:opacity-50"
       >
         등급▾
       </button>
@@ -544,7 +543,7 @@ function PromotionButton({
                 startTransition(() => adminSetPostPromotionLevel(postId, opt.level))
               }}
               className={`flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm transition-colors hover:bg-zinc-50 ${
-                current === opt.level ? 'font-bold text-[#FF6F61]' : 'text-zinc-700'
+                current === opt.level ? 'font-bold text-primary-text' : 'text-zinc-700'
               }`}
             >
               {opt.label}
@@ -634,22 +633,22 @@ function BoardCategoryCell({
             </option>
           ))}
         </select>
-        <button
+        <AdminInlineButton
           onClick={handleConfirm}
           disabled={isPending}
           title="저장"
-          className="rounded bg-zinc-900 px-2 py-1 text-xs font-medium text-white hover:bg-zinc-700 disabled:opacity-50"
-        >
+          className="bg-zinc-900 text-white hover:bg-zinc-700"
+          >
           ✓
-        </button>
-        <button
+        </AdminInlineButton>
+        <AdminInlineButton
           onClick={handleCancel}
           disabled={isPending}
           title="취소"
-          className="rounded border border-zinc-300 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-50 disabled:opacity-50"
-        >
+          className="border border-zinc-300 text-zinc-600 hover:bg-zinc-50"
+          >
           ✗
-        </button>
+        </AdminInlineButton>
       </div>
       {categories.length > 0 && (
         <select
