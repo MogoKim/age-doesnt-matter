@@ -260,20 +260,6 @@ export default async function middleware(request: NextRequest) {
     // CUID 는 위 블록이 이미 처리했다(거기서 못 풀면 여기서도 못 푼다)
     if (!CUID_PATTERN.test(segment)) {
       const boardType = await resolveBoardType(segment)
-      // TEMP-PROBE(Batch A, 머지 전 제거): `?__probe=1` 일 때만 조회 결과를 헤더로 노출한다.
-      // Preview 에서 308 이 안 나오는 원인이 조회 실패인지 판정 실패인지 가르기 위한 일회용 계측.
-      if (request.nextUrl.searchParams.get('__probe') === '1') {
-        const probe = NextResponse.next()
-        probe.headers.set('x-probe-segment-len', String(segment.length))
-        probe.headers.set('x-probe-board-type', boardType ?? 'NULL')
-        probe.headers.set('x-probe-url-board', urlBoardSlug)
-        probe.headers.set('x-probe-has-supabase-url', process.env.NEXT_PUBLIC_SUPABASE_URL ? '1' : '0')
-        probe.headers.set('x-probe-has-service-key', process.env.SUPABASE_SERVICE_ROLE_KEY ? '1' : '0')
-        probe.headers.set('x-probe-canonical', String(resolveCommunityCanonicalPath({
-          boardSlug: urlBoardSlug, postId: segment, post: { boardType: boardType ?? 'UNKNOWN', slug: segment },
-        })))
-        return probe
-      }
       if (boardType) {
         // slug 는 URL 세그먼트 그대로다 → `resolveCommunityCanonicalPath` 는 보드만 비교한다
         const canonicalPath = resolveCommunityCanonicalPath({
