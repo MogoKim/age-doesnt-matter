@@ -4,7 +4,7 @@ import { getInternalSessionIds, getAdminUserIds } from './internal-sessions'
 import {
   SIGNUP_BANNER_CTA_TYPES,
   SIGNUP_BANNER_MEASUREMENT_VERSION,
-  
+
 } from '@/lib/telemetry/signup-banner-cta'
 import { KAKAO_CLICK_EXEMPTION } from '@/lib/telemetry/event-rate-limit'
 
