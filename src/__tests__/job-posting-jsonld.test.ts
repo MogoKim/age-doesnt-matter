@@ -3,11 +3,15 @@
  *
  * ── 실측 근거 (2026-09-16, production 50건 전수) ───────────────
  *  · `employmentType: 'FULL_TIME'` 이 **50/50 하드코딩**이었다.
- *    표시 급여의 24건이 시급직이다 — 사실과 다른 값을 Google 에 선언하고 있었다.
- *  · `directApply: true` 가 **50/50**. 그런데 50/50 이 외부 `work24.go.kr` 로 나가고,
- *    본문에 전화번호 **0건** · 이메일 **0건** · 지원 폼 **0건**이다.
+ *    🔴 틀린 이유는 "시급직이라서"가 아니다 — **시급 여부는 전일제 여부를 결정하지 않는다**
+ *       (시급 전일제가 흔하다). 틀린 이유는 **아무 출처 없이 상수로 박혀 있었기 때문**이다
+ *       (`jobType` 은 쿼리에 select 조차 되지 않았다).
+ *  · `directApply: true` 가 **50/50**. 지원 흐름을 확인할 수단이 없는데도 참을 선언했다.
+ *    (판정 근거는 `job-posting-evidence.test.ts` 로 옮겼다 — 근거 없으면 생략한다)
  *  · `baseSalary` 가 **26/50** 뿐이다. 빠진 24건은 전부 `시급 …` 표기 —
  *    파서 정규식이 `월 N만원` 만 보기 때문이다. Google 은 `HOUR` 를 허용한다.
+ *    🔴 다만 "시급을 넣으면 끝"이 아니다 — 원본→화면 단계의 손실(범위 소실·반올림·
+ *       단위 추정) 때문에 **무손실인 건만** 내보낸다(`job-posting-evidence.test.ts`).
  *  · `validThrough` 는 0/50. `JobDetail.expiresAt` 에 **쓰는 코드가 어디에도 없다**(항상 NULL).
  *
  * ── Google 공식 기준 (developers.google.com/search/docs/appearance/structured-data/job-posting)
@@ -28,12 +32,14 @@
  */
 import { describe, expect, it } from 'vitest'
 import {
-  parseBaseSalary,
+  resolveBaseSalary,
   mapEmploymentType,
-  resolveDirectApply,
   buildJobPostingJsonLd,
   EMPLOYMENT_TYPE_VALUES,
 } from '@/lib/seo/job-posting'
+
+/** 원본과 화면이 같은(무손실) 입력만 다룬다 — 손실 케이스는 evidence 테스트가 본다 */
+const parseBaseSalary = (s: string) => resolveBaseSalary({ raw: s, display: s })
 
 const SITE = 'https://age-doesnt-matter.com'
 
@@ -93,49 +99,22 @@ describe('mapEmploymentType — 모르면 넣지 않는다', () => {
     expect(mapEmploymentType('알 수 없음')).toBeNull()
   })
 
-  it('확실히 대응되는 표현만 매핑한다', () => {
-    expect(mapEmploymentType('정규직')).toEqual(['FULL_TIME'])
+  it('의미가 1:1 인 표현만 매핑한다 (범주가 다른 추정 매핑은 evidence 테스트가 막는다)', () => {
     expect(mapEmploymentType('시간제')).toEqual(['PART_TIME'])
     expect(mapEmploymentType('파트타임')).toEqual(['PART_TIME'])
-    expect(mapEmploymentType('계약직')).toEqual(['CONTRACTOR'])
     expect(mapEmploymentType('일용직')).toEqual(['PER_DIEM'])
     expect(mapEmploymentType('인턴')).toEqual(['INTERN'])
   })
 
   it('매핑 결과는 전부 Google 허용 enum 이다', () => {
-    for (const k of ['정규직', '시간제', '계약직', '일용직', '인턴', '파트타임']) {
+    for (const k of ['시간제', '일용직', '인턴', '파트타임', '자원봉사']) {
       for (const v of mapEmploymentType(k)!) expect(EMPLOYMENT_TYPE_VALUES).toContain(v)
     }
   })
 })
 
-describe('resolveDirectApply — 세 조건을 다 본다', () => {
-  const WORK24 = 'https://www.work24.go.kr/wk/a/b/1500/empDetailAuthView.do?wantedAuthNo=K12'
-
-  it('🔴 외부 포털로 나가고 본문에 연락처가 없으면 false', () => {
-    expect(resolveDirectApply({ applyUrl: WORK24, plainContent: '요양보호사 모집합니다. 경력무관.', siteOrigin: SITE })).toBe(false)
-  })
-
-  it('🔴 외부 링크여도 본문에 전화번호가 있으면 false 로 단정하지 않는다', () => {
-    expect(resolveDirectApply({ applyUrl: WORK24, plainContent: '문의 02-123-4567 로 연락주세요', siteOrigin: SITE })).toBe(true)
-  })
-
-  it('외부 링크여도 본문에 이메일이 있으면 true', () => {
-    expect(resolveDirectApply({ applyUrl: WORK24, plainContent: '이력서는 hr@example.com 으로', siteOrigin: SITE })).toBe(true)
-  })
-
-  it('자사 도메인 안에서 지원이 끝나면 true', () => {
-    expect(resolveDirectApply({ applyUrl: `${SITE}/jobs/apply/abc`, plainContent: '', siteOrigin: SITE })).toBe(true)
-  })
-
-  it('🔴 지원 URL 자체가 없으면 undefined — 판단하지 않는다', () => {
-    expect(resolveDirectApply({ applyUrl: null, plainContent: '', siteOrigin: SITE })).toBeUndefined()
-  })
-
-  it('휴대폰 번호도 직접 연락처로 본다', () => {
-    expect(resolveDirectApply({ applyUrl: WORK24, plainContent: '010-1234-5678', siteOrigin: SITE })).toBe(true)
-  })
-})
+// directApply 판정은 `job-posting-evidence.test.ts` 가 전담한다 —
+// "근거가 없으면 생략" 계약이라 여기서 중복 고정하지 않는다.
 
 describe('buildJobPostingJsonLd — 전체 계약', () => {
   const base = {
@@ -145,6 +124,7 @@ describe('buildJobPostingJsonLd — 전체 계약', () => {
     company: '수호천사재가복지센터',
     region: '서울 강서구',
     location: '서울 강서구',
+    salaryRaw: '시급 1만원',
     salaryDisplay: '시급 1만원',
     createdAt: '2026-08-14T05:00:31.211Z',
     applyUrl: 'https://www.work24.go.kr/wk/a/b/1500/empDetailAuthView.do?wantedAuthNo=K12',
@@ -167,13 +147,13 @@ describe('buildJobPostingJsonLd — 전체 계약', () => {
     expect('employmentType' in buildJobPostingJsonLd(base)).toBe(false)
   })
 
-  it('🔴 시급 공고에도 baseSalary 가 생긴다', () => {
+  it('🔴 시급 공고도 원본=화면(무손실)이면 baseSalary 가 생긴다', () => {
     const v = (buildJobPostingJsonLd(base).baseSalary as Record<string, Record<string, unknown>>).value
     expect(v).toMatchObject({ minValue: 10000, unitText: 'HOUR' })
   })
 
-  it('🔴 외부 지원 + 연락처 없음 → directApply false', () => {
-    expect(buildJobPostingJsonLd(base).directApply).toBe(false)
+  it('🔴 지원 흐름을 확인할 수 없으므로 directApply 키가 없다', () => {
+    expect('directApply' in buildJobPostingJsonLd(base)).toBe(false)
   })
 
   it('🔴 expiresAt 이 null 이면 validThrough 키가 없다 — Google 지침대로 "모르면 생략"', () => {
@@ -203,6 +183,6 @@ describe('buildJobPostingJsonLd — 전체 계약', () => {
   })
 
   it('🔴 급여를 모르면 baseSalary 키가 없다', () => {
-    expect('baseSalary' in buildJobPostingJsonLd({ ...base, salaryDisplay: '급여 협의' })).toBe(false)
+    expect('baseSalary' in buildJobPostingJsonLd({ ...base, salaryRaw: '', salaryDisplay: '급여 협의' })).toBe(false)
   })
 })

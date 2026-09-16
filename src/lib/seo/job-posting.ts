@@ -1,30 +1,19 @@
 /**
  * JobPosting 구조화 데이터 빌더 (순수 — DB·React 의존 없음)
  *
- * ── 왜 만들었나 (2026-09-16 production 50건 전수 실측) ─────────
- *  기존 인라인 구현이 **사실과 다른 값을 Google 에 선언**하고 있었다:
- *    · `employmentType: 'FULL_TIME'` 50/50 하드코딩 — 표시 급여 24건이 시급직이다
- *    · `directApply: true` 50/50 — 전부 외부 `work24.go.kr` 로 나가고
- *      본문 전화번호 0건 · 이메일 0건 · 사이트 내 지원 폼 0건
- *    · `baseSalary` 26/50 — 빠진 24건은 전부 `시급 …`. 파서가 `월 N만원` 만 봤다
+ * ── 이 파일의 원칙 하나 ───────────────────────────────────────
+ *  **근거가 없으면 값을 만들지 않는다.** Google 의 JobPosting 에서 Required 는
+ *  title·description·datePosted·hiringOrganization·jobLocation 뿐이고,
+ *  나머지는 전부 **권장**이다. 권장 필드를 추정으로 채우면 "틀린 사실"을 선언하게 된다.
+ *  필드를 채운 건수는 목표가 아니다 — **사실에 맞는 것**이 목표다.
  *
- * ── Google 공식 기준 (search/docs/appearance/structured-data/job-posting)
- *  · `employmentType` 은 **권장**이고 허용값이 정해져 있다(아래 상수).
- *    🔴 모르면 **넣지 않는다.** 틀린 값보다 없는 게 낫다.
- *  · `baseSalary.value.unitText` 는 HOUR·DAY·WEEK·MONTH·YEAR 만 허용한다.
- *  · `directApply` 는 "이 공고 URL 이 **직접 지원**을 가능하게 하는가"다. 셋 중 하나면 참:
- *      ① 사이트 안에서 지원 완료(다중 로그인 없이)
- *      ② 공고에 **직접 연락처(이메일·전화)** 포함
- *      ③ 면접 일정 예약 가능
- *    🔴 "외부 링크"라는 사실 하나로 단정하지 않는다 — ②까지 본 뒤에 판정한다.
- *  · `validThrough` 는 "만료가 없거나 **모르면 아예 생략**"이 공식 지침이다.
- *    🔴 `JobDetail.expiresAt` 에 쓰는 코드가 어디에도 없어 항상 NULL 이다.
- *       지금의 생략은 결함이 아니라 **정답**이다. 날짜를 지어내지 않는다.
- *
- * ── 🔴 급여는 "화면에 보이는 문자열"을 판다 ────────────────────
- *  구조화 데이터는 **사용자에게 보이는 값과 일치**해야 한다(Google 정책).
- *  그래서 원본 `salary` 가 아니라 `formatSalary()` 가 정규화한 **표시 문자열**을 파싱한다.
- *  두 곳이 갈리면 "보이는 것과 다른 구조화 데이터"가 되어 위반이다.
+ * ── 1차 구현이 틀렸던 세 곳 (재리뷰 보정) ─────────────────────
+ *  ① directApply 를 "자사 도메인" 또는 "본문에 전화/이메일" 로 판정했다.
+ *     둘 다 **지원이 실제로 그 경로로 완료된다는 증거가 아니다.**
+ *  ② employmentType 을 정규직→FULL_TIME, 계약직→CONTRACTOR 로 매핑했다.
+ *     **범주가 다르다**(고용 기간 vs 근로시간 / 기간제 근로자 vs 도급).
+ *  ③ baseSalary 를 "화면 문자열을 파싱하니 정확하다"고 봤는데,
+ *     **원본→화면 단계에서 이미 손실**이 있었다(범위 소실·반올림·단위 추정).
  */
 
 /** Google 이 허용하는 employmentType 값 (대소문자 구분) */
@@ -33,10 +22,6 @@ export const EMPLOYMENT_TYPE_VALUES = [
   'INTERN', 'VOLUNTEER', 'PER_DIEM', 'OTHER',
 ] as const
 
-/** Google 이 허용하는 baseSalary 단위 */
-const UNIT_MONTH = 'MONTH'
-const UNIT_HOUR = 'HOUR'
-
 export interface MonetaryAmount {
   '@type': 'MonetaryAmount'
   currency: 'KRW'
@@ -44,14 +29,111 @@ export interface MonetaryAmount {
     '@type': 'QuantitativeValue'
     minValue: number
     maxValue: number
-    unitText: typeof UNIT_MONTH | typeof UNIT_HOUR
+    unitText: 'MONTH' | 'HOUR'
   }
 }
+
+/* ────────────────────────────────────────────────────────────
+ * ① directApply
+ * ──────────────────────────────────────────────────────────── */
+
+/**
+ * Google 정의: "이 공고 URL 이 **직접 지원**을 가능하게 하는가."
+ * 참이 되는 조건(OR):
+ *   ① 사이트 안에서 지원이 완료된다(다중 로그인 없이)
+ *   ② 공고에 **채용 회사(또는 대리인)의 지원 연락처**가 있다
+ *   ③ 면접 일정 예약이 가능하다
+ *
+ * 🔴 우리가 **확인할 수 없는 것들**:
+ *   · 자사 도메인 URL 이라는 사실은 ①의 증거가 아니다.
+ *     실제로 사이트 안에 지원 라우트가 없다(`app/(main)/jobs/` = `[id]` · `region` 뿐).
+ *   · 본문의 전화번호·이메일이 **그 채용의 지원 창구**라는 보장이 없다.
+ *     기관 대표번호·원문 출처 안내·무관한 숫자열일 수 있고, 우리는 구분할 수단이 없다.
+ *   · 외부 포털(work24)로 나간다는 사실도 **false 의 증거가 아니다** — 그 포털에서
+ *     지원이 끝날 수도 있다. "다중 로그인 없이"인지 확인할 수단이 없다.
+ *
+ * → 따라서 현재 데이터로는 **참도 거짓도 세울 수 없다. 생략한다.**
+ *
+ * 되살리는 조건(둘 중 하나가 생기면 이 함수부터 고친다):
+ *   · 자사에 실제 지원 라우트가 생기고, 그 경로로 지원이 완료됨을 코드로 보장할 수 있을 때
+ *   · 수집 단계에서 **채용 담당자 연락처**를 별도 필드로 확보할 때(본문 정규식이 아니라)
+ */
+export function resolveDirectApply(_input: {
+  applyUrl: string | null | undefined
+  plainContent: string
+  siteOrigin: string
+}): boolean | undefined {
+  return undefined
+}
+
+/* ────────────────────────────────────────────────────────────
+ * ② employmentType
+ * ──────────────────────────────────────────────────────────── */
+
+/**
+ * 🔴 **범주가 1:1 로 대응하는 표현만** 남긴다.
+ *
+ *  제거한 매핑과 이유:
+ *   · 정규직·상용직 → FULL_TIME  ✗ 한국어 "정규직"은 **고용 기간의 무기한성**이고
+ *     Google `FULL_TIME` 은 **근로시간**이다. 정규직이면서 단시간 근로가 가능하다.
+ *   · 계약직·기간제 → CONTRACTOR ✗ 기간제 **근로자**이지 도급·프리랜서가 아니다.
+ *   · 임시직 → TEMPORARY         ✗ 한국 노동통계의 "임시직"은 1개월~1년 기간제에 가까워
+ *     Google 의 단기 임시직과 경계가 다르다.
+ *
+ *  남긴 매핑(의미가 그대로 겹치는 것만):
+ *   · 시간제·단시간·파트타임 → PART_TIME   (둘 다 **근로시간**을 가리킨다)
+ *   · 일용직·일용근로      → PER_DIEM     (둘 다 **일 단위** 고용이다)
+ *   · 인턴                → INTERN
+ *   · 자원봉사            → VOLUNTEER
+ *
+ * 🔴 급여 단위(시급/월급)로 전일제 여부를 추론하지 않는다 — **시급 전일제가 흔하다.**
+ *    1차 보고에서 "시급직이라 FULL_TIME 이 틀렸다"고 쓴 것은 잘못된 근거였다.
+ *    FULL_TIME 이 틀린 진짜 이유는 **아무 출처 없이 상수로 박혀 있었기 때문**이다.
+ */
+const EMPLOYMENT_TYPE_MAP: ReadonlyArray<readonly [RegExp, (typeof EMPLOYMENT_TYPE_VALUES)[number]]> = [
+  [/파트\s*타임|시간\s*제|단시간/, 'PART_TIME'],
+  [/일용\s*(?:직|근로)/, 'PER_DIEM'],
+  [/인턴/, 'INTERN'],
+  [/자원\s*봉사|봉사\s*직/, 'VOLUNTEER'],
+]
+
+/**
+ * 매핑을 **포기해야 하는** 신호.
+ * · 부정 — "시간제 아님", "파트타임 불가"
+ * · 혼합 — 서로 다른 범주가 같이 등장하거나, 매핑 대상 밖의 고용형태 어휘가 섞임
+ */
+const NEGATION_RE = /(아님|아닌|불가|제외|없음|미해당|불가능)/
+/** 매핑하지 않기로 한 고용형태 어휘 — 이것이 섞여 있으면 문장이 단일 범주가 아니다 */
+const UNMAPPED_TYPE_RE = /(정규직|상용직|계약직|기간제|임시직|전일제|무기계약)/
+
+export function mapEmploymentType(jobType: string | null | undefined): string[] | null {
+  if (!jobType) return null
+  const s = jobType.replace(/\s+/g, ' ').trim()
+  if (s === '') return null
+
+  // 부정 문구가 있으면 무엇을 긍정하는지 알 수 없다
+  if (NEGATION_RE.test(s)) return null
+
+  const matched = new Set<string>()
+  for (const [re, value] of EMPLOYMENT_TYPE_MAP) {
+    if (re.test(s)) matched.add(value)
+  }
+  if (matched.size === 0) return null
+  // 서로 다른 범주가 섞였다 → 단정할 수 없다
+  if (matched.size > 1) return null
+  // 매핑 대상 밖 고용형태 어휘가 함께 있다 → 혼합 표현이다
+  if (UNMAPPED_TYPE_RE.test(s)) return null
+
+  return [...matched]
+}
+
+/* ────────────────────────────────────────────────────────────
+ * ③ baseSalary
+ * ──────────────────────────────────────────────────────────── */
 
 const money = (minValue: number, maxValue: number, unitText: MonetaryAmount['value']['unitText']): MonetaryAmount => ({
   '@type': 'MonetaryAmount',
   currency: 'KRW',
-  // 원본이 뒤집혀 들어와도 min ≤ max 를 지킨다 — 구조화 데이터 검증에서 오류가 된다
   value: {
     '@type': 'QuantitativeValue',
     minValue: Math.min(minValue, maxValue),
@@ -60,111 +142,81 @@ const money = (minValue: number, maxValue: number, unitText: MonetaryAmount['val
   },
 })
 
+interface Amounts { unit: 'MONTH' | 'HOUR'; min: number; max: number }
+
 /**
- * 표시 급여 문자열 → `baseSalary`.
+ * 문자열에서 **고용주가 준 단위와 금액**을 읽는다. 단위를 못 읽으면 `null`.
  *
- * `formatSalary()` 가 만드는 형태만 다룬다(실측 50건 기준):
- *   · `월 227만원` · `월 216~240만원`
- *   · `시급 1만원` · `시급 1.3만원`  ← 기존 파서가 통째로 놓치던 구간
- *   · `급여 협의` · 그 외 자유 문자열 → **null** (지어내지 않는다)
+ * 🔴 단위 없는 숫자(`3000000`)는 `null` 이다. `formatSalary` 는 임계값으로 월/시급을
+ *    **추정**하지만 그건 우리 추정이지 고용주가 제시한 단위가 아니다.
  */
-export function parseBaseSalary(display: string | null | undefined): MonetaryAmount | null {
-  if (!display) return null
-  const s = display.replace(/,/g, '').replace(/\s+/g, ' ').trim()
+function readAmounts(text: string | null | undefined): Amounts | null {
+  if (!text) return null
+  const s = text.replace(/,/g, '').replace(/\s+/g, ' ').trim()
   if (s === '' || s.includes('협의')) return null
 
-  // "월 216~240만원" / "월 227만원"  (만원 단위)
-  const m = s.match(/^월\s*([\d.]+)(?:\s*[~\-]\s*([\d.]+))?\s*만원?$/)
-  if (m) {
-    const low = Number(m[1]) * 10000
-    const high = m[2] ? Number(m[2]) * 10000 : low
-    if (Number.isFinite(low) && Number.isFinite(high)) return money(low, high, UNIT_MONTH)
-    return null
+  const unitOf = (label: string): Amounts['unit'] | null =>
+    /시급/.test(label) ? 'HOUR' : /^(월|월급)$/.test(label) ? 'MONTH' : null
+
+  // "월 216~240만원" · "시급 1.3만원"  (만원 단위)
+  const man = s.match(/^(시급|월급|월)\s*([\d.]+)(?:\s*[~\-]\s*([\d.]+))?\s*만원?$/)
+  if (man) {
+    const unit = unitOf(man[1])
+    if (!unit) return null
+    const lo = Number(man[2]) * 10000
+    const hi = man[3] ? Number(man[3]) * 10000 : lo
+    if (!Number.isFinite(lo) || !Number.isFinite(hi)) return null
+    return { unit, min: Math.min(lo, hi), max: Math.max(lo, hi) }
   }
 
-  // "시급 1만원" / "시급 1.3만원"  (만원 단위 — 1.3만원 = 13,000원)
-  const hMan = s.match(/^시급\s*([\d.]+)(?:\s*[~\-]\s*([\d.]+))?\s*만원?$/)
-  if (hMan) {
-    const low = Number(hMan[1]) * 10000
-    const high = hMan[2] ? Number(hMan[2]) * 10000 : low
-    if (Number.isFinite(low) && Number.isFinite(high)) return money(low, high, UNIT_HOUR)
-    return null
+  // "시급 10030원" · "월급 2800000원 ~ 3000000원"  (원 단위)
+  const won = s.match(/^(시급|월급|월)\s*(\d+)\s*원?(?:\s*[~\-]\s*(\d+)\s*원?)?$/)
+  if (won) {
+    const unit = unitOf(won[1])
+    if (!unit) return null
+    const lo = Number(won[2])
+    const hi = won[3] ? Number(won[3]) : lo
+    if (!Number.isFinite(lo) || !Number.isFinite(hi)) return null
+    return { unit, min: Math.min(lo, hi), max: Math.max(lo, hi) }
   }
 
-  // "시급 10030원" (원 단위 — formatSalary 의 다른 분기)
-  const hWon = s.match(/^시급\s*(\d+)(?:\s*[~\-]\s*(\d+))?\s*원$/)
-  if (hWon) {
-    const low = Number(hWon[1])
-    const high = hWon[2] ? Number(hWon[2]) : low
-    if (Number.isFinite(low) && Number.isFinite(high)) return money(low, high, UNIT_HOUR)
-    return null
-  }
-
-  // 해석 못 한 형태는 만들지 않는다
   return null
 }
 
 /**
- * `JobDetail.jobType`(스크래퍼가 work24 의 "고용형태/근무형태" 라벨에서 긁은 **자유 한국어**)
- * → Google enum.
+ * `baseSalary` — **원본과 화면이 무손실로 일치할 때만** 내보낸다.
  *
- * 🔴 **확실한 표현만** 매핑한다. "기간의 정함이 없는 근로계약" 처럼 해석이 갈리는 문구는
- *    `null` 로 두어 `employmentType` 자체를 생략한다 — 틀린 값보다 없는 게 낫다.
+ * 왜 둘 다 보나: 구조화 데이터는 ⑴ 고용주가 제시한 금액이어야 하고(Google)
+ * ⑵ 화면에 보이는 값과 일치해야 한다(Google). 그런데 `formatSalary()` 가
+ * 원본을 화면 문자열로 바꾸는 과정에서 아래 손실이 일어난다:
+ *
+ *   · 범위 소실  "월급 2,800,000원 ~ 3,000,000원" → "월 300만원"   (low 가 버려진다)
+ *   · 반올림     "2,588,000"                     → "월 259만원"   (2,590,000 으로 +5,000)
+ *   · 단위 추정  "3000000"                       → "월 300만원"   (임계값 추정)
+ *
+ * 손실이 있으면 ⑴과 ⑵를 **동시에** 만족시킬 수 없다 → **생략**한다.
+ *
+ * ※ 화면 함수(`lib/format.ts`)는 공용 파일이라 이번에 바꾸지 않았다(소유권 미확정).
+ *   화면 표기를 무손실로 바꾸면 그때 더 많은 건이 자격을 얻는다.
  */
-const EMPLOYMENT_TYPE_MAP: ReadonlyArray<readonly [RegExp, (typeof EMPLOYMENT_TYPE_VALUES)[number]]> = [
-  [/파트\s*타임|시간\s*제|단시간/, 'PART_TIME'],
-  [/일용직|일용\s*근로/, 'PER_DIEM'],
-  [/인턴|수습생/, 'INTERN'],
-  [/자원\s*봉사|봉사직/, 'VOLUNTEER'],
-  [/계약직|기간제/, 'CONTRACTOR'],
-  [/임시직|단기\s*계약/, 'TEMPORARY'],
-  [/정규직|상용직/, 'FULL_TIME'],
-]
+export function resolveBaseSalary(input: { raw: string | null | undefined; display: string | null | undefined }): MonetaryAmount | null {
+  const fromRaw = readAmounts(input.raw)
+  if (!fromRaw) return null
+  const fromDisplay = readAmounts(input.display)
+  if (!fromDisplay) return null
 
-export function mapEmploymentType(jobType: string | null | undefined): string[] | null {
-  if (!jobType) return null
-  const s = jobType.replace(/\s+/g, ' ').trim()
-  if (s === '') return null
-  for (const [re, value] of EMPLOYMENT_TYPE_MAP) {
-    if (re.test(s)) return [value]
-  }
-  return null
+  const lossless =
+    fromRaw.unit === fromDisplay.unit &&
+    fromRaw.min === fromDisplay.min &&
+    fromRaw.max === fromDisplay.max
+  if (!lossless) return null
+
+  return money(fromRaw.min, fromRaw.max, fromRaw.unit)
 }
 
-/** 본문에 사람이 바로 연락할 수 있는 수단이 있는가 (Google 조건 ②) */
-const PHONE_RE = /(?:^|[^\d])(0\d{1,2})[-.\s]?(\d{3,4})[-.\s]?(\d{4})(?![\d])/
-const EMAIL_RE = /[\w.+-]+@[\w-]+\.[\w.-]+/
-
-/**
- * `directApply` 판정.
- *
- * 🔴 외부 링크라는 사실 **하나만으로 false 로 단정하지 않는다.**
- *    Google 조건은 OR 이므로, 외부로 나가더라도 본문에 직접 연락처가 있으면 true 다.
- *
- * 반환값:
- *   · `true`      — 자사 도메인에서 지원이 끝나거나, 본문에 직접 연락처가 있다
- *   · `false`     — 외부로 나가고 직접 연락처도 없다 (확인된 부정)
- *   · `undefined` — 지원 URL 자체가 없다. **판단하지 않는다**(키를 생략한다)
- */
-export function resolveDirectApply(input: {
-  applyUrl: string | null | undefined
-  plainContent: string
-  siteOrigin: string
-}): boolean | undefined {
-  if (!input.applyUrl) return undefined
-
-  let sameSite = false
-  try {
-    sameSite = new URL(input.applyUrl, input.siteOrigin).origin === new URL(input.siteOrigin).origin
-  } catch {
-    // 파싱 불가한 URL 은 외부로 본다
-  }
-  if (sameSite) return true
-
-  const body = input.plainContent ?? ''
-  if (PHONE_RE.test(body) || EMAIL_RE.test(body)) return true
-  return false
-}
+/* ────────────────────────────────────────────────────────────
+ * 빌더
+ * ──────────────────────────────────────────────────────────── */
 
 export interface JobPostingInput {
   id: string
@@ -174,14 +226,16 @@ export interface JobPostingInput {
   company: string
   region: string
   location: string
-  /** `formatSalary()` 가 만든 **표시** 문자열 */
+  /** `JobDetail.salary` 원본 */
+  salaryRaw: string | null
+  /** `formatSalary()` 가 만든 **화면** 문자열 */
   salaryDisplay: string
   /** ISO 8601 */
   createdAt: string
   applyUrl: string | null
   /** `JobDetail.jobType` — 자유 한국어. 없으면 null */
   jobType: string | null
-  /** `JobDetail.expiresAt` — ISO 8601. 없으면 null (지금은 항상 null) */
+  /** `JobDetail.expiresAt` — ISO 8601. 없으면 null (현재 쓰는 코드가 없어 항상 null) */
   expiresAt: string | null
   siteOrigin: string
 }
@@ -190,7 +244,7 @@ export interface JobPostingInput {
 const DESCRIPTION_MAX = 500
 
 export function buildJobPostingJsonLd(i: JobPostingInput): Record<string, unknown> {
-  const baseSalary = parseBaseSalary(i.salaryDisplay)
+  const baseSalary = resolveBaseSalary({ raw: i.salaryRaw, display: i.salaryDisplay })
   const employmentType = mapEmploymentType(i.jobType)
   const directApply = resolveDirectApply({
     applyUrl: i.applyUrl,
@@ -218,7 +272,7 @@ export function buildJobPostingJsonLd(i: JobPostingInput): Record<string, unknow
         streetAddress: i.location,
       },
     },
-    // 아래 넷은 **값을 확인했을 때만** 넣는다. 키가 남지 않게 spread 로 붙인다.
+    // 아래 넷은 **근거를 확인했을 때만** 넣는다. 키가 남지 않게 spread 로 붙인다.
     ...(baseSalary ? { baseSalary } : {}),
     ...(employmentType ? { employmentType } : {}),
     ...(directApply === undefined ? {} : { directApply }),

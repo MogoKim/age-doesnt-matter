@@ -88,6 +88,7 @@ function JobPostingJsonLd({ job }: { job: JobDetailPublicItem }) {
     company: job.company,
     region: job.region,
     location: job.location,
+    salaryRaw: job.salary,
     salaryDisplay: formatSalary(job.salary),
     createdAt: job.createdAt,
     applyUrl: job.applyUrl,
