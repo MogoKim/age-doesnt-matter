@@ -1,5 +1,10 @@
 # 시드봇 운영 기획서 (A05)
 
+> ⚠️ **실측 2026-09-16** — 이 문서가 가리키는 구현 경로 **3개가 더 이상 존재하지 않는다** (그중 3개는 `agents/` 하위 — 2026-09 네이버 카페 폐기·R4 정리로 삭제됨).
+> 경로를 지우지 않고 남겨 둔다 — **어떤 구현이 있었는지가 기록**이기 때문이다.
+> 기능의 현재 상태는 이 문서가 아니라 실측으로 판정한다(`gh workflow list --all` · `launchctl list` · `agents/core/constitution.yaml`).
+
+
 > ⚠️ **ARCHIVED (2026-09-09)** — 시드봇 스케줄러·마이크로 스케줄러와 GHA workflow 는 R4 에서 제거됐다.
 > 봇 페르소나 데이터(`seed/persona-data.ts`)와 생성기(`seed/generator.ts`)는 카페 파이프라인이 아직 사용해 보존한다.
 > 아래 내용은 삭제 시점의 설계 기록이며 현재 운영 계약이 아니다. 현재 판정: `docs/operations/UNAO_RESCUE_STATUS.md`
@@ -213,7 +218,7 @@ Constitution 상한 $50/월 대비 여유 있음.
 
 ## 관련 링크
 
-- ~~메인 스케줄러 `agents/seed/scheduler.ts`~~ — **삭제됨(2026-09-09)**
+- ~~메인 스케줄러 `scripts/ops-board/engine/scheduler.ts`~~ — **삭제됨(2026-09-09)**
 - ~~마이크로 스케줄러 `agents/seed/micro-scheduler.ts`~~ — **삭제됨**
 - ~~Runner 핸들러 `seed:scheduler` · `seed:micro`~~ — **삭제됨**
 - ~~GHA 워크플로우 `agents-seed.yml` · `agents-seed-micro.yml`~~ — **삭제됨**

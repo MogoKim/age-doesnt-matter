@@ -10,6 +10,7 @@
 > - **자동화(A·M 계열)는 의도적으로 정지 상태다.** GitHub Actions 26개 중 21개 `disabled_manually`(2026-08-24 이후 미실행). launchd 콘텐츠 발행 12개는 2026-09-06 04:09 KST unload 완료(4개 유지/관찰). production `/api/health`는 감사 당시 503이었으나 R1-A로 복구돼 현재 healthy. `/api/bot/posts·jobs`는 #412로 기본 차단.
 > - 실측으로 확인된 불일치: 문서상 ACTIVE인데 스케줄 자체가 없는 것 6(A09·A10·A11·A20·A21·A22 — **A11·A20·A21·A22는 2026-09-08 R4 ORG_THEATER 제거로 ARCHIVED 전환**), ARCHIVED인데 코드 잔존 5(A07·A08·A23·A28·A99), 경로·슬롯 불일치 13, 미등록 워크플로우 12·plist 3·agents 디렉터리 5.
 > - 개별 행의 실제 상태는 **실측 필요**: `gh workflow list --all`, `launchctl list | grep -iE 'unao|unaeo'`, `agents/core/constitution.yaml` `automation_status`(현재 `PAUSED` — coo:moderator는 #411로 MONITORING_TASKS 포함).
+> - **2026-09-16 경로 실측(Foundation 3.0)**: 이 표가 가리키는 구현 경로 중 **32개가 존재하지 않는다**(그중 `agents/` 하위 31개 — 네이버 카페 폐기·R4 정리로 삭제). `agents/core/r2.ts`→`src/lib/r2.ts`, `agents/seed/scheduler.ts`→`scripts/ops-board/engine/scheduler.ts` 2건은 **이동**이라 정정했고, 나머지는 **표를 손대지 않았다** — 이 문서가 스스로 "수동 편집 금지, R4/R5에서 재작성"이라고 못박고 있기 때문이다. 개별 feature 문서에는 같은 날짜의 실측 표시를 넣었다.
 > - 근거·행별 판정: `docs/operations/2026-09-05-claude-foundation-reset-audit-report.md` §3 A-06~A-08, 원본 검증 표는 Rescue R4/R5에서 REGISTRY 재작성 시 반영한다.
 
 ---
@@ -115,7 +116,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | A02 | 매거진 자동생성 | ~~`agents/cafe/magazine-generator.ts`~~ · ~~`local-magazine-runner.ts`~~ 삭제됨 | — | — | — | — | [F05](F05-magazine.md) | **ARCHIVED** | 2026-09-09 |  <!-- R4 B-3 -->
 | A03 | 일자리봇 | `agents/coo/job-scraper.ts` | GHA 12:00·16:00·20:00 KST | GHA | MONEY | P4 | [A03](A03-job-scraper.md) | ACTIVE | 2026-04-27 |
 | A04 | 외부 콘텐츠 스크래퍼 | ~~`agents/community/**`~~ · ~~`agents-scraper.yml`~~ · ~~`agents-scraper-dawn.yml`~~ 삭제됨 | — | — | — | — | [A04](A04-external-content.md) | **ARCHIVED** | 2026-09-09 |  <!-- R4 B-3 -->
-| A05 | 시드봇 35명 | ~~`agents/seed/scheduler.ts`·`micro-scheduler.ts`~~ 삭제됨 (generator·persona-data 는 보존) | — | — | RELATION+HEALTH | ALL | [A05](A05-seed-bot.md) | **ARCHIVED** | 2026-09-09 |
+| A05 | 시드봇 35명 | ~~`scripts/ops-board/engine/scheduler.ts`·`micro-scheduler.ts`~~ 삭제됨 (generator·persona-data 는 보존) | — | — | RELATION+HEALTH | ALL | [A05](A05-seed-bot.md) | **ARCHIVED** | 2026-09-09 |
 | A06 | SNS 자동 포스팅 | ~~`agents/cmo/social-poster.ts`~~ 삭제됨 | — | — | RELATION | — | [A06](A06-sns-posting.md) | **ARCHIVED** | 2026-09-08 |
 | A07 | 카드뉴스 생성 | `agents/cmo/card-news-generator.ts` | GHA 13:00 KST | GHA | RELATION | — | [A07](A07-card-news.md) | ARCHIVED | 2026-05-15 |
 | A08 | 지식인 답변 | `agents/cmo/knowledge-responder.ts` | launchd 14:30 KST (화/목/토) | LOCAL_ONLY | HEALTH+MONEY | P2·P4 | - | ARCHIVED | 2026-05-15 |
@@ -133,8 +134,8 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | A20 | CPO 페르소나 다양성 체커 | ~~`agents/cpo/persona-diversity-checker.ts`~~ 삭제됨 | — | — | INFRA | — | — | **ARCHIVED** | 2026-09-08 |
 | A21 | CDO 참여 최적화 | ~~`agents/cdo/engagement-optimizer.ts`~~ 삭제됨 | — | — | INFRA | — | — | **ARCHIVED** | 2026-09-08 |
 | A22 | Strategist 사용자 딥 분석 | ~~`agents/strategist/user-deep-analysis.ts`~~ 삭제됨 | — | — | INFRA | — | — | **ARCHIVED** | 2026-09-08 |
-| A23 | Seed 킬러 포스트 | `agents/seed/scheduler.ts` (killer-post) | GHA 09:10·22:10 KST | GHA | RELATION | ALL | — | ARCHIVED | 2026-06-03 |
-| A24 | Seed 바이럴 웨이브 | ~~`agents/seed/scheduler.ts`~~ · ~~`agents-sheet-viral.yml`~~ 삭제됨 | — | — | RELATION | ALL | — | **ARCHIVED** | 2026-09-09 |
+| A23 | Seed 킬러 포스트 | `scripts/ops-board/engine/scheduler.ts` (killer-post) | GHA 09:10·22:10 KST | GHA | RELATION | ALL | — | ARCHIVED | 2026-06-03 |
+| A24 | Seed 바이럴 웨이브 | ~~`scripts/ops-board/engine/scheduler.ts`~~ · ~~`agents-sheet-viral.yml`~~ 삭제됨 | — | — | RELATION | ALL | — | **ARCHIVED** | 2026-09-09 |
 | A25 | 논란 체인 | ~~`agents/seed/controversy-chain.ts`~~ 삭제됨 | — | — | RELATION | ALL | — | **ARCHIVED** | 2026-09-09 |
 | A26 | Design 광고 루프 | ~~`agents/marketing-loop/creative-optimizer.ts`~~ 삭제됨 | — | — | INFRA | — | — | **ARCHIVED** | 2026-09-09 |
 | A27 | QA 코드 게이트 | ~~`agents/qa/pre-deploy-gate.ts`~~ 삭제됨 (`/done` 도 workflow 도 호출한 적이 없다 — 검증은 CI `quality` job) | — | — | — | — | — | **ARCHIVED** | 2026-09-09 |
@@ -162,7 +163,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 |----|--------|--------------|---------|------------|------|------|---------|
 | I01 | launchd 로컬 스케줄러 | `~/Library/LaunchAgents/com.unaeo.*.plist` | INFRA | — | [I01](I01-launchd-scheduler.md) | ACTIVE | 2026-05-13 |
 | I02 | Upstash Redis 레이트리밋 | `src/lib/rate-limit.ts` | INFRA | — | [I02](I02-redis-ratelimit.md) | ACTIVE | 2026-04-27 |
-| I03 | Cloudflare R2 이미지 저장소 | `src/lib/r2.ts` (~~`agents/core/r2.ts`~~ 는 이전 배치에서 이미 제거됨) | INFRA | — | [I03](I03-r2-storage.md) | ACTIVE | 2026-09-09 |
+| I03 | Cloudflare R2 이미지 저장소 | `src/lib/r2.ts` (~~`src/lib/r2.ts`~~ 는 이전 배치에서 이미 제거됨) | INFRA | — | [I03](I03-r2-storage.md) | ACTIVE | 2026-09-09 |
 | I04 | Google Indexing API | ~~`agents/cafe/indexing-api.ts`~~ 삭제됨 (호출하던 발행 경로가 사라짐) | — | — | [I04](I04-google-indexing.md) | **ARCHIVED** | 2026-09-09 |
 | I05 | 아동 안전 표준 페이지 | `src/app/child-safety/page.tsx` | INFRA | — | — | ACTIVE | 2026-05-23 |
 | I06 | 커뮤니티 slug 백필 스크립트 | ~~`agents/scripts/backfill-community-slug.ts`~~ 삭제됨 (2026-05 백필 완료, 재실행 대상 없음) | — | — | [I06](I06-community-slug-backfill.md) | **ARCHIVED** | 2026-09-09 |

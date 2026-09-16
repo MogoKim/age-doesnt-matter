@@ -192,8 +192,7 @@ export interface PostCacheRef {
  * CUID와 slug 두 키를 모두 지우는 이유: 상세 페이지는 정본 URL(slug)로 getPostDetail을 호출하고
  * opengraph-image·/api/posts/[postId]는 CUID로 호출해 캐시 엔트리가 둘로 나뉠 수 있다.
  * 한쪽만 지우면 댓글 수가 옛 값으로 남는다.
- */
-/**
+ *
  * ⚠️ **Server Action 안에서만 호출한다.** `updateTag` 는 read-your-own-writes 를 보장하는 대신
  * Server Action 밖에서 부르면 던진다. 현재 호출부는 `actions/comments.ts` ·
  * `actions/guest-comments.ts` 뿐이고 둘 다 `'use server'` 다.

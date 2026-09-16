@@ -1,5 +1,10 @@
 # Google Indexing API 운영 기획서 (I04)
 
+> ⚠️ **실측 2026-09-16** — 이 문서가 가리키는 구현 경로 **2개가 더 이상 존재하지 않는다** (그중 2개는 `agents/` 하위 — 2026-09 네이버 카페 폐기·R4 정리로 삭제됨).
+> 경로를 지우지 않고 남겨 둔다 — **어떤 구현이 있었는지가 기록**이기 때문이다.
+> 기능의 현재 상태는 이 문서가 아니라 실측으로 판정한다(`gh workflow list --all` · `launchctl list` · `agents/core/constitution.yaml`).
+
+
 > ⚠️ **ARCHIVED (2026-09-09)** — 색인 API 를 호출하던 `agents/cafe/indexing-api.ts` 와 그 호출부(매거진 생성기)가
 > R4 B-3 에서 제거됐다. GitHub Secrets `GOOGLE_INDEXING_*` 도 소비처 0 이라 삭제했다.
 > 아래는 당시 구현 기록이며 현재 동작하지 않는다. 재도입하려면 새 판정과 자격 재발급이 필요하다.

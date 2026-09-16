@@ -17,6 +17,11 @@ sitemap.ts의 `!(isCommunity && !post.slug)` 필터로 누락된 1,792건 SEO �
 cd agents
 
 # dry-run (기본 50건)
+
+> ⚠️ **실측 2026-09-16** — 이 문서가 가리키는 구현 경로 **2개가 더 이상 존재하지 않는다** (그중 1개는 `agents/` 하위 — 2026-09 네이버 카페 폐기·R4 정리로 삭제됨).
+> 경로를 지우지 않고 남겨 둔다 — **어떤 구현이 있었는지가 기록**이기 때문이다.
+> 기능의 현재 상태는 이 문서가 아니라 실측으로 판정한다(`gh workflow list --all` · `launchctl list` · `agents/core/constitution.yaml`).
+
 npx tsx --env-file=../.env.local scripts/backfill-community-slug.ts
 
 # write 샘플 (≤10건)
