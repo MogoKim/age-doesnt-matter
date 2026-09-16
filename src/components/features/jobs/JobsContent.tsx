@@ -3,13 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import type { JobCardItem } from '@/lib/queries/posts'
-import type { SearchField } from '@/lib/queries/posts/posts.base'
 import PostListWithAds from '@/components/features/common/PostListWithAds'
 import BoardPaginationFooter from '@/components/features/common/BoardPaginationFooter'
 import JobCard from '@/components/features/jobs/JobCard'
 import EmptyState from '@/components/ui/EmptyState'
 import SearchParamsBridge from '@/components/features/common/SearchParamsBridge'
-import { normalizeClientQuery } from '@/lib/list-query'
+import { normalizeClientQuery, parseSearchField } from '@/lib/list-query'
 
 const LIMIT = 12
 
@@ -25,10 +24,6 @@ interface JobsResponse {
   total: number
 }
 
-function parseSearchField(raw: string | null): SearchField {
-  if (raw === 'title' || raw === 'content') return raw
-  return 'both'
-}
 
 export default function JobsContent({ initialJobs, initialTotal, initialQuery }: JobsContentProps) {
   // 🔴 `useSearchParams()` 를 여기서 부르면 정적 렌더가 CSR 로 bail out 되어

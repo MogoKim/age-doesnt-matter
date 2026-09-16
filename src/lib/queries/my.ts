@@ -1,25 +1,17 @@
 import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { buildNotificationLinkUrl } from '@/lib/notifications/link'
-import { GRADE_INFO } from '@/lib/grade'
-import type { PostSummary, NotificationItem, UserSummary, Grade } from '@/types/api'
+import type { PostSummary, NotificationItem } from '@/types/api'
 import type { PromotionLevel, BoardType } from '@/generated/prisma/client'
+import { toUserSummaryBase, toPostSummaryCore } from './posts/posts.base'
 
-function toUserSummary(user: {
-  id: string
-  nickname: string
-  grade: string
-  profileImage: string | null
-}): UserSummary {
-  const grade = user.grade as Grade
-  return {
-    id: user.id,
-    nickname: user.nickname,
-    grade,
-    gradeEmoji: GRADE_INFO[grade]?.emoji ?? '🌱',
-    profileImage: user.profileImage,
-  }
-}
+/**
+ * 공통 매핑을 그대로 쓴다.
+ *
+ * 🔴 글 목록의 `toUserSummary`(탈퇴 마스킹 포함)를 쓰지 않는다 — 여기는 저장된 값을
+ *    그대로 보여주는 것이 **기존 표시 정책**이고, 리팩토링으로 바꾸지 않는다.
+ */
+export const toUserSummary = toUserSummaryBase
 
 const postSelect = {
   id: true,
@@ -40,7 +32,7 @@ const postSelect = {
   },
 } as const
 
-function toPostSummary(post: {
+export function toPostSummary(post: {
   id: string
   boardType: BoardType
   category: string | null
@@ -56,21 +48,14 @@ function toPostSummary(post: {
   createdAt: Date
   author: { id: string; nickname: string; grade: string; profileImage: string | null }
 }): PostSummary {
+  // 🔴 `slug`·`hotPromotedAt` 은 넣지 않는다 — 내 활동 목록의 기존 payload 에 없던 키다.
   return {
-    id: post.id,
-    boardType: post.boardType,
-    category: post.category ?? '',
-    title: post.title,
-    preview: post.summary ?? '',
-    thumbnailUrl: post.thumbnailUrl,
-    author: toUserSummary(post.author),
-    likeCount: post.likeCount,
-    commentCount: post.commentCount,
-    viewCount: post.viewCount,
-    promotionLevel: post.promotionLevel === 'HALL_OF_FAME' ? 'HALL_OF_FAME' : post.promotionLevel,
+    ...toPostSummaryCore(
+      post,
+      toUserSummary(post.author),
+      post.promotionLevel === 'HALL_OF_FAME' ? 'HALL_OF_FAME' : post.promotionLevel,
+    ),
     isPinned: post.isPinned ?? false,
-    trendingScore: post.trendingScore,
-    createdAt: post.createdAt.toISOString(),
   }
 }
 

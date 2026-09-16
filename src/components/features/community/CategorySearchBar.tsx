@@ -2,13 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
+import { parseSearchField, type SearchField } from '@/lib/list-query'
 
-type SearchField = 'both' | 'title' | 'content'
-
-function parseSf(raw: string | null): SearchField {
-  if (raw === 'title' || raw === 'content' || raw === 'both') return raw
-  return 'both'
-}
 
 const FIELD_OPTIONS: Array<{ value: SearchField; label: string }> = [
   { value: 'title', label: '제목' },
@@ -22,7 +17,7 @@ export default function CategorySearchBar() {
   const searchParams = useSearchParams()
 
   const currentQ = searchParams.get('q')
-  const currentSf = parseSf(searchParams.get('sf'))
+  const currentSf = parseSearchField(searchParams.get('sf'))
 
   const [field, setField] = useState<SearchField>(currentSf)
   const [query, setQuery] = useState(currentQ ?? '')

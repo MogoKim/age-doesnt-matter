@@ -2,12 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCachedMagazinePage, getMagazineListPage } from '@/lib/queries/posts'
 import { handleApiError } from '@/lib/api-utils'
 import { checkApiRateLimit } from '@/lib/api-rate-limit'
-import type { SearchField } from '@/lib/queries/posts/posts.base'
+import { parseSearchField } from '@/lib/list-query'
 
-function parseSearchField(raw: string | null): SearchField {
-  if (raw === 'title' || raw === 'content') return raw
-  return 'both'
-}
 
 export async function GET(request: NextRequest) {
   const rateLimited = await checkApiRateLimit(request, 'magazine', { max: 60 })

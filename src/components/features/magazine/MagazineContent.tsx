@@ -5,13 +5,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { PostSummary } from '@/types/api'
-import type { SearchField } from '@/lib/queries/posts/posts.base'
 import { formatTimeAgo } from '@/components/features/community/utils'
 import PostListWithAds from '@/components/features/common/PostListWithAds'
 import BoardPaginationFooter from '@/components/features/common/BoardPaginationFooter'
 import EmptyState from '@/components/ui/EmptyState'
 import SearchParamsBridge from '@/components/features/common/SearchParamsBridge'
-import { normalizeClientQuery } from '@/lib/list-query'
+import { normalizeClientQuery, parseSearchField } from '@/lib/list-query'
 
 const LIMIT = 12
 
@@ -27,10 +26,6 @@ interface MagazineResponse {
   total: number
 }
 
-function parseSearchField(raw: string | null): SearchField {
-  if (raw === 'title' || raw === 'content') return raw
-  return 'both'
-}
 
 export default function MagazineContent({ initialPosts, initialTotal, initialQuery }: MagazineContentProps) {
   // 🔴 `useSearchParams()` 를 여기서 부르면 정적 렌더가 CSR 로 bail out 되어

@@ -8,6 +8,29 @@
  * 두 곳의 규칙이 갈리면 서버 HTML 과 hydration 결과가 달라지거나(React #418),
  * 첫 화면에서 불필요한 재조회가 한 번 더 일어난다.
  */
+/**
+ * 검색 대상 축 — 제목만 / 내용만 / 둘 다.
+ *
+ * 🔴 **여기가 정본이다.** 예전에는 이 타입이 `queries/posts/posts.base.ts` 에 있고
+ *    파서는 7곳에 각자 복사돼 있었다(API 3 · 목록 클라이언트 3 · 검색바 1).
+ *    `posts.base.ts` 는 `prisma` 와 `next/cache` 를 import 한다 — 클라이언트 컴포넌트가
+ *    거기서 값을 하나라도 가져오면 **브라우저 번들에 Prisma 와 서버 캐시가 딸려온다.**
+ *    타입 전용 import 라 지금까지는 지워졌지만, 한 번만 실수하면 새는 구조였다.
+ *    이 모듈은 **import 가 하나도 없어** 서버·브라우저 어디서 불러도 안전하다.
+ *    `ci`/계약 테스트가 이 모듈의 무의존성을 고정한다.
+ */
+export type SearchField = 'both' | 'title' | 'content'
+
+/**
+ * `?sf=` 값을 검색 축으로 해석한다. 모르는 값은 `both`.
+ *
+ * 입력이 `'both'` 든 `null` 이든 오타든 결과가 같다 — 기존 7개 복사본의 동작 그대로다.
+ */
+export function parseSearchField(raw: string | null | undefined): SearchField {
+  if (raw === 'title' || raw === 'content') return raw
+  return 'both'
+}
+
 export type ListSort = 'latest' | 'likes'
 
 export interface ListQuery {

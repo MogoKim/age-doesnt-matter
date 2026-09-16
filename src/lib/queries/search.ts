@@ -1,10 +1,10 @@
 import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import type { BoardType } from '@/generated/prisma/client'
-import { GRADE_INFO } from '@/lib/grade'
 import { EXCLUDE_GREETING } from '@/lib/greeting'
 import { EXCLUDE_EVENT } from '@/lib/event-category'
-import type { PostSummary, UserSummary, Grade } from '@/types/api'
+import type { PostSummary } from '@/types/api'
+import { toUserSummaryBase, toPostSummaryCore } from './posts/posts.base'
 
 /**
  * 검색 '게시글' 탭 대상 커뮤니티 게시판.
@@ -15,21 +15,13 @@ const COMMUNITY_SEARCH_BOARDS: BoardType[] = ['STORY', 'HUMOR', 'LIFE2', 'MENOPA
 
 /* ── 헬퍼 (posts.ts와 동일 패턴) ── */
 
-function toUserSummary(user: {
-  id: string
-  nickname: string
-  grade: string
-  profileImage: string | null
-}): UserSummary {
-  const grade = user.grade as Grade
-  return {
-    id: user.id,
-    nickname: user.nickname,
-    grade,
-    gradeEmoji: GRADE_INFO[grade]?.emoji ?? '🌱',
-    profileImage: user.profileImage,
-  }
-}
+/**
+ * 공통 매핑을 그대로 쓴다.
+ *
+ * 🔴 글 목록의 `toUserSummary`(탈퇴 마스킹 포함)를 쓰지 않는다 — 여기는 저장된 값을
+ *    그대로 보여주는 것이 **기존 표시 정책**이고, 리팩토링으로 바꾸지 않는다.
+ */
+export const toUserSummary = toUserSummaryBase
 
 const postSelect = {
   id: true,
@@ -49,7 +41,7 @@ const postSelect = {
   },
 } as const
 
-function toPostSummary(post: {
+export function toPostSummary(post: {
   id: string
   boardType: BoardType
   category: string | null
@@ -64,21 +56,12 @@ function toPostSummary(post: {
   createdAt: Date
   author: { id: string; nickname: string; grade: string; profileImage: string | null }
 }): PostSummary {
-  return {
-    id: post.id,
-    boardType: post.boardType,
-    category: post.category ?? '',
-    title: post.title,
-    preview: post.summary ?? '',
-    thumbnailUrl: post.thumbnailUrl,
-    author: toUserSummary(post.author),
-    likeCount: post.likeCount,
-    commentCount: post.commentCount,
-    viewCount: post.viewCount,
-    promotionLevel: post.promotionLevel as PostSummary['promotionLevel'],
-    trendingScore: post.trendingScore,
-    createdAt: post.createdAt.toISOString(),
-  }
+  // 🔴 `slug`·`hotPromotedAt`·`isPinned` 를 넣지 않는다 — 검색 결과의 기존 payload 에 없던 키다.
+  return toPostSummaryCore(
+    post,
+    toUserSummary(post.author),
+    post.promotionLevel as PostSummary['promotionLevel'],
+  )
 }
 
 /* ── 검색 타입 ── */

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import type { BoardType, PromotionLevel } from '@/generated/prisma/client'
 import { GRADE_INFO } from '@/lib/grade'
 import type { PostSummary, PostDetail, UserSummary, Grade } from '@/types/api'
+import type { SearchField } from '@/lib/list-query'
 
 /* ── 헬퍼 ── */
 
@@ -14,16 +15,20 @@ export const DELETED_USER: UserSummary = {
   profileImage: null,
 }
 
-export function toUserSummary(user: {
+/**
+ * 회원 → 화면용 요약의 **공통 매핑**. 댓글·내 활동·검색·글 목록 네 곳이 공유한다.
+ *
+ * 🔴 여기에 마스킹을 넣지 마라. 탈퇴/익명 처리는 **글 목록만의 계약**이고
+ *    (`toUserSummary` 참조), 나머지 세 곳은 저장된 값을 그대로 보여준다.
+ *    그 차이는 개인정보·표시 **정책**이라 리팩토링으로 바꾸지 않는다.
+ *    `query-summary-mappers.test.ts` 가 양쪽을 다 고정한다.
+ */
+export function toUserSummaryBase(user: {
   id: string
   nickname: string
   grade: string
   profileImage: string | null
-  status?: string
-} | null): UserSummary {
-  if (!user) return DELETED_USER
-  // 탈퇴(익명화) 회원은 저장된 익명 닉네임 대신 '탈퇴한 회원'으로 표시 마스킹
-  if (user.status === 'WITHDRAWN') return DELETED_USER
+}): UserSummary {
   const grade = user.grade as Grade
   return {
     id: user.id,
@@ -32,6 +37,22 @@ export function toUserSummary(user: {
     gradeEmoji: GRADE_INFO[grade]?.emoji ?? '🌱',
     profileImage: user.profileImage,
   }
+}
+
+/**
+ * 글 목록용 회원 요약 — 공통 매핑 위에 **탈퇴 마스킹**을 얹은 얇은 계약.
+ * 작성자가 없거나 탈퇴(익명화)했으면 저장된 익명 닉네임 대신 '탈퇴한 회원'으로 보여준다.
+ */
+export function toUserSummary(user: {
+  id: string
+  nickname: string
+  grade: string
+  profileImage: string | null
+  status?: string
+} | null): UserSummary {
+  if (!user) return DELETED_USER
+  if (user.status === 'WITHDRAWN') return DELETED_USER
+  return toUserSummaryBase(user)
 }
 
 export function toPromotionLevel(level: PromotionLevel): PostSummary['promotionLevel'] {
@@ -80,6 +101,51 @@ export const homeListSelect = {
   createdAt: true,
 } as const
 
+/**
+ * 글 → 목록 카드용 요약의 **공통 13키**. 글 목록·내 활동·검색이 공유한다.
+ *
+ * 🔴 `slug`·`hotPromotedAt`·`isPinned` 는 **여기 넣지 마라.**
+ *    세 호출부의 반환 키가 원래부터 다르다 — 글 목록은 셋 다, 내 활동은 `isPinned` 만,
+ *    검색은 하나도 없다(`PostSummary` 에서 셋 다 optional 이라 부재가 정상).
+ *    코어에 넣으면 클라이언트로 가는 payload 모양이 조용히 바뀐다.
+ *
+ * 작성자 매핑과 승격 등급 해석은 **호출부가 정한다** — 글 목록만 탈퇴 마스킹을 쓰고,
+ * 검색은 `promotionLevel` 이 string 으로 들어오기 때문이다.
+ */
+export function toPostSummaryCore(
+  post: {
+    id: string
+    boardType: BoardType
+    category?: string | null
+    title: string
+    summary?: string | null
+    thumbnailUrl?: string | null
+    likeCount: number
+    commentCount: number
+    viewCount: number
+    trendingScore: number
+    createdAt: Date
+  },
+  author: UserSummary,
+  promotionLevel: PostSummary['promotionLevel'],
+): Omit<PostSummary, 'hotPromotedAt' | 'isPinned' | 'slug'> {
+  return {
+    id: post.id,
+    boardType: post.boardType,
+    category: post.category ?? '',
+    title: post.title,
+    preview: post.summary ?? '',
+    thumbnailUrl: post.thumbnailUrl ?? null,
+    author,
+    likeCount: post.likeCount,
+    commentCount: post.commentCount,
+    viewCount: post.viewCount,
+    promotionLevel,
+    trendingScore: post.trendingScore,
+    createdAt: post.createdAt.toISOString(),
+  }
+}
+
 export function toPostSummary(
   post: {
     id: string
@@ -101,28 +167,18 @@ export function toPostSummary(
   },
 ): PostSummary {
   return {
-    id: post.id,
-    boardType: post.boardType,
-    category: post.category ?? '',
-    title: post.title,
-    preview: post.summary ?? '',
-    thumbnailUrl: post.thumbnailUrl ?? null,
-    author: toUserSummary(post.author ?? null),
-    likeCount: post.likeCount,
-    commentCount: post.commentCount,
-    viewCount: post.viewCount,
-    promotionLevel: toPromotionLevel(post.promotionLevel),
+    ...toPostSummaryCore(post, toUserSummary(post.author ?? null), toPromotionLevel(post.promotionLevel)),
     hotPromotedAt: post.hotPromotedAt?.toISOString() ?? null,
     isPinned: post.isPinned ?? false,
-    trendingScore: post.trendingScore,
-    createdAt: post.createdAt.toISOString(),
     slug: post.slug ?? null,
   }
 }
 
 /* ── 텍스트 검색 조건 빌더 ── */
 
-export type SearchField = 'both' | 'title' | 'content'
+// 정본은 `@/lib/list-query` 다(브라우저 안전 · 무의존 모듈).
+// 기존 `posts.base` 경로로 가져오던 코드가 깨지지 않도록 여기서 그대로 재수출한다.
+export type { SearchField } from '@/lib/list-query'
 
 export function buildTextSearch(
   q?: string,

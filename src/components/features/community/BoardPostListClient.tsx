@@ -4,13 +4,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import type { BoardType } from '@/generated/prisma/client'
 import type { PostSummary } from '@/types/api'
-import type { SearchField } from '@/lib/queries/posts/posts.base'
 import PostCard from '@/components/features/community/PostCard'
 import PostListWithAds from '@/components/features/common/PostListWithAds'
 import BoardPaginationFooter from '@/components/features/common/BoardPaginationFooter'
 import EmptyState from '@/components/ui/EmptyState'
 import SearchParamsBridge from '@/components/features/common/SearchParamsBridge'
-import { normalizeClientQuery } from '@/lib/list-query'
+import { normalizeClientQuery, parseSearchField } from '@/lib/list-query'
 
 const LIMIT = 12
 
@@ -48,10 +47,6 @@ function PostListSkeleton() {
   )
 }
 
-function parseSearchField(raw: string | null): SearchField {
-  if (raw === 'title' || raw === 'content') return raw
-  return 'both'
-}
 
 export default function BoardPostListClient({
   boardSlug,
