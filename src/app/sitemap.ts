@@ -42,8 +42,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/topic/menopause`, changeFrequency: 'weekly', priority: 0.8 },
     // 인생 2막 허브 — 재취업·연금·생활비 자산을 검색 의도별로 묶는 내부링크 축
     { url: `${BASE_URL}/topic/second-act`, changeFrequency: 'weekly', priority: 0.8 },
-    { url: `${BASE_URL}/best`, changeFrequency: 'daily', priority: 0.7 },
-    { url: `${BASE_URL}/search`, changeFrequency: 'weekly', priority: 0.4 },
+    // 🔴 /best·/search 는 sitemap 에서 뺀다(2026-09-16 실측).
+    //    `/best` SSR 본문 366자·콘텐츠 링크 **0개**, `/search` 424자 — 둘 다 서버 HTML 에
+    //    수집할 내용이 없다. 수집기에게는 soft-404 로 보이고, 크롤 예산만 쓴다.
+    //    라우트는 그대로 살아 있다(사람은 쓴다) — **수집 요청 목록에서만** 뺀다.
     { url: `${BASE_URL}/terms`, changeFrequency: 'yearly', priority: 0.2 },
     { url: `${BASE_URL}/privacy`, changeFrequency: 'yearly', priority: 0.2 },
     { url: `${BASE_URL}/rules`, changeFrequency: 'yearly', priority: 0.2 },
@@ -89,9 +91,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
       const isSeoOnly = post.status === 'SEO_ONLY'
 
+      // 🔴 `lastModified` 를 넣지 않는다(2026-09-16 실측).
+      //    글 상세를 열 때마다 `viewCount: { increment: 1 }` 이 돌고, `Post.updatedAt` 은
+      //    Prisma `@updatedAt` 이라 그 write 로 **오늘 날짜가 된다**. 그 결과 sitemap
+      //    lastmod 188건 중 **175건(93%)이 최근 3일**이었다 — 실제 발행일은 4~9월에 퍼져 있고
+      //    발행-수정 간격 중앙값은 61일이다. 전부 "방금 수정됨"으로 보이면 Google 은
+      //    이 사이트의 lastmod 를 신호로 쓰지 않는다. **거짓 날짜보다 무날짜가 낫다.**
+      //    진짜 콘텐츠 수정 시각을 따로 들고 오면(Batch B) 그때 다시 넣는다.
       return {
         url,
-        lastModified: post.updatedAt,
         changeFrequency: isJob ? 'daily' : 'weekly',
         priority: isSeoOnly ? 0.5 : isJob ? 0.9 : isMagazine ? 0.8 : 0.6,
       }

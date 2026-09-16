@@ -6,6 +6,7 @@ import { verifyAdminToken } from '@/lib/admin-auth'
 import { BOT_UA_PATTERN } from '@/lib/bot-patterns'
 import { isDevRoute, isDevRouteAllowed } from '@/lib/dev-routes'
 import { getMovedPostRedirect } from '@/lib/moved-posts'
+import { resolveCommunityCanonicalPath } from '@/lib/community-canonical'
 import { buildReturnTo } from '@/lib/return-to'
 
 /**
@@ -92,6 +93,52 @@ async function resolveSlug(cuid: string): Promise<string | null> {
     const slug = data[0]?.slug ?? null
     redis.set(key, slug ?? '', { ex: SLUG_REDIS_TTL_S }).catch(() => {})
     return slug
+  } catch {
+    return null
+  }
+}
+
+const BOARD_REDIS_TTL_S = 86400  // 24시간 — 글의 보드는 거의 바뀌지 않고, 바뀌면 옛 URL 이 하루 안에 정본으로 수렴한다
+const BOARD_REDIS_PREFIX = 'board:'
+
+/**
+ * slug 로 글의 **정본 보드 타입**을 찾는다. `resolveSlug` 와 같은 2단 구조(Redis → Supabase REST).
+ *
+ * 왜 middleware 인가: 상세 라우트가 `dynamic = 'force-static'` 이라
+ * `generateMetadata` 안의 `permanentRedirect()` 가 정적 생성 중 redirect 가 되어 **HTTP 500** 이 난다
+ * (2026-09-16 production 실측 9/9, `x-matched-path: /500`). middleware 는 렌더 전에 돌기 때문에
+ * 진짜 HTTP 308 을 보낼 수 있다 — CUID→slug 교정이 이미 같은 이유로 여기 있다.
+ *
+ * 실패하면 `null` 을 돌려주고 **조용히 통과**시킨다. 그 경우 페이지가 200 으로 렌더되며
+ * 정본 canonical 을 달아 중복 신호를 정리한다(500 보다 낫다).
+ */
+async function resolveBoardType(slug: string): Promise<string | null> {
+  const key = `${BOARD_REDIS_PREFIX}${slug}`
+  try {
+    const cached = await redis.get<string>(key)
+    if (cached !== null && cached !== undefined) return cached === '' ? null : cached
+  } catch {
+    // Redis 장애 → REST fallback
+  }
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/Post` +
+        `?select=boardType&slug=eq.${encodeURIComponent(slug)}&limit=1`,
+      {
+        headers: {
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!}`,
+        },
+      },
+    )
+    if (!res.ok) {
+      redis.set(key, '', { ex: BOARD_REDIS_TTL_S }).catch(() => {})
+      return null
+    }
+    const data = (await res.json()) as { boardType: string }[]
+    const boardType = data[0]?.boardType ?? null
+    redis.set(key, boardType ?? '', { ex: BOARD_REDIS_TTL_S }).catch(() => {})
+    return boardType
   } catch {
     return null
   }
@@ -186,6 +233,37 @@ export default async function middleware(request: NextRequest) {
           NextResponse.redirect(new URL(`/community/${communityMatch[1]}/${slug}`, request.url), 301),
           request,
         )
+      }
+    }
+  }
+
+  // ── 커뮤니티 상세: 정본 **보드** 교정 308 (Batch A) ──
+  // 글을 다른 보드로 옮기면 옛 보드 URL 이 그대로 200 을 내 같은 글이 두 주소로 존재했다.
+  // 상세 라우트에서 교정하려던 `permanentRedirect()` 는 force-static 정적 생성과 충돌해
+  // **HTTP 500** 을 냈다(2026-09-16 실측). 그래서 렌더 전 여기서 진짜 308 을 보낸다.
+  //
+  // 비용: 커뮤니티 상세 요청마다 Redis GET 1회(캐시 적중 시). 24시간 TTL 이라
+  // 같은 글의 두 번째 요청부터는 REST 왕복이 없다. 실패는 전부 통과(fail-open)다.
+  if (communityMatch) {
+    const urlBoardSlug = communityMatch[1]
+    const segment = decodeURIComponent(communityMatch[2])
+    // CUID 는 위 블록이 이미 처리했다(거기서 못 풀면 여기서도 못 푼다)
+    if (!CUID_PATTERN.test(segment)) {
+      const boardType = await resolveBoardType(segment)
+      if (boardType) {
+        // slug 는 URL 세그먼트 그대로다 → `resolveCommunityCanonicalPath` 는 보드만 비교한다
+        const canonicalPath = resolveCommunityCanonicalPath({
+          boardSlug: urlBoardSlug,
+          postId: segment,
+          post: { boardType, slug: segment },
+        })
+        if (canonicalPath) {
+          // `new URL` 이 한글 세그먼트를 percent-encode 한다 → Location 헤더가 ASCII 로 나간다
+          return addAnonSession(
+            NextResponse.redirect(new URL(canonicalPath, request.url), 308),
+            request,
+          )
+        }
       }
     }
   }
