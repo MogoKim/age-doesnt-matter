@@ -27,8 +27,11 @@
  *    🔴 즉 지금의 생략은 **결함이 아니라 정답**이다. 날짜를 지어내지 않는다.
  *
  * ── 이 테스트가 고정하는 것 ─────────────────────────────────
- *  구조화 데이터는 **화면에 보이는 값과 일치**해야 한다. 그래서 급여는 사용자가 보는
- *  정규화 문자열(`formatSalary` 출력)을 파싱한다 — 두 곳이 갈리면 Google 위반이다.
+ *  구조화 데이터는 ⑴**고용주가 제시한 금액**이어야 하고 ⑵**화면에 보이는 값과 일치**해야 한다.
+ *  그래서 빌더는 **원본과 화면 문자열을 둘 다** 받아 각각 파싱하고, 단위·min·max 가
+ *  **완전히 같을 때만** 내보낸다. 손실(범위 소실·반올림·단위 추정)이 있으면 생략한다.
+ *  이 파일은 **무손실 입력**만 다루고, 손실·역순·부분문자열 반례는
+ *  `job-posting-evidence.test.ts` 가 전담한다.
  */
 import { describe, expect, it } from 'vitest'
 import {
@@ -38,7 +41,11 @@ import {
   EMPLOYMENT_TYPE_VALUES,
 } from '@/lib/seo/job-posting'
 
-/** 원본과 화면이 같은(무손실) 입력만 다룬다 — 손실 케이스는 evidence 테스트가 본다 */
+/**
+ * 이 파일 전용 헬퍼 — **원본과 화면이 같은(무손실)** 입력만 다룬다.
+ * 실제 호출부(`page.tsx`)는 `job.salary`(원본)와 `formatSalary(job.salary)`(화면)를
+ * 서로 다른 값으로 넘긴다. 둘이 어긋나는 반례는 `job-posting-evidence.test.ts` 가 본다.
+ */
 const parseBaseSalary = (s: string) => resolveBaseSalary({ raw: s, display: s })
 
 const SITE = 'https://age-doesnt-matter.com'
@@ -81,9 +88,15 @@ describe('parseBaseSalary — 화면 표기와 일치해야 한다', () => {
     }
   })
 
-  it('최소값이 최대값보다 클 수 없다', () => {
-    const v = parseBaseSalary('월 300~216만원')!.value as { minValue: number; maxValue: number }
-    expect(v.minValue).toBeLessThanOrEqual(v.maxValue)
+  it('🔴 역순 범위는 정렬하지 않고 생략한다 (자동 교정 금지 — evidence 테스트 ④ 참조)', () => {
+    expect(parseBaseSalary('월 300~216만원')).toBeNull()
+  })
+
+  it('내보낸 값은 항상 min ≤ max 다 (역순이 생략되므로 자연히 성립)', () => {
+    for (const s of ['월 227만원', '월 216~240만원', '시급 1만원']) {
+      const v = parseBaseSalary(s)!.value as { minValue: number; maxValue: number }
+      expect(v.minValue, s).toBeLessThanOrEqual(v.maxValue)
+    }
   })
 })
 
@@ -96,18 +109,19 @@ describe('mapEmploymentType — 모르면 넣지 않는다', () => {
 
   it('🔴 해석할 수 없는 한국어는 null — 추측하지 않는다', () => {
     expect(mapEmploymentType('기간의 정함이 없는 근로계약')).toBeNull()
+    expect(mapEmploymentType('일용직')).toBeNull()
     expect(mapEmploymentType('알 수 없음')).toBeNull()
   })
 
-  it('의미가 1:1 인 표현만 매핑한다 (범주가 다른 추정 매핑은 evidence 테스트가 막는다)', () => {
+  it('의미가 1:1 인 표현만 매핑한다 (추정 매핑·부분 문자열은 evidence 테스트가 막는다)', () => {
     expect(mapEmploymentType('시간제')).toEqual(['PART_TIME'])
     expect(mapEmploymentType('파트타임')).toEqual(['PART_TIME'])
-    expect(mapEmploymentType('일용직')).toEqual(['PER_DIEM'])
     expect(mapEmploymentType('인턴')).toEqual(['INTERN'])
+    expect(mapEmploymentType('자원봉사')).toEqual(['VOLUNTEER'])
   })
 
   it('매핑 결과는 전부 Google 허용 enum 이다', () => {
-    for (const k of ['시간제', '일용직', '인턴', '파트타임', '자원봉사']) {
+    for (const k of ['시간제', '단시간', '인턴', '파트타임', '자원봉사']) {
       for (const v of mapEmploymentType(k)!) expect(EMPLOYMENT_TYPE_VALUES).toContain(v)
     }
   })

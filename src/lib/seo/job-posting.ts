@@ -71,73 +71,83 @@ export function resolveDirectApply(_input: {
  * ──────────────────────────────────────────────────────────── */
 
 /**
- * 🔴 **범주가 1:1 로 대응하는 표현만** 남긴다.
+ * 🔴 **명확한 고용형태 표현 전체**만 허용한다. 자유 문장의 **부분 문자열**로 판정하지 않는다.
+ *
+ *  이전 구현은 정규식을 자유 문장에 그대로 돌려 설명문에 섞인 어휘를 잡았다(실측):
+ *    "인턴십 경험 우대"      → INTERN     ✗ 자격요건이지 고용형태가 아니다
+ *    "자원봉사 경험 우대"    → VOLUNTEER  ✗
+ *    "단시간 집중 교육 제공" → PART_TIME  ✗
+ *    "근무시간제 협의"       → PART_TIME  ✗ ("시간제" 가 부분 일치)
+ *    "일용직 경력 우대"      → PER_DIEM   ✗
+ *
+ *  → 값을 구분자로 쪼갠 뒤 **모든 토큰이 허용 표현이어야** 하고 **전부 같은 범주**여야 한다.
+ *    모르는 토큰이 하나라도 있으면 설명문·혼합·부정으로 보고 생략한다.
+ *
+ *  허용 표현(의미가 그대로 겹치는 것만):
+ *   · 시간제 · 단시간 · 파트타임 → PART_TIME  (둘 다 **근로시간**을 가리킨다)
+ *   · 인턴                      → INTERN
+ *   · 자원봉사                  → VOLUNTEER
  *
  *  제거한 매핑과 이유:
- *   · 정규직·상용직 → FULL_TIME  ✗ 한국어 "정규직"은 **고용 기간의 무기한성**이고
+ *   · 정규직·상용직 → FULL_TIME  ✗ "정규직"은 **고용 기간의 무기한성**이고
  *     Google `FULL_TIME` 은 **근로시간**이다. 정규직이면서 단시간 근로가 가능하다.
  *   · 계약직·기간제 → CONTRACTOR ✗ 기간제 **근로자**이지 도급·프리랜서가 아니다.
- *   · 임시직 → TEMPORARY         ✗ 한국 노동통계의 "임시직"은 1개월~1년 기간제에 가까워
- *     Google 의 단기 임시직과 경계가 다르다.
- *
- *  남긴 매핑(의미가 그대로 겹치는 것만):
- *   · 시간제·단시간·파트타임 → PART_TIME   (둘 다 **근로시간**을 가리킨다)
- *   · 일용직·일용근로      → PER_DIEM     (둘 다 **일 단위** 고용이다)
- *   · 인턴                → INTERN
- *   · 자원봉사            → VOLUNTEER
+ *   · 임시직 → TEMPORARY         ✗ 한국 "임시직"은 1개월~1년 기간제에 가까워 경계가 다르다.
+ *   · 일용직·일용근로 → PER_DIEM ✗ Google `PER_DIEM` 은 **일당제(급여 단위)** 를 뜻한다.
+ *     한국어 "일용직"은 고용 형태이고 급여가 일당인지는 별개다. 현재 코퍼스의 급여는
+ *     전부 시급·월급이라 **일 단위 급여 근거가 없다.** 근거가 생기기 전에는 만들지 않는다.
  *
  * 🔴 급여 단위(시급/월급)로 전일제 여부를 추론하지 않는다 — **시급 전일제가 흔하다.**
- *    1차 보고에서 "시급직이라 FULL_TIME 이 틀렸다"고 쓴 것은 잘못된 근거였다.
- *    FULL_TIME 이 틀린 진짜 이유는 **아무 출처 없이 상수로 박혀 있었기 때문**이다.
+ *    1차 보고의 "시급직이라 FULL_TIME 이 틀렸다"는 잘못된 근거였다. 진짜 이유는
+ *    **아무 출처 없이 상수로 박혀 있었기 때문**이다(`jobType` 은 select 조차 되지 않았다).
  */
-const EMPLOYMENT_TYPE_MAP: ReadonlyArray<readonly [RegExp, (typeof EMPLOYMENT_TYPE_VALUES)[number]]> = [
-  [/파트\s*타임|시간\s*제|단시간/, 'PART_TIME'],
-  [/일용\s*(?:직|근로)/, 'PER_DIEM'],
-  [/인턴/, 'INTERN'],
-  [/자원\s*봉사|봉사\s*직/, 'VOLUNTEER'],
-]
+const EMPLOYMENT_TYPE_TERMS: ReadonlyMap<string, (typeof EMPLOYMENT_TYPE_VALUES)[number]> = new Map([
+  ['시간제', 'PART_TIME'],
+  ['단시간', 'PART_TIME'],
+  ['파트타임', 'PART_TIME'],
+  ['인턴', 'INTERN'],
+  ['자원봉사', 'VOLUNTEER'],
+])
 
-/**
- * 매핑을 **포기해야 하는** 신호.
- * · 부정 — "시간제 아님", "파트타임 불가"
- * · 혼합 — 서로 다른 범주가 같이 등장하거나, 매핑 대상 밖의 고용형태 어휘가 섞임
- */
-const NEGATION_RE = /(아님|아닌|불가|제외|없음|미해당|불가능)/
-/** 매핑하지 않기로 한 고용형태 어휘 — 이것이 섞여 있으면 문장이 단일 범주가 아니다 */
-const UNMAPPED_TYPE_RE = /(정규직|상용직|계약직|기간제|임시직|전일제|무기계약)/
+/** 동의어 나열에 쓰이는 구분자. 그 외 문자가 붙으면 토큰이 달라져 자동으로 탈락한다. */
+const TERM_SEPARATOR = /(?:또는)|[/,·()\s]+/
 
 export function mapEmploymentType(jobType: string | null | undefined): string[] | null {
   if (!jobType) return null
-  const s = jobType.replace(/\s+/g, ' ').trim()
+  // 앞뒤 공백·마침표 정도는 견딘다. 그 외 문자는 토큰 안에 남아 불일치가 된다.
+  const s = jobType.replace(/\s+/g, ' ').trim().replace(/\.+$/, '')
   if (s === '') return null
 
-  // 부정 문구가 있으면 무엇을 긍정하는지 알 수 없다
-  if (NEGATION_RE.test(s)) return null
+  const tokens = s.split(TERM_SEPARATOR).map((t) => t.trim()).filter((t) => t !== '')
+  if (tokens.length === 0) return null
 
-  const matched = new Set<string>()
-  for (const [re, value] of EMPLOYMENT_TYPE_MAP) {
-    if (re.test(s)) matched.add(value)
+  const categories = new Set<string>()
+  for (const t of tokens) {
+    const v = EMPLOYMENT_TYPE_TERMS.get(t)
+    if (!v) return null
+    categories.add(v)
   }
-  if (matched.size === 0) return null
-  // 서로 다른 범주가 섞였다 → 단정할 수 없다
-  if (matched.size > 1) return null
-  // 매핑 대상 밖 고용형태 어휘가 함께 있다 → 혼합 표현이다
-  if (UNMAPPED_TYPE_RE.test(s)) return null
+  if (categories.size !== 1) return null
 
-  return [...matched]
+  return [...categories]
 }
 
 /* ────────────────────────────────────────────────────────────
  * ③ baseSalary
  * ──────────────────────────────────────────────────────────── */
 
+/**
+ * 🔴 여기서 값을 **뒤집어 고치지 않는다.**
+ *    "월 300~216만원" 은 데이터가 잘못된 것이지 "216~300만원" 이라는 뜻이 아니다.
+ *    역순 판정은 `readAmounts` 가 하고, 여기 오는 값은 이미 min ≤ max 다.
+ */
 const money = (minValue: number, maxValue: number, unitText: MonetaryAmount['value']['unitText']): MonetaryAmount => ({
   '@type': 'MonetaryAmount',
   currency: 'KRW',
   value: {
     '@type': 'QuantitativeValue',
-    minValue: Math.min(minValue, maxValue),
-    maxValue: Math.max(minValue, maxValue),
+    minValue,
+    maxValue,
     unitText,
   },
 })
@@ -166,7 +176,9 @@ function readAmounts(text: string | null | undefined): Amounts | null {
     const lo = Number(man[2]) * 10000
     const hi = man[3] ? Number(man[3]) * 10000 : lo
     if (!Number.isFinite(lo) || !Number.isFinite(hi)) return null
-    return { unit, min: Math.min(lo, hi), max: Math.max(lo, hi) }
+    // 🔴 역순은 정렬하지 않고 생략한다 — 자동 교정은 원본에 없는 사실을 만든다
+    if (lo > hi) return null
+    return { unit, min: lo, max: hi }
   }
 
   // "시급 10030원" · "월급 2800000원 ~ 3000000원"  (원 단위)
@@ -177,7 +189,9 @@ function readAmounts(text: string | null | undefined): Amounts | null {
     const lo = Number(won[2])
     const hi = won[3] ? Number(won[3]) : lo
     if (!Number.isFinite(lo) || !Number.isFinite(hi)) return null
-    return { unit, min: Math.min(lo, hi), max: Math.max(lo, hi) }
+    // 🔴 역순은 정렬하지 않고 생략한다 — 자동 교정은 원본에 없는 사실을 만든다
+    if (lo > hi) return null
+    return { unit, min: lo, max: hi }
   }
 
   return null

@@ -77,8 +77,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  * 로직은 `lib/seo/job-posting.ts` 로 옮겼다(순수 함수 — 계약 테스트 대상).
  * 이 컴포넌트는 **데이터를 넘기고 script 태그를 그리는 일만** 한다.
  *
- * 🔴 급여는 원본이 아니라 `formatSalary()` 의 **표시 문자열**을 넘긴다 —
- *    구조화 데이터는 화면에 보이는 값과 일치해야 한다(Google 정책).
+ * 🔴 급여는 **원본(`job.salary`)과 화면 문자열(`formatSalary()`)을 둘 다** 넘긴다.
+ *    구조화 데이터는 ⑴고용주가 제시한 금액이어야 하고 ⑵화면에 보이는 값과 일치해야 한다.
+ *    그런데 `formatSalary()` 가 화면 문자열을 만드는 과정에서 범위 소실·반올림·단위 추정이
+ *    일어난다. 빌더는 둘을 각각 파싱해 **완전히 같을 때만** `baseSalary` 를 내보낸다.
  */
 function JobPostingJsonLd({ job }: { job: JobDetailPublicItem }) {
   const jsonLd = buildJobPostingJsonLd({
