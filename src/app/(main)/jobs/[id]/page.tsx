@@ -17,6 +17,11 @@ import { ADSENSE } from '@/components/ad/ad-slots'
 import JobListBottom from '@/components/features/jobs/JobListBottom'
 import JobPostBanner from '@/components/features/jobs/JobPostBanner'
 import PostViewBeacon from '@/components/common/PostViewBeacon'
+import { buildJobPostingJsonLd } from '@/lib/seo/job-posting'
+
+// generateMetadata 와 JSON-LD 가 **같은 origin** 을 써야 한다 — 갈라지면 canonical 과
+// 구조화 데이터가 다른 주소를 가리킨다. (값은 기존 지역 상수와 동일)
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -44,7 +49,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const baseDescription = [rawDescription, `${job.location} 근무`, formatSalary(job.salary)]
     .filter(Boolean).join(' · ').slice(0, 155)
   const description = job.seoDescription ?? baseDescription
-  const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'
   const url = `${BASE_URL}${buildPostPath({ id, boardType: 'JOB' })}`
 
   return {
@@ -67,52 +71,33 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
-/** JobPosting JSON-LD 구조화 데이터 (Google 검색 리치 스니펫) */
+/**
+ * JobPosting JSON-LD.
+ *
+ * 로직은 `lib/seo/job-posting.ts` 로 옮겼다(순수 함수 — 계약 테스트 대상).
+ * 이 컴포넌트는 **데이터를 넘기고 script 태그를 그리는 일만** 한다.
+ *
+ * 🔴 급여는 **원본(`job.salary`)과 화면 문자열(`formatSalary()`)을 둘 다** 넘긴다.
+ *    구조화 데이터는 ⑴고용주가 제시한 금액이어야 하고 ⑵화면에 보이는 값과 일치해야 한다.
+ *    그런데 `formatSalary()` 가 화면 문자열을 만드는 과정에서 범위 소실·반올림·단위 추정이
+ *    일어난다. 빌더는 둘을 각각 파싱해 **완전히 같을 때만** `baseSalary` 를 내보낸다.
+ */
 function JobPostingJsonLd({ job }: { job: JobDetailPublicItem }) {
-  const salaryText = formatSalary(job.salary)
-
-  // 급여 파싱: "월 280만원" → baseSalary 객체
-  let baseSalary: Record<string, unknown> | undefined
-  const monthlyMatch = salaryText.match(/월\s*(\d+)(?:~(\d+))?만원/)
-  if (monthlyMatch) {
-    const low = parseInt(monthlyMatch[1]) * 10000
-    const high = monthlyMatch[2] ? parseInt(monthlyMatch[2]) * 10000 : low
-    baseSalary = {
-      '@type': 'MonetaryAmount',
-      currency: 'KRW',
-      value: {
-        '@type': 'QuantitativeValue',
-        minValue: low,
-        maxValue: high,
-        unitText: 'MONTH',
-      },
-    }
-  }
-
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'JobPosting',
+  const jsonLd = buildJobPostingJsonLd({
+    id: job.id,
     title: job.title,
-    description: job.content.replace(/<[^>]+>/g, '').slice(0, 500),
-    datePosted: job.createdAt,
-    hiringOrganization: {
-      '@type': 'Organization',
-      name: job.company || '채용기업',
-    },
-    jobLocation: {
-      '@type': 'Place',
-      address: {
-        '@type': 'PostalAddress',
-        addressLocality: job.region,
-        addressRegion: job.region,
-        addressCountry: 'KR',
-        streetAddress: job.location,
-      },
-    },
-    ...(baseSalary && { baseSalary }),
-    ...(job.applyUrl && { directApply: true }),
-    employmentType: 'FULL_TIME',
-  }
+    plainContent: job.content.replace(/<[^>]+>/g, ''),
+    company: job.company,
+    region: job.region,
+    location: job.location,
+    salaryRaw: job.salary,
+    salaryDisplay: formatSalary(job.salary),
+    createdAt: job.createdAt,
+    applyUrl: job.applyUrl,
+    jobType: job.jobType,
+    expiresAt: job.expiresAt,
+    siteOrigin: BASE_URL,
+  })
 
   return (
     <script
