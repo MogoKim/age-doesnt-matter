@@ -50,9 +50,9 @@ export default function FAB() {
   if (writeHref === null) return null
 
   const fabClassName = cn(
-    'group fixed bottom-6 right-6 z-[97] flex items-center gap-2 h-[52px] px-6 bg-primary text-white rounded-full shadow-[0_4px_20px_rgba(255,111,97,0.35)] text-body font-bold cursor-pointer transition-all duration-200 no-underline [-webkit-tap-highlight-color:transparent] active:scale-95',
+    'group fixed bottom-6 right-6 z-[97] flex items-center gap-2 h-control px-6 bg-primary text-white rounded-full shadow-[0_4px_20px_rgba(255,111,97,0.35)] text-body font-bold cursor-pointer transition-all duration-200 no-underline [-webkit-tap-highlight-color:transparent] active:scale-95',
     'lg:bottom-8 lg:right-8 lg:h-14 lg:w-14 lg:p-0 lg:justify-center lg:hover:w-auto lg:hover:px-6',
-    collapsed && 'px-4 w-[52px] justify-center gap-0'
+    collapsed && 'px-4 w-control justify-center gap-0'
   )
 
   const labelClassName = cn(

@@ -56,13 +56,13 @@ export default function PwaInlineBanner() {
       </div>
       <button
         onClick={handleInstall}
-        className="min-h-[52px] px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold leading-tight shrink-0 whitespace-nowrap"
+        className="min-h-control px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold leading-tight shrink-0 whitespace-nowrap"
       >
         {isAndroid ? '받기' : '추가하기'}
       </button>
       <button
         onClick={handleDismiss}
-        className="min-w-[36px] min-h-[36px] flex items-center justify-center text-muted-foreground flex-shrink-0"
+        className="min-w-control-compact min-h-control-compact flex items-center justify-center text-muted-foreground flex-shrink-0"
         aria-label="닫기"
       >
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none">

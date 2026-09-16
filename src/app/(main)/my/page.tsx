@@ -79,7 +79,7 @@ function MenuItem({ href, emoji, label }: { href: string; emoji: string; label: 
   return (
     <Link
       href={href}
-      className="flex items-center gap-3 min-h-[56px] px-6 py-4 text-body font-medium text-foreground no-underline transition-colors hover:bg-primary/5 border-b border-border last:border-b-0"
+      className="flex items-center gap-3 min-h-control-lg px-6 py-4 text-body font-medium text-foreground no-underline transition-colors hover:bg-primary/5 border-b border-border last:border-b-0"
     >
       <span className="text-lg">{emoji}</span>
       <span className="flex-1">{label}</span>

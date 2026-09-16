@@ -1,20 +1,9 @@
 /**
- * `/dev/*` 노출 통제 — **환경별 허용/차단 계약**.
+ * `/dev/*` 노출 통제 — **환경별 허용/차단 계약**을 고정한다.
  *
- * ── 왜 필요한가 ──────────────────────────────────────────────
- *  2026-09-15 실측: `/dev/components` · `/dev/qa-report` · `/dev/event-preview` 가
- *  **production 에서 200** 이었다. 내부 미리보기 화면이 외부에 그대로 열려 있었다.
- *
- *  🔴 **`noindex` 는 접근 통제가 아니다.** 이 페이지들에는 `noindex, nofollow` 가 붙어 있었지만
- *     그것은 "검색엔진에 넣지 마라"는 요청일 뿐, URL 을 아는 사람의 접근을 막지 못한다.
- *     `robots.txt` 도 마찬가지다(애초에 `/dev/` Disallow 도 없었다).
- *     막아야 하는 것은 **서버 응답**이다.
- *
- * ── 계약 ────────────────────────────────────────────────────
- *  · Vercel **production** → 404
- *  · Vercel **preview** → 허용 (Preview E2E 가 `/dev/event-preview` 를 쓴다)
- *  · **로컬**(VERCEL_ENV 없음) → 허용
- *  · 차단은 **middleware 한 곳**에서 한다 — 페이지마다 흩어두면 새 라우트가 새어 나간다
+ * 배경과 환경 행렬의 정본은 `src/lib/dev-routes.ts` 다 — 같은 설명을 여기 옮겨 적지 않는다.
+ * 이 파일이 지키는 것: ① 환경 행렬대로 판정하는가 ② middleware 가 인증·Redis 이전에 막는가
+ * ③ 차단 근거가 robots·metadata 가 아닌가 ④ Preview E2E 가 계속 통과하는 구조인가.
  */
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'

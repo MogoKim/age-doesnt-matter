@@ -121,7 +121,7 @@ export default function GradePage() {
       <div className="text-center">
         <Link
           href="/community/stories"
-          className="inline-flex items-center gap-1.5 h-[52px] px-6 bg-primary text-white rounded-xl text-body font-bold no-underline hover:bg-primary/90"
+          className="inline-flex items-center gap-1.5 h-control px-6 bg-primary text-white rounded-xl text-body font-bold no-underline hover:bg-primary/90"
         >
           지금 글 쓰러 가기 →
         </Link>

@@ -122,7 +122,7 @@ export default function GuideIndexPage() {
                       <p className="mt-2 line-clamp-3 text-[17px] leading-[1.7] text-muted-foreground">
                         {guide.description}
                       </p>
-                      <span className="mt-3 inline-flex min-h-[52px] items-center text-[17px] font-bold text-primary-text">
+                      <span className="mt-3 inline-flex min-h-control items-center text-[17px] font-bold text-primary-text">
                         자세히 보기
                       </span>
                     </Link>
@@ -143,13 +143,13 @@ export default function GuideIndexPage() {
           <div className="mt-4 flex flex-col gap-2 sm:flex-row">
             <Link
               href="/community/life2"
-              className="inline-flex min-h-[52px] items-center justify-center rounded-lg bg-primary px-4 text-[17px] font-bold text-white no-underline"
+              className="inline-flex min-h-control items-center justify-center rounded-lg bg-primary px-4 text-[17px] font-bold text-white no-underline"
             >
               2막준비 보기
             </Link>
             <Link
               href="/community/stories"
-              className="inline-flex min-h-[52px] items-center justify-center rounded-lg border border-border bg-card px-4 text-[17px] font-bold text-foreground no-underline"
+              className="inline-flex min-h-control items-center justify-center rounded-lg border border-border bg-card px-4 text-[17px] font-bold text-foreground no-underline"
             >
               사는이야기 보기
             </Link>

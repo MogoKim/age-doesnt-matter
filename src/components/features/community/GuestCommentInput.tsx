@@ -277,15 +277,15 @@ export default function GuestCommentInput({
         <KakaoSignupButton
           callbackUrl={pathname}
           gtmFrom="guest_comment_success"
-          className="flex items-center justify-center w-full min-h-[52px] rounded-xl text-caption font-bold mb-2 transition-all hover:brightness-95"
-          style={{ background: '#FEE500', color: '#191919' }}
+          className="flex items-center justify-center w-full min-h-control rounded-xl text-caption font-bold mb-2 transition-all hover:brightness-95"
+          style={{ background: 'var(--kakao-bg)', color: 'var(--kakao-text)' }}
         >
           카카오로 1초 만에 시작하기
         </KakaoSignupButton>
         <button
           type="button"
           onClick={() => setShowSignupPrompt(false)}
-          className="w-full min-h-[52px] rounded-xl text-caption text-muted-foreground hover:text-foreground transition-colors"
+          className="w-full min-h-control rounded-xl text-caption text-muted-foreground hover:text-foreground transition-colors"
         >
           나중에 할게요
         </button>
@@ -329,7 +329,7 @@ export default function GuestCommentInput({
               onFocus={funnel.onIdentityStarted}
               onChange={(e) => setNickname(e.target.value.slice(0, 10))}
               maxLength={10}
-              className="w-full px-3 py-2 min-h-[52px] border border-border rounded-xl text-body text-foreground bg-background outline-none focus:border-primary transition-colors"
+              className="w-full px-3 py-2 min-h-control border border-border rounded-xl text-body text-foreground bg-background outline-none focus:border-primary transition-colors"
             />
           </div>
           <div>
@@ -343,7 +343,7 @@ export default function GuestCommentInput({
               onFocus={funnel.onIdentityStarted}
               onChange={(e) => setPassword(e.target.value.replace(/\D/g, '').slice(0, 4))}
               maxLength={4}
-              className="w-full px-3 py-2 min-h-[52px] border border-border rounded-xl text-body text-foreground bg-background outline-none focus:border-primary transition-colors"
+              className="w-full px-3 py-2 min-h-control border border-border rounded-xl text-body text-foreground bg-background outline-none focus:border-primary transition-colors"
             />
             <p className="text-caption text-muted-foreground mt-1 ml-1">댓글 수정·삭제할 때만 써요</p>
           </div>
@@ -363,7 +363,7 @@ export default function GuestCommentInput({
           type="button"
           onClick={handleSubmit}
           disabled={submitDisabled}
-          className="flex-1 flex items-center justify-center min-h-[52px] px-4 bg-primary text-white rounded-xl text-caption font-bold hover:bg-primary/90 disabled:bg-border disabled:cursor-not-allowed transition-colors"
+          className="flex-1 flex items-center justify-center min-h-control px-4 bg-primary text-white rounded-xl text-caption font-bold hover:bg-primary/90 disabled:bg-border disabled:cursor-not-allowed transition-colors"
         >
           {submitLabel}
         </button>
@@ -371,7 +371,7 @@ export default function GuestCommentInput({
           <button
             type="button"
             onClick={onCancel}
-            className="flex items-center justify-center min-h-[52px] min-w-[52px] px-3 rounded-xl text-caption text-muted-foreground hover:text-foreground transition-colors"
+            className="flex items-center justify-center min-h-control min-w-control px-3 rounded-xl text-caption text-muted-foreground hover:text-foreground transition-colors"
           >
             취소
           </button>

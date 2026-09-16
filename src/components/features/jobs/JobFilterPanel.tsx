@@ -61,7 +61,7 @@ export default function JobFilterPanel({ onClose }: JobFilterPanelProps) {
           <h2 className="text-title font-bold text-foreground">필터</h2>
           <div className="flex items-center gap-2">
             <button
-              className="text-body font-medium text-muted-foreground cursor-pointer min-h-[52px] lg:min-h-[44px] px-2 hover:text-primary-text transition-colors"
+              className="text-body font-medium text-muted-foreground cursor-pointer min-h-control lg:min-h-control-sm px-2 hover:text-primary-text transition-colors"
               onClick={handleReset}
             >
               초기화
@@ -70,7 +70,7 @@ export default function JobFilterPanel({ onClose }: JobFilterPanelProps) {
               type="button"
               aria-label="필터 닫기"
               onClick={onClose}
-              className="flex items-center justify-center w-[52px] h-[52px] lg:w-11 lg:h-11 rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              className="flex items-center justify-center w-control h-control lg:w-11 lg:h-11 rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                 <path d="M4 4L16 16M16 4L4 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -137,7 +137,7 @@ export default function JobFilterPanel({ onClose }: JobFilterPanelProps) {
 
         <div className="sticky bottom-0 bg-card px-6 py-4 border-t border-border">
           <button
-            className="w-full h-[52px] rounded-xl border border-primary/30 bg-primary/10 text-primary-text font-bold text-body cursor-pointer hover:bg-primary/15 transition-colors"
+            className="w-full h-control rounded-xl border border-primary/30 bg-primary/10 text-primary-text font-bold text-body cursor-pointer hover:bg-primary/15 transition-colors"
             onClick={handleApply}
           >
             필터 적용하기

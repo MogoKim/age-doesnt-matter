@@ -26,7 +26,7 @@ export default function Header() {
       </Link>
 
       <div className="flex items-center gap-1">
-        <Link href="/search" prefetch={false} className="icon-hover flex items-center justify-center w-[52px] h-[52px] rounded-xl text-muted-foreground [-webkit-tap-highlight-color:transparent] hover:bg-primary/5 hover:text-primary-text" aria-label="검색">
+        <Link href="/search" prefetch={false} className="icon-hover flex items-center justify-center w-control h-control rounded-xl text-muted-foreground [-webkit-tap-highlight-color:transparent] hover:bg-primary/5 hover:text-primary-text" aria-label="검색">
           <IconSearch size={22} />
         </Link>
         <HeaderFontSizeToggle />
@@ -34,7 +34,7 @@ export default function Header() {
         <Link
           href={isLoggedIn ? '/my' : '/login'}
           prefetch={false}
-          className="icon-hover flex items-center justify-center w-[52px] h-[52px] rounded-xl text-muted-foreground [-webkit-tap-highlight-color:transparent] hover:bg-primary/5 hover:text-primary-text"
+          className="icon-hover flex items-center justify-center w-control h-control rounded-xl text-muted-foreground [-webkit-tap-highlight-color:transparent] hover:bg-primary/5 hover:text-primary-text"
           aria-label={isLoggedIn ? '마이페이지' : '로그인'}
         >
           <IconUser size={22} />

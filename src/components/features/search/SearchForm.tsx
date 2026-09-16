@@ -102,7 +102,7 @@ export default function SearchForm({ initialQuery = '', popularKeywords = [] }: 
         <button
           type="button"
           onClick={() => router.back()}
-          className="flex items-center justify-center w-[52px] h-[52px] text-lg text-foreground shrink-0"
+          className="flex items-center justify-center w-control h-control text-lg text-foreground shrink-0"
           aria-label="뒤로가기"
         >
           ←
@@ -113,12 +113,12 @@ export default function SearchForm({ initialQuery = '', popularKeywords = [] }: 
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="검색어를 입력해 주세요"
-          className="flex-1 min-w-0 min-h-[52px] px-4 py-2 bg-background border border-border rounded-xl text-body text-foreground outline-none transition-colors focus:border-primary placeholder:text-muted-foreground"
+          className="flex-1 min-w-0 min-h-control px-4 py-2 bg-background border border-border rounded-xl text-body text-foreground outline-none transition-colors focus:border-primary placeholder:text-muted-foreground"
           aria-label="검색어 입력"
         />
         <button
           type="submit"
-          className="flex items-center justify-center w-[52px] h-[52px] text-muted-foreground hover:text-foreground transition-colors shrink-0"
+          className="flex items-center justify-center w-control h-control text-muted-foreground hover:text-foreground transition-colors shrink-0"
           aria-label="검색"
         >
           <IconSearch size={22} />
@@ -136,7 +136,7 @@ export default function SearchForm({ initialQuery = '', popularKeywords = [] }: 
                 <button
                   type="button"
                   onClick={clearAllRecent}
-                  className="text-[17px] text-muted-foreground min-h-[52px] px-2"
+                  className="text-[17px] text-muted-foreground min-h-control px-2"
                 >
                   전체 삭제
                 </button>
@@ -147,14 +147,14 @@ export default function SearchForm({ initialQuery = '', popularKeywords = [] }: 
                     <button
                       type="button"
                       onClick={() => handleKeywordClick(keyword)}
-                      className="flex-1 text-left text-body text-foreground py-3 min-h-[52px] px-2 hover:bg-muted transition-colors rounded-xl"
+                      className="flex-1 text-left text-body text-foreground py-3 min-h-control px-2 hover:bg-muted transition-colors rounded-xl"
                     >
                       {keyword}
                     </button>
                     <button
                       type="button"
                       onClick={() => removeRecent(keyword)}
-                      className="flex items-center justify-center w-[52px] h-[52px] text-muted-foreground text-[17px]"
+                      className="flex items-center justify-center w-control h-control text-muted-foreground text-[17px]"
                       aria-label={`${keyword} 삭제`}
                     >
                       ✕
@@ -174,7 +174,7 @@ export default function SearchForm({ initialQuery = '', popularKeywords = [] }: 
                   key={cat.query}
                   type="button"
                   onClick={() => handleKeywordClick(cat.query)}
-                  className="inline-flex items-center min-h-[52px] px-4 rounded-full border border-border bg-background text-foreground transition-colors hover:border-primary hover:text-primary-text lg:min-h-[48px]"
+                  className="inline-flex items-center min-h-control px-4 rounded-full border border-border bg-background text-foreground transition-colors hover:border-primary hover:text-primary-text lg:min-h-control-desktop"
                 >
                   {cat.label}
                 </button>
@@ -196,7 +196,7 @@ export default function SearchForm({ initialQuery = '', popularKeywords = [] }: 
                       <button
                         type="button"
                         onClick={() => handleKeywordClick(keyword)}
-                        className="flex items-center gap-3 w-full text-left py-3 min-h-[52px] px-2 hover:bg-muted transition-colors rounded-xl"
+                        className="flex items-center gap-3 w-full text-left py-3 min-h-control px-2 hover:bg-muted transition-colors rounded-xl"
                       >
                         <span className="text-body font-bold text-primary-text w-6 text-center">
                           {idx + 1}

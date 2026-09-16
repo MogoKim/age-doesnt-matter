@@ -9,7 +9,30 @@
 
 /* ── shadcn/ui CSS Variables — 시니어 고대비 컬러 팔레트 ── */
 @layer base {
+  /* ═══════════════════════════════════════════════════════════════
+     우나어 디자인 토큰 — reference → system → component
+     계약 정본: `src/lib/design-tokens.ts` · 계약 테스트: `design-token-contract.test.ts`
+
+     · reference  원자값. 화면 코드에서 **직접 쓰지 않는다** — system/component 를 통해 쓴다.
+     · system     역할 기반. 화면 코드가 쓰는 계층이다.
+     · component  특정 컴포넌트 전용. 다른 곳에서 재사용하지 않는다.
+
+     🔴 **색상 표기 두 종류를 섞지 마라.**
+        · HSL triplet(`5 100% 69%`) → 반드시 `hsl(var(--x))`. Tailwind 가 알파(`/50`)를 붙인다.
+        · 완성값(`#FF6F61`·`rgba(...)`) → 반드시 `var(--x)`. `hsl()` 로 감싸면 무효가 된다.
+        어느 쪽인지는 `design-tokens.ts` 의 `HSL_TRIPLET_TOKENS` 가 정본이다.
+     ═══════════════════════════════════════════════════════════════ */
+
   :root {
+    /* ── component · 외부 브랜드 (우리가 정할 수 없는 값) ──────────
+       카카오 로그인 버튼 규정색. 화면이 직접 쓴다.
+       브랜드 코랄은 따로 두지 않는다 — system `--primary` 계열이 정본이고,
+       HEX 가 필요한 곳은 CSS 변수를 못 읽는 문맥(OG 이미지)뿐이라 토큰으로 해결되지 않는다. */
+    --kakao-bg: #FEE500;
+    --kakao-text: #191919;
+
+    /* ═══ system · 색상 역할 ═══════════════════════════════════════
+       전부 HSL triplet 이다 → `hsl(var(--x))` 로만 쓴다. */
     /* 배경: #F8F9FA 옅은 웜그레이 — 눈 피로도 감소 */
     --background: 210 17% 98%;
     /* 기본 글씨: #111827 차콜 블랙 — 고대비 */
@@ -27,7 +50,7 @@
     /* 브랜드 코랄(텍스트 포인트): #E85D50 — 흰 배경 대비 3.4:1 (큰 글씨 AA / 작은 글씨는 경계) */
     --primary-text: 5 77% 61%;
     /* 진한 코랄(작은 텍스트용): #B23B2E — 흰 배경 5.9:1 / bg-primary/10 위 5.3:1 (작은 글씨도 AA PASS).
-       배지·태그·caption 등 작은 글씨에서 --primary-text가 대비 경계라 쓰던 하드코딩을 토큰으로 승격한 값. */
+       배지·태그·caption 등 작은 글씨에서 --primary-text 가 대비 경계라 쓰던 하드코딩을 토큰으로 승격한 값. */
     --primary-strong: 6 59% 44%;
 
     /* 보조: 은은한 뉴트럴 */
@@ -51,111 +74,146 @@
     --destructive: 4 90% 58%;
     --destructive-foreground: 0 0% 100%;
 
-    /* 구분선: #E5E7EB 은은한 보더 */
+    /* 구분선·입력 테두리·포커스 링 */
     --border: 220 13% 91%;
     --input: 220 13% 91%;
     --ring: 5 100% 69%;
-    --radius: 0.75rem;
 
-    /* 그래디언트 & 특수 색상 */
-    --gradient-hot-from: #FF6B6B;
-    --gradient-hot-to: #FF8E53;
-    --gradient-fame-from: #A855F7;
-    --gradient-fame-to: #EC4899;
-    --badge-editors: #FF8C00;
-    --surface-warm: #F9F5F0;
-    --kakao-bg: #FEE500;
-    --kakao-text: #191919;
-    --hero-slide-1: #FF6F61;
-    --hero-slide-2: #5B8DEF;
-    --hero-slide-3: #4CAF50;
-
-    /* ── 우나어 디자인 시스템 v0.3 — Hero 카테고리 그라디언트 ── */
-    --hero-1-from: #C4453B; --hero-1-mid: #FF6F61;  --hero-1-to: #FFB4A2; /* 브랜드 (코랄) */
-    --hero-2-from: #C7651E; --hero-2-mid: #E89456;  --hero-2-to: #FAC775; /* 사는이야기 (오렌지) */
-    --hero-3-from: #1B5E20; --hero-3-mid: #4A8C3A;  --hero-3-to: #97C459; /* 2막준비 (그린) */
-
-    /* ── IconMenu 카테고리 (6종) ── */
-    --icon-best-bg:     #FFE9E5; --icon-best-stroke:     #C4453B;
-    --icon-life-bg:     #FFF1E5; --icon-life-stroke:     #C7651E;
-    --icon-life2-bg:    #E8F5E9; --icon-life2-stroke:    #2E7D32;
-    --icon-laugh-bg:    #FFF8E1; --icon-laugh-stroke:    #A06900;
-    --icon-magazine-bg: #E3F2FD; --icon-magazine-stroke: #185FA5;
-    --icon-job-bg:      #F3E5F5; --icon-job-stroke:      #6A1B9A;
-    --icon-meno-bg:     #FCE4EC; --icon-meno-stroke:     #C2185B;
-
-    /* ── Category chip 전용 — GNB icon 동일 색 계열 ── */
-    --cat-life-bg: #FFF1E5;  --cat-life-text: #8F4514;
-    --cat-life2-bg: #E8F5E9; --cat-life2-text: #2E7D32;
-    --cat-laugh-bg: #FFF8E1; --cat-laugh-text: #765000;
-    --cat-mag-bg: #E3F2FD;   --cat-mag-text: #185FA5;
-    --cat-best-bg: #FFE9E5;  --cat-best-text: #AD372F;
-    --cat-job-text: #6A1B9A;
-    --cat-meno-bg: #FCE4EC; --cat-meno-text: #AD1457;
-
-    /* ── 보조 surface (코랄 계열) ── */
-    --surface-coral-soft: #FFE9E5; /* 태그·뱃지 배경 */
-    --surface-coral-pale: #FFF8F6; /* 카드·greeting 배경 */
-    --border-coral-soft:  #FFD4CC; /* 강조 보더 */
-
-    /* ── Activity Pulse (살아있음 신호) ── */
-    --pulse-dot-color: #FF6F61;
-    --pulse-dot-glow:  rgba(255, 111, 97, 0.2);
-
-    /* ── 등급 색상 팔레트 (Grade Token) ── */
-    --grade-sprout-bg:     #F0FDF4;   /* 새싹: 성장/시작 (green) */
-    --grade-sprout-border: #86EFAC;
-    --grade-sprout-text:   #15803D;   /* WCAG AA 5.8:1 */
-
-    --grade-regular-bg:     #FFF7ED;  /* 단골: 따뜻한 관계 (orange) */
-    --grade-regular-border: #FED7AA;
-    --grade-regular-text:   #C2410C;  /* WCAG AA 5.3:1 */
-
-    --grade-veteran-bg:     #EFF6FF;  /* 터줏대감: 신뢰/깊이 (blue) */
-    --grade-veteran-border: #93C5FD;
-    --grade-veteran-text:   #1D4ED8;  /* WCAG AA 5.5:1 */
-
-    --grade-neighbor-bg:     #FEFCE8; /* 따뜻한이웃: 명예/골드 (amber) */
-    --grade-neighbor-border: #FDE047;
-    --grade-neighbor-text:   #92400E; /* WCAG AA 7.1:1 — amber-600 대비 부족 수정 */
-
-    /* ── Semantic Colors ── */
-    --success: 142 71% 38%;           /* #1F8A47 */
+    /* 상태 색 — success/warning/info */
+    --success: 142 71% 38%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;            /* #F4A60D */
+    --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
-    --info: 211 100% 41%;             /* #0066CC */
+    --info: 211 100% 41%;
     --info-foreground: 0 0% 100%;
 
-    /* ── Elevation ── */
-    --shadow-fab: 0 8px 24px rgba(255,111,97,0.4);
-
+    /* ═══ system · 타이포그래피 ═════════════════════════════════════
+       `data-font-size` (NORMAL/LARGE/XLARGE) 로 통째로 전환된다.
+       Tailwind `text-xs~2xl` 이 이 값을 참조한다 — tailwind.config.ts fontSize 참조. */
     /* 'Pretendard Variable'는 dynamic-subset @font-face(public/fonts)에서 정의됨 */
     --font-family: 'Pretendard Variable', 'Pretendard',
       -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 
-    /* ── 시니어 글꼴 크기 스케일 (FontSizeProvider가 data-font-size 속성으로 전환) ── */
-    --text-body: 1.125rem;    /* 18px — 본문 (시니어 규칙 최소) */
-    --text-caption: 0.9375rem; /* 15px — 보조/캡션 */
-    --text-title: 1.25rem;    /* 20px — 섹션 제목 */
-    --text-heading: 1.5rem;   /* 24px — 페이지 제목 */
-    --text-sm: 1rem;          /* 16px — tailwind sm 매핑 */
-    --text-display: 1.75rem;  /* 28px — tailwind 2xl 매핑 */
+    --text-body: 1.125rem;
+    --text-caption: 0.9375rem;
+    --text-title: 1.25rem;
+    --text-heading: 1.5rem;
+    --text-sm: 1rem;
+    --text-display: 1.75rem;
     /* 홈 히어로 전용: 배너는 viewport clamp를 유지하되 가+ 설정도 함께 따른다. */
     --text-hero-title: clamp(26px, 6.8vw, 40px);
     --text-hero-subtitle: clamp(18px, 4.4vw, 22px);
     --text-hero-cta: clamp(16px, 3.8vw, 18px);
 
-    /* ── HomePage.module.css 연결 (CSS 변수 시스템과 통일) ── */
-    --font-size-xs: var(--text-caption);   /* 15px → 설정에 따라 확대 */
-    --font-size-sm: var(--text-body);      /* 18px → 설정에 따라 확대 */
-    --font-size-base: var(--text-body);    /* 18px → 설정에 따라 확대 */
-    --font-size-lg: var(--text-title);     /* 20px → 설정에 따라 확대 */
+    /* ═══ system · 컨트롤 크기 (밀도) ═══════════════════════════════
+       🔴 **public/mobile 과 admin 은 밀도가 다르다.** 실측(2026-09-15):
+          public 은 52px 컨트롤 279회·본문 17~18px, admin 은 10~11px 텍스트 33회.
+          같은 토큰을 쓰되 **크기만 다른 variant** 로 가른다 — admin 에 52px 를 강제하지 않는다. */
+    --control-h-touch:   52px;  /* public/mobile 기본 — 터치 목표 (CLAUDE.md 배포 기준) */
+    --control-h-desktop: 48px;  /* public/desktop — 포인터 입력 */
+    --control-h-sm:      44px;  /* 보조 컨트롤 — iOS 최소 터치 */
+    --control-h-lg:      56px;  /* 주요 CTA */
+    --control-h-compact: 36px;  /* admin 전용 — 표·필터가 빽빽한 화면 */
 
-    /* ── IconMenu 반응형 크기 (폰트 크기 설정에 따라 확대) ── */
-    --icon-box-size: 3rem;        /* 48px — 아이콘 컬러 박스 */
-    --icon-svg-size: 1.375rem;    /* 22px — SVG 아이콘 */
-    --icon-container-w: 4.5rem;   /* 72px — Link 셀 너비 */
+    /* ═══ system · 간격 ═════════════════════════════════════════════
+       🔴 Tailwind 기본 spacing scale(`p-4`·`gap-3`)이 이미 토큰 체계다. 그걸 대체하지 않는다.
+          여기엔 **스케일로 표현되지 않는 반복 치수**만 둔다. */
+    --space-row-y:     18px;   /* 목록 행 세로 패딩 — py-[18px] 9회 */
+    --content-max:     720px;  /* 본문 단 최대폭 — w-[720px] 32회 */
+    --content-max-wide: 960px; /* 넓은 단(대시보드·표) — w-[960px] 11회 */
+
+    /* ═══ system · shape ════════════════════════════════════════════ */
+    --radius: 0.75rem;
+    --radius-full: 9999px;
+
+    /* ═══ system · elevation ════════════════════════════════════════
+       그림자는 세 단계뿐이다. 새 값이 필요하면 단계를 늘리지 말고 기존 단계를 쓴다. */
+    --elevation-1: 0 1px 2px rgba(17, 24, 39, 0.06);
+    --elevation-2: 0 4px 12px rgba(17, 24, 39, 0.10);
+    --elevation-3: 0 8px 24px rgba(255, 111, 97, 0.40); /* 브랜드 FAB — 코랄 글로우 */
+
+    /* ═══ system · state ════════════════════════════════════════════
+       hover/disabled/focus 를 컴포넌트마다 다르게 정하지 않는다. */
+    /* 값은 기존 화면과 **동일하다**(disabled:opacity-50 · ring-2 · ring-offset-2).
+       토큰으로 올린 이유는 컴포넌트마다 제각각 정하지 못하게 하려는 것이다. */
+    --state-disabled-opacity: 0.5;
+    --state-focus-ring-width: 2px;
+    --state-focus-ring-offset: 2px;
+
+    /* ═══ component · 카테고리 아이콘 (IconMenu 6종) ═══════════════ */
+    --icon-best-bg: #FFE9E5;
+    --icon-best-stroke: #C4453B;
+    --icon-life-bg: #FFF1E5;
+    --icon-life-stroke: #C7651E;
+    --icon-life2-bg: #E8F5E9;
+    --icon-life2-stroke: #2E7D32;
+    --icon-laugh-bg: #FFF8E1;
+    --icon-laugh-stroke: #A06900;
+    --icon-magazine-bg: #E3F2FD;
+    --icon-magazine-stroke: #185FA5;
+    --icon-job-bg: #F3E5F5;
+    --icon-job-stroke: #6A1B9A;
+    --icon-meno-bg: #FCE4EC;
+    --icon-meno-stroke: #C2185B;
+
+    /* ═══ component · 카테고리 chip — GNB icon 과 같은 색 계열 ═════ */
+    --cat-life-bg: #FFF1E5;
+    --cat-life-text: #8F4514;
+    --cat-life2-bg: #E8F5E9;
+    --cat-life2-text: #2E7D32;
+    --cat-laugh-bg: #FFF8E1;
+    --cat-laugh-text: #765000;
+    --cat-mag-bg: #E3F2FD;
+    --cat-mag-text: #185FA5;
+    --cat-best-bg: #FFE9E5;
+    --cat-best-text: #AD372F;
+    --cat-job-text: #6A1B9A;
+    --cat-meno-bg: #FCE4EC;
+    --cat-meno-text: #AD1457;
+
+    /* ═══ component · 보조 surface (코랄 계열) ═════════════════════ */
+    --surface-warm: #F9F5F0;
+    --surface-coral-soft: #FFE9E5;
+    --surface-coral-pale: #FFF8F6;
+    --border-coral-soft: #FFD4CC;
+
+    /* ═══ component · Hero 카테고리 그라디언트 ═════════════════════
+       1=브랜드(코랄) / 2=사는이야기(오렌지) / 3=2막준비(그린).
+       2·3 은 아직 화면에 없다 — 디자인상 확정된 예약 세트다(`design-tokens.ts` RESERVED). */
+    --hero-1-from: #C4453B;
+    --hero-1-mid: #FF6F61;
+    --hero-1-to: #FFB4A2;
+    --hero-2-from: #C7651E;
+    --hero-2-mid: #E89456;
+    --hero-2-to: #FAC775;
+    --hero-3-from: #1B5E20;
+    --hero-3-mid: #4A8C3A;
+    --hero-3-to: #97C459;
+
+    /* ═══ component · 등급 배지 ════════════════════════════════════ */
+    --grade-sprout-bg: #F0FDF4;
+    --grade-sprout-border: #86EFAC;
+    --grade-sprout-text: #15803D;
+    --grade-regular-bg: #FFF7ED;
+    --grade-regular-border: #FED7AA;
+    --grade-regular-text: #C2410C;
+    --grade-veteran-bg: #EFF6FF;
+    --grade-veteran-border: #93C5FD;
+    --grade-veteran-text: #1D4ED8;
+    --grade-neighbor-bg: #FEFCE8;
+    --grade-neighbor-border: #FDE047;
+    --grade-neighbor-text: #92400E;
+
+    /* ═══ component · 그라디언트 (HOT·명예의전당) ══════════════════ */
+    --gradient-hot-from: #FF6B6B;
+    --gradient-hot-to: #FF8E53;
+    --gradient-fame-from: #A855F7;
+    --gradient-fame-to: #EC4899;
+
+    /* ═══ component · IconMenu 크기 (글꼴 설정 따라 확대) ══════════ */
+    --icon-box-size: 3rem;
+    --icon-svg-size: 1.375rem;
+    --icon-container-w: 4.5rem;
   }
 
   /* LARGE (20px 베이스) */

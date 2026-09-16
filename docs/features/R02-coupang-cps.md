@@ -93,10 +93,13 @@ BotLog details.cpsMatched 기록
 | 페이지 | 컴포넌트 | 배치 위치 |
 |--------|---------|---------|
 | 홈 (`/`) | `CoupangBanner` (mobile) | CommunitySection 다음 |
-| 홈 (`/`) | `CoupangCarousel` | MagazineSection 다음 |
-| 커뮤니티 상세 | `CoupangSearchWidget` | AdSense 다음 |
-| 매거진 상세 | `CoupangCPS` (상품 링크 최대 3건 표시) | 본문 아래 |
-| 매거진 상세 | `CoupangSearchWidget` | CPS 링크 다음 |
+| 홈 (`/`) | `CoupangHome1` · `CoupangHome2` | 홈 섹션 사이 |
+| 데스크탑 | `CoupangDesktopBanner` | 사이드 |
+| 공통 | `CoupangBanner` | 배치별 |
+
+> 🔴 **2026-09-15 정정**: `CoupangCarousel` · `CoupangSearchWidget` · `CoupangCPS` · `CoupangCategoryBanner` 와
+> `src/lib/coupang.ts` 는 **제거됐다**. 소비처가 0이었고, 살아 있는 쿠팡 컴포넌트는
+> `src/components/ad/ad-slots.ts` 의 `COUPANG` 상수를 쓴다 — **수익 경로에는 영향이 없다.**
 | 일자리 목록 | `CoupangBanner` (mobile) | 8번째 항목 다음 (`idx % 8 === 0`) |
 | 베스트 | `CoupangBanner` (mobile) | 피드 사이 |
 | 매거진 목록 | `CoupangBanner` (mobile) | 피드 사이 |
@@ -201,7 +204,8 @@ COUPANG_ACCESS_KEY 미설정
 - ~~AI 매칭 에이전트~~: `agents/cafe/cps-matcher.ts` — 제거됨(2026-09-09). **배너 노출은 `src/components/ad/CoupangBanner.tsx` 로 계속 동작한다**
 - 쿠팡 API 클라이언트: `agents/core/coupang.ts`
 - 배너 컴포넌트: `src/components/ad/CoupangBanner.tsx`
-- 상품 링크 컴포넌트: `src/components/ad/CoupangCPS.tsx`
+- ~~상품 링크 컴포넌트~~: `src/components/ad/CoupangCPS.tsx` — **제거됨(2026-09-15, 소비처 0)**.
+  상품 노출은 `src/components/ad/CoupangBanner.tsx` 와 `CoupangHome1`·`CoupangHome2`·`CoupangDesktopBanner` 가 담당한다
 - 클릭 추적: `src/components/ad/CpsClickTracker.tsx`
 - 슬롯 설정: `src/components/ad/ad-slots.ts`
 - ~~매거진 파이프라인~~: `agents/cafe/magazine-generator.ts` — 제거됨(2026-09-09)

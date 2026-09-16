@@ -88,6 +88,60 @@ const config: Config = {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
+        full: 'var(--radius-full)',
+      },
+      /* ── 컨트롤 밀도 ──────────────────────────────────────────────
+         `h-control`·`min-h-control` 로 쓴다. public 은 touch(52px), admin 은 compact(36px).
+         🔴 admin 에 touch 를 강제하지 않는다 — 밀도 계약은 `src/lib/design-tokens.ts` 참조. */
+      height: {
+        control: 'var(--control-h-touch)',
+        'control-desktop': 'var(--control-h-desktop)',
+        'control-sm': 'var(--control-h-sm)',
+        'control-lg': 'var(--control-h-lg)',
+        'control-compact': 'var(--control-h-compact)',
+      },
+      minHeight: {
+        control: 'var(--control-h-touch)',
+        'control-desktop': 'var(--control-h-desktop)',
+        'control-sm': 'var(--control-h-sm)',
+        'control-lg': 'var(--control-h-lg)',
+        'control-compact': 'var(--control-h-compact)',
+      },
+      minWidth: {
+        control: 'var(--control-h-touch)',
+        'control-sm': 'var(--control-h-sm)',
+        'control-compact': 'var(--control-h-compact)',
+      },
+      width: {
+        control: 'var(--control-h-touch)',
+        'control-desktop': 'var(--control-h-desktop)',
+        'control-sm': 'var(--control-h-sm)',
+        'control-compact': 'var(--control-h-compact)',
+      },
+      /* Tailwind 기본 spacing scale 은 그대로 쓴다. 여기엔 스케일로 안 나오는 반복 치수만 둔다. */
+      spacing: {
+        'row-y': 'var(--space-row-y)',
+      },
+      maxWidth: {
+        content: 'var(--content-max)',
+        'content-wide': 'var(--content-max-wide)',
+      },
+      /* ── state ───────────────────────────────────────────────────
+         `disabled:opacity-disabled` · `focus-visible:ring-focus ring-offset-focus` 로 쓴다.
+         값은 기존(0.5 · 2px · 2px)과 같다 — 외형은 그대로 두고 출처만 토큰으로 모은다. */
+      opacity: {
+        disabled: 'var(--state-disabled-opacity)',
+      },
+      ringWidth: {
+        focus: 'var(--state-focus-ring-width)',
+      },
+      ringOffsetWidth: {
+        focus: 'var(--state-focus-ring-offset)',
+      },
+      boxShadow: {
+        'elevation-1': 'var(--elevation-1)',
+        'elevation-2': 'var(--elevation-2)',
+        'elevation-3': 'var(--elevation-3)',
       },
       keyframes: {
         'accordion-down': {

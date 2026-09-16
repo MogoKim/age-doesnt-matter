@@ -60,7 +60,7 @@ export default function JobRegionSheet({ onClose }: JobRegionSheetProps) {
             type="button"
             aria-label="지역 선택 닫기"
             onClick={onClose}
-            className="flex items-center justify-center w-[52px] h-[52px] lg:w-11 lg:h-11 rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            className="flex items-center justify-center w-control h-control lg:w-11 lg:h-11 rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
               <path d="M4 4L16 16M16 4L4 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />

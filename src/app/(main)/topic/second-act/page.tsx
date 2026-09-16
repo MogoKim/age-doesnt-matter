@@ -112,7 +112,7 @@ export default async function SecondActTopicPage() {
               <li key={section.id} className="list-none">
                 <a
                   href={`#${section.id}`}
-                  className="inline-flex min-h-[52px] items-center rounded-full border border-border bg-background px-4 text-[17px] font-bold text-foreground no-underline transition-colors hover:border-primary/40 hover:bg-primary/5"
+                  className="inline-flex min-h-control items-center rounded-full border border-border bg-background px-4 text-[17px] font-bold text-foreground no-underline transition-colors hover:border-primary/40 hover:bg-primary/5"
                 >
                   {section.title}
                 </a>
@@ -173,7 +173,7 @@ export default async function SecondActTopicPage() {
                       <li key={sido} className="list-none">
                         <Link
                           href={`/jobs/region/${encodeURIComponent(sido)}`}
-                          className="inline-flex min-h-[52px] items-center rounded-lg border border-border bg-card px-4 text-[17px] font-bold text-foreground no-underline transition-colors hover:border-primary/40 hover:bg-primary/5"
+                          className="inline-flex min-h-control items-center rounded-lg border border-border bg-card px-4 text-[17px] font-bold text-foreground no-underline transition-colors hover:border-primary/40 hover:bg-primary/5"
                         >
                           {sido} 일자리
                         </Link>
@@ -195,19 +195,19 @@ export default async function SecondActTopicPage() {
           <div className="mt-4 flex flex-wrap gap-3">
             <Link
               href="/community/life2"
-              className="inline-flex min-h-[52px] items-center rounded-lg bg-primary px-5 text-[17px] font-bold text-white no-underline transition-colors hover:bg-primary/90"
+              className="inline-flex min-h-control items-center rounded-lg bg-primary px-5 text-[17px] font-bold text-white no-underline transition-colors hover:bg-primary/90"
             >
               2막준비에서 이야기 나누기
             </Link>
             <Link
               href="/jobs"
-              className="inline-flex min-h-[52px] items-center rounded-lg border border-border bg-card px-5 text-[17px] font-bold text-foreground no-underline transition-colors hover:border-primary/40 hover:bg-primary/5"
+              className="inline-flex min-h-control items-center rounded-lg border border-border bg-card px-5 text-[17px] font-bold text-foreground no-underline transition-colors hover:border-primary/40 hover:bg-primary/5"
             >
               내일찾기 일자리 전체 보기
             </Link>
             <Link
               href="/guide"
-              className="inline-flex min-h-[52px] items-center rounded-lg border border-border bg-card px-5 text-[17px] font-bold text-foreground no-underline transition-colors hover:border-primary/40 hover:bg-primary/5"
+              className="inline-flex min-h-control items-center rounded-lg border border-border bg-card px-5 text-[17px] font-bold text-foreground no-underline transition-colors hover:border-primary/40 hover:bg-primary/5"
             >
               생활 가이드 전체 보기
             </Link>

@@ -24,7 +24,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
       </a>
 
       {/* 전 페이지 최상단 홍보 띠 배너 */}
-      <Suspense fallback={<div className="h-[56px]" />}>
+      <Suspense fallback={<div className="h-control-lg" />}>
         <TopPromoBanner />
       </Suspense>
 

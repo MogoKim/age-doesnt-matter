@@ -14,7 +14,7 @@ export function FaqAccordion({ item }: { item: FaqItem }) {
   return (
     <div className="border border-border rounded-2xl overflow-hidden">
       <button
-        className="w-full flex items-center justify-between px-5 py-4 text-left bg-card hover:bg-accent/50 transition-colors min-h-[52px] cursor-pointer"
+        className="w-full flex items-center justify-between px-5 py-4 text-left bg-card hover:bg-accent/50 transition-colors min-h-control cursor-pointer"
         onClick={() => setOpen(!open)}
       >
         <span className="text-body font-bold text-foreground pr-4">{item.q}</span>

@@ -92,7 +92,7 @@ export default async function RegionJobsPage({ params }: PageProps) {
         {/* 뒤로가기 */}
         <Link
           href="/jobs"
-          className="inline-flex items-center gap-1 text-[17px] font-medium text-muted-foreground no-underline min-h-[52px] mb-2 px-2 py-1 rounded-lg transition-colors hover:text-primary-text hover:bg-primary/5"
+          className="inline-flex items-center gap-1 text-[17px] font-medium text-muted-foreground no-underline min-h-control mb-2 px-2 py-1 rounded-lg transition-colors hover:text-primary-text hover:bg-primary/5"
         >
           ← 내 일 찾기
         </Link>
@@ -122,7 +122,7 @@ export default async function RegionJobsPage({ params }: PageProps) {
           >
             <Link
               href="/jobs"
-              className="inline-flex items-center justify-center h-[52px] px-6 bg-primary text-white rounded-xl text-body font-bold no-underline hover:bg-primary/90"
+              className="inline-flex items-center justify-center h-control px-6 bg-primary text-white rounded-xl text-body font-bold no-underline hover:bg-primary/90"
             >
               전체 일자리 보기
             </Link>

@@ -146,7 +146,7 @@ export default async function JobDetailPage({ params }: PageProps) {
       {/* 뒤로가기 */}
       <Link
         href="/jobs"
-        className="inline-flex items-center gap-1 text-[17px] font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-colors hover:text-primary-text hover:bg-primary/5"
+        className="inline-flex items-center gap-1 text-[17px] font-medium text-muted-foreground no-underline min-h-control mb-4 px-2 py-1 rounded-lg transition-colors hover:text-primary-text hover:bg-primary/5"
       >
         ← 내 일 찾기
       </Link>
@@ -209,7 +209,7 @@ export default async function JobDetailPage({ params }: PageProps) {
             href={job.applyUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center w-full h-[52px] bg-primary text-white rounded-xl text-body font-bold no-underline transition-colors hover:bg-primary/90 lg:w-auto lg:h-12 lg:px-8"
+            className="inline-flex items-center justify-center w-full h-control bg-primary text-white rounded-xl text-body font-bold no-underline transition-colors hover:bg-primary/90 lg:w-auto lg:h-control-desktop lg:px-8"
           >
             지원하기
           </a>

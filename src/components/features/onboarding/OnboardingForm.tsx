@@ -357,7 +357,7 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
               id="nickname"
               type="text"
               className={cn(
-                'w-full min-h-[52px] px-4 pr-12 border-2 rounded-xl text-body font-medium text-foreground bg-card outline-none transition-colors placeholder:text-muted-foreground placeholder:font-normal',
+                'w-full min-h-control px-4 pr-12 border-2 rounded-xl text-body font-medium text-foreground bg-card outline-none transition-colors placeholder:text-muted-foreground placeholder:font-normal',
                 nicknameStatus === 'valid'
                   ? 'border-success focus:border-success focus:ring-2 focus:ring-success/10'
                   : nicknameStatus === 'error'
@@ -463,7 +463,7 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
           {/* 전체 동의 */}
           <div
             className={cn(
-              'flex items-center gap-2 min-h-[52px] p-4 rounded-xl mb-4 cursor-pointer border-2 transition-colors',
+              'flex items-center gap-2 min-h-control p-4 rounded-xl mb-4 cursor-pointer border-2 transition-colors',
               allChecked
                 ? 'border-primary bg-primary/5'
                 : 'border-border bg-background hover:border-primary',
@@ -488,7 +488,7 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
           {/* 개별 약관 */}
           <div className="flex flex-col gap-1">
             {TERMS.map((term) => (
-              <div key={term.id} className="flex items-center gap-2 min-h-[52px] px-4 py-2 cursor-pointer rounded-lg transition-colors hover:bg-background">
+              <div key={term.id} className="flex items-center gap-2 min-h-control px-4 py-2 cursor-pointer rounded-lg transition-colors hover:bg-background">
                 <span
                   className={cn(
                     'w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 transition-colors text-sm',
@@ -511,7 +511,7 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
                 {term.url && (
                   <a
                     href={term.url}
-                    className="text-[17px] text-muted-foreground underline shrink-0 min-w-[52px] min-h-[52px] flex items-center justify-center hover:text-primary-text"
+                    className="text-[17px] text-muted-foreground underline shrink-0 min-w-control min-h-control flex items-center justify-center hover:text-primary-text"
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}

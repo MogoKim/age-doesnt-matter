@@ -61,7 +61,7 @@ export default function ContactForm({ type }: ContactFormProps) {
     <>
       <button
         onClick={handleOpen}
-        className="inline-flex items-center justify-center h-[52px] px-6 rounded-xl bg-primary text-white text-body font-bold hover:bg-primary/90 active:scale-[0.98] transition-all"
+        className="inline-flex items-center justify-center h-control px-6 rounded-xl bg-primary text-white text-body font-bold hover:bg-primary/90 active:scale-[0.98] transition-all"
       >
         문의하기
       </button>
@@ -80,7 +80,7 @@ export default function ContactForm({ type }: ContactFormProps) {
               placeholder="홍길동"
               maxLength={30}
               disabled={isPending}
-              className="w-full h-[52px] px-4 rounded-xl border border-border bg-background text-body text-foreground placeholder:text-muted-foreground outline-none transition-colors focus:border-primary focus:shadow-[0_0_0_3px_rgba(255,111,97,0.1)] disabled:opacity-50"
+              className="w-full h-control px-4 rounded-xl border border-border bg-background text-body text-foreground placeholder:text-muted-foreground outline-none transition-colors focus:border-primary focus:shadow-[0_0_0_3px_rgba(255,111,97,0.1)] disabled:opacity-50"
             />
           </div>
 
@@ -96,7 +96,7 @@ export default function ContactForm({ type }: ContactFormProps) {
               placeholder="example@email.com"
               maxLength={100}
               disabled={isPending}
-              className="w-full h-[52px] px-4 rounded-xl border border-border bg-background text-body text-foreground placeholder:text-muted-foreground outline-none transition-colors focus:border-primary focus:shadow-[0_0_0_3px_rgba(255,111,97,0.1)] disabled:opacity-50"
+              className="w-full h-control px-4 rounded-xl border border-border bg-background text-body text-foreground placeholder:text-muted-foreground outline-none transition-colors focus:border-primary focus:shadow-[0_0_0_3px_rgba(255,111,97,0.1)] disabled:opacity-50"
             />
           </div>
 
@@ -130,7 +130,7 @@ export default function ContactForm({ type }: ContactFormProps) {
           <button
             onClick={handleSubmit}
             disabled={isPending || message.trim().length < 10}
-            className="w-full h-[52px] rounded-xl bg-primary text-white text-body font-bold hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+            className="w-full h-control rounded-xl bg-primary text-white text-body font-bold hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
           >
             {isPending ? '전송 중...' : '문의 보내기'}
           </button>

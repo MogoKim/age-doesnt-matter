@@ -235,7 +235,7 @@ export default async function MagazineDetailPage({ params }: PageProps) {
       {/* 뒤로가기 */}
       <Link
         href="/magazine"
-        className="inline-flex items-center gap-1 text-[17px] font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-colors hover:text-primary-text hover:bg-primary/5"
+        className="inline-flex items-center gap-1 text-[17px] font-medium text-muted-foreground no-underline min-h-control mb-4 px-2 py-1 rounded-lg transition-colors hover:text-primary-text hover:bg-primary/5"
       >
         ← 매거진
       </Link>
@@ -321,7 +321,7 @@ export default async function MagazineDetailPage({ params }: PageProps) {
                   href={link.productUrl}
                   target="_blank"
                   rel="noopener noreferrer nofollow"
-                  className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border no-underline transition-colors hover:border-primary/30 hover:shadow-sm min-h-[52px]"
+                  className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border no-underline transition-colors hover:border-primary/30 hover:shadow-sm min-h-control"
                 >
                   <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center text-xl flex-shrink-0">
                     🛍️
@@ -365,7 +365,7 @@ export default async function MagazineDetailPage({ params }: PageProps) {
                   <a
                     key={related.href}
                     href={related.href}
-                    className="flex items-start gap-3 p-4 bg-card rounded-xl border border-border no-underline transition-colors hover:border-primary/30 hover:shadow-sm min-h-[52px]"
+                    className="flex items-start gap-3 p-4 bg-card rounded-xl border border-border no-underline transition-colors hover:border-primary/30 hover:shadow-sm min-h-control"
                   >
                     <div className="flex-1 min-w-0">
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary-strong text-caption font-bold mb-1">
@@ -384,7 +384,7 @@ export default async function MagazineDetailPage({ params }: PageProps) {
                 <a
                   key={related.id}
                   href={buildPostPath({ id: related.id, boardType: 'MAGAZINE', slug: related.slug })}
-                  className="flex items-start gap-3 p-4 bg-card rounded-xl border border-border no-underline transition-colors hover:border-primary/30 hover:shadow-sm min-h-[52px]"
+                  className="flex items-start gap-3 p-4 bg-card rounded-xl border border-border no-underline transition-colors hover:border-primary/30 hover:shadow-sm min-h-control"
                 >
                   <div className="flex-1 min-w-0">
                     {related.category && (

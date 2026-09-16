@@ -31,7 +31,7 @@ export default async function NewcomerWelcomeSection() {
           <li key={n.id} className="group">
             <Link
               href={buildPostPath({ id: n.id, boardType: 'STORY', slug: n.slug })}
-              className="group block py-3.5 border-b border-border/60 no-underline text-inherit min-h-[52px] motion-safe:transition-[border-color] motion-safe:duration-[250ms] motion-reduce:transition-none [@media(hover:hover)]:hover:border-primary active:border-primary"
+              className="group block py-3.5 border-b border-border/60 no-underline text-inherit min-h-control motion-safe:transition-[border-color] motion-safe:duration-[250ms] motion-reduce:transition-none [@media(hover:hover)]:hover:border-primary active:border-primary"
             >
               <div className="mb-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1">
                 <span className="text-body font-bold text-primary-text">{n.nickname}</span>

@@ -80,7 +80,7 @@ export default function GoRedirect({
           {isAndroid && !isKakao && (
             <a
               href={intentHref}
-              className="w-full min-h-[52px] flex items-center justify-center rounded-xl bg-primary text-white text-[18px] font-bold"
+              className="w-full min-h-control flex items-center justify-center rounded-xl bg-primary text-white text-[18px] font-bold"
             >
               앱으로 열기
             </a>
@@ -88,14 +88,14 @@ export default function GoRedirect({
           {isAndroid && (
             <a
               href={storeHref}
-              className="w-full min-h-[52px] flex items-center justify-center rounded-xl bg-primary text-white text-[18px] font-bold"
+              className="w-full min-h-control flex items-center justify-center rounded-xl bg-primary text-white text-[18px] font-bold"
             >
               스토어에서 설치
             </a>
           )}
           <a
             href={webTo}
-            className="w-full min-h-[52px] flex items-center justify-center rounded-xl border-2 border-border text-foreground text-[18px] font-bold"
+            className="w-full min-h-control flex items-center justify-center rounded-xl border-2 border-border text-foreground text-[18px] font-bold"
           >
             웹으로 보기
           </a>

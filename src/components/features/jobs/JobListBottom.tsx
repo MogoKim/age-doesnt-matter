@@ -19,7 +19,7 @@ export default async function JobListBottom({ excludeJobId }: Props) {
         <span className="text-base font-bold text-foreground">다른 일자리도 찾아보세요</span>
         <Link
           href="/jobs"
-          className="text-[17px] text-primary-text no-underline min-h-[52px] flex items-center px-2 hover:underline"
+          className="text-[17px] text-primary-text no-underline min-h-control flex items-center px-2 hover:underline"
         >
           목록 →
         </Link>
@@ -29,7 +29,7 @@ export default async function JobListBottom({ excludeJobId }: Props) {
           <li key={job.id} className="border-b border-border last:border-b-0">
             <Link
               href={buildPostPath({ id: job.id, boardType: 'JOB' })}
-              className="flex items-start gap-3 py-3 no-underline text-inherit min-h-[52px] hover:bg-muted/40 transition-colors -mx-1 px-1 rounded-lg"
+              className="flex items-start gap-3 py-3 no-underline text-inherit min-h-control hover:bg-muted/40 transition-colors -mx-1 px-1 rounded-lg"
             >
               <span className="text-caption font-bold text-muted-foreground w-5 shrink-0 pt-0.5 text-right">
                 {idx + 1}
