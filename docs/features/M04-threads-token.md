@@ -1,5 +1,10 @@
 # Threads 토큰 갱신 운영 기획서 (M04)
 
+> ⚠️ **실측 2026-09-16** — 이 문서가 가리키는 구현 경로 **2개가 더 이상 존재하지 않는다** (그중 2개는 `agents/` 하위 — 2026-09 네이버 카페 폐기·R4 정리로 삭제됨).
+> 경로를 지우지 않고 남겨 둔다 — **어떤 구현이 있었는지가 기록**이기 때문이다.
+> 기능의 현재 상태는 이 문서가 아니라 실측으로 판정한다(`gh workflow list --all` · `launchctl list` · `agents/core/constitution.yaml`).
+
+
 > ⚠️ **ARCHIVED (2026-09-08)** — 이 기능의 구현 파일은 R4 GROWTH_LEGACY 제거로 삭제됐다.
 > 아래 내용은 삭제 시점의 설계 기록이며 현재 운영 계약이 아니다.
 > 현재 판정: `docs/operations/UNAO_RESCUE_STATUS.md` · PR #437

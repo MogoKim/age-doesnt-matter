@@ -2,14 +2,11 @@ import { prisma } from '@/lib/prisma'
 import { pushService } from '@/lib/push/service'
 import type { NotificationType } from '@/generated/prisma/client'
 import type { PushPayload } from '@/lib/push/types'
+import { isRealUser } from '@/lib/real-user'
 
-/**
- * 실고객(진짜 카카오 가입자) 판별 — providerId가 순수 숫자.
- * 봇(seed/curate/bot-* 등)은 providerId가 비숫자 → 알림 대상에서 제외.
- * 기준 단일화: admin.insights.ts isRealUser와 동일 규칙.
- */
-export const isRealUser = (providerId: string | null | undefined): boolean =>
-  !!providerId && /^\d+$/.test(providerId)
+// 실고객 판별 정본은 `@/lib/real-user` 다(의존성 없는 중립 모듈).
+// 이 파일 안에서도 쓰고, 기존에 `notify` 에서 가져오던 코드가 깨지지 않도록 재수출한다.
+export { isRealUser }
 
 interface NotifyUserParams {
   type: NotificationType

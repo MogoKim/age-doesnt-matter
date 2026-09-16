@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { unstable_cache } from 'next/cache'
 import { getInternalSessionIds } from './internal-sessions'
 import { resolveGuestKey } from '@/lib/anon-cid'
+import { isRealUser } from '@/lib/real-user'
 
 // 리텐션 4분면 (TWA/웹 × 회원/비회원) D1/D3/D7.
 // 회원 = providerId 순수숫자(^\d+$), 채널 = User.signupSource(없으면 UNKNOWN), 코호트 = 가입일.
@@ -9,7 +10,6 @@ import { resolveGuestKey } from '@/lib/anon-cid'
 // D-N = 기준일 + N일 이후 재방문 존재(누적 생존). 분모 = N일 경과할 시간이 있었던 코호트만.
 
 const DAY = 86400000
-const isRealUser = (pid: string) => /^\d+$/.test(pid)
 const dayIdx = (t: number) => Math.floor((t + 9 * 3600000) / DAY)
 const isTwaRef = (ref: string) => ref.startsWith('android-app://')
 

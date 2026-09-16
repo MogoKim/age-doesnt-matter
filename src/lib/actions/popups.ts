@@ -3,13 +3,8 @@
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import type { PopupType, PopupTarget } from '@/generated/prisma/client'
-import { getAdminSession } from '@/lib/admin-auth'
+import { requireAdminSession as requireAdmin } from '@/lib/admin-auth'
 
-async function requireAdmin() {
-  const session = await getAdminSession()
-  if (!session) throw new Error('관리자 인증이 필요합니다.')
-  return session
-}
 
 interface CreatePopupInput {
   type: PopupType

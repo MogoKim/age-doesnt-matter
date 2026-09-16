@@ -1,25 +1,17 @@
 import { revalidatePath, updateTag, unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { GRADE_INFO } from '@/lib/grade'
 import { postDetailCacheTag } from '@/lib/queries/posts/posts.base'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
-import type { BoardType, CommentItem, UserSummary, Grade } from '@/types/api'
+import type { BoardType, CommentItem } from '@/types/api'
+import { toUserSummaryBase } from './posts/posts.base'
 
-function toUserSummary(user: {
-  id: string
-  nickname: string
-  grade: string
-  profileImage: string | null
-}): UserSummary {
-  const grade = user.grade as Grade
-  return {
-    id: user.id,
-    nickname: user.nickname,
-    grade,
-    gradeEmoji: GRADE_INFO[grade]?.emoji ?? '🌱',
-    profileImage: user.profileImage,
-  }
-}
+/**
+ * 공통 매핑을 그대로 쓴다.
+ *
+ * 🔴 글 목록의 `toUserSummary`(탈퇴 마스킹 포함)를 쓰지 않는다 — 여기는 저장된 값을
+ *    그대로 보여주는 것이 **기존 표시 정책**이고, 리팩토링으로 바꾸지 않는다.
+ */
+export const toUserSummary = toUserSummaryBase
 
 /** 게시글의 댓글 목록 조회 (트리 구조) */
 async function _getCommentsByPostId(
@@ -200,8 +192,7 @@ export interface PostCacheRef {
  * CUID와 slug 두 키를 모두 지우는 이유: 상세 페이지는 정본 URL(slug)로 getPostDetail을 호출하고
  * opengraph-image·/api/posts/[postId]는 CUID로 호출해 캐시 엔트리가 둘로 나뉠 수 있다.
  * 한쪽만 지우면 댓글 수가 옛 값으로 남는다.
- */
-/**
+ *
  * ⚠️ **Server Action 안에서만 호출한다.** `updateTag` 는 read-your-own-writes 를 보장하는 대신
  * Server Action 밖에서 부르면 던진다. 현재 호출부는 `actions/comments.ts` ·
  * `actions/guest-comments.ts` 뿐이고 둘 다 `'use server'` 다.

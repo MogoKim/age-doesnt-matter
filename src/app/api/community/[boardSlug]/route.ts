@@ -1,14 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getBoardConfig } from '@/lib/queries/boards'
 import { getCachedBoardPage, getPostsByBoardPage } from '@/lib/queries/posts'
-import type { SearchField } from '@/lib/queries/posts/posts.base'
+import { parseSearchField } from '@/lib/list-query'
 
 const LIMIT_MAX = 24
 
-function parseSearchField(raw: string | null): SearchField {
-  if (raw === 'title' || raw === 'content') return raw
-  return 'both'
-}
 
 export async function GET(
   request: NextRequest,

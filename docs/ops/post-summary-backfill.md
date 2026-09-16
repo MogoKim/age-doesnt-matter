@@ -26,7 +26,7 @@
 
 ## 스크립트
 
-`agents/scripts/backfill-post-summary.ts`
+`agents/scripts/backfill-post-summary.ts` **(제거됨 — 2026-09 R4 정리)**
 
 ```bash
 # dry-run (기본값 — DB 수정 0)
@@ -96,7 +96,7 @@ known issue
 
 ### 선행 작업
 
-`agents/core/summary.ts` 보강 PR이 먼저다.
+~~`agents/core/summary.ts`~~ 보강 PR이 먼저다 (그 파일은 #444 에서 삭제됐다. `src/lib/summary.ts` 는 #257 에서 **따로 만든 별도 구현**이지 이동본이 아니다).
 
 1. `ㅊㅊ` 등 초성 은어 라벨 인식 (44건)
 2. 위치 무관 URL 제거 — 현재 `TAIL_URL`은 꼬리만 본다 (19건)

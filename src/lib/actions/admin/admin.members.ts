@@ -2,10 +2,10 @@
 
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { getAdminSession } from '@/lib/admin-auth'
+import { requireAdminSession as requireAdmin } from '@/lib/admin-auth'
 import type { Grade, UserStatus } from '@/generated/prisma/client'
-import { BOARD_URL_PREFIX } from '@/lib/board-registry'
 import { revalidateJobPostsBulk } from '@/lib/cache/job-cache'
+import { revalidateServicePaths } from './revalidate'
 
 export type UserPostItem = {
   id: string
@@ -27,26 +27,7 @@ export type UserCommentItem = {
   post: { id: string; title: string; boardType: string; slug: string | null }
 }
 
-async function requireAdmin() {
-  const session = await getAdminSession()
-  if (!session) throw new Error('관리자 인증이 필요합니다.')
-  return session
-}
 
-// BoardType → 서비스 페이지 경로 매핑 (SSoT: board-registry — 구 로컬 중복 정의 제거)
-const BOARD_PATHS: Record<string, string> = BOARD_URL_PREFIX
-
-/** 게시글 상태 변경 시 서비스 페이지 캐시 무효화 */
-function revalidateServicePaths(boardType?: string | null, postId?: string) {
-  const boardPath = boardType ? BOARD_PATHS[boardType] : null
-  if (boardPath) {
-    revalidatePath(boardPath)
-    if (postId) revalidatePath(`${boardPath}/${postId}`)
-  }
-  revalidatePath('/')
-  revalidatePath('/best')
-  revalidatePath('/search')
-}
 
 export async function adminUpdateUserStatus(
   userId: string,

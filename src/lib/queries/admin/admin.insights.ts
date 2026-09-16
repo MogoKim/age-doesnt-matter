@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { unstable_cache } from 'next/cache'
 import { getInternalSessionIds } from './internal-sessions'
 import { isLowQualityDirectSession, ACTIVITY_EVENTS } from './pc-direct-filter'
+import { isRealUser } from '@/lib/real-user'
 
 // 실고객 인사이트 — 봇 제외(실고객 = providerId 순수숫자 ^\d+$) 4대 지표.
 // agents/scripts/insights.ts(CLI)와 동일 기준의 서버판. 화면용으로 unstable_cache(30분).
@@ -9,7 +10,6 @@ import { isLowQualityDirectSession, ACTIVITY_EVENTS } from './pc-direct-filter'
 
 const WEEK = 7 * 86400000
 const DAY = 86400000
-const isRealUser = (pid: string) => /^\d+$/.test(pid)
 const pct = (n: number, d: number) => (d > 0 ? Math.round((n / d) * 1000) / 10 : 0)
 
 export interface InsightsData {

@@ -21,9 +21,9 @@ E2E Admin 은 **계속 skip** 이다. 두 조건은 AND 로 묶여 있고, 계�
 
 ```
 picomatch('src/app/(admin)/**', {dot:true})
-  'src/app/admin/page.tsx'          → true
-  'src/app/admin/content/page.tsx'  → true
-  'src/app/(admin)/admin/page.tsx'  → false   ← 표기대로의 경로는 오히려 안 잡힌다
+  'src/app/admin/(panel)/page.tsx'         → true
+  'src/app/admin/(panel)/content/page.tsx' → true
+  'src/app/(admin)/admin/page.tsx'         → false   ← 표기대로의 경로는 오히려 안 잡힌다(존재하지도 않는다)
   'src/components/admin/ContentTable.tsx' → false
 ```
 
@@ -115,7 +115,7 @@ audit 스크립트·baseline 을 스스로 담는 것과 같은 이유다.
 ### 🔴 판정에 실제 matcher 를 쓴다
 
 계약 테스트는 `dorny/paths-filter@v3` 와 **같은 라이브러리·같은 옵션**으로 판정한다 —
-`picomatch@^2.3.1`, `{ dot: true }` (v3 `src/filter.ts` 의 `MatchOptions`).
+`picomatch@^2.3.1`, `{ dot: true }` (dorny/paths-filter 저장소의 `src/filter.ts` 에 있는 `MatchOptions`).
 
 기존 `ci-paths-filter.test.ts` 는 `dir/**` 와 단일 파일만 처리하는 손수 만든 matcher 를
 썼다. 새 필터의 `admin*.ts`·`0[6-9]-*.spec.ts` 를 그 matcher 에 물리면 **전부 false**

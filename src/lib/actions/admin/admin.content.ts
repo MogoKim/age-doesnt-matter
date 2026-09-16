@@ -2,7 +2,7 @@
 
 import { revalidatePath, updateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { getAdminSession } from '@/lib/admin-auth'
+import { requireAdminSession as requireAdmin } from '@/lib/admin-auth'
 import { deleteFromR2, extractR2KeyFromUrl } from '@/lib/r2'
 import { checkAndPromotePost } from '@/lib/actions/promotion'
 import type { PostStatus, PromotionLevel, BoardType } from '@/generated/prisma/client'
@@ -10,30 +10,16 @@ import { assertGreetingByMember } from '@/lib/greeting'
 import { BOARD_URL_PREFIX } from '@/lib/board-registry'
 import { revalidateJobPost, revalidateJobPostsBulk } from '@/lib/cache/job-cache'
 import { invalidateCachedBoardType } from '@/lib/seo/board-slug-cache'
+import { revalidateServicePaths } from './revalidate'
 
-async function requireAdmin() {
-  const session = await getAdminSession()
-  if (!session) throw new Error('관리자 인증이 필요합니다.')
-  return session
-}
+// BoardType → 서비스 페이지 경로 (SSoT: board-registry).
+// 캐시 무효화는 `./revalidate` 로 옮겼지만, 이 파일은 경로 매핑 자체를 따로 쓴다.
+const BOARD_PATHS: Record<string, string> = BOARD_URL_PREFIX
+
 
 // 1차 이동 허용 게시판 (MAGAZINE/JOB/WEEKLY는 별도 영향도 검토 필요)
 const MOVABLE_BOARD_TYPES: BoardType[] = ['STORY', 'LIFE2', 'HUMOR', 'MENOPAUSE']
 
-// BoardType → 서비스 페이지 경로 매핑 (SSoT: board-registry — 구 로컬 중복 정의 제거)
-const BOARD_PATHS: Record<string, string> = BOARD_URL_PREFIX
-
-/** 게시글 상태 변경 시 서비스 페이지 캐시 무효화 */
-function revalidateServicePaths(boardType?: string | null, postIdentifier?: string | null) {
-  const boardPath = boardType ? BOARD_PATHS[boardType] : null
-  if (boardPath) {
-    revalidatePath(boardPath)
-    if (postIdentifier) revalidatePath(`${boardPath}/${postIdentifier}`)
-  }
-  revalidatePath('/')
-  revalidatePath('/best')
-  revalidatePath('/search')
-}
 
 export async function adminSetPostPromotionLevel(postId: string, level: PromotionLevel) {
   const admin = await requireAdmin()

@@ -10,6 +10,7 @@
 > - **자동화(A·M 계열)는 의도적으로 정지 상태다.** GitHub Actions 26개 중 21개 `disabled_manually`(2026-08-24 이후 미실행). launchd 콘텐츠 발행 12개는 2026-09-06 04:09 KST unload 완료(4개 유지/관찰). production `/api/health`는 감사 당시 503이었으나 R1-A로 복구돼 현재 healthy. `/api/bot/posts·jobs`는 #412로 기본 차단.
 > - 실측으로 확인된 불일치: 문서상 ACTIVE인데 스케줄 자체가 없는 것 6(A09·A10·A11·A20·A21·A22 — **A11·A20·A21·A22는 2026-09-08 R4 ORG_THEATER 제거로 ARCHIVED 전환**), ARCHIVED인데 코드 잔존 5(A07·A08·A23·A28·A99), 경로·슬롯 불일치 13, 미등록 워크플로우 12·plist 3·agents 디렉터리 5.
 > - 개별 행의 실제 상태는 **실측 필요**: `gh workflow list --all`, `launchctl list | grep -iE 'unao|unaeo'`, `agents/core/constitution.yaml` `automation_status`(현재 `PAUSED` — coo:moderator는 #411로 MONITORING_TASKS 포함).
+> - **2026-09-16 경로 실측(Foundation 3.0)**: 이 표가 가리키는 구현 경로 중 **32개가 존재하지 않는다**(그중 `agents/` 하위 31개 — 네이버 카페 폐기·R4 정리로 삭제). 사라진 경로는 **역사 기록이라 그대로 둔다** — 이름이 같은 현재 파일로 바꾸지 않는다(`agents/seed/scheduler.ts` 는 시드 콘텐츠 스케줄러였고 `scripts/ops-board/engine/scheduler.ts` 는 운영 보드 probe/SSE 로 **다른 기능**이다). 표 자체는 **손대지 않았다** — 이 문서가 스스로 "수동 편집 금지, R4/R5에서 재작성"이라고 못박고 있기 때문이다. 개별 feature 문서에는 같은 날짜의 실측 표시를 넣었다.
 > - 근거·행별 판정: `docs/operations/2026-09-05-claude-foundation-reset-audit-report.md` §3 A-06~A-08, 원본 검증 표는 Rescue R4/R5에서 REGISTRY 재작성 시 반영한다.
 
 ---
@@ -133,7 +134,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | A20 | CPO 페르소나 다양성 체커 | ~~`agents/cpo/persona-diversity-checker.ts`~~ 삭제됨 | — | — | INFRA | — | — | **ARCHIVED** | 2026-09-08 |
 | A21 | CDO 참여 최적화 | ~~`agents/cdo/engagement-optimizer.ts`~~ 삭제됨 | — | — | INFRA | — | — | **ARCHIVED** | 2026-09-08 |
 | A22 | Strategist 사용자 딥 분석 | ~~`agents/strategist/user-deep-analysis.ts`~~ 삭제됨 | — | — | INFRA | — | — | **ARCHIVED** | 2026-09-08 |
-| A23 | Seed 킬러 포스트 | `agents/seed/scheduler.ts` (killer-post) | GHA 09:10·22:10 KST | GHA | RELATION | ALL | — | ARCHIVED | 2026-06-03 |
+| A23 | Seed 킬러 포스트 | ~~`agents/seed/scheduler.ts`~~ (killer-post, 삭제됨) | GHA 09:10·22:10 KST | GHA | RELATION | ALL | — | ARCHIVED | 2026-06-03 |
 | A24 | Seed 바이럴 웨이브 | ~~`agents/seed/scheduler.ts`~~ · ~~`agents-sheet-viral.yml`~~ 삭제됨 | — | — | RELATION | ALL | — | **ARCHIVED** | 2026-09-09 |
 | A25 | 논란 체인 | ~~`agents/seed/controversy-chain.ts`~~ 삭제됨 | — | — | RELATION | ALL | — | **ARCHIVED** | 2026-09-09 |
 | A26 | Design 광고 루프 | ~~`agents/marketing-loop/creative-optimizer.ts`~~ 삭제됨 | — | — | INFRA | — | — | **ARCHIVED** | 2026-09-09 |

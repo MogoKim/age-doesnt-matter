@@ -1,5 +1,10 @@
 # launchd 로컬 스케줄러 운영 기획서 (I01)
 
+> ⚠️ **실측 2026-09-16** — 이 문서가 가리키는 구현 경로 **4개가 더 이상 존재하지 않는다** (그중 4개는 `agents/` 하위 — 2026-09 네이버 카페 폐기·R4 정리로 삭제됨).
+> 경로를 지우지 않고 남겨 둔다 — **어떤 구현이 있었는지가 기록**이기 때문이다.
+> 기능의 현재 상태는 이 문서가 아니라 실측으로 판정한다(`gh workflow list --all` · `launchctl list` · `agents/core/constitution.yaml`).
+
+
 > ⚠️ **정정 (2026-09-09)** — 여기 예시로 든 카페 크롤러·매거진 러너 launchd 는 **전부 제거됐다**(R4 B-3).
 > 저장소에 남는 plist 는 `com.unao.unao-prod-sync` · `com.unaeo.opsboard` 둘뿐이고, 설치본 15개는
 > `~/backups/unao-launchd-archive-2026-09-09/` 로 옮겼다. 아래 예시는 launchd 사용법 참고로만 읽는다.
