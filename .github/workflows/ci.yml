@@ -43,8 +43,38 @@ jobs:
             agents:
               - 'agents/**'
               - '.github/workflows/agents-*.yml'
+            # 🔴 어드민 전용 — `src/app/(admin)/**` 한 줄이었다(2026-09-16 교정).
+            #    ① 그 경로는 **존재하지 않는다.** 실제 관리자 route 는 `src/app/admin/**` 이다.
+            #       그런데도 매칭은 됐다 — picomatch 가 맨 `(admin)` 을 캡처 그룹으로 컴파일해
+            #       리터럴 `admin` 세그먼트에 걸렸기 때문이다. 괄호를 '고치면' 소리 없이 죽는 표기였다.
+            #    ② page 층 48파일 말고는 전부 놓쳤다 — 어드민 화면의 본체(컴포넌트·쿼리·
+            #       server action·API·인증·미들웨어)와 **E2E 하네스 자신**이 필터 밖이었다.
+            #       PR #486 이 그 예다: 어드민 4개 화면을 바꿨는데 admin=false 였다.
+            #    판정은 `src/__tests__/ci-admin-paths-filter.test.ts` 가 **실제 matcher**
+            #    (picomatch, dot:true — dorny/paths-filter@v3 와 동일)로 고정한다.
             admin:
-              - 'src/app/(admin)/**'
+              # 관리자 화면·API 라우트
+              - 'src/app/admin/**'
+              - 'src/app/api/admin/**'
+              # 화면 본체 — 실제 동작이 여기 있다
+              - 'src/components/admin/**'
+              # 데이터·변이 계층
+              - 'src/lib/queries/admin/**'
+              - 'src/lib/queries/admin*.ts'
+              - 'src/lib/actions/admin/**'
+              - 'src/lib/actions/admin*.ts'
+              # 접근 제어 — /admin 진입은 미들웨어가 admin-token 으로 막는다
+              - 'src/lib/admin-auth.ts'
+              - 'src/middleware.ts'
+              # E2E 하네스 자신 — qa-admin project 가 쓰는 spec·fixture·설정
+              - 'e2e/qa/0[6-9]-*.spec.ts'
+              - 'e2e/qa/1[0-4]-*.spec.ts'
+              - 'e2e/fixtures/auth.setup.ts'
+              - 'playwright.config.ts'
+              # 🔴 검사 도구 자신 — 이 둘이 없으면 **필터·계약만 고친 PR 이 검증 없이 통과**한다.
+              #    `design` 필터가 같은 이유로 자기 도구를 담는다.
+              - '.github/workflows/ci.yml'
+              - 'src/__tests__/ci-admin-paths-filter.test.ts'
             prisma:
               - 'prisma/**'
             # 운영 스크립트. root tsconfig의 exclude에 'scripts'가 있어 npm run typecheck로는

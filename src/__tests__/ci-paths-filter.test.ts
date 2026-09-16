@@ -17,6 +17,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { parse } from 'yaml'
+import picomatch from 'picomatch'
 
 const ROOT = resolve(process.cwd())
 const CI_PATH = resolve(ROOT, '.github/workflows/ci.yml')
@@ -34,12 +35,15 @@ function filters(): Record<string, string[]> {
 }
 
 /**
- * `dorny/paths-filter` 의 glob 판정을 필요한 만큼만 흉내 낸다.
- * 여기서 쓰는 패턴은 전부 `<디렉토리>/**` 또는 단일 파일이다.
+ * `dorny/paths-filter@v3` 와 **같은 라이브러리·같은 옵션**으로 판정한다
+ * (v3 `src/filter.ts` 의 `MatchOptions = { dot: true }`).
+ *
+ * 🔴 예전에는 `dir/**` 와 단일 파일만 처리하는 손수 만든 matcher 였다.
+ *    `admin` 필터가 `admin*.ts`·`0[6-9]-*.spec.ts` 같은 패턴을 쓰게 되면서
+ *    그 흉내 matcher 는 **전부 false 를 돌려 false-green** 이 된다. 그래서 교체했다.
  */
 function matches(pattern: string, path: string): boolean {
-  if (pattern.endsWith('/**')) return path.startsWith(pattern.slice(0, -2))
-  return pattern === path
+  return picomatch(pattern, { dot: true })(path)
 }
 
 function matchedFilters(path: string): string[] {
