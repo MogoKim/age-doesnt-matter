@@ -2,15 +2,10 @@
 
 import { revalidatePath, updateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { getAdminSession } from '@/lib/admin-auth'
+import { requireAdminSession as requireAdmin } from '@/lib/admin-auth'
 import { retroactivePromotionUpdate } from '@/lib/actions/promotion'
 import type { BannedWordCategory, Grade } from '@/generated/prisma/client'
 
-async function requireAdmin() {
-  const session = await getAdminSession()
-  if (!session) throw new Error('관리자 인증이 필요합니다.')
-  return session
-}
 
 // ─── 금지어 ───
 

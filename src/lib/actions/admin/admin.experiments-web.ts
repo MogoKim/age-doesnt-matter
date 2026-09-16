@@ -2,13 +2,8 @@
 
 import { revalidatePath, updateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { getAdminSession } from '@/lib/admin-auth'
+import { requireAdminSession as requireAdmin } from '@/lib/admin-auth'
 
-async function requireAdmin() {
-  const session = await getAdminSession()
-  if (!session) throw new Error('관리자 인증이 필요합니다.')
-  return session
-}
 
 // 웹 A/B 실험 운영 상태 저장 (ExperimentState upsert)
 // startedAt/endedAt 는 상태 전이에 따라 자동: ACTIVE 진입 시 시작일, CONCLUDED 시 종료일.

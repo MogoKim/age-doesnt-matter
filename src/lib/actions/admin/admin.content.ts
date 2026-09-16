@@ -2,7 +2,7 @@
 
 import { revalidatePath, updateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { getAdminSession } from '@/lib/admin-auth'
+import { requireAdminSession as requireAdmin } from '@/lib/admin-auth'
 import { deleteFromR2, extractR2KeyFromUrl } from '@/lib/r2'
 import { checkAndPromotePost } from '@/lib/actions/promotion'
 import type { PostStatus, PromotionLevel, BoardType } from '@/generated/prisma/client'
@@ -16,11 +16,6 @@ import { revalidateServicePaths } from './revalidate'
 // 캐시 무효화는 `./revalidate` 로 옮겼지만, 이 파일은 경로 매핑 자체를 따로 쓴다.
 const BOARD_PATHS: Record<string, string> = BOARD_URL_PREFIX
 
-async function requireAdmin() {
-  const session = await getAdminSession()
-  if (!session) throw new Error('관리자 인증이 필요합니다.')
-  return session
-}
 
 // 1차 이동 허용 게시판 (MAGAZINE/JOB/WEEKLY는 별도 영향도 검토 필요)
 const MOVABLE_BOARD_TYPES: BoardType[] = ['STORY', 'LIFE2', 'HUMOR', 'MENOPAUSE']

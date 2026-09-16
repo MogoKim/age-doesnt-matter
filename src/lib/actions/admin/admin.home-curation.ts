@@ -2,7 +2,7 @@
 
 import { updateTag, revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { getAdminSession } from '@/lib/admin-auth'
+import { requireAdminSession as requireAdmin } from '@/lib/admin-auth'
 import type { BoardType } from '@/generated/prisma/client'
 
 type SectionType = 'TRENDING' | 'STORIES' | 'HUMOR' | 'BEST_HOT' | 'BEST_FAME'
@@ -20,11 +20,6 @@ const SECTION_ALLOWED_BOARDS: Record<SectionType, BoardType[]> = {
   BEST_FAME: ['STORY', 'LIFE2', 'HUMOR'] as BoardType[],
 }
 
-async function requireAdmin() {
-  const session = await getAdminSession()
-  if (!session) throw new Error('관리자 인증이 필요합니다.')
-  return session
-}
 
 // KST 오늘 23:59:59 = UTC 14:59:59 (UTC+9)
 function calcExpiresAt(duration: DurationPreset): Date | null {
