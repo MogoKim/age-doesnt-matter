@@ -99,6 +99,11 @@ async function resolveSlug(cuid: string): Promise<string | null> {
 }
 
 const BOARD_REDIS_TTL_S = 86400  // 24시간 — 글의 보드는 거의 바뀌지 않고, 바뀌면 옛 URL 이 하루 안에 정본으로 수렴한다
+/**
+ * "그런 slug 없음"은 **짧게만** 기억한다.
+ * 방금 발행된 글이 24시간 동안 "없는 글"로 캐시되면 그동안 정본 교정이 죽는다.
+ */
+const BOARD_NEGATIVE_TTL_S = 300
 const BOARD_REDIS_PREFIX = 'board:'
 
 /**
@@ -131,13 +136,18 @@ async function resolveBoardType(slug: string): Promise<string | null> {
         },
       },
     )
-    if (!res.ok) {
-      redis.set(key, '', { ex: BOARD_REDIS_TTL_S }).catch(() => {})
-      return null
-    }
+    // 🔴 전송 실패(401·5xx·네트워크)는 **캐시하지 않는다.**
+    //    한 번의 일시 장애를 '없는 글'로 24시간 굳히면 그동안 정본 교정이 통째로 죽는다.
+    //    (2026-09-16 Preview 실측에서 실제로 이 함정을 밟았다 — 첫 요청 실패가 캐시돼
+    //     이후 요청이 REST 를 시도조차 하지 않았다.)
+    if (!res.ok) return null
+
     const data = (await res.json()) as { boardType: string }[]
     const boardType = data[0]?.boardType ?? null
-    redis.set(key, boardType ?? '', { ex: BOARD_REDIS_TTL_S }).catch(() => {})
+    // 조회가 **성공**했을 때만 캐시한다. 없음(null)은 짧게만 기억한다.
+    redis
+      .set(key, boardType ?? '', { ex: boardType ? BOARD_REDIS_TTL_S : BOARD_NEGATIVE_TTL_S })
+      .catch(() => {})
     return boardType
   } catch {
     return null
