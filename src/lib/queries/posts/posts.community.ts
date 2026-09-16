@@ -5,6 +5,9 @@ import type { PostSummary } from '@/types/api'
 import { postSelect, toPostSummary, buildTextSearch, SearchField } from './posts.base'
 import { EXCLUDE_GREETING, GREETING_CATEGORY } from '@/lib/greeting'
 import { EXCLUDE_EVENT } from '@/lib/event-category'
+// 페이지 크기는 404 경계(`isPageOutOfRange`)와 **같은 상수**를 써야 한다 — 갈라지면
+// 마지막 페이지가 404 가 되거나 빈 페이지가 200 이 된다.
+import { LIST_PAGE_SIZE } from '@/lib/list-query'
 
 /* ── 게시판별 목록 ── */
 
@@ -243,7 +246,7 @@ export const getCachedBoardPage = unstable_cache(
       category: category === 'all' ? undefined : category,
       sort: sort as 'latest' | 'likes',
       skip: 0,
-      limit: 12,
+      limit: LIST_PAGE_SIZE,
     }),
   ['community-board-page'],
   { revalidate: 300, tags: ['community-board-page'] },
@@ -264,8 +267,8 @@ export const getCachedBoardPageAt = unstable_cache(
     getPostsByBoardPage(boardType, {
       category: category === 'all' ? undefined : category,
       sort: sort as 'latest' | 'likes',
-      skip: (Math.max(1, page) - 1) * 12,
-      limit: 12,
+      skip: (Math.max(1, page) - 1) * LIST_PAGE_SIZE,
+      limit: LIST_PAGE_SIZE,
     }),
   ['community-board-page-at'],
   { revalidate: 300, tags: ['community-board-page'] },

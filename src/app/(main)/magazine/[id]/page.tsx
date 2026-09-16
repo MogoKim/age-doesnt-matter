@@ -189,7 +189,10 @@ export default async function MagazineDetailPage({ params }: PageProps) {
     description: post.preview || '',
     url: `${BASE_URL}/magazine/${canonicalSlug}`,
     datePublished: post.createdAt,
-    dateModified: post.updatedAt,
+    // 🔴 `dateModified` 를 선언하지 않는다 — `Post.updatedAt` 은 글 조회마다 도는
+    //    `viewCount: { increment: 1 }` write 로 오늘 날짜가 된다(Prisma `@updatedAt`).
+    //    2026-09-16 실측: JSON-LD dateModified 146건 중 138건이 이틀 안 날짜.
+    //    모르는 값을 지어내느니 필드를 빼는 게 맞다(근거: lib/seo/discussion-forum.ts).
     inLanguage: 'ko-KR',
     articleSection: post.category ?? '라이프스타일',
     keywords: post.seoTitle ?? post.title,

@@ -26,6 +26,7 @@ import { buildBreadcrumbJsonLd } from '@/lib/seo/breadcrumb'
 import { GREETING_CATEGORY } from '@/lib/greeting'
 import { EVENT_CATEGORY } from '@/lib/event-category'
 import { resolveCommunityCanonicalPath } from '@/lib/community-canonical'
+import { buildPostPath, encodePathname } from '@/lib/post-url'
 import { shouldGoogleNoindexCommunityPost } from '@/lib/seo/community-google-noindex'
 
 interface PageProps {
@@ -83,13 +84,25 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   // Suspense 스트리밍이 200 헤더를 먼저 보내 무력화). Next가 noindex를 자동 삽입 — 명시 robots 불필요(중복 해소)
   if (!post) notFound()
 
-  // 정본 URL 교정(PR-M0): CUID 접근 + 보드 불일치(글 이동 후 옛 보드 URL)를 한 번의 308로.
-  // metadata 단계는 streaming 시작 전이라 여기서 redirect해야 상태코드가 확정된다.
+  // 정본 URL 교정(PR-M0 → Batch A).
+  //
+  // 🔴 여기서 `permanentRedirect()` 를 부르면 **HTTP 500** 이 난다.
+  //    이 라우트는 `dynamic = 'force-static'` 이라 정적 생성 중 redirect 를 표현할 수 없다
+  //    (2026-09-16 production 실측: `/community/{humor,life2,menopause}/<stories-slug>`
+  //     9건 전부 500, `x-matched-path: /500`).
+  //    308 은 **렌더 전에 도는 middleware** 가 보낸다 — CUID→slug 교정과 같은 자리다.
+  //
+  //    middleware 가 놓친 경우(Redis·Supabase 장애)에도 500 을 내지 않는다. 대신
+  //    **정본 canonical** 을 달아 중복 신호를 정리한다. 200 + 올바른 canonical 이
+  //    500 보다 언제나 낫다.
+  //    `resolveCommunityCanonicalPath` 는 **디코드된** 경로를 돌려준다. 공개 URL 로 쓰기 전에
+  //    segment 단위로 인코딩한다 — raw 한글 URL 은 네이버 Yeti 가 수집하지 못한다(PR #481).
   const canonicalPath = resolveCommunityCanonicalPath({ boardSlug, postId, post })
-  if (canonicalPath) permanentRedirect(canonicalPath)
-
   const canonicalId = post.slug ?? postId
-  const url = `${BASE_URL}/community/${boardSlug}/${canonicalId}`
+  const canonicalDetailPath = canonicalPath
+    ? encodePathname(canonicalPath)
+    : buildPostPath({ id: canonicalId, boardType: post.boardType, slug: post.slug })
+  const url = `${BASE_URL}${canonicalDetailPath}`
   const description = post.preview || buildFallbackDescription(post.title, post.boardType)
 
   return {
@@ -149,9 +162,11 @@ export default async function PostDetailPage({ params }: PageProps) {
   const backHref = `/community/${boardSlug}`
   const backLabel = board.displayName
 
-  // 정본 URL 교정(PR-M0): CUID→slug + 보드 불일치(글 이동 후 옛 보드 URL) 통합 308 — metadata와 동일 규칙
+  // 정본 URL 교정(PR-M0 → Batch A): 308 은 middleware 가 보낸다.
+  // 여기서 `permanentRedirect()` 를 부르면 force-static 정적 생성 중 redirect 가 되어
+  // **HTTP 500** 이 난다(generateMetadata 쪽 주석의 실측 근거와 동일 원인).
+  // 렌더 단계에서는 정본 경로를 **canonical 값으로만** 쓴다.
   const canonicalPath = resolveCommunityCanonicalPath({ boardSlug, postId, post })
-  if (canonicalPath) permanentRedirect(canonicalPath)
 
   // slug로 접근한 경우에도 DB의 실제 CUID를 사용 (comments/likes FK 보장)
   const resolvedId = post.id
@@ -169,12 +184,18 @@ export default async function PostDetailPage({ params }: PageProps) {
   if (post.category === EVENT_CATEGORY) permanentRedirect(`/events/${resolvedId}`)
   // ↑ 여기까지 통과하면 이벤트글이 아님 → 일반 사는이야기 글로 렌더(투표 레이아웃은 /events가 담당)
 
-  const canonicalSlug = post.slug ?? postId
-  const url = `${BASE_URL}/community/${boardSlug}/${canonicalSlug}`
+  // generateMetadata 의 canonical 과 **같은 값**이어야 한다 — 갈라지면 JSON-LD `url` 과
+  // `<link rel="canonical">` 이 서로 다른 주소를 가리킨다.
+  // generateMetadata 의 canonical 과 **같은 규칙**이어야 한다 — 갈라지면 JSON-LD `url` 과
+  // `<link rel="canonical">` 이 서로 다른 주소를 가리킨다.
+  const canonicalDetailPath = canonicalPath
+    ? encodePathname(canonicalPath)
+    : buildPostPath({ id: post.slug ?? postId, boardType: post.boardType, slug: post.slug })
+  const url = `${BASE_URL}${canonicalDetailPath}`
   const breadcrumbJsonLd = buildBreadcrumbJsonLd([
     { name: '홈', path: '/' },
     { name: board.displayName, path: `/community/${boardSlug}` },
-    { name: post.title, path: `/community/${boardSlug}/${canonicalSlug}` },
+    { name: post.title, path: canonicalDetailPath },
   ])
   const firstContentImage = post.content
     ? (post.content.match(/<img[^>]+src="([^"]+)"/)?.[1] ?? null)
@@ -192,7 +213,8 @@ export default async function PostDetailPage({ params }: PageProps) {
     text: plainText || post.preview || buildFallbackDescription(post.title, post.boardType),
     authorName: post.author.nickname,
     datePublished: new Date(post.createdAt).toISOString(),
-    dateModified: new Date(post.updatedAt).toISOString(),
+    // dateModified 를 넘기지 않는다 — `Post.updatedAt` 은 조회수 write 로 오늘이 된다.
+    // 근거·복구 조건은 `lib/seo/discussion-forum.ts` 의 dateModified 주석 참조.
     url,
     image: ogImage,
     likeCount: post.likeCount ?? 0,

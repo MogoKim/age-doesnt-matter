@@ -21,8 +21,16 @@ export interface DiscussionForumInput {
   authorName: string
   /** ISO 문자열 */
   datePublished: string
-  /** ISO 문자열 */
-  dateModified: string
+  /**
+   * ISO 문자열 — **선택**.
+   *
+   * 🔴 `Post.updatedAt` 을 넣지 마라. 글을 열 때마다 `viewCount: { increment: 1 }` 이 돌고
+   *    Prisma `@updatedAt` 이 그 write 로 `updatedAt` 을 오늘로 바꾼다(2026-09-16 실측:
+   *    JSON-LD `dateModified` 146건 중 138건이 이틀 안 날짜, 실제 발행은 4~9월 분산).
+   *    "언제 고쳤는지"를 모르면 **선언하지 않는 것**이 맞다 — Google 은 없는 필드를
+   *    `datePublished` 로 대체해 읽는다. 진짜 수정 시각이 생기면 그때 넘긴다.
+   */
+  dateModified?: string
   url: string
   image?: string | null
   likeCount: number
@@ -68,7 +76,9 @@ export function buildDiscussionForumJsonLd(i: DiscussionForumInput): Record<stri
     text: i.text,
     url: i.url,
     datePublished: i.datePublished,
-    dateModified: i.dateModified,
+    // 값이 없으면 필드 자체를 빼야 한다 — `dateModified: undefined` 는 JSON.stringify 가
+    // 지우지만, 객체 비교 테스트와 다른 소비자에게는 "키가 있다"로 보인다.
+    ...(i.dateModified ? { dateModified: i.dateModified } : {}),
     author: { '@type': 'Person', name: i.authorName },
     ...(i.image ? { image: i.image } : {}),
     publisher: { '@type': 'Organization', name: i.publisherName, url: i.publisherUrl },

@@ -6,6 +6,9 @@ import { verifyAdminToken } from '@/lib/admin-auth'
 import { BOT_UA_PATTERN } from '@/lib/bot-patterns'
 import { isDevRoute, isDevRouteAllowed } from '@/lib/dev-routes'
 import { getMovedPostRedirect } from '@/lib/moved-posts'
+import { resolveCommunityCanonicalPath } from '@/lib/community-canonical'
+import { BOARD_SLUG_TO_TYPE } from '@/lib/board-registry'
+import { readCachedBoardType, writeCachedBoardType } from '@/lib/seo/board-slug-cache'
 import { buildReturnTo } from '@/lib/return-to'
 
 /**
@@ -92,6 +95,42 @@ async function resolveSlug(cuid: string): Promise<string | null> {
     const slug = data[0]?.slug ?? null
     redis.set(key, slug ?? '', { ex: SLUG_REDIS_TTL_S }).catch(() => {})
     return slug
+  } catch {
+    return null
+  }
+}
+
+/**
+ * slug 의 정본 BoardType 을 **권위 있는 소스에서 새로 읽는다**(Supabase REST).
+ *
+ * 🔴 308 은 오직 이 함수의 반환값으로만 낸다. 캐시된 값으로 redirect 하면
+ *    글 이동 직후 **정본 URL 을 옛 주소로 밀어내는** 사고가 난다
+ *    (근거·시나리오: `lib/seo/board-slug-cache.ts` 상단 주석).
+ *
+ * 실패하면 `null` 을 돌려주고 조용히 통과시킨다(fail-open). 그 경우 페이지가 200 으로
+ * 렌더되며 DB 를 새로 읽어 정본 canonical 을 단다 — 500 보다 낫다.
+ *
+ * 🔴 전송 실패(401·5xx·네트워크)는 **캐시하지 않는다.** 한 번의 일시 장애를
+ *    '없는 글'로 굳히면 그동안 정본 교정이 통째로 죽는다(2026-09-16 Preview 실측).
+ */
+async function fetchBoardType(slug: string): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/Post` +
+        `?select=boardType&slug=eq.${encodeURIComponent(slug)}&limit=1`,
+      {
+        headers: {
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!}`,
+        },
+      },
+    )
+    if (!res.ok) return null
+
+    const data = (await res.json()) as { boardType: string }[]
+    const boardType = data[0]?.boardType ?? null
+    await writeCachedBoardType(slug, boardType)
+    return boardType
   } catch {
     return null
   }
@@ -186,6 +225,59 @@ export default async function middleware(request: NextRequest) {
           NextResponse.redirect(new URL(`/community/${communityMatch[1]}/${slug}`, request.url), 301),
           request,
         )
+      }
+    }
+  }
+
+  // ── 커뮤니티 상세: 정본 **보드** 교정 308 (Batch A) ──
+  // 글을 다른 보드로 옮기면 옛 보드 URL 이 그대로 200 을 내 같은 글이 두 주소로 존재했다.
+  // 상세 라우트에서 교정하려던 `permanentRedirect()` 는 force-static 정적 생성과 충돌해
+  // **HTTP 500** 을 냈다(2026-09-16 실측). 그래서 렌더 전 여기서 진짜 308 을 보낸다.
+  //
+  // 🔴 **캐시는 "교정 불필요" 판정에만 쓴다.** 캐시된 값으로 redirect 를 만들면
+  //    글 이동 직후(`adminMovePost`) 캐시가 옛 보드를 들고 있어
+  //    **새 정본 URL 을 옛 주소로 308** 하는 최악의 사고가 난다.
+  //    그래서 URL 보드와 캐시가 **일치할 때만** 캐시를 믿고 통과시키고,
+  //    어긋나거나 모르면 권위 있는 값을 새로 읽어 그 값으로만 308 을 만든다.
+  //    stale 캐시가 만들 수 있는 최악은 "교정 누락"이고, 그때도 페이지가
+  //    DB 를 새로 읽어 정본 canonical 을 달기 때문에 중복 신호는 남지 않는다.
+  //
+  // 비용: 정상 트래픽(URL 보드 = 실제 보드, 캐시 워밍)은 **Redis GET 1회**로 끝난다.
+  //       REST 왕복은 실제로 어긋난 요청에서만 일어난다.
+  if (communityMatch) {
+    const urlBoardSlug = communityMatch[1]
+    const segment = decodeURIComponent(communityMatch[2])
+    // CUID 는 위 블록이 이미 처리했다(거기서 못 풀면 여기서도 못 푼다)
+    if (!CUID_PATTERN.test(segment)) {
+      const urlBoardType = BOARD_SLUG_TO_TYPE[urlBoardSlug as keyof typeof BOARD_SLUG_TO_TYPE] as string | undefined
+      const cached = await readCachedBoardType(segment)
+
+      // REST 를 건너뛰어도 되는 두 경우:
+      //  · found + URL 보드와 일치 → 교정할 게 없다(stale 이어도 최악은 교정 누락)
+      //  · absent → 그런 slug 가 없다. 교정할 대상 자체가 없으므로 REST 를 칠 이유가 없다.
+      //             (봇이 만들어내는 쓰레기 URL 이 그대로 REST 부하가 되는 것을 막는다.
+      //              negative TTL 이 짧아 새 글이 오래 묻히지 않는다.)
+      const skipLookup =
+        cached.kind === 'absent' ||
+        (cached.kind === 'found' && Boolean(urlBoardType) && cached.boardType === urlBoardType)
+
+      if (!skipLookup) {
+        const boardType = await fetchBoardType(segment)
+        if (boardType) {
+          // slug 는 URL 세그먼트 그대로다 → `resolveCommunityCanonicalPath` 는 보드만 비교한다
+          const canonicalPath = resolveCommunityCanonicalPath({
+            boardSlug: urlBoardSlug,
+            postId: segment,
+            post: { boardType, slug: segment },
+          })
+          if (canonicalPath) {
+            // `new URL` 이 한글 세그먼트를 percent-encode 한다 → Location 헤더가 ASCII 로 나간다
+            return addAnonSession(
+              NextResponse.redirect(new URL(canonicalPath, request.url), 308),
+              request,
+            )
+          }
+        }
       }
     }
   }

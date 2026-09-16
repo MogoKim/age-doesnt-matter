@@ -59,3 +59,26 @@ export function normalizeClientQuery(search: string): string {
   })
   return hasClientOnly ? `client:${params.toString()}` : serverOwned
 }
+
+/**
+ * 목록 한 페이지의 글 수. **경계 판정의 단일 소스**다.
+ *
+ * 쿼리(`getCachedBoardPage*`)와 404 경계(`isPageOutOfRange`)가 서로 다른 값을 쓰면
+ * "마지막 페이지인데 404" 또는 "빈 페이지인데 200"이 생긴다.
+ */
+export const LIST_PAGE_SIZE = 12
+
+/**
+ * 요청된 페이지가 **존재하지 않는 범위**인지 — true 면 호출부가 `notFound()` 를 던진다.
+ *
+ * 왜 필요한가: `?page=12` 처럼 마지막 페이지를 넘긴 요청이 **200 + 글 0건**을 돌려줬다
+ * (2026-09-16 실측: `/community/stories?page=12` → 200, 글 링크 0). 수집기에게는
+ * 무한히 이어지는 빈 페이지로 보여 soft-404 를 양산한다.
+ *
+ * 🔴 **글이 하나도 없는 게시판의 1페이지는 404 가 아니다.** 게시판 자체는 존재하고
+ *    "아직 글이 없습니다"는 정상 응답이다. 그래서 하한을 1 페이지로 둔다.
+ */
+export function isPageOutOfRange(page: number, total: number, pageSize: number = LIST_PAGE_SIZE): boolean {
+  const lastPage = Math.max(1, Math.ceil(total / pageSize))
+  return page > lastPage
+}

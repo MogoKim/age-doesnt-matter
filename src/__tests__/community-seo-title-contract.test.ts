@@ -74,7 +74,12 @@ describe('P0-2 범위 밖 — 이번 변경이 건드리지 않는 것', () => {
   })
 
   it('canonical은 slug 기반 URL을 유지한다 (리라이팅이 URL을 흔들지 않는다)', () => {
+    // Batch A(2026-09-16): 정본 경로 계산이 `resolveCommunityCanonicalPath` + `buildPostPath` 로
+    // 옮겨졌다(force-static + permanentRedirect = HTTP 500 을 없애면서 경로 생성을 SSoT 로 통일).
+    // 지키려는 계약은 그대로다 — **slug 우선, 없으면 id. 제목 리라이팅은 URL 을 흔들지 않는다.**
     expect(META).toContain('const canonicalId = post.slug ?? postId')
+    expect(META).toContain('buildPostPath(')
+    expect(META).not.toMatch(/canonical[A-Za-z]*\s*=\s*post\.(seoTitle|title)/)
     expect(META).toMatch(/alternates:\s*\{\s*canonical:\s*url\s*\}/)
   })
 })

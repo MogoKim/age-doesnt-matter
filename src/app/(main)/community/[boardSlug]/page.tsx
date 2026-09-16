@@ -4,7 +4,7 @@ import { Suspense } from 'react'
 import Link from 'next/link'
 import { getBoardConfig } from '@/lib/queries/boards'
 import { getCachedBoardPageAt } from '@/lib/queries/posts'
-import { parseListQuery } from '@/lib/list-query'
+import { isPageOutOfRange, parseListQuery } from '@/lib/list-query'
 import BoardFilter from '@/components/features/community/BoardFilter'
 import SortToggle from '@/components/features/community/SortToggle'
 import BoardViewTracker from '@/components/features/community/BoardViewTracker'
@@ -208,6 +208,14 @@ export default async function BoardListPage({ params, searchParams }: PageProps)
   if (!board) notFound()
 
   const initialData = await getInitialBoardData(board.boardType, sort, page)
+
+  // 🔴 마지막 페이지를 넘긴 요청은 404 다.
+  //    2026-09-16 실측: `/community/stories?page=12` 가 **200 + 글 링크 0개**를 돌려줬다.
+  //    수집기에게는 끝없이 이어지는 빈 페이지로 보여 soft-404 를 양산한다.
+  //    글이 0건인 게시판의 1페이지는 여기 걸리지 않는다 — 게시판은 존재하고
+  //    "아직 글이 없습니다"는 정상 응답이다(`isPageOutOfRange` 가 하한을 1로 잡는다).
+  if (isPageOutOfRange(page, initialData.total)) notFound()
+
   const topicHub = TOPIC_HUB[boardSlug]
 
   const boardFaqJsonLd = getBoardFaqJsonLd(boardSlug)
