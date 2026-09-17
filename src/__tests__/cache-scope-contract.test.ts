@@ -120,25 +120,48 @@ describe('② 목록에 영향 주는 쓰기 경로가 지역 목록까지 갱�
   })
 
   /**
-   * 🔴 **기존부터 있던 누락 — 이번 배치에서 고치지 않는다.**
+   * 🔴 **기존부터 있던 누락 — 이번 배치에서 고치지 않는다(승격 체계 무변경).**
+   *
    *  `adminSetPostLikeCount` 는 JOB 일자리 캐시를 무효화하지 않는다.
-   *  지금은 보이는 영향이 없다 — `JobCardItem` 에 `likeCount` 가 없고,
-   *  일자리 정렬 기준도 `isPinned`·`createdAt` 뿐이라 목록이 바뀌지 않는다.
-   *  다만 이 함수는 `checkAndPromotePost` 를 부르므로 **승격이 일어나면** 간접 영향 가능성이 있다.
-   *  살아 있는 예외로 고정한다 — 조건이 바뀌면(카드에 공감 수가 생기면) 이 테스트가 먼저 깨진다.
+   *
+   *  ⚠️ **"영향 없음" 은 틀렸다(2026-09-17 정정).** 앞서 "카드에 공감 수가 없으니 무해"라고 적었는데
+   *     실제로는 공감 수가 **자동 승격**을 트리거하고, 승격은 카드에 보인다:
+   *
+   *        likeCount → checkAndPromotePost → promotionLevel = 'HOT'
+   *                 → JobCardItem.isUrgent → JobCard 의 **급구 배지**
+   *
+   *     게다가 `checkAndPromotePost` 자신도 `revalidatePath('/best')` 만 부르고
+   *     일자리 태그는 건드리지 않는다. 즉 **자동 승격 경로 전체가 일자리 캐시와 끊겨 있다.**
+   *     같은 함수가 댓글·공감·게스트 공감에서도 불린다.
+   *
+   *  ⚠️ **이번 TTL 확대가 이 창을 넓힌다.** 지역 페이지 120초 → 3600초.
+   *     승격이 급구 배지에 반영되기까지 최대 1시간이 걸릴 수 있다.
+   *     (`/jobs` 목록은 기존 120초 그대로다 — 이번 변경 대상이 아니다.)
+   *
+   *  이 테스트는 **누락이 있다는 사실과 그 연결 고리**를 고정한다. 고치지 않는다.
    */
-  it('알려진 누락: adminSetPostLikeCount 는 JOB 무효화를 하지 않는다 (영향 없음 조건 포함)', () => {
+  it('알려진 누락: adminSetPostLikeCount 는 JOB 무효화를 하지 않는다', () => {
     const src = read('lib/actions/admin/admin.content.ts')
     const start = src.indexOf('export async function adminSetPostLikeCount')
     const next = src.indexOf('\nexport async function ', start + 1)
     const body = src.slice(start, next === -1 ? undefined : next)
     expect(body).not.toMatch(/revalidateJobPost\(|revalidateJobPostsBulk\(/)
+    // 승격을 부르므로 무해하지 않다 — 그 연결을 함께 고정한다
+    expect(body).toContain('checkAndPromotePost(')
+  })
 
-    // 영향이 없는 근거를 함께 고정한다
+  it('🔴 승격이 일자리 카드에 실제로 보인다 — 누락이 무해하지 않은 근거', () => {
     const jobs = read('lib/queries/posts/posts.jobs.ts')
-    const card = jobs.slice(jobs.indexOf('export interface JobCardItem'), jobs.indexOf('export interface JobCardItem') + 600)
-    expect(card, 'JobCardItem 에 likeCount 가 생겼다 — 누락이 실제 결함이 된다').not.toContain('likeCount')
-    expect(jobs).toContain("orderBy: [{ isPinned: 'desc' }, { createdAt: 'desc' }]")
+    expect(jobs).toContain("isUrgent: post.promotionLevel === 'HOT'")
+    expect(read('components/features/jobs/JobCard.tsx')).toContain('job.isUrgent')
+    expect(read('components/features/jobs/JobCard.tsx')).toContain('급구')
+  })
+
+  it('🔴 자동 승격은 일자리 태그를 무효화하지 않는다 (별도 위험으로 기록)', () => {
+    const promo = read('lib/actions/promotion.ts')
+    expect(promo).toContain("revalidatePath('/best')")
+    expect(promo, '승격이 일자리 태그를 건드리게 되면 이 위험 기록을 갱신해야 한다')
+      .not.toMatch(/revalidateJobPost|JOBS_LIST_TAG/)
   })
 
   it('일괄 삭제·일괄 처리는 bulk 경로를 쓴다', () => {
@@ -250,13 +273,12 @@ describe('③ 보존 계약 — post-meta·목록·홈·sitemap·경로', () => 
    실패 시 동작 — 인증 실패 · DB 실패
    ───────────────────────────────────────────────────────────── */
 describe('🔴 실패 시 무효화가 일어나지 않는다', () => {
-  it('DB 조회가 실패하면 캐시는 값을 저장하지 않는다 (빈 목록으로 굳지 않음)', async () => {
-    // `unstable_cache` 는 mock 에서 원본 함수를 그대로 돌려준다 —
-    // 던지는 함수는 값을 만들지 않는다는 성질을 여기서 고정한다.
-    const failing = async () => { throw new Error('DB down') }
-    await expect(failing()).rejects.toThrow('DB down')
-
-    // 캐시 정의에 catch 나 빈 배열 기본값이 없어야 이 성질이 유지된다
+  /**
+   * 🔴 실제 조회 실패 전파는 **`cache-scope-invocation.test.ts`** 가 진짜 함수를 돌려 확인한다.
+   *    (앞서 여기 있던 별도 `failing()` 테스트는 구현을 검증하지 않아 제거했다.)
+   *    여기서는 그 성질이 깨질 수 있는 **구조**만 본다 — 캐시 정의 안의 catch·빈 배열 기본값.
+   */
+  it('캐시 정의 안에 실패를 삼키는 코드가 없다', () => {
     const jobs = read('lib/queries/posts/posts.jobs.ts')
     const block = jobs.slice(jobs.indexOf('export const getCachedJobsRegionPage'))
     expect(block.slice(0, block.indexOf(')\n\n'))).not.toMatch(/catch|\?\?\s*\[\]|jobs:\s*\[\]/)
