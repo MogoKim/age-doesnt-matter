@@ -33,6 +33,23 @@ vi.mock('next/headers', () => ({
   cookies: async () => ({ get: () => (adminCookie ? { value: adminCookie } : undefined), set: () => {}, delete: () => {} }),
 }))
 
+/**
+ * 🔴 Redis 격리 — `adminMovePost` 가 `invalidateCachedBoardType` 을 통해
+ *    실제 Upstash 클라이언트를 부른다. mock 하지 않으면 테스트가 네트워크를 탄다
+ *    (Codex 실행에서 localhost:3000 연결 오류 반복).
+ *    **이 파일은 네트워크를 쓰지 않는다.**
+ */
+const redisInvalidate = vi.fn(async (_slug?: string | null) => {})
+vi.mock('@/lib/seo/board-slug-cache', () => ({
+  invalidateCachedBoardType: (slug: string | null | undefined) => redisInvalidate(slug),
+  readCachedBoardType: async () => ({ hit: false as const }),
+  writeCachedBoardType: async () => {},
+}))
+// @upstash/redis 자체도 막는다 — 다른 경로로 새어도 네트워크로 나가지 않게.
+vi.mock('@upstash/redis', () => ({
+  Redis: class { async get() { return null } async set() { return 'OK' } async del() { return 1 } },
+}))
+
 vi.mock('@/lib/banned-words', () => ({ checkBannedWords: async () => null }))
 vi.mock('@/lib/sanitize', () => ({ sanitizeHtml: (s: string) => s, stripHtmlTags: (s: string) => s, plainTextToSafeHtml: (s: string) => s }))
 vi.mock('@/lib/summary', () => ({ buildSummary: () => '요약' }))
@@ -107,6 +124,7 @@ function form(over: Record<string, string> = {}) {
 
 beforeEach(async () => {
   vi.clearAllMocks()
+  redisInvalidate.mockClear()
   sessionUserId = 'author-1'
   process.env.ADMIN_JWT_SECRET = 'x'.repeat(40)
   adminCookie = await createAdminToken({ adminId: 'a1', email: 'a@b.com', nickname: '관리자' })
@@ -194,6 +212,26 @@ describe('🔴 adminMovePost — 실제 호출', () => {
     expect(tags()).toEqual(expect.arrayContaining([
       'post-meta', 'sitemap-posts', 'home-trending', 'home-stories', 'home-humor', 'community-board-page',
     ]))
+  })
+})
+
+describe('🔴 adminMovePost — board-slug Redis 캐시 (네트워크 없음)', () => {
+  it('이동에 성공하면 기존 slug 의 Redis 캐시를 무효화한다', async () => {
+    await adminMovePost('post-1', 'HUMOR' as never, null)
+    expect(redisInvalidate).toHaveBeenCalledTimes(1)
+    expect(redisInvalidate).toHaveBeenCalledWith('my-slug')
+  })
+
+  it('DB 쓰기가 실패하면 Redis 무효화가 0 이다', async () => {
+    db.updateThrows = true
+    await expect(adminMovePost('post-1', 'HUMOR' as never, null)).rejects.toThrow('DB write failed')
+    expect(redisInvalidate).not.toHaveBeenCalled()
+  })
+
+  it('인증 실패면 Redis 무효화가 0 이다', async () => {
+    adminCookie = undefined
+    await expect(adminMovePost('post-1', 'HUMOR' as never, null)).rejects.toThrow('관리자 인증이 필요합니다.')
+    expect(redisInvalidate).not.toHaveBeenCalled()
   })
 })
 

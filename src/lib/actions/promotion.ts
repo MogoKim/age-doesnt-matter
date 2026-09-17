@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
+import { revalidateJobPromotion, revalidateJobPromotionBulk } from '@/lib/cache/job-cache'
 import type { BoardType, PromotionLevel } from '@/generated/prisma/client'
 
 function computeLevel(
@@ -56,6 +57,12 @@ export async function checkAndPromotePost(
         : {}),
     },
   })
+
+  // 🔴 DB 변경이 **성공한 뒤에만** 일자리 캐시를 갱신한다.
+  //    승격은 `JobCardItem.isUrgent`(= promotionLevel === 'HOT') 로 카드의 급구 배지에 보인다.
+  //    지역 목록도 `JOBS_LIST_TAG` 를 공유하므로 여기서 함께 갱신된다.
+  //    try/catch 로 감싸지 않는다 — 삼키면 무효화 실패가 보이지 않는다.
+  if (boardType === 'JOB') revalidateJobPromotion(postId)
 
   const isPromotion =
     (post.promotionLevel === 'NORMAL' && newLevel !== 'NORMAL') ||
@@ -156,6 +163,9 @@ export async function retroactivePromotionUpdate(
       })
       .catch(() => {})
   }
+
+  // 🔴 트랜잭션이 성공한 뒤에만. 대상이 JOB 게시판일 때만 일자리 캐시를 갱신한다.
+  if (boardType === 'JOB') revalidateJobPromotionBulk()
 
   revalidatePath('/best')
   return { updated: toUpdate.length, promoted: promoted.length }

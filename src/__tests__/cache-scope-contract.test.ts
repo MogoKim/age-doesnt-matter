@@ -120,48 +120,49 @@ describe('② 목록에 영향 주는 쓰기 경로가 지역 목록까지 갱�
   })
 
   /**
-   * 🔴 **기존부터 있던 누락 — 이번 배치에서 고치지 않는다(승격 체계 무변경).**
+   * 자동 승격도 일자리 목록에 영향을 준다 — `promotionLevel === 'HOT'` 이
+   * `JobCardItem.isUrgent` 를 거쳐 카드의 **급구 배지**로 보이기 때문이다.
+   * 그래서 승격 경로도 `JOBS_LIST_TAG` 에 연결한다(지역 목록이 이 태그를 공유한다).
    *
-   *  `adminSetPostLikeCount` 는 JOB 일자리 캐시를 무효화하지 않는다.
-   *
-   *  ⚠️ **"영향 없음" 은 틀렸다(2026-09-17 정정).** 앞서 "카드에 공감 수가 없으니 무해"라고 적었는데
-   *     실제로는 공감 수가 **자동 승격**을 트리거하고, 승격은 카드에 보인다:
-   *
-   *        likeCount → checkAndPromotePost → promotionLevel = 'HOT'
-   *                 → JobCardItem.isUrgent → JobCard 의 **급구 배지**
-   *
-   *     게다가 `checkAndPromotePost` 자신도 `revalidatePath('/best')` 만 부르고
-   *     일자리 태그는 건드리지 않는다. 즉 **자동 승격 경로 전체가 일자리 캐시와 끊겨 있다.**
-   *     같은 함수가 댓글·공감·게스트 공감에서도 불린다.
-   *
-   *  ⚠️ **이번 TTL 확대가 이 창을 넓힌다.** 지역 페이지 120초 → 3600초.
-   *     승격이 급구 배지에 반영되기까지 최대 1시간이 걸릴 수 있다.
-   *     (`/jobs` 목록은 기존 120초 그대로다 — 이번 변경 대상이 아니다.)
-   *
-   *  이 테스트는 **누락이 있다는 사실과 그 연결 고리**를 고정한다. 고치지 않는다.
+   * 🔴 실행 문맥이 달라 API 도 다르다 — 승격은 detached 호출이라
+   *    `updateTag` 가 아니라 `revalidateTag(tag, 'max')` 를 쓴다.
+   *    실제 호출 검증은 `promotion-job-cache.test.ts` 가 한다.
    */
-  it('알려진 누락: adminSetPostLikeCount 는 JOB 무효화를 하지 않는다', () => {
+  it('자동 승격이 일자리 목록 태그에 연결돼 있다', () => {
+    const promo = read('lib/actions/promotion.ts')
+    expect(promo).toContain("if (boardType === 'JOB') revalidateJobPromotion(postId)")
+    expect(promo).toContain("if (boardType === 'JOB') revalidateJobPromotionBulk()")
+  })
+
+  it('승격 헬퍼가 목록·홈 태그를 담고, detached 문맥용 API 를 쓴다', () => {
+    const cache = read('lib/cache/job-cache.ts')
+    // 승격 헬퍼 두 개만 잘라 본다 — 뒤쪽 Server Action 용 헬퍼는 updateTag 를 쓴다(정상).
+    const from = cache.indexOf('export function revalidateJobPromotion')
+    const to = cache.indexOf('export function revalidateJobPostsBulk')
+    const block = cache.slice(from, to > from ? to : undefined)
+    expect(block).toContain('revalidateTag(JOBS_LIST_TAG')
+    expect(block).toContain('revalidateTag(HOME_JOBS_TAG')
+    expect(block).not.toContain('updateTag(')
+  })
+
+  it('🔴 승격이 카드에 보인다는 연결 고리 (계약의 근거)', () => {
+    expect(read('lib/queries/posts/posts.jobs.ts')).toContain("isUrgent: post.promotionLevel === 'HOT'")
+    const card = read('components/features/jobs/JobCard.tsx')
+    expect(card).toContain('job.isUrgent')
+    expect(card).toContain('급구')
+  })
+
+  /**
+   * `adminSetPostLikeCount` 자체는 여전히 `revalidateJobPost` 를 직접 부르지 않는다.
+   * 다만 그것이 부르는 `checkAndPromotePost` 가 이제 연결돼 있어
+   * **승격이 일어나면 일자리 목록이 갱신된다.** 승격이 없으면 카드가 바뀌지 않으므로
+   * 갱신할 것도 없다. 이 관계를 고정한다 — 연결이 끊기면 먼저 깨진다.
+   */
+  it('adminSetPostLikeCount 는 승격 경로를 통해 연결된다', () => {
     const src = read('lib/actions/admin/admin.content.ts')
     const start = src.indexOf('export async function adminSetPostLikeCount')
     const next = src.indexOf('\nexport async function ', start + 1)
-    const body = src.slice(start, next === -1 ? undefined : next)
-    expect(body).not.toMatch(/revalidateJobPost\(|revalidateJobPostsBulk\(/)
-    // 승격을 부르므로 무해하지 않다 — 그 연결을 함께 고정한다
-    expect(body).toContain('checkAndPromotePost(')
-  })
-
-  it('🔴 승격이 일자리 카드에 실제로 보인다 — 누락이 무해하지 않은 근거', () => {
-    const jobs = read('lib/queries/posts/posts.jobs.ts')
-    expect(jobs).toContain("isUrgent: post.promotionLevel === 'HOT'")
-    expect(read('components/features/jobs/JobCard.tsx')).toContain('job.isUrgent')
-    expect(read('components/features/jobs/JobCard.tsx')).toContain('급구')
-  })
-
-  it('🔴 자동 승격은 일자리 태그를 무효화하지 않는다 (별도 위험으로 기록)', () => {
-    const promo = read('lib/actions/promotion.ts')
-    expect(promo).toContain("revalidatePath('/best')")
-    expect(promo, '승격이 일자리 태그를 건드리게 되면 이 위험 기록을 갱신해야 한다')
-      .not.toMatch(/revalidateJobPost|JOBS_LIST_TAG/)
+    expect(src.slice(start, next === -1 ? undefined : next)).toContain('checkAndPromotePost(')
   })
 
   it('일괄 삭제·일괄 처리는 bulk 경로를 쓴다', () => {

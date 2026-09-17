@@ -83,6 +83,36 @@ export function revalidateJobPost(postId: string, options?: { includeSitemap?: b
  * 대상 글이 여러 건이라 per-id 태그를 나열할 수 없을 때 전역 `job-detail` 을 쓴다.
  * **반드시 DB write/transaction 성공 후에만 호출한다.**
  */
+/**
+ * 자동 승격 전용 — **detached 호출에서 부른다.**
+ *
+ * `checkAndPromotePost`·`retroactivePromotionUpdate` 는 호출부가 전부
+ * `void fn(...).catch(...)` 형태라 **Server Action 이 반환한 뒤에 실행될 수 있다.**
+ * 그 문맥에서 `updateTag` 는 던지고, 호출부의 `.catch` 가 그것을 삼켜
+ * **무효화가 조용히 사라진다.** 그래서 Route Handler 와 같은
+ * `revalidateTag(tag, 'max')` 를 쓴다(위 문맥 규칙: 문맥이 다르면 함수를 나눈다).
+ *
+ * 🔴 즉시 최신값 보장은 아니다 — 승격 반영은 다음 재검증부터다.
+ *
+ * `SITEMAP_POSTS_TAG` 는 넣지 않는다. 승격은 `status` 를 바꾸지 않아
+ * sitemap 구성원이 달라지지 않는다.
+ */
+export function revalidateJobPromotion(postId: string): void {
+  // 태그를 변수로 뽑는다 — `cache-api-context.test.ts` 의 2인자 검사기가
+  // 중첩 괄호를 읽지 못해 `revalidateTag(jobDetailCacheTag(x), 'max')` 를 1인자로 오인한다.
+  const detailTag = jobDetailCacheTag(postId)
+  revalidateTag(JOBS_LIST_TAG, 'max')
+  revalidateTag(HOME_JOBS_TAG, 'max')
+  revalidateTag(detailTag, 'max')
+}
+
+/** 일괄 재계산용 — 대상이 여러 건이라 글별 태그 대신 전역 상세 태그를 쓴다. */
+export function revalidateJobPromotionBulk(): void {
+  revalidateTag(JOBS_LIST_TAG, 'max')
+  revalidateTag(HOME_JOBS_TAG, 'max')
+  revalidateTag(JOB_DETAIL_TAG, 'max')
+}
+
 export function revalidateJobPostsBulk(): void {
   updateTag(JOBS_LIST_TAG)
   updateTag(HOME_JOBS_TAG)
