@@ -13,6 +13,7 @@ import { buildSummary } from '@/lib/summary'
 import { deleteFromR2, extractR2KeyFromUrl } from '@/lib/r2'
 import { checkAndPromote } from '@/lib/grade'
 import { generateCommunitySlug } from '@/lib/seo/slug'
+import { postDetailCacheTag, postCacheKeys } from '@/lib/queries/posts/posts.base'
 import { getWriteBlockReason } from '@/lib/sanctions'
 
 interface CreatePostResult {
@@ -162,7 +163,7 @@ export async function updatePost(postId: string, formData: FormData): Promise<Cr
   // 게시글 소유권 확인
   const existing = await prisma.post.findUnique({
     where: { id: postId },
-    select: { authorId: true, boardType: true, status: true },
+    select: { authorId: true, boardType: true, status: true, slug: true },
   })
   if (!existing || existing.status === 'DELETED') {
     return { error: '존재하지 않는 게시글입니다' }
@@ -253,7 +254,11 @@ export async function updatePost(postId: string, formData: FormData): Promise<Cr
   const boardSlug = BOARD_TYPE_TO_SLUG[existing.boardType]
   revalidatePath(`/community/${boardSlug}/${postId}`)
   revalidatePath(`/community/${boardSlug}`)
-  updateTag('post-detail')
+  // 🔴 이 글 하나만 무효화한다. 전역 'post-detail' 을 쓰면 **다른 모든 글의 상세 캐시**까지 날아간다.
+  //    한 글이 CUID·slug 두 키로 캐시될 수 있으므로 둘 다 지운다(`postDetailCacheTag` 주석 참조).
+  //    이 경로는 slug 를 바꾸지 않는다 — 옛 slug 처리는 필요 없고, 새로 만들지도 않는다.
+  for (const key of postCacheKeys(postId, existing.slug)) updateTag(postDetailCacheTag(key))
+  // post-meta·홈 태그는 전역 그대로 둔다 — 글별 태그가 없고, 목록/홈 구성에는 실제로 영향을 준다.
   updateTag('post-meta')
   updateTag('home-trending')
   updateTag('home-stories')
@@ -267,7 +272,7 @@ export async function deletePost(postId: string): Promise<{ error?: string }> {
 
   const post = await prisma.post.findUnique({
     where: { id: postId },
-    select: { authorId: true, boardType: true, status: true, thumbnailUrl: true },
+    select: { authorId: true, boardType: true, status: true, thumbnailUrl: true, slug: true },
   })
   if (!post || post.status === 'DELETED') {
     return { error: '존재하지 않는 게시글입니다' }
@@ -300,7 +305,8 @@ export async function deletePost(postId: string): Promise<{ error?: string }> {
   revalidatePath('/')
   revalidatePath('/best')
   revalidatePath('/search')
-  updateTag('post-detail')
+  // 🔴 이 글 하나만 무효화한다(위 updatePost 와 같은 이유). CUID·slug 둘 다.
+  for (const key of postCacheKeys(postId, post.slug)) updateTag(postDetailCacheTag(key))
   updateTag('post-meta')
   updateTag('home-trending')
   updateTag('home-stories')

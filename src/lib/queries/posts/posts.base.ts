@@ -244,6 +244,15 @@ function cacheTagToken(value: string): string {
  * Next는 캐시 태그를 x-next-cache-tags 헤더에 싣기 때문에 한글 slug를 그대로 태그에 넣으면
  * ERR_INVALID_CHAR 500이 난다. 태그 값은 ASCII 안전 토큰으로 정규화한다.
  */
+/**
+ * 한 글의 **캐시 키 후보**(CUID·slug) 중 실재하는 것만 중복 없이 돌려준다.
+ * 상세는 정본 URL(slug)로, `opengraph-image`·`/api/posts/[postId]` 는 CUID 로 부르기 때문에
+ * 한 글이 두 엔트리를 가질 수 있다 — 무효화하는 쪽이 둘 다 지워야 한다.
+ */
+export function postCacheKeys(postId: string, slug?: string | null): string[] {
+  return Array.from(new Set([postId, slug].filter((v): v is string => !!v)))
+}
+
 export function postDetailCacheTag(postIdOrSlug: string): string {
   return `post-detail-${cacheTagToken(postIdOrSlug)}`
 }

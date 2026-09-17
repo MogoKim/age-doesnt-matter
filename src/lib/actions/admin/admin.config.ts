@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { requireAdminSession as requireAdmin } from '@/lib/admin-auth'
 import { retroactivePromotionUpdate } from '@/lib/actions/promotion'
 import type { BannedWordCategory, Grade } from '@/generated/prisma/client'
+import { after } from 'next/server'
 
 
 // ─── 금지어 ───
@@ -108,11 +109,31 @@ export async function adminUpdateBoardConfig(
   if (data.hotThreshold !== undefined || data.fameThreshold !== undefined) {
     const updated = await prisma.boardConfig.findUnique({ where: { id: configId } })
     if (updated?.boardType) {
-      void retroactivePromotionUpdate(
-        updated.boardType,
-        updated.hotThreshold,
-        updated.fameThreshold,
-      )
+      // 🔴 `after()` 로 관리한다. 예전에는 `void fn(...).catch(...)` 였는데,
+      //    그 형태는 응답 처리가 끝난 뒤에 `revalidateTag` 를 등록할 수 있고
+      //    그렇게 등록된 무효화는 **요청의 캐시 처리에서 빠질 수 있다**(Next 16.3.4 재현).
+      //    `after` 는 응답을 보낸 뒤에도 요청 수명 안에서 콜백을 돌려 그 등록을 살린다.
+      //    ⚠️ `after(이미시작한Promise)` 나 콜백 안의 `void` 는 같은 문제가 남는다 — 반드시 await 한다.
+      // 🔴 **JOB 일 때만** `after()` 로 관리한다.
+      //    `void fn(...)` 는 응답 처리가 끝난 뒤 `revalidateTag` 를 등록할 수 있고,
+      //    그렇게 등록된 무효화는 요청의 캐시 처리에서 빠질 수 있다(Next 16.3.4 재현).
+      //    일자리 캐시 갱신이 걸린 JOB 만 `after` 로 옮기고,
+      //    **그 외 게시판은 변경 전 실행 방식과 오류 처리를 그대로 둔다.**
+      if (updated.boardType === 'JOB') {
+        after(async () => {
+          try {
+            await retroactivePromotionUpdate(updated.boardType, updated.hotThreshold, updated.fameThreshold)
+          } catch (e) {
+            console.error('[admin.config] retroactive promote 실패:', e)
+          }
+        })
+      } else {
+        void retroactivePromotionUpdate(
+          updated.boardType,
+          updated.hotThreshold,
+          updated.fameThreshold,
+        )
+      }
     }
   }
 }

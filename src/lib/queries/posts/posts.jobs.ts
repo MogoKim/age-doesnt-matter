@@ -218,6 +218,28 @@ export const getCachedJobsPageAt = unstable_cache(
   { revalidate: 120, tags: [JOBS_LIST_TAG] },
 )
 
+/**
+ * 시도별 일자리 목록 — **지역마다 캐시 키가 갈린다.**
+ *
+ * ── 왜 필요한가 ──────────────────────────────────────────────
+ *  지역 페이지(`/jobs/region/[sido]`)는 캐시되지 않은 `getJobListPage` 를 직접 불렀다.
+ *  그래서 `revalidateJobCreated`·`revalidateJobPost`·`revalidateJobPostsBulk` 가
+ *  `JOBS_LIST_TAG` 를 무효화해도 **지역 페이지에는 닿지 않았다** —
+ *  유일한 갱신 수단이 페이지 ISR 시간(120초)뿐이었다.
+ *  같은 태그에 묶어 두면 기존 쓰기 경로가 그대로 지역 목록까지 갱신한다.
+ *
+ * 🔴 조회 실패를 빈 목록으로 캐시하지 않는다. 여기서 잡지 않고 던지면
+ *    `unstable_cache` 는 값을 저장하지 않는다. 호출부의 CI 더미 DB 가드는
+ *    **캐시 바깥**에 있어야 한다(`jobs/region/[sido]/page.tsx` 참조).
+ *
+ * 필터·정렬·30건 제한은 `getJobListPage` 가 그대로 담당한다 — 여기서 바꾸지 않는다.
+ */
+export const getCachedJobsRegionPage = unstable_cache(
+  (region: string) => getJobListPage({ region, limit: 30 }),
+  ['jobs-region-page'],
+  { revalidate: 3600, tags: [JOBS_LIST_TAG] },
+)
+
 /* ── 일자리 상세 ── */
 
 export interface JobDetailItem {

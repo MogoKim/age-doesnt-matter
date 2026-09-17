@@ -11,6 +11,8 @@ import { BOARD_URL_PREFIX } from '@/lib/board-registry'
 import { revalidateJobPost, revalidateJobPostsBulk } from '@/lib/cache/job-cache'
 import { invalidateCachedBoardType } from '@/lib/seo/board-slug-cache'
 import { revalidateServicePaths } from './revalidate'
+import { postDetailCacheTag, postCacheKeys } from '@/lib/queries/posts/posts.base'
+import { after } from 'next/server'
 
 // BoardType → 서비스 페이지 경로 (SSoT: board-registry).
 // 캐시 무효화는 `./revalidate` 로 옮겼지만, 이 파일은 경로 매핑 자체를 따로 쓴다.
@@ -83,7 +85,27 @@ export async function adminSetPostLikeCount(postId: string, likeCount: number) {
     },
   })
 
-  void checkAndPromotePost(postId, post.boardType, likeCount, post.commentCount).catch(() => {})
+  // 🔴 `after()` 로 관리한다. 예전에는 `void fn(...).catch(...)` 였는데,
+  //    그 형태는 응답 처리가 끝난 뒤에 `revalidateTag` 를 등록할 수 있고
+  //    그렇게 등록된 무효화는 **요청의 캐시 처리에서 빠질 수 있다**(Next 16.3.4 재현).
+  //    `after` 는 응답을 보낸 뒤에도 요청 수명 안에서 콜백을 돌려 그 등록을 살린다.
+  //    ⚠️ `after(이미시작한Promise)` 나 콜백 안의 `void` 는 같은 문제가 남는다 — 반드시 await 한다.
+  // 🔴 **JOB 일 때만** `after()` 로 관리한다.
+  //    `void fn(...)` 는 응답 처리가 끝난 뒤 `revalidateTag` 를 등록할 수 있고,
+  //    그렇게 등록된 무효화는 요청의 캐시 처리에서 빠질 수 있다(Next 16.3.4 재현).
+  //    일자리 캐시 갱신이 걸린 JOB 만 `after` 로 옮기고,
+  //    **그 외 게시판은 변경 전 실행 방식과 오류 처리를 그대로 둔다.**
+  if (post.boardType === 'JOB') {
+    after(async () => {
+      try {
+        await checkAndPromotePost(postId, post.boardType, likeCount, post.commentCount)
+      } catch (e) {
+        console.error('[admin.content] post promote 실패:', e)
+      }
+    })
+  } else {
+    void checkAndPromotePost(postId, post.boardType, likeCount, post.commentCount).catch(() => {})
+  }
 
   revalidateServicePaths(post.boardType, postId)
   revalidatePath('/admin/content')
@@ -406,7 +428,7 @@ export async function adminMovePost(
 
   // 이전 게시판 + 새 게시판 revalidation.
   // 상세 공개 URL은 slug이므로 id와 slug를 모두 무효화해야 이동 직후 정본 보드가 맞는다.
-  const postIdentifiers = Array.from(new Set([postId, existing.slug].filter(Boolean)))
+  const postIdentifiers = postCacheKeys(postId, existing.slug)
   for (const identifier of postIdentifiers) {
     revalidateServicePaths(existing.boardType, identifier)
     revalidateServicePaths(boardType, identifier)
@@ -415,7 +437,9 @@ export async function adminMovePost(
   revalidatePath('/')
   revalidatePath('/best')
   revalidatePath('/search')
-  updateTag('post-detail')
+  // 🔴 이 글 하나만 무효화한다 — 전역 'post-detail' 은 다른 모든 글의 상세 캐시까지 날린다.
+  //    위에서 이미 모은 id·slug 를 그대로 쓴다(이 경로는 slug 를 바꾸지 않는다).
+  for (const identifier of postIdentifiers) updateTag(postDetailCacheTag(identifier))
   updateTag('post-meta')
   // sitemap-posts는 revalidate 3600 — 누락 시 숨긴 글이 최대 1시간 sitemap에 남는다.
   updateTag('sitemap-posts')
