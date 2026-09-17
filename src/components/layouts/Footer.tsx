@@ -5,6 +5,21 @@ import FooterFontSizeToggle from '@/components/common/FooterFontSizeToggle'
 //  - 제거: 공식 채널(SNS)·Google Play 버튼(FooterChannelLinks), 회사소개·자주 묻는 질문 링크, 상단 브랜드 블록.
 //  - 유지: 이용약관/개인정보처리방침/커뮤니티 규칙/문의, 글씨 크기 토글(접근성), 저작권, 사업자정보확인.
 //  - 사업자 정보(전자상거래법 제10조): 완전 삭제 금지 → details 접기로 조용하게 유지(펼치면 전체 표시).
+/**
+ * 주제별 모아보기 — `/guide` · `/topic/*` 진입점.
+ *
+ * Footer 간소화 v1 은 "회사소개·자주 묻는 질문" 같은 **안내성** 링크를 뺐다. 이건 성격이 다르다:
+ * 실제 콘텐츠 허브로 가는 길이고, 공개면 전체에서 `/guide` 는 내부링크를 18회 · `/topic` 은
+ * 2회밖에 못 받고 있었다(2026-09-16 실측). 정책 링크 행과 **섞지 않고** 별도 행으로 둔다.
+ *
+ * 🔴 `/topic` 자체는 index 라우트가 없다 — 개별 허브로만 링크한다.
+ */
+const TOPIC_LINKS = [
+  { label: '갱년기', href: '/topic/menopause' },
+  { label: '인생 2막', href: '/topic/second-act' },
+  { label: '생활 가이드', href: '/guide' },
+] as const
+
 const FOOTER_LINKS = [
   { label: '이용약관', href: '/terms', emphasis: false },
   { label: '개인정보처리방침', href: '/privacy', emphasis: true }, // 법정 고지 — 강조 유지
@@ -21,8 +36,21 @@ export default function Footer() {
   return (
     <footer className="w-full bg-background">
       <div className="mx-auto flex w-full max-w-lg flex-col items-center px-4 pb-4 lg:pb-6">
+        {/* 0. 주제별 모아보기 — 콘텐츠 허브 진입점. 정책 링크와 분리된 별도 행 */}
+        <nav className="flex w-full flex-wrap justify-center gap-x-3 gap-y-1.5 pt-3" aria-label="주제별 모아보기">
+          {TOPIC_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="inline-flex min-h-11 items-center px-1 py-1.5 text-caption text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary"
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+
         {/* 1. 정책 링크 — 개인정보처리방침만 강조(법정 고지) */}
-        <nav className="flex w-full flex-wrap justify-center gap-x-3 gap-y-1.5 py-3" aria-label="하단 링크">
+        <nav className="flex w-full flex-wrap justify-center gap-x-3 gap-y-1.5 pb-3" aria-label="하단 링크">
           {FOOTER_LINKS.map((link) => (
             <Link
               key={link.href}

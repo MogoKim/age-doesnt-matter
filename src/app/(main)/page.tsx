@@ -22,6 +22,7 @@ import MagazineSection from '@/components/features/home/MagazineSection'
 import FirstGreetingWidget from '@/components/features/home/FirstGreetingWidget'
 import SignupCard from '@/components/features/home/SignupCard'
 import HomeFaqSection from '@/components/features/home/HomeFaqSection'
+import TopicGuideSection from '@/components/features/home/TopicGuideSection'
 import {
   getLatestJobs,
   getLatestMagazinePosts,
@@ -236,6 +237,12 @@ export default function HomePage() {
             <Suspense fallback={<SectionSkeleton h="h-[280px]" />}>
               <JobWrapper />
             </Suspense>
+
+            {/* 주제별 모아보기 — /guide·/topic/* 진입점(서버 컴포넌트, DB 조회 없음).
+                🔴 위치: 일자리와 FAQ 사이. 이 자리만 **양옆에 광고가 없어** 기존 광고 인접
+                관계(매거진↔쿠팡2, SignupCard↔데스크탑 하단)를 그대로 둘 수 있다.
+                섹션 자체의 순서도 바꾸지 않았다 — 사이에 끼워 넣기만 했다. */}
+            <TopicGuideSection />
 
             {/* 비회원 전용 FAQ (클라이언트, useSession) */}
             <HomeFaqSection />
