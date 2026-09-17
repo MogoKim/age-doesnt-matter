@@ -2,7 +2,7 @@ import { buildPostPath } from '@/lib/post-url'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { getJobListPage, type JobCardItem } from '@/lib/queries/posts'
+import { getCachedJobsRegionPage, type JobCardItem } from '@/lib/queries/posts'
 import JobCard from '@/components/features/jobs/JobCard'
 import JobRegionLinks from '@/components/features/jobs/JobRegionLinks'
 import { JOB_SIDO_LIST, isJobSido } from '@/lib/jobs-regions'
@@ -13,7 +13,9 @@ interface PageProps {
   params: Promise<{ sido: string }>
 }
 
-export const revalidate = 120
+// 조회 캐시(`getCachedJobsRegionPage`)와 같은 주기로 맞춘다.
+// 갱신의 주된 수단은 시간이 아니라 `JOBS_LIST_TAG` 무효화다 — 이 값은 안전망이다.
+export const revalidate = 3600
 export const dynamicParams = false // 화이트리스트 17개 시도만 허용, 나머지 404
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'
@@ -57,9 +59,14 @@ function ItemListJsonLd({ region, jobs }: { region: string; jobs: JobCardItem[] 
   )
 }
 
+/**
+ * 🔴 CI 더미 DB 가드는 **캐시 바깥**에 둔다.
+ *    안에 두면 빌드 중 빈 목록이 캐시에 그대로 저장돼 오래 남는다.
+ *    캐시 안에서 던지면 `unstable_cache` 는 아무것도 저장하지 않는다.
+ */
 async function getRegionJobs(region: string) {
   try {
-    return await getJobListPage({ region, limit: 30 })
+    return await getCachedJobsRegionPage(region)
   } catch (error) {
     if (!CI_DUMMY_DB) throw error
     return { jobs: [], total: 0 }

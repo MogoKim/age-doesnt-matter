@@ -11,6 +11,7 @@ import { BOARD_URL_PREFIX } from '@/lib/board-registry'
 import { revalidateJobPost, revalidateJobPostsBulk } from '@/lib/cache/job-cache'
 import { invalidateCachedBoardType } from '@/lib/seo/board-slug-cache'
 import { revalidateServicePaths } from './revalidate'
+import { postDetailCacheTag, postCacheKeys } from '@/lib/queries/posts/posts.base'
 
 // BoardType → 서비스 페이지 경로 (SSoT: board-registry).
 // 캐시 무효화는 `./revalidate` 로 옮겼지만, 이 파일은 경로 매핑 자체를 따로 쓴다.
@@ -406,7 +407,7 @@ export async function adminMovePost(
 
   // 이전 게시판 + 새 게시판 revalidation.
   // 상세 공개 URL은 slug이므로 id와 slug를 모두 무효화해야 이동 직후 정본 보드가 맞는다.
-  const postIdentifiers = Array.from(new Set([postId, existing.slug].filter(Boolean)))
+  const postIdentifiers = postCacheKeys(postId, existing.slug)
   for (const identifier of postIdentifiers) {
     revalidateServicePaths(existing.boardType, identifier)
     revalidateServicePaths(boardType, identifier)
@@ -415,7 +416,9 @@ export async function adminMovePost(
   revalidatePath('/')
   revalidatePath('/best')
   revalidatePath('/search')
-  updateTag('post-detail')
+  // 🔴 이 글 하나만 무효화한다 — 전역 'post-detail' 은 다른 모든 글의 상세 캐시까지 날린다.
+  //    위에서 이미 모은 id·slug 를 그대로 쓴다(이 경로는 slug 를 바꾸지 않는다).
+  for (const identifier of postIdentifiers) updateTag(postDetailCacheTag(identifier))
   updateTag('post-meta')
   // sitemap-posts는 revalidate 3600 — 누락 시 숨긴 글이 최대 1시간 sitemap에 남는다.
   updateTag('sitemap-posts')
