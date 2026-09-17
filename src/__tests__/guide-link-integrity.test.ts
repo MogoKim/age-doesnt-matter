@@ -196,3 +196,92 @@ describe('⑦ 나머지 6개 가이드 회귀 없음', () => {
     }
   })
 })
+
+// ─────────────────────────────────────────────────────────────
+// 2026-09-17 2차 보정 (Codex 지적 3건)
+// ─────────────────────────────────────────────────────────────
+
+const allLines = (g: typeof GLASSES) => [
+  g.title,
+  g.description,
+  g.tldr,
+  ...g.sections.flatMap((s) => [s.heading, ...s.paragraphs]),
+  ...g.faqs.flatMap((f) => [f.q, f.a]),
+]
+
+describe('⑧ 안경 — 테 구조를 단정하지 않는다', () => {
+  // 무테·반무테의 고정 방식은 제품마다 다르고 우리가 확인한 근거가 없다.
+  // 구조를 설명하는 대신 "매장에서 확인" 으로 보낸다.
+  const STRUCTURE_CLAIM = /구멍을? 뚫|나사로 고정|피스로 고정|낚싯줄|와이어로 고정/
+
+  it('🔴 본문·FAQ 어디에도 테 고정 구조 단정이 없다', () => {
+    for (const line of allLines(GLASSES)) {
+      expect(line, line.slice(0, 40)).not.toMatch(STRUCTURE_CLAIM)
+    }
+  })
+
+  it('🔴 무테·반무테를 언급하는 본문·답변은 "매장 확인" 으로 이어진다', () => {
+    // 질문(FAQ q)은 사용자의 말이라 안내 문구를 요구하지 않는다 — 답변과 본문만 본다.
+    const answers = [...GLASSES.sections.flatMap((s) => s.paragraphs), ...GLASSES.faqs.map((f) => f.a)]
+    const mentions = answers.filter((l) => l.includes('무테'))
+    expect(mentions.length).toBeGreaterThan(0)
+    for (const line of mentions) {
+      expect(line, line.slice(0, 40)).toMatch(/매장|물어보|확인/)
+    }
+  })
+
+  it('테 형태·상태 둘 다 가능 여부의 변수로 안내한다', () => {
+    const body = allLines(GLASSES).join('\n')
+    expect(body).toMatch(/테 형태/)
+    expect(body).toMatch(/상태/)
+  })
+})
+
+describe('⑨ 안경 — 미검증 비율 표현을 쓰지 않는다', () => {
+  // "대부분"·"많은 매장" 은 우리가 센 적 없는 수치다. 검색 설명(description)까지 같은 기준이어야 한다.
+  const RATIO = /대부분|대다수|거의 (다|모두)|많은 (매장|곳|안경원)|절반 이상|보통은/
+
+  it('🔴 description 에 비율 표현이 없다', () => {
+    expect(GLASSES.description).not.toMatch(RATIO)
+  })
+
+  it('🔴 요약·본문·FAQ 어디에도 비율 표현이 없다', () => {
+    for (const line of allLines(GLASSES)) {
+      expect(line, line.slice(0, 40)).not.toMatch(RATIO)
+    }
+  })
+
+  it('🔴 description 과 본문이 같은 결론을 말한다 — "매장에서 확인"', () => {
+    expect(GLASSES.description).toMatch(/매장/)
+    expect(GLASSES.description).toMatch(/확인/)
+    expect(GLASSES.tldr).toMatch(/매장/)
+  })
+
+  it('가능 여부를 단정하지 않는다 — 제목도 질문형을 유지한다', () => {
+    expect(GLASSES.title).toContain('되나요')
+    expect(GLASSES.title).not.toMatch(RATIO)
+  })
+})
+
+describe('⑩ 손댄 2개 가이드는 브랜드 금지 표현을 쓰지 않는다', () => {
+  // CLAUDE.md: "시니어·어르신·노인·실버" 금지.
+  // 🔴 범위는 이번에 손댄 2개뿐이다. 주거 가이드의 "실버타운"(시설 분류명)은 이번 작업 범위가 아니다.
+  const BANNED = ['시니어', '어르신', '노인', '실버']
+
+  it('🔴 재취업·안경 가이드에 금지 표현이 없다', () => {
+    for (const g of [GLASSES, REJOB]) {
+      for (const line of allLines(g)) {
+        for (const term of BANNED) {
+          expect(line.includes(term), `${g.slug} / ${term} / ${line.slice(0, 40)}`).toBe(false)
+        }
+      }
+    }
+  })
+
+  it('일자리 종류 나열은 유지하되 제도명으로 확장하지 않았다', () => {
+    const body = allLines(REJOB).join('\n')
+    expect(body).toContain('공공근로')
+    // 공식 제도 설명(지원 자격·신청처 등)으로 번지지 않았는지
+    expect(body).not.toMatch(/신청 자격|참여 자격|보건복지부|신청 방법은/)
+  })
+})
