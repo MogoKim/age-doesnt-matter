@@ -107,7 +107,10 @@ export default async function GuidePage({ params }: PageProps) {
           ))}
         </div>
 
-        {/* 우리 또래 마늘 이야기 */}
+        {/* 우리 또래 이야기 — 🔴 링크가 하나도 없으면 **제목·박스까지 통째로 감춘다.**
+            빈 상자만 남으면 "이야기가 있다"고 약속해놓고 아무것도 없는 화면이 된다.
+            (2026-09-17: 삭제된 글을 가리키던 링크를 걷어내며 실제로 0건이 되는 가이드가 생겼다) */}
+        {guide.communityLinks.length > 0 && (
         <section className="mt-8 rounded-2xl border border-primary/20 bg-primary/5 p-5">
           <h2 className="text-body font-bold text-primary-text m-0 mb-3">📖 우리 또래 이야기</h2>
           <ul className="list-none m-0 p-0 space-y-2">
@@ -123,6 +126,7 @@ export default async function GuidePage({ params }: PageProps) {
             ))}
           </ul>
         </section>
+        )}
 
         {/* FAQ */}
         <section className="mt-8">
@@ -137,7 +141,8 @@ export default async function GuidePage({ params }: PageProps) {
           </dl>
         </section>
 
-        {/* 관련 생활 글 */}
+        {/* 관련 생활 글 — 위와 같은 이유로 0건이면 통째로 감춘다 */}
+        {guide.relatedLinks.length > 0 && (
         <section className="mt-8 pt-6 border-t border-border">
           <h2 className="text-body font-bold text-foreground m-0 mb-3">관련 생활 이야기</h2>
           <ul className="list-none m-0 p-0 space-y-1">
@@ -150,6 +155,7 @@ export default async function GuidePage({ params }: PageProps) {
             ))}
           </ul>
         </section>
+        )}
       </article>
     </div>
   )
