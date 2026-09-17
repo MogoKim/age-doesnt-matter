@@ -11,9 +11,13 @@
  * mutation 쪽은 아래 무효화 함수만 호출한다.
  *
  * ── 의도적 eventual consistency (캐시 스래싱 방지) ──
- * 조회수·댓글수·좋아요수, 그리고 좋아요·댓글에 의해 발생하는 자동 승격은
- * 무효화하지 않는다. 조회할 때마다 캐시를 날리면 캐시 자체가 무의미해진다.
- * 허용 지연: 목록·홈 표시 최대 120초 / 상세 카운터 최대 300초.
+ * 조회수·댓글수·좋아요수 **자체**는 무효화하지 않는다.
+ * 조회할 때마다 캐시를 날리면 캐시 자체가 무의미해진다.
+ *
+ * ⚠️ **자동 승격은 예외다(2026-09-17 변경).** 승격은 카운터와 달리 카드에 보인다 —
+ * `promotionLevel === 'HOT'` → `JobCardItem.isUrgent` → **급구 배지**.
+ * 그래서 `revalidateJobPromotion`·`revalidateJobPromotionBulk` 로 무효화한다.
+ * 승격은 카운터처럼 매 조회마다 일어나지 않아 스래싱 걱정이 없다.
  */
 import { revalidateTag, updateTag } from 'next/cache'
 
@@ -84,13 +88,18 @@ export function revalidateJobPost(postId: string, options?: { includeSitemap?: b
  * **반드시 DB write/transaction 성공 후에만 호출한다.**
  */
 /**
- * 자동 승격 전용 — **detached 호출에서 부른다.**
+ * 자동 승격 전용 — **`after()` 콜백 안에서 부른다.**
  *
- * `checkAndPromotePost`·`retroactivePromotionUpdate` 는 호출부가 전부
- * `void fn(...).catch(...)` 형태라 **Server Action 이 반환한 뒤에 실행될 수 있다.**
- * 그 문맥에서 `updateTag` 는 던지고, 호출부의 `.catch` 가 그것을 삼켜
- * **무효화가 조용히 사라진다.** 그래서 Route Handler 와 같은
- * `revalidateTag(tag, 'max')` 를 쓴다(위 문맥 규칙: 문맥이 다르면 함수를 나눈다).
+ * `checkAndPromotePost`·`retroactivePromotionUpdate` 는 응답을 보낸 뒤에 끝날 수 있다.
+ * 예전에는 호출부가 `void fn(...).catch(...)` 였는데, 그러면 **응답 처리가 끝난 뒤에
+ * 등록된 무효화가 요청의 캐시 처리에서 빠질 수 있다**(Next 16.3.4 재현).
+ * 그래서 호출부를 `after(async () => { await fn(...) })` 로 바꿨다 —
+ * 응답 이후에도 **요청 수명 안에서** 돌아 등록이 살아난다.
+ *
+ * ⚠️ 정정: "detached 면 `updateTag` 가 반드시 던진다" 는 설명은 **정확하지 않았다.**
+ *    문제는 예외가 아니라 **등록 시점**이다. 여기서 `revalidateTag(tag, 'max')` 를 쓰는 이유도
+ *    "던지지 않게 하려고" 가 아니라, 승격이 즉시 반영될 필요가 없는 지연 허용 갱신이기 때문이다.
+ *    read-your-own-writes 가 필요한 어드민 단건 경로는 계속 `updateTag` 를 쓴다.
  *
  * 🔴 즉시 최신값 보장은 아니다 — 승격 반영은 다음 재검증부터다.
  *

@@ -12,6 +12,7 @@ import { revalidateJobPost, revalidateJobPostsBulk } from '@/lib/cache/job-cache
 import { invalidateCachedBoardType } from '@/lib/seo/board-slug-cache'
 import { revalidateServicePaths } from './revalidate'
 import { postDetailCacheTag, postCacheKeys } from '@/lib/queries/posts/posts.base'
+import { after } from 'next/server'
 
 // BoardType → 서비스 페이지 경로 (SSoT: board-registry).
 // 캐시 무효화는 `./revalidate` 로 옮겼지만, 이 파일은 경로 매핑 자체를 따로 쓴다.
@@ -84,7 +85,18 @@ export async function adminSetPostLikeCount(postId: string, likeCount: number) {
     },
   })
 
-  void checkAndPromotePost(postId, post.boardType, likeCount, post.commentCount).catch(() => {})
+  // 🔴 `after()` 로 관리한다. 예전에는 `void fn(...).catch(...)` 였는데,
+  //    그 형태는 응답 처리가 끝난 뒤에 `revalidateTag` 를 등록할 수 있고
+  //    그렇게 등록된 무효화는 **요청의 캐시 처리에서 빠질 수 있다**(Next 16.3.4 재현).
+  //    `after` 는 응답을 보낸 뒤에도 요청 수명 안에서 콜백을 돌려 그 등록을 살린다.
+  //    ⚠️ `after(이미시작한Promise)` 나 콜백 안의 `void` 는 같은 문제가 남는다 — 반드시 await 한다.
+  after(async () => {
+    try {
+      await checkAndPromotePost(postId, post.boardType, likeCount, post.commentCount)
+    } catch (e) {
+      console.error('[admin.content] post promote 실패:', e)
+    }
+  })
 
   revalidateServicePaths(post.boardType, postId)
   revalidatePath('/admin/content')
