@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { bridgeUrl, SORANSORAN_ORIGIN, BRIDGE_COPY, type BridgeSlot } from '@/lib/bridge'
+import { isReadingPage } from '@/components/features/bridge/SoranSoranPopup'
 
 /**
  * Project BRIDGE 계약 테스트.
@@ -13,7 +14,7 @@ import { bridgeUrl, SORANSORAN_ORIGIN, BRIDGE_COPY, type BridgeSlot } from '@/li
  */
 
 const SLOTS: BridgeSlot[] = [
-  'popup', 'homecard', 'footer', 'topbanner', 'push', 'hero', 'listad', 'detailad', 'notice',
+  'popup', 'homecard', 'postdetail', 'footer', 'topbanner', 'push', 'hero', 'listad', 'detailad', 'notice',
 ]
 
 describe('bridgeUrl — UTM 계약', () => {
@@ -78,5 +79,45 @@ describe('금지 표현 (영구)', () => {
 
   it('병행 운영 안심 문구가 있다 — 우나어가 없어진다는 오해를 막는다', () => {
     expect(BRIDGE_COPY.reassure).toContain('우나어')
+  })
+})
+
+describe('읽기 화면에서는 팝업이 뜨지 않는다', () => {
+  // 검색으로 글 하나 보러 온 사람에게 모달을 씌우면 읽기를 끊어 그대로 이탈한다.
+  // 그 동선은 글 하단 인라인 카드(SoranSoranPostCard)가 맡는다.
+  it.each([
+    '/community/free/cmxyz123',
+    '/community/menopause/abc',
+    '/magazine/some-slug',
+    '/jobs/cm123',
+    '/guide/some-guide',
+    '/topic/some-topic',
+  ])('%s 는 읽기 화면이다 (팝업 X)', (path) => {
+    expect(isReadingPage(path)).toBe(true)
+  })
+
+  it.each([
+    '/',
+    '/community/free',
+    '/community/menopause',
+    '/best',
+    '/magazine',
+    '/jobs',
+    '/search',
+  ])('%s 는 둘러보는 화면이다 (팝업 O)', (path) => {
+    expect(isReadingPage(path)).toBe(false)
+  })
+})
+
+describe('글 상세 카피 — SEO 유입 접점', () => {
+  it('금지 표현이 없다', () => {
+    const all = Object.values(BRIDGE_COPY.post).join(' ')
+    for (const w of ['광고 없', '소란소란으로 변경', '시니어', '어르신', '실버']) {
+      expect(all).not.toContain(w)
+    }
+  })
+
+  it('"지금은" 장치가 글 상세 카피에도 있다', () => {
+    expect(BRIDGE_COPY.post.hook).toContain('지금은')
   })
 })

@@ -15,8 +15,9 @@ export const SORANSORAN_ORIGIN = 'https://soransoran.com'
 
 /** 유도 구좌. GA4 "세션 소스/매체" 에 `unao / <slot>` 으로 찍힌다. */
 export type BridgeSlot =
-  | 'popup'      // 전 경로 모달
+  | 'popup'      // 목록·홈 모달 (읽기 화면에서는 뜨지 않는다)
   | 'homecard'   // 홈 중반부 카드
+  | 'postdetail' // 글 상세 하단 인라인 카드 — SEO 유입의 주 착지점
   | 'footer'     // 푸터 상시 링크
   | 'topbanner'  // 최상단 띠배너 (어드민 설정)
   | 'push'       // 푸시·종알림 (어드민 발송)
@@ -55,4 +56,16 @@ export const BRIDGE_COPY = {
   ctaShort: '구경하러 가기',
   /** 병행 운영 — 우나어가 없어지는 게 아님을 반드시 알린다 */
   reassure: '우나어도 그대로 있습니다.',
+
+  /**
+   * 글 상세 하단용. 검색으로 글 하나 보러 온 사람이 **다 읽은 직후** 만나는 문구다.
+   * 홈을 거치지 않으므로 이 자리가 SEO 유입의 유일한 접점이다.
+   * 모달처럼 끊지 않고, 읽던 흐름을 이어 "다음 이야기"로 제안한다.
+   */
+  post: {
+    title: '이런 이야기, 소란소란에도 있어요',
+    body: '우나어를 만든 사람들이 새로 연 커뮤니티예요.',
+    hook: '지금은 글을 쓰면 답이 달려요.',
+    cta: '소란소란 구경하기',
+  },
 } as const
