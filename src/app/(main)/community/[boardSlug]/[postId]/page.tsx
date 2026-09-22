@@ -9,6 +9,7 @@ import { getCommentsByPostId, getForumCommentsForJsonLd } from '@/lib/queries/co
 import { buildDiscussionForumJsonLd, DFP_COMMENT_LIMIT } from '@/lib/seo/discussion-forum'
 import ActionBar from '@/components/features/community/ActionBar'
 import PostCTA from '@/components/features/community/PostCTA'
+import SoranSoranPostCard from '@/components/features/bridge/SoranSoranPostCard'
 import PostOwnerActions from '@/components/features/community/PostOwnerActions'
 import CommentSection from '@/components/features/community/CommentSection'
 import { formatTimeAgo } from '@/components/features/community/utils'
@@ -309,8 +310,13 @@ export default async function PostDetailPage({ params }: PageProps) {
         <CommentsLoader postId={resolvedId} isGreeting={post.category === GREETING_CATEGORY} />
       </Suspense>
 
-      {/* 가입 유도 — 댓글까지 본 사람에게 */}
+      {/* 가입 유도 — 댓글까지 본 사람에게 (2026-09-22 이후 로그인 사용자 앱 설치 CTA 전용) */}
       <PostCTA postId={resolvedId} postTitle={post.title} />
+
+      {/* Project BRIDGE: 소란소란 안내 — 🔴 SEO 유입의 유일한 접점.
+          검색으로 이 글만 보러 온 사람은 홈 카드를 못 보고, 읽기 화면에서는 팝업도 뜨지 않는다.
+          다 읽은 직후인 이 자리에서 한 번만 제안한다. */}
+      <SoranSoranPostCard />
 
       {/* 관련글 추천 v2 — 댓글·가입유도 뒤 "다음에 읽기 좋은 이야기".
           후보 전체(24)를 넘기고 클라에서 본 글 제외 + 맥락×흥미도 점수화 상위 3개 노출. 하단 PostListBottom 유지. */}
