@@ -91,7 +91,10 @@ async function triggerBanner(page: Page): Promise<void> {
 
 // ── 테스트 ────────────────────────────────────────────────────────────────
 
-test.describe('SignupPromptBanner GTM 이벤트', () => {
+// Project BRIDGE(2026-09-22): SignupPromptBanner 를 MainGroupClientOnly 에서 마운트 해제했다.
+// 배너가 렌더되지 않으므로 이 스위트는 전부 타임아웃한다. 컴포넌트와 단위 테스트는 남아 있으니
+// 배너를 되살리면 skip 만 풀면 된다.
+test.describe.skip('SignupPromptBanner GTM 이벤트', () => {
   test.beforeEach(async ({ page }) => {
     // 페이지 로드 전 storage 초기화 (테스트 격리)
     await page.addInitScript(() => {

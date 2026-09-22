@@ -20,7 +20,6 @@ import { ADSENSE } from '@/components/ad/ad-slots'
 import MagazineSection from '@/components/features/home/MagazineSection'
 // import PersonalGreeting from '@/components/features/home/PersonalGreeting' // 당분간 비활성화(2026-06-17, 홈 회원 인사 카드)
 import FirstGreetingWidget from '@/components/features/home/FirstGreetingWidget'
-import SignupCard from '@/components/features/home/SignupCard'
 import HomeFaqSection from '@/components/features/home/HomeFaqSection'
 import TopicGuideSection from '@/components/features/home/TopicGuideSection'
 import {
@@ -240,15 +239,17 @@ export default function HomePage() {
 
             {/* 주제별 모아보기 — /guide·/topic/* 진입점(서버 컴포넌트, DB 조회 없음).
                 🔴 위치: 일자리와 FAQ 사이. 이 자리만 **양옆에 광고가 없어** 기존 광고 인접
-                관계(매거진↔쿠팡2, SignupCard↔데스크탑 하단)를 그대로 둘 수 있다.
+                관계(매거진↔쿠팡2, 하단 섹션↔데스크탑 하단)를 그대로 둘 수 있다.
                 섹션 자체의 순서도 바꾸지 않았다 — 사이에 끼워 넣기만 했다. */}
             <TopicGuideSection />
 
             {/* 비회원 전용 FAQ (클라이언트, useSession) */}
             <HomeFaqSection />
 
-            {/* 비회원 전용 가입 유도 카드 (클라이언트, useSession) */}
-            <SignupCard />
+            {/* Project BRIDGE(2026-09-22): SignupCard(비회원 카카오 가입 유도) 제거.
+                소란소란 이주 유도와 메시지가 충돌한다. 컴포넌트 파일은 남겨둔다.
+                광고 인접: 아래 데스크탑 하단 AdSense 앵커가 HomeFaqSection 으로 이동
+                (home-footer-topic-links.test.ts 동반 수정). 광고 슬롯 자체는 변경 없음. */}
 
             {/* 데스크탑 전용 하단 AdSense 728×250 (회원/비회원 공통) */}
             <ResponsiveAd
