@@ -1,21 +1,20 @@
-import { buttonVariants } from '@/components/ui/Button'
-import { cn } from '@/lib/utils'
 import { BRIDGE_COPY, bridgeUrl } from '@/lib/bridge'
 
 /**
  * Project BRIDGE — 글 상세 하단 인라인 카드 (서버 컴포넌트).
  *
- * 🔴 **SEO 유입의 유일한 접점이다.** 검색으로 글 하나 보러 온 사람은 홈을 거치지 않으므로
- *    홈 카드도 못 보고, 읽기 화면에서는 팝업도 뜨지 않는다(의도).
- *    그래서 **다 읽은 직후** 이 자리에서 한 번 제안한다.
- *
- * 모달처럼 끊지 않고 "다음에 읽을 곳"으로 이어지게 둔다 —
- * 바로 아래 관련글 추천(NextPostsInline)과 같은 결이다.
+ * 검색으로 글 하나 보러 온 사람이 **다 읽은 직후** 만나는 자리다
+ * (`PostCTA` 다음, 관련글 추천 앞). 팝업과 같은 방침으로 **카드 전체가 링크**다.
  */
 export default function SoranSoranPostCard() {
   return (
     <section className="mb-12">
-      <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5">
+      <a
+        href={bridgeUrl('postdetail')}
+        target="_blank"
+        rel="noopener"
+        className="block rounded-2xl border border-primary/20 bg-primary/5 p-5 no-underline transition-colors hover:bg-primary/10"
+      >
         <div className="flex items-start gap-3">
           <span className="text-2xl leading-none" aria-hidden="true">
             💬
@@ -33,15 +32,10 @@ export default function SoranSoranPostCard() {
           </div>
         </div>
 
-        <a
-          href={bridgeUrl('postdetail')}
-          target="_blank"
-          rel="noopener"
-          className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'mt-4 w-full no-underline')}
-        >
+        <span className="mt-4 flex min-h-control w-full items-center justify-center rounded-lg border border-primary bg-background px-4 py-2 text-center text-body font-bold leading-tight text-primary-text break-keep">
           {BRIDGE_COPY.post.cta} →
-        </a>
-      </div>
+        </span>
+      </a>
     </section>
   )
 }
