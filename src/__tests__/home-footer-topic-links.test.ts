@@ -96,8 +96,8 @@ describe('보존 — 광고·섹션 순서', () => {
   })
 
   it('🔴 기존 섹션 순서가 그대로다 — 새 섹션은 일자리와 FAQ **사이**에만 들어간다', () => {
-    // Project BRIDGE(2026-09-22): SignupCard 제거 — 마지막 앵커가 HomeFaqSection 으로 내려왔다.
-    const order = ['HeroSlider', 'FirstGreetingWidget', 'HotContentSections', 'MagazineWrapper', 'JobWrapper', 'TopicGuideSection', 'HomeFaqSection']
+    // Project BRIDGE(2026-09-22): SignupCard 자리를 SoranSoranCard 가 이어받았다.
+    const order = ['HeroSlider', 'FirstGreetingWidget', 'HotContentSections', 'MagazineWrapper', 'JobWrapper', 'TopicGuideSection', 'HomeFaqSection', 'SoranSoranCard']
     const positions = order.map((name) => HOME.indexOf(`<${name}`))
     for (const [i, pos] of positions.entries()) expect(pos, order[i]).toBeGreaterThan(-1)
     for (let i = 1; i < positions.length; i++) {
@@ -105,21 +105,21 @@ describe('보존 — 광고·섹션 순서', () => {
     }
   })
 
-  it('🔴 광고 인접 관계가 유지된다 — 매거진 다음이 쿠팡2, HomeFaqSection 다음이 데스크탑 하단', () => {
+  it('🔴 광고 인접 관계가 유지된다 — 매거진 다음이 쿠팡2, SoranSoranCard 다음이 데스크탑 하단', () => {
     // 🔴 import 줄이 아니라 **JSX 사용 지점**으로 앵커한다 — import 는 파일 맨 위에 모여 있어
     //    단순 indexOf 로는 순서 판정이 뒤집힌다(2026-09-17 에 실제로 밟았다).
     const mag = HOME.indexOf('<MagazineWrapper')
     const coupang2 = HOME.indexOf('<CoupangHome2')
     const newSection = HOME.indexOf('<TopicGuideSection')
-    // Project BRIDGE(2026-09-22): SignupCard 제거 → 데스크탑 하단 광고의 앵커를 HomeFaqSection 으로 옮겼다.
-    //   광고 슬롯(ADSENSE.DESKTOP_BOTTOM) 자체는 그대로다 — 앞 섹션만 바뀌었다.
-    const lastSection = HOME.indexOf('<HomeFaqSection')
+    // Project BRIDGE(2026-09-22): SignupCard → SoranSoranCard 로 교체됐다.
+    //   광고 슬롯(ADSENSE.DESKTOP_BOTTOM) 자체는 한 번도 바뀌지 않았다 — 앞 섹션만 교체됐다.
+    const lastSection = HOME.indexOf('<SoranSoranCard')
     expect(mag).toBeGreaterThan(-1)
     expect(coupang2, '<CoupangHome2 JSX').toBeGreaterThan(mag)
     // 새 섹션은 매거진↔쿠팡2 사이에 끼어들지 않았다
     expect(newSection).toBeGreaterThan(coupang2)
-    // HomeFaqSection 다음이 데스크탑 하단 광고다
-    expect(lastSection, '<HomeFaqSection JSX').toBeGreaterThan(-1)
+    // SoranSoranCard 다음이 데스크탑 하단 광고다
+    expect(lastSection, '<SoranSoranCard JSX').toBeGreaterThan(-1)
     expect(HOME.indexOf('ADSENSE.DESKTOP_BOTTOM')).toBeGreaterThan(lastSection)
   })
 })
