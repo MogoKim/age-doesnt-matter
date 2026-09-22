@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { BRIDGE_COPY, bridgeUrl } from '@/lib/bridge'
 import FooterFontSizeToggle from '@/components/common/FooterFontSizeToggle'
 
 // Footer 간소화 v1 — 짧고 조용하게. 법정 고지/약관/개인정보/문의/글씨크기 접근성은 유지.
@@ -36,6 +37,19 @@ export default function Footer() {
   return (
     <footer className="w-full bg-background">
       <div className="mx-auto flex w-full max-w-lg flex-col items-center px-4 pb-4 lg:pb-6">
+        {/* Project BRIDGE: 소란소란 상시 진입점. 외부 도메인이라 next/link 가 아닌 <a>.
+            🔴 URL 은 반드시 bridgeUrl() 로 만든다 — UTM 이 빠지면 GA4 에서 출처를 구분할 수 없다. */}
+        <div className="flex w-full justify-center pt-3">
+          <a
+            href={bridgeUrl('footer')}
+            target="_blank"
+            rel="noopener"
+            className="inline-flex min-h-control items-center px-2 py-1.5 text-caption text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary break-keep"
+          >
+            우나어가 만든 새 커뮤니티 <span className="font-semibold text-foreground">&nbsp;{BRIDGE_COPY.name}&nbsp;</span> 구경하기 →
+          </a>
+        </div>
+
         {/* 0. 주제별 모아보기 — 콘텐츠 허브 진입점. 정책 링크와 분리된 별도 행 */}
         <nav className="flex w-full flex-wrap justify-center gap-x-3 gap-y-1.5 pt-3" aria-label="주제별 모아보기">
           {TOPIC_LINKS.map((link) => (

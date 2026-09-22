@@ -20,6 +20,7 @@ import { ADSENSE } from '@/components/ad/ad-slots'
 import MagazineSection from '@/components/features/home/MagazineSection'
 // import PersonalGreeting from '@/components/features/home/PersonalGreeting' // 당분간 비활성화(2026-06-17, 홈 회원 인사 카드)
 import FirstGreetingWidget from '@/components/features/home/FirstGreetingWidget'
+import SoranSoranCard from '@/components/features/bridge/SoranSoranCard'
 import HomeFaqSection from '@/components/features/home/HomeFaqSection'
 import TopicGuideSection from '@/components/features/home/TopicGuideSection'
 import {
@@ -246,10 +247,9 @@ export default function HomePage() {
             {/* 비회원 전용 FAQ (클라이언트, useSession) */}
             <HomeFaqSection />
 
-            {/* Project BRIDGE(2026-09-22): SignupCard(비회원 카카오 가입 유도) 제거.
-                소란소란 이주 유도와 메시지가 충돌한다. 컴포넌트 파일은 남겨둔다.
-                광고 인접: 아래 데스크탑 하단 AdSense 앵커가 HomeFaqSection 으로 이동
-                (home-footer-topic-links.test.ts 동반 수정). 광고 슬롯 자체는 변경 없음. */}
+            {/* Project BRIDGE(2026-09-22): 비회원 가입 유도 카드(SignupCard)가 있던 자리를
+                소란소란 안내 카드가 그대로 이어받는다 → 데스크탑 하단 AdSense 광고 인접 관계 복원. */}
+            <SoranSoranCard />
 
             {/* 데스크탑 전용 하단 AdSense 728×250 (회원/비회원 공통) */}
             <ResponsiveAd

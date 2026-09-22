@@ -267,3 +267,36 @@ https://soransoran.com/?utm_source=unao&utm_medium=<구좌>&utm_campaign=bridge
 
 🔴 **모든 링크에 UTM 을 빠뜨리지 말 것.** 특히 TopPromoBanner 는 `rel="noopener noreferrer"` 라
 referrer 가 아예 없어, UTM 이 없으면 GA4 에서 **"직접 유입"으로 100% 실종**된다.
+
+---
+
+## 11. 집행 방식 변경 — 어드민 등록 → **코드 고정** (2026-09-22)
+
+창업자가 **"전부 Claude가 한다"** 고 지시했다. 그런데 어드민은 **이메일+비밀번호(bcrypt)** 로그인이고
+Claude 는 그 자격증명이 없다(탐색 시도도 하지 않는다). DB 직접 write 역시 접속 정보가 없다.
+
+→ **어드민 등록이 필요 없도록 코드로 고정한다.** 배포와 동시에 작동하며 창업자 조작이 0이다.
+
+| 구좌 | 방식 | 구현 |
+|---|---|---|
+| 팝업(전 경로) | **코드** | `SoranSoranPopup` — `MainGroupClientOnly` 에 `ssr:false` 마운트 |
+| 홈 카드 | **코드** | `SoranSoranCard` — `SignupCard` 자리(데스크탑 하단 광고 바로 앞) |
+| 푸터 상시 링크 | **코드** | `Footer` 최상단 별도 행 |
+| 띠배너·HERO·AdBanner·공지글 | 어드민 | 자격증명 확보 시 §9 대로 등록(선택) |
+| 푸시·종알림 | **보류** | §9-5 (광고성 판정 리스크) |
+
+**트레이드오프**: 문구를 바꾸려면 **코드 배포가 필요하다**(어드민에서 못 고친다).
+나중에 어드민 운영으로 옮기려면 컴포넌트를 떼고 `Popup`/`Banner` 레코드를 등록하면 된다.
+
+### 안전장치 — `src/lib/bridge.ts` 단일 진실
+
+🔴 **소란소란 URL 을 하드코딩하지 마라. 반드시 `bridgeUrl(slot)` 을 쓴다.**
+계약 테스트 `src/__tests__/bridge-links.test.ts` 가 아래를 강제한다(18 케이스):
+
+- 모든 slot 의 URL 에 `utm_source=unao` · `utm_medium=<slot>` · `utm_campaign=bridge` 존재
+- slot 마다 `utm_medium` 이 서로 다름
+- **`soransoran.com` 을 직접 적은 파일은 `lib/bridge.ts` 뿐** (하드코딩 시 테스트 실패)
+- 금지 표현(`광고 없`·`소란소란으로 변경`·시니어/어르신/실버)이 카피에 없음
+- `"지금은"` 이 hook 에 있음 · 안심 문구에 `"우나어"` 가 있음
+
+`homecard` slot 이 추가됐다(§3 표에 없던 신규 구좌).

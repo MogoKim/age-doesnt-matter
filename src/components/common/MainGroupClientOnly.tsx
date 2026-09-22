@@ -13,6 +13,7 @@ const ProgressBar = dynamic(() => import('@/components/common/ProgressBar'), { s
 const WelcomeToast = dynamic(() => import('@/components/common/WelcomeToast').then(m => ({ default: m.WelcomeToast })), { loading: () => null, ssr: false })
 const OfflineBanner = dynamic(() => import('@/components/common/OfflineBanner'), { loading: () => null, ssr: false })
 const PopupRenderer = dynamic(() => import('@/components/common/PopupRenderer'), { loading: () => null, ssr: false })
+const SoranSoranPopup = dynamic(() => import('@/components/features/bridge/SoranSoranPopup'), { loading: () => null, ssr: false })
 const PushPermissionToast = dynamic(() => import('@/components/common/PushPermissionToast').then(m => ({ default: m.PushPermissionToast })), { loading: () => null, ssr: false })
 
 /** MainLayout 위에 렌더되던 것들. */
@@ -35,6 +36,8 @@ export function MainGroupClientBottom() {
           컴포넌트 파일은 남겨둔다 — 계약 테스트(r8-telemetry-v2)가 소스를 읽고,
           되돌릴 때 import 1줄 + 렌더 1줄 복구로 끝나게 하기 위함. */}
       <PopupRenderer />
+      {/* Project BRIDGE: 소란소란 안내 모달. ssr:false 필수 — 크롤러 노출 시 doorway 판정 위험. */}
+      <SoranSoranPopup />
       <PushPermissionToast />
     </>
   )
