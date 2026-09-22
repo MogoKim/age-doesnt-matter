@@ -1,5 +1,11 @@
 # 회원가입 유도 배너 운영 기획서 (F01)
 
+> ⚠️ **ARCHIVED: 2026-09-22** — Project BRIDGE(소란소란 이주 유도)와 메시지가 충돌해 우나어 가입 유도를 중단.
+> `MainGroupClientOnly`에서 마운트를 해제해 **화면에 더 이상 뜨지 않는다**(정독 85퍼센트 트리거·5초 자동 가입 포함 전부 중단).
+> 🔴 **컴포넌트 파일과 단위 테스트는 삭제하지 않았다** — 계약 테스트(`r8-telemetry-v2`)가 소스를 읽고,
+> 되살릴 때 `MainGroupClientOnly`에 import 1줄 + 렌더 1줄만 복구하면 되게 하기 위함이다.
+> e2e `22-signup-banner-gtm.spec.ts`는 `describe.skip` 상태다.
+
 > 📌 **채널별 CTA 문구·클릭 경로의 정본은 [F20 전환 채널 정책](F20-conversion-channel-policy.md)이다.**
 > 이 문서는 배너 자체의 트리거·횟수·구현을 다루고, "어느 브라우저에서 무엇을 유도하는가"는 F20이 정한다.
 

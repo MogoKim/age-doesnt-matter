@@ -1,5 +1,10 @@
 # 홈 페이지 운영 기획서 (F03)
 
+> 🔴 **2026-09-22 변경** — Project BRIDGE(소란소란 이주 유도)와 메시지가 충돌해 우나어 가입 유도를 중단.
+> 홈 중반부 `SignupCard`(비회원 카카오 가입 카드)를 제거했다. 컴포넌트 파일은 보존.
+> **광고 영향 없음**: 데스크탑 하단 AdSense(`ADSENSE.DESKTOP_BOTTOM`) 슬롯은 그대로이고,
+> 배치 테스트의 앵커만 `SignupCard` → `HomeFaqSection`으로 옮겼다.
+
 > ⚠️ **실측 2026-09-16** — 이 문서가 가리키는 구현 경로 **1개가 더 이상 존재하지 않는다**.
 > 경로를 지우지 않고 남겨 둔다 — **어떤 구현이 있었는지가 기록**이기 때문이다.
 > 기능의 현재 상태는 이 문서가 아니라 실측으로 판정한다(`gh workflow list --all` · `launchctl list` · `agents/core/constitution.yaml`).

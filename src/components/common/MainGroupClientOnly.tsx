@@ -12,7 +12,6 @@ import dynamic from 'next/dynamic'
 const ProgressBar = dynamic(() => import('@/components/common/ProgressBar'), { ssr: false })
 const WelcomeToast = dynamic(() => import('@/components/common/WelcomeToast').then(m => ({ default: m.WelcomeToast })), { loading: () => null, ssr: false })
 const OfflineBanner = dynamic(() => import('@/components/common/OfflineBanner'), { loading: () => null, ssr: false })
-const SignupPromptBanner = dynamic(() => import('@/components/common/SignupPromptBanner').then(m => ({ default: m.SignupPromptBanner })), { loading: () => null, ssr: false })
 const PopupRenderer = dynamic(() => import('@/components/common/PopupRenderer'), { loading: () => null, ssr: false })
 const PushPermissionToast = dynamic(() => import('@/components/common/PushPermissionToast').then(m => ({ default: m.PushPermissionToast })), { loading: () => null, ssr: false })
 
@@ -31,7 +30,10 @@ export function MainGroupClientTop() {
 export function MainGroupClientBottom() {
   return (
     <>
-      <SignupPromptBanner />
+      {/* Project BRIDGE(2026-09-22): SignupPromptBanner(정독 85% 후 5초 자동 가입) 마운트 해제.
+          우나어 가입 유도와 소란소란 이주 유도가 같은 화면에서 충돌하므로 중단한다.
+          컴포넌트 파일은 남겨둔다 — 계약 테스트(r8-telemetry-v2)가 소스를 읽고,
+          되돌릴 때 import 1줄 + 렌더 1줄 복구로 끝나게 하기 위함. */}
       <PopupRenderer />
       <PushPermissionToast />
     </>
