@@ -94,6 +94,12 @@ describe('공격적 모드 — 노출 억제 장치가 없다', () => {
     expect(src).toContain("bridgeUrl('popup')")
     expect(src).toMatch(/label="닫기"/)
   })
+
+  it('🔴 자동화 브라우저(E2E)에서는 뜨지 않는다 — 오버레이가 클릭을 가로막는다', () => {
+    // 경로마다 다시 뜨는 설계라 E2E 의 SPA 네비게이션 이후 클릭을 전부 막는다.
+    // 실제 사용자에게는 영향이 없다(navigator.webdriver 는 자동화에서만 true).
+    expect(src).toContain('navigator.webdriver')
+  })
 })
 
 describe('글 상세 카피 — SEO 유입 접점', () => {

@@ -32,6 +32,12 @@ export default function SoranSoranPopup() {
   // 경로가 바뀔 때마다 처음부터 다시 — 닫은 기록을 남기지 않는다(의도).
   // 리셋은 cleanup 에서 한다: effect 본문의 동기 setState 는 cascading render 를 만든다.
   useEffect(() => {
+    // 🔴 자동화 브라우저(E2E)에서는 띄우지 않는다.
+    //    이 팝업은 경로가 바뀔 때마다 다시 뜨므로, 오버레이가 pointer events 를 가로채
+    //    SPA 네비게이션 이후의 클릭을 전부 막는다(2026-09-22 main E2E Smoke 실패 원인).
+    //    실제 사용자에게는 영향이 없다 — navigator.webdriver 는 자동화에서만 true 다.
+    if (typeof navigator !== 'undefined' && navigator.webdriver) return
+
     const t = window.setTimeout(() => {
       try {
         // 어드민 팝업이 이미 떠 있으면 이번에는 양보한다(모달 2겹 방지)
