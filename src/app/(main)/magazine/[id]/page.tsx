@@ -13,6 +13,7 @@ import { formatTimeAgo } from '@/components/features/community/utils'
 import { sanitizeMagazineHtml, proxyMagazineImages } from '@/lib/sanitize'
 import GTMEventOnMount from '@/components/common/GTMEventOnMount'
 import SeriesNav from '@/components/features/magazine/SeriesNav'
+import SoranSoranPostCard from '@/components/features/bridge/SoranSoranPostCard'
 import MagazineExploreLinks from '@/components/features/magazine/MagazineExploreLinks'
 import MagazineDisclosure from '@/components/features/magazine/MagazineDisclosure'
 import AdSenseUnit from '@/components/ad/AdSenseUnit'
@@ -353,6 +354,10 @@ export default async function MagazineDetailPage({ params }: PageProps) {
       )}
 
       {/* 매거진 상세는 읽기 전용 — 댓글/가입 CTA 없음. 우나어 소개·탐색 동선만 유지 */}
+
+      {/* Project BRIDGE: 소란소란 안내 — 다 읽은 직후, 우나어 내부 탐색 동선보다 **앞**에 둔다.
+          🔴 광고 인접 불변: 인아티클(위)·하단 띠배너(관련글 뒤) 사이에 끼지 않는다. */}
+      <SoranSoranPostCard slot="magazine" />
 
       {/* 우나어 소개 & 더 둘러보기 — 검색 유입자가 우나어를 이해하고 이동하도록 (홈/커뮤니티/2막/베스트) */}
       <MagazineExploreLinks postId={resolvedId} postTitle={post.title} />
