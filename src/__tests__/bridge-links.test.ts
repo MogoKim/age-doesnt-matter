@@ -13,7 +13,7 @@ import { bridgeUrl, SORANSORAN_ORIGIN, BRIDGE_COPY, type BridgeSlot } from '@/li
  */
 
 const SLOTS: BridgeSlot[] = [
-  'popup', 'homecard', 'postdetail', 'footer', 'topbanner', 'push', 'hero', 'listad', 'detailad', 'notice',
+  'popup', 'homecard', 'postdetail', 'magazine', 'footer', 'topbanner', 'push', 'hero', 'listad', 'detailad', 'notice',
 ]
 
 describe('bridgeUrl — UTM 계약', () => {

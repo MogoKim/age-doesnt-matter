@@ -17,7 +17,8 @@ export const SORANSORAN_ORIGIN = 'https://soransoran.com'
 export type BridgeSlot =
   | 'popup'      // 목록·홈 모달 (읽기 화면에서는 뜨지 않는다)
   | 'homecard'   // 홈 중반부 카드
-  | 'postdetail' // 글 상세 하단 인라인 카드 — SEO 유입의 주 착지점
+  | 'postdetail' // 커뮤니티 글 상세 하단 인라인 카드 — SEO 유입의 주 착지점
+  | 'magazine'   // 매거진 상세 하단 인라인 카드 (성과를 커뮤니티와 나눠 보려고 slot 을 분리한다)
   | 'footer'     // 푸터 상시 링크
   | 'topbanner'  // 최상단 띠배너 (어드민 설정)
   | 'push'       // 푸시·종알림 (어드민 발송)

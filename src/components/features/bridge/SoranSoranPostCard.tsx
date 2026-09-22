@@ -1,16 +1,22 @@
-import { BRIDGE_COPY, bridgeUrl } from '@/lib/bridge'
+import { BRIDGE_COPY, bridgeUrl, type BridgeSlot } from '@/lib/bridge'
 
 /**
- * Project BRIDGE — 글 상세 하단 인라인 카드 (서버 컴포넌트).
+ * Project BRIDGE — 읽기 화면 하단 인라인 카드 (서버 컴포넌트).
  *
- * 검색으로 글 하나 보러 온 사람이 **다 읽은 직후** 만나는 자리다
- * (`PostCTA` 다음, 관련글 추천 앞). 팝업과 같은 방침으로 **카드 전체가 링크**다.
+ * 검색으로 글 하나 보러 온 사람이 **다 읽은 직후** 만나는 자리다.
+ *   - 커뮤니티 글 상세: `PostCTA` 다음, 관련글 추천 앞 (`slot='postdetail'`)
+ *   - 매거진 상세: `MagazineExploreLinks` 앞 (`slot='magazine'`)
+ * 성과를 나눠 보려고 slot 을 구분한다. 팝업과 같은 방침으로 **카드 전체가 링크**다.
  */
-export default function SoranSoranPostCard() {
+export default function SoranSoranPostCard({
+  slot = 'postdetail',
+}: {
+  slot?: Extract<BridgeSlot, 'postdetail' | 'magazine'>
+} = {}) {
   return (
     <section className="mb-12">
       <a
-        href={bridgeUrl('postdetail')}
+        href={bridgeUrl(slot)}
         target="_blank"
         rel="noopener"
         className="block rounded-2xl border border-primary/20 bg-primary/5 p-5 no-underline transition-colors hover:bg-primary/10"
