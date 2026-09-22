@@ -108,7 +108,8 @@ export default function SoranSoranPopup() {
   return (
     <div
       className={cn(
-        'fixed inset-0 z-[60] flex items-end justify-center px-4 pb-4 transition-opacity duration-200 sm:items-center sm:pb-0',
+        // z-[200]: 어드민 팝업(PopupRenderer)과 같은 층. FAB(z-[97]) 위여야 버튼이 가려지지 않는다.
+        'fixed inset-0 z-[200] flex items-end justify-center px-4 pb-6 transition-opacity duration-200 sm:items-center sm:pb-0',
         shown ? 'bg-black/60 opacity-100' : 'bg-black/0 opacity-0',
       )}
       onClick={() => close(1)}
