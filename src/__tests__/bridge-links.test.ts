@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { bridgeUrl, SORANSORAN_ORIGIN, BRIDGE_COPY, type BridgeSlot } from '@/lib/bridge'
-import { isReadingPage } from '@/components/features/bridge/SoranSoranPopup'
 
 /**
  * Project BRIDGE 계약 테스트.
@@ -76,36 +75,24 @@ describe('금지 표현 (영구)', () => {
   it('"지금은" 이 붙어 있다 — 댓글률이 떨어져도 거짓이 되지 않게 하는 장치', () => {
     expect(BRIDGE_COPY.hook).toContain('지금은')
   })
-
-  it('병행 운영 안심 문구가 있다 — 우나어가 없어진다는 오해를 막는다', () => {
-    expect(BRIDGE_COPY.reassure).toContain('우나어')
-  })
 })
 
-describe('읽기 화면에서는 팝업이 뜨지 않는다', () => {
-  // 검색으로 글 하나 보러 온 사람에게 모달을 씌우면 읽기를 끊어 그대로 이탈한다.
-  // 그 동선은 글 하단 인라인 카드(SoranSoranPostCard)가 맡는다.
-  it.each([
-    '/community/free/cmxyz123',
-    '/community/menopause/abc',
-    '/magazine/some-slug',
-    '/jobs/cm123',
-    '/guide/some-guide',
-    '/topic/some-topic',
-  ])('%s 는 읽기 화면이다 (팝업 X)', (path) => {
-    expect(isReadingPage(path)).toBe(true)
+describe('공격적 모드 — 노출 억제 장치가 없다', () => {
+  // 창업자 결정(2026-09-22): 읽기 화면 포함 전 경로에서 띄우고, 닫아도 저장하지 않는다.
+  // 되돌릴 때를 대비해 "왜 없는지"를 테스트로 남긴다.
+  const src = readFileSync(resolve(__dirname, '../components/features/bridge/SoranSoranPopup.tsx'), 'utf8')
+
+  it('경로로 노출을 막지 않는다 — isReadingPage 류 게이트가 없다', () => {
+    expect(src).not.toContain('isReadingPage')
   })
 
-  it.each([
-    '/',
-    '/community/free',
-    '/community/menopause',
-    '/best',
-    '/magazine',
-    '/jobs',
-    '/search',
-  ])('%s 는 둘러보는 화면이다 (팝업 O)', (path) => {
-    expect(isReadingPage(path)).toBe(false)
+  it('닫은 기록을 저장하지 않는다 — localStorage 를 쓰지 않는다', () => {
+    expect(src).not.toContain('localStorage')
+  })
+
+  it('X 버튼을 제외한 카드 전체가 소란소란 링크다', () => {
+    expect(src).toContain("bridgeUrl('popup')")
+    expect(src).toMatch(/label="닫기"/)
   })
 })
 
