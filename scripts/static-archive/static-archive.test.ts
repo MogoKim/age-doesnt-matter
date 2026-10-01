@@ -149,3 +149,35 @@ test('커뮤니티 암시 패턴은 일반 단어를 오탐하지 않는다', ()
   assert.equal(hit('아래 커뮤니티 이야기에서 확인하세요.'), true)
   assert.equal(hit('| 40대 50대 여성 커뮤니티 : 우리 나이가 어때서'), true)
 })
+
+test('심볼릭 링크 부모로 저장소·홈·상위 경로를 우회할 수 없다 (실제 위치 기준)', () => {
+  const base = tmpBase()
+  const toRepo = path.join(base, 'link-to-repo')
+  const toScripts = path.join(base, 'link-to-scripts')
+  const toHome = path.join(base, 'link-to-home')
+  const toRoot = path.join(base, 'link-to-root')
+  fs.symlinkSync(REPO_ROOT, toRepo, 'dir')
+  fs.symlinkSync(path.join(REPO_ROOT, 'scripts'), toScripts, 'dir')
+  fs.symlinkSync(os.homedir(), toHome, 'dir')
+  fs.symlinkSync(path.parse(REPO_ROOT).root, toRoot, 'dir')
+  // 링크 부모 아래 새 이름 — 실제 위치는 저장소 안쪽
+  assert.throws(() => assertSafeOutDir(path.join(toRepo, 'archive-out')), '저장소를 가리키는 링크 부모')
+  assert.throws(() => assertSafeOutDir(path.join(toScripts, 'archive-out')), '저장소 하위를 가리키는 링크 부모')
+  // 실제 위치가 홈의 상위(=파일시스템 루트 아래 홈 조상)인 경우
+  assert.throws(() => assertSafeOutDir(path.join(toRoot, 'Users')), '루트 링크 아래 홈 조상(이미 존재)')
+  // 링크 자체(이미 존재) 를 출력으로 쓰는 경우
+  assert.throws(() => assertSafeOutDir(toHome), '홈을 가리키는 링크 자체')
+  // 링크·저장소는 그대로
+  assert.ok(fs.existsSync(path.join(REPO_ROOT, 'package.json')))
+  assert.ok(!fs.existsSync(path.join(REPO_ROOT, 'archive-out')))
+})
+
+test('정상 경로: 링크 없는 임시 부모 아래 새 이름은 허용', () => {
+  const out = path.join(tmpBase(), 'fresh-out')
+  assert.equal(assertSafeOutDir(out), path.resolve(out))
+})
+
+test('override 는 검증 안 된 효능·일반화 단정을 새로 만들지 않는다', () => {
+  const STRONG = [/잘 어울려요/, /오래가는 편이에요/, /도움이 됩니다/, /비결이 되기 쉬워요/, /붙기 쉬워요/, /차이가 꽤 납니다/, /가장 정확합니다/, /시작할 수 있어요/]
+  for (const [, to] of GUIDE_TEXT_OVERRIDES) for (const re of STRONG) assert.doesNotMatch(to, re, `단정형 치환: ${to}`)
+})

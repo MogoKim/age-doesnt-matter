@@ -15,6 +15,7 @@
 - 가이드의 `communityLinks` 전부 제외, `relatedLinks` 는 남는 가이드끼리만.
 - `guide-overrides.ts`: 원본은 그대로 두고 출력에서만 "아래 커뮤니티"·"실제 후기/이야기"·"우나어 일자리 정보"·"후기가 많아요"·"실버타운"
   같은 사라진 기능·회원 이야기 암시와 금지 표현을 바꾼다. 원문에 없는 override 는 테스트가 실패시킨다.
+  경험담을 지운 자리에는 검증 안 된 효능·일반화 단정을 만들지 않고 선택·확인 안내형/가능성 표현만 쓴다(테스트로 고정).
 - 모든 페이지 공통 공지 띠 없음. title 접미사는 ` | 우리 나이가 어때서` ("여성 커뮤니티" 제거).
 - 제거(REMOVE_PUBLIC): `/jobs/**`, `/community/**`, `/magazine/**`(소유권 불명확 → 기본 제외), `/topic/**`, `/rules`,
   로그인·가입·검색·베스트·마이·글쓰기·어드민·API·이벤트·문의, `ads.txt`·`app-ads.txt`·`sw.js`·`manifest.json`.
@@ -24,7 +25,7 @@
 ## 2. 산출물·게이트
 
 ```bash
-npx tsx scripts/static-archive/build.ts  --out <존재하지 않는 새 경로>   # 저장소·내부·상위·홈·루트·기존 경로는 exit 2
+npx tsx scripts/static-archive/build.ts  --out <존재하지 않는 새 경로>   # 저장소·내부·상위·홈·루트·기존 경로는 exit 2 (부모 realpath 기준 — symlink 우회 불가)
 npx tsx scripts/static-archive/verify.ts --out <같은 경로>               # expected-manifest.json 과 항상 대조
 npx tsx --test scripts/static-archive/static-archive.test.ts         # 빌더·게이트 테스트
 ```
@@ -46,7 +47,7 @@ npx tsx --test scripts/static-archive/static-archive.test.ts         # 빌더·�
 
 | 실행 위치 | 내용 | 결과 |
 |---|---|---|
-| **로컬** | `static-archive.test.ts` (11건: 위험 경로·기존 경로 거부, 삭제 API 부재, manifest 13/13, 금지 문자열·허용 밖 페이지·커뮤니티 암시 주입 FAIL, 오탐 방지, 낡은 override 0) | 구현 전 7 FAIL → 구현 후 11/11 PASS |
+| **로컬** | `static-archive.test.ts` (14건: 위험 경로·기존 경로·**symlink 부모 우회** 거부, 삭제 API 부재, manifest 13/13, 금지 문자열·허용 밖 페이지·커뮤니티 암시 주입 FAIL, 오탐 방지, 낡은 override 0, **단정형 치환 0**) | 1차 7 FAIL→11/11 · symlink 반례 1 FAIL→green · 단정형 1 FAIL→green · 최종 14/14 PASS |
 | **로컬** | `verify.ts` | PASS · manifest 13/13 · 파일 21 · 이미지 참조 0 |
 | **로컬** | CLI 오입력 8종(`.`·`scripts`·`..`·`~`·`/`·기존 디렉터리·부모 없음·저장소 내부) | 전부 exit 2 · 보초 파일·저장소 상태 무변경 |
 | **로컬** | `wrangler pages dev`(Cloudflare Pages 런타임 로컬 실행) | 13/13 200 · 제거 경로 404 · `/faq` 301 · 한글 raw 경로 200 |

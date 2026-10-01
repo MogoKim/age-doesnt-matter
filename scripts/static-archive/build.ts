@@ -29,20 +29,29 @@ const ARCHIVE_GUIDES: Record<string, GuideDoc> = Object.fromEntries(
 const isSameOrInside = (child: string, parent: string): boolean =>
   child === parent || child.startsWith(parent.endsWith(path.sep) ? parent : parent + path.sep)
 
+/** 루트·홈·저장소 자체, 저장소 안쪽, 저장소·홈의 상위 경로면 거부 사유를 돌려준다 */
+function forbiddenReason(out: string, repo: string, home: string): string | null {
+  if (out === path.parse(out).root) return '파일시스템 루트다'
+  if (out === home) return '홈 디렉터리다'
+  if (isSameOrInside(out, repo)) return '저장소이거나 그 안쪽이다(공개 저장소)'
+  if (isSameOrInside(repo, out) || isSameOrInside(home, out)) return '저장소·홈의 상위 경로다'
+  return null
+}
+
 /**
- * --out 안전 검사. 통과 조건: 절대경로로 풀었을 때
+ * --out 안전 검사. 통과 조건:
  *  - 아직 존재하지 않는다 (파일·디렉터리·심볼릭 링크 모두 거부)
  *  - 부모 디렉터리는 이미 존재한다 (재귀 생성 금지)
- *  - 파일시스템 루트·홈·저장소 루트가 아니고, 저장소 안쪽도 아니며, 저장소·홈의 상위도 아니다
+ *  - 글자 그대로의 경로와 **실제 위치**(부모 realpath + 이름) 둘 다
+ *    파일시스템 루트·홈·저장소 자체·저장소 안쪽·저장소/홈의 상위가 아니다
+ *    → 저장소를 가리키는 심볼릭 링크 부모 아래로 우회할 수 없다
  * 어긋나면 throw — 빌더는 무엇도 지우거나 덮어쓰지 않는다.
  */
 export function assertSafeOutDir(outDir: string): string {
   const out = path.resolve(outDir)
   const home = path.resolve(os.homedir())
-  if (out === path.parse(out).root) throw new Error(`--out 이 파일시스템 루트다: ${out}`)
-  if (out === home) throw new Error(`--out 이 홈 디렉터리다: ${out}`)
-  if (isSameOrInside(out, REPO_ROOT)) throw new Error(`--out 이 저장소이거나 그 안쪽이다(공개 저장소): ${out}`)
-  if (isSameOrInside(REPO_ROOT, out) || isSameOrInside(home, out)) throw new Error(`--out 이 저장소·홈의 상위 경로다: ${out}`)
+  const lexical = forbiddenReason(out, REPO_ROOT, home)
+  if (lexical) throw new Error(`--out 이 ${lexical}: ${out}`)
   let exists = true
   try {
     fs.lstatSync(out)
@@ -50,9 +59,13 @@ export function assertSafeOutDir(outDir: string): string {
     exists = false
   }
   if (exists) throw new Error(`--out 이 이미 존재한다(삭제·덮어쓰기 금지): ${out}`)
-  if (!fs.existsSync(path.dirname(out)) || !fs.statSync(path.dirname(out)).isDirectory()) {
-    throw new Error(`--out 의 부모 디렉터리가 없다: ${path.dirname(out)}`)
+  const parent = path.dirname(out)
+  if (!fs.existsSync(parent) || !fs.statSync(parent).isDirectory()) {
+    throw new Error(`--out 의 부모 디렉터리가 없다: ${parent}`)
   }
+  const realOut = path.join(fs.realpathSync(parent), path.basename(out))
+  const real = forbiddenReason(realOut, fs.realpathSync(REPO_ROOT), fs.realpathSync(home))
+  if (real) throw new Error(`--out 의 실제 위치가 ${real}: ${realOut} (입력 ${out})`)
   return out
 }
 
