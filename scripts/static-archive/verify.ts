@@ -1,19 +1,49 @@
 /**
  * 우나어 정적 기록관 검증 게이트 — 산출물 디렉터리만 읽고 PASS/FAIL 판정한다.
  *
- * 실행: npx tsx scripts/static-archive/verify.ts --out <dir> [--baseline <baseline.json>]
- *   baseline.json = 운영 사이트에서 캡처한 유지 URL 의 { path, title, description, canonical }[]
- *   (저장소 밖 백업에 둔다). 주면 유지 URL(가이드)의 SEO 메타가 기준선과 같은지도 본다.
+ * 실행: npx tsx scripts/static-archive/verify.ts --out <dir>
+ *   항상 저장소의 expected-manifest.json(검토용 13 URL·title·description·canonical 고정본)과 대조한다.
+ *   13/13 일치가 아니면 FAIL.
  * 종료코드: 0 = 전 게이트 PASS, 1 = FAIL 1건 이상
  */
 import fs from 'node:fs'
 import path from 'node:path'
-import { pathToFileURL } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { GUIDES } from '../../src/lib/guides'
 import { BASE_URL, ROBOTS_TXT, encodePath, fileForPath } from './build'
 
 /** KEEP_PUBLIC 허용 목록 — 빌더 출력이 아니라 원천(가이드 상수 + 고정 4쪽)에서 독립 산출 */
 export const ALLOWLIST: string[] = ['/', '/about', '/privacy', '/terms', '/guide', ...Object.keys(GUIDES).map((s) => `/guide/${s}`)]
+
+export interface ManifestEntry {
+  path: string
+  file: string
+  title: string
+  description: string
+  canonical: string
+}
+
+const MANIFEST_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'expected-manifest.json')
+
+export function loadExpectedManifest(): ManifestEntry[] {
+  return JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8')) as ManifestEntry[]
+}
+
+/** 사라진 커뮤니티·회원 이야기·일자리 기능을 암시하는 표현 — 산출물에 0건이어야 한다 */
+export const PHANTOM_COMMUNITY: RegExp[] = [
+  /아래\s*커뮤니티/,
+  /커뮤니티\s*(이야기|후기|글)/,
+  /실제\s*(후기|이야기|경험담|방법)/,
+  /실제로\s*사\s*본/,
+  /이야기로\s*이어|이어\s*드릴|이어드릴/,
+  /(또래|회원)\s*(이야기|후기|꿀팁|실제)/,
+  /후기가\s*많|(?<![가-힣])분이\s*많|고들\s*하/,
+  /우나어\s*일자리|일자리\s*정보/,
+  /여성\s*커뮤니티\s*:/,
+]
+
+/** 브랜드 금지 표현 (CLAUDE.md) */
+const BANNED_WORDS = /시니어|어르신|노인|실버/
 
 const PAGES_MAX_FILES = 20_000
 const PAGES_MAX_FILE_BYTES = 25 * 1024 * 1024
@@ -62,9 +92,8 @@ function resolveHref(out: string, href: string): boolean {
   return [rel, `${rel}.html`, path.join(rel, 'index.html')].some((c) => fs.existsSync(path.join(out, c)) && fs.statSync(path.join(out, c)).isFile())
 }
 
-export function verify(out: string, baselinePath?: string): { issues: Issue[]; summary: Record<string, unknown>; warnings: string[] } {
+export function verify(out: string): { issues: Issue[]; summary: { manifestMatched: number } & Record<string, number> } {
   const issues: Issue[] = []
-  const warnings: string[] = []
   const files = walk(out)
   const htmlFiles = files.filter((f) => f.endsWith('.html'))
   const textFiles = files.filter((f) => /\.(html|css|xml|txt)$|^_headers$|^_redirects$/.test(f))
@@ -126,23 +155,42 @@ export function verify(out: string, baselinePath?: string): { issues: Issue[]; s
     if (!/<title>[^<]+<\/title>/.test(s) || !/<meta name="description" content="[^"]+">/.test(s)) issues.push({ gate: 'G5-meta', file: f, detail: 'title/description 없음' })
   }
 
-  // G6 기준선 대비 (유지 URL 의 SEO 메타 동일성)
-  let baselineCompared = 0
-  if (baselinePath) {
-    const base = JSON.parse(fs.readFileSync(baselinePath, 'utf8')) as Array<{ path: string; title: string; description: string; canonical: string }>
-    const unescape = (x: string): string => x.replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
-    for (const b of base.filter((x) => x.path.startsWith('/guide'))) {
-      const f = fileForPath(b.path)
-      if (!fs.existsSync(path.join(out, f))) continue
-      const s = fs.readFileSync(path.join(out, f), 'utf8')
-      const title = unescape(/<title>([^<]*)<\/title>/.exec(s)?.[1] ?? '')
-      const desc = unescape(/<meta name="description" content="([^"]*)">/.exec(s)?.[1] ?? '')
-      const canonical = /<link rel="canonical" href="([^"]+)"/.exec(s)?.[1]
-      baselineCompared++
-      if (title !== b.title) issues.push({ gate: 'G6-baseline-title', file: f, detail: `${title} ≠ ${b.title}` })
-      if (desc !== b.description) issues.push({ gate: 'G6-baseline-desc', file: f, detail: '설명이 기준선과 다름' })
-      if (canonical !== b.canonical) issues.push({ gate: 'G6-baseline-canonical', file: f, detail: `${canonical} ≠ ${b.canonical}` })
+  // G6 검토용 expected manifest 와 13/13 일치 (경로 집합 = 허용 목록)
+  const manifest = loadExpectedManifest()
+  const unescape = (x: string): string => x.replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
+  if (JSON.stringify(manifest.map((m) => m.path).sort()) !== JSON.stringify([...ALLOWLIST].sort())) {
+    issues.push({ gate: 'G6-manifest', file: 'expected-manifest.json', detail: 'manifest 경로 집합 ≠ 허용 목록' })
+  }
+  let manifestMatched = 0
+  for (const m of manifest) {
+    const f = path.join(out, m.file)
+    if (m.file !== fileForPath(m.path) || !fs.existsSync(f)) {
+      issues.push({ gate: 'G6-manifest', file: m.file, detail: '파일 없음 또는 경로·파일 불일치' })
+      continue
     }
+    const s = fs.readFileSync(f, 'utf8')
+    const got = {
+      title: unescape(/<title>([^<]*)<\/title>/.exec(s)?.[1] ?? ''),
+      description: unescape(/<meta name="description" content="([^"]*)">/.exec(s)?.[1] ?? ''),
+      canonical: /<link rel="canonical" href="([^"]+)"/.exec(s)?.[1] ?? '',
+    }
+    const diffs = (['title', 'description', 'canonical'] as const).filter((k) => got[k] !== m[k])
+    if (diffs.length === 0) manifestMatched++
+    else issues.push({ gate: 'G6-manifest', file: m.file, detail: diffs.map((k) => `${k}: ${got[k]} ≠ ${m[k]}`).join(' / ') })
+  }
+  if (manifestMatched !== ALLOWLIST.length) {
+    issues.push({ gate: 'G6-manifest', file: '*', detail: `manifest 일치 ${manifestMatched}/${ALLOWLIST.length}` })
+  }
+
+  // G10 사라진 커뮤니티 암시 0 · G11 금지 표현 0 (title·meta·JSON-LD·본문 전부)
+  for (const f of htmlFiles) {
+    const s = fs.readFileSync(path.join(out, f), 'utf8')
+    for (const re of PHANTOM_COMMUNITY) {
+      const m = re.exec(s)
+      if (m) issues.push({ gate: 'G10-phantom-community', file: f, detail: `${re}: …${s.slice(Math.max(0, m.index - 20), m.index + 30)}…` })
+    }
+    const b = BANNED_WORDS.exec(s)
+    if (b) issues.push({ gate: 'G11-banned-words', file: f, detail: `…${s.slice(Math.max(0, b.index - 20), b.index + 20)}…` })
   }
 
   // G7 robots.txt 기존과 동일 · sitemap = 허용 목록
@@ -171,24 +219,16 @@ export function verify(out: string, baselinePath?: string): { issues: Issue[]; s
     if (code !== '301' || !resolveHref(out, to)) issues.push({ gate: 'G9-redirects', file: '_redirects', detail: line })
   }
 
-  // 경고(차단 아님): 가이드 본문이 사라진 커뮤니티를 가리키는 문장
-  for (const g of Object.values(GUIDES)) {
-    for (const t of [g.tldr, ...g.sections.flatMap((s) => s.paragraphs)]) {
-      if (/아래|이어드릴|이어 드릴/.test(t) && /커뮤니티|이야기|후기/.test(t)) warnings.push(`/guide/${g.slug}: "${t.slice(0, 70)}…"`)
-    }
-  }
-
   return {
     issues,
-    warnings,
     summary: {
+      manifestMatched,
       urls: ALLOWLIST.length,
       htmlFiles: htmlFiles.length,
       totalFiles: files.length,
       totalBytes,
       imageRefs,
       uniqueImages: images.size,
-      baselineCompared,
       redirects: redirects.length,
     },
   }
@@ -201,10 +241,10 @@ if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) 
   }
   const out = arg('--out')
   if (!out) {
-    console.error('usage: tsx scripts/static-archive/verify.ts --out <dir> [--baseline <json>]')
+    console.error('usage: tsx scripts/static-archive/verify.ts --out <dir>')
     process.exit(2)
   }
-  const r = verify(path.resolve(out), arg('--baseline'))
-  console.log(JSON.stringify({ result: r.issues.length === 0 ? 'PASS' : 'FAIL', ...r.summary, issues: r.issues, warnings: r.warnings }, null, 2))
+  const r = verify(path.resolve(out))
+  console.log(JSON.stringify({ result: r.issues.length === 0 ? 'PASS' : 'FAIL', ...r.summary, issues: r.issues }, null, 2))
   process.exit(r.issues.length === 0 ? 0 : 1)
 }

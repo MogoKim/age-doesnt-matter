@@ -22,15 +22,13 @@ export interface ArchivePage {
   sections: ArchiveSection[]
 }
 
-export const ARCHIVE_NOTICE = `${SITE_NAME}(우나어)는 ${CLOSED_LABEL} 운영을 마치고, 직접 만든 생활 가이드만 기록으로 남겨 두었어요.`
-
 export const HOME: ArchivePage = {
   path: '/',
   title: `${SITE_NAME} — 기록 보관소`,
   description:
-    '40대 중반부터 60대 중반 여성을 위해 만든 커뮤니티 우나어의 기록 보관소입니다. 운영은 마쳤고, 직접 만든 생활 가이드를 그대로 읽으실 수 있어요.',
+    '40대 중반부터 60대 중반 여성을 위해 만든 커뮤니티 우나어의 기록 보관소입니다. 운영은 마쳤고, 우나어에서 정리한 생활 가이드를 읽기 전용으로 남겨 두었어요.',
   h1: SITE_NAME,
-  lead: '같은 또래 여성들과 일상과 인생 2막을 나누던 곳이에요. 지금은 운영진이 직접 만든 생활 가이드를 읽기 전용으로 남겨 두었어요.',
+  lead: `같은 또래 여성들과 일상과 인생 2막을 나누던 곳이에요. ${CLOSED_LABEL} 운영을 마쳤고, 지금은 우나어에서 정리한 생활 가이드만 읽기 전용 기록으로 남겨 두었어요.`,
   sections: [],
 }
 
@@ -45,14 +43,14 @@ export const ABOUT: ArchivePage = {
       heading: '어떤 곳이었나요',
       paragraphs: [
         '40대 중반부터 60대 중반 여성이 일상과 인생 2막 이야기를 나누던 커뮤니티였습니다.',
-        '운영진이 직접 쓴 생활 가이드(살림, 장보기, 여행, 운동, 재취업 준비)도 함께 만들었어요.',
+        '살림, 장보기, 여행, 운동, 재취업 준비처럼 자주 묻는 생활 정보를 가이드로 정리하기도 했어요.',
       ],
     },
     {
       heading: '지금은 어떻게 남아 있나요',
       paragraphs: [
         `${CLOSED_LABEL} 운영을 마쳤습니다. 회원가입, 로그인, 글쓰기, 댓글 같은 기능은 모두 닫았어요.`,
-        '회원이 쓴 글과 댓글은 이 보관소에 싣지 않았습니다. 운영진이 직접 만든 생활 가이드만 읽기 전용으로 남겨 두었어요.',
+        '회원이 쓴 글과 댓글은 이 보관소에 싣지 않았습니다. 우나어에서 정리한 생활 가이드만 읽기 전용으로 남겨 두었어요.',
       ],
     },
     {
@@ -64,10 +62,10 @@ export const ABOUT: ArchivePage = {
 
 export const PRIVACY: ArchivePage = {
   path: '/privacy',
-  title: `개인정보 안내 | ${SITE_NAME} 기록 보관소`,
-  description: '우나어 기록 보관소의 개인정보 처리 안내입니다. 이 보관소는 방문자의 개인정보를 수집하지 않습니다.',
+  title: `개인정보 안내 | ${SITE_NAME}`,
+  description: '우나어 사이트의 개인정보 처리 안내입니다. 이 사이트는 방문자의 개인정보를 수집하지 않습니다.',
   h1: '개인정보 안내',
-  lead: '이 보관소는 읽기 전용 정적 페이지예요. 방문하시는 분의 개인정보를 따로 모으지 않습니다.',
+  lead: '이 사이트는 방문하시는 분의 개인정보를 따로 모으지 않습니다.',
   sections: [
     {
       heading: '수집하지 않는 것',
@@ -80,7 +78,7 @@ export const PRIVACY: ArchivePage = {
       heading: '기존 회원 정보',
       paragraphs: [
         '운영 종료와 함께 회원 정보를 이용하는 목적은 끝났습니다.',
-        '서비스 복구에 대비한 암호화 백업만 짧은 기간 보관한 뒤 파기하며, 이 보관소에는 회원의 닉네임·글·댓글·프로필을 싣지 않습니다.',
+        '서비스 복구에 대비한 암호화 백업만 짧은 기간 보관한 뒤 파기하며, 이 사이트에는 회원의 닉네임·글·댓글·프로필을 싣지 않습니다.',
       ],
     },
     {
@@ -92,21 +90,20 @@ export const PRIVACY: ArchivePage = {
 
 export const TERMS: ArchivePage = {
   path: '/terms',
-  title: `이용 안내 | ${SITE_NAME} 기록 보관소`,
-  description: '우나어 기록 보관소 이용 안내입니다.',
+  title: `이용 안내 | ${SITE_NAME}`,
+  description: '우나어 사이트 이용 안내입니다.',
   h1: '이용 안내',
-  lead: `우나어는 ${CLOSED_LABEL} 운영을 마쳤고, 이 페이지들은 기록으로 남긴 읽기 전용 자료입니다.`,
+  lead: '이 사이트의 생활 가이드는 가입이나 결제 없이 읽으실 수 있어요.',
   sections: [
     {
-      heading: '보관소에서 할 수 있는 것',
+      heading: '이용 방법',
       paragraphs: [
-        '생활 가이드를 자유롭게 읽으실 수 있어요. 별도 가입이나 결제는 없습니다.',
         '가이드 내용은 작성 당시 기준이에요. 가격·제도처럼 바뀌는 정보는 꼭 최신 내용을 다시 확인해 주세요.',
       ],
     },
     {
       heading: '저작권',
-      paragraphs: ['보관소의 글은 우나어 운영진이 직접 만든 것입니다. 출처를 밝히지 않은 무단 복제는 삼가 주세요.'],
+      paragraphs: ['이 사이트의 생활 가이드는 우나어에서 정리한 글입니다. 출처를 밝히지 않은 무단 복제는 삼가 주세요.'],
     },
     {
       heading: '문의',
@@ -143,5 +140,5 @@ export const GUIDE_INDEX = {
   ],
 } as const
 
-/** 운영 사이트 title template (src/app/layout.tsx) — 유지 URL(가이드)의 title 을 기준선과 같게 둔다 */
-export const LEGACY_TITLE_SUFFIX = ' | 40대 50대 여성 커뮤니티 : 우리 나이가 어때서'
+/** 가이드·가이드 목록 title 접미사 — 운영 시절의 '여성 커뮤니티' 접미사는 쓰지 않는다 */
+export const TITLE_SUFFIX = ' | 우리 나이가 어때서'

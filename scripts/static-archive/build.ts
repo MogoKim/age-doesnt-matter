@@ -3,31 +3,58 @@
  *
  * 입력: 코드 상수뿐 (src/lib/guides 의 자체 제작 가이드 + ./content.ts 기록관 문안).
  *       DB·운영 HTML·R2 를 읽지 않는다 → 회원 닉네임·글·댓글·프로필이 섞일 경로가 없다.
- * 출력: --out <dir> (저장소 밖 경로 권장). Cloudflare Pages 정적 자산 규칙에 맞춘다:
+ * 출력: --out <dir> — **존재하지 않는 새 디렉터리만** 허용(assertSafeOutDir). 삭제·덮어쓰기 코드 없음.
+ *       Cloudflare Pages 정적 자산 규칙에 맞춘다:
  *       /about → about.html, /guide/<slug> → guide/<slug>.html (trailing slash 리다이렉트 방지)
  *
- * 실행: npx tsx scripts/static-archive/build.ts --out ../unao-archive-out
- * 검증: npx tsx scripts/static-archive/verify.ts --out ../unao-archive-out
+ * 실행: npx tsx scripts/static-archive/build.ts --out <새 경로>
+ * 검증: npx tsx scripts/static-archive/verify.ts --out <같은 경로>
  */
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { GUIDES, type GuideDoc } from '../../src/lib/guides'
-import {
-  ABOUT,
-  ARCHIVE_NOTICE,
-  CONTACT_EMAIL,
-  GUIDE_INDEX,
-  HOME,
-  LEGACY_TITLE_SUFFIX,
-  PRIVACY,
-  SITE_NAME,
-  TERMS,
-  type ArchivePage,
-} from './content'
+import { ABOUT, CONTACT_EMAIL, GUIDE_INDEX, HOME, PRIVACY, SITE_NAME, TERMS, TITLE_SUFFIX, type ArchivePage } from './content'
+import { applyGuideOverrides } from './guide-overrides'
 
 export const BASE_URL = 'https://age-doesnt-matter.com'
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
+export const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
+
+/** 기록관 출력용 가이드 — 원본(src/lib/guides)에 출력 전용 문안 보정을 입힌 사본 */
+const ARCHIVE_GUIDES: Record<string, GuideDoc> = Object.fromEntries(
+  Object.entries(GUIDES).map(([slug, g]) => [slug, applyGuideOverrides(g)]),
+)
+
+const isSameOrInside = (child: string, parent: string): boolean =>
+  child === parent || child.startsWith(parent.endsWith(path.sep) ? parent : parent + path.sep)
+
+/**
+ * --out 안전 검사. 통과 조건: 절대경로로 풀었을 때
+ *  - 아직 존재하지 않는다 (파일·디렉터리·심볼릭 링크 모두 거부)
+ *  - 부모 디렉터리는 이미 존재한다 (재귀 생성 금지)
+ *  - 파일시스템 루트·홈·저장소 루트가 아니고, 저장소 안쪽도 아니며, 저장소·홈의 상위도 아니다
+ * 어긋나면 throw — 빌더는 무엇도 지우거나 덮어쓰지 않는다.
+ */
+export function assertSafeOutDir(outDir: string): string {
+  const out = path.resolve(outDir)
+  const home = path.resolve(os.homedir())
+  if (out === path.parse(out).root) throw new Error(`--out 이 파일시스템 루트다: ${out}`)
+  if (out === home) throw new Error(`--out 이 홈 디렉터리다: ${out}`)
+  if (isSameOrInside(out, REPO_ROOT)) throw new Error(`--out 이 저장소이거나 그 안쪽이다(공개 저장소): ${out}`)
+  if (isSameOrInside(REPO_ROOT, out) || isSameOrInside(home, out)) throw new Error(`--out 이 저장소·홈의 상위 경로다: ${out}`)
+  let exists = true
+  try {
+    fs.lstatSync(out)
+  } catch {
+    exists = false
+  }
+  if (exists) throw new Error(`--out 이 이미 존재한다(삭제·덮어쓰기 금지): ${out}`)
+  if (!fs.existsSync(path.dirname(out)) || !fs.statSync(path.dirname(out)).isDirectory()) {
+    throw new Error(`--out 의 부모 디렉터리가 없다: ${path.dirname(out)}`)
+  }
+  return out
+}
 
 /** 기존 robots.txt 와 바이트 동일하게 유지 (네이버 Search Advisor 보호) */
 export const ROBOTS_TXT = `User-Agent: *
@@ -118,7 +145,6 @@ ${(opts.jsonLds ?? []).map(jsonLd).join('\n')}
     </nav>
   </div>
 </header>
-<p class="notice"><span class="wrap">${esc(ARCHIVE_NOTICE)}</span></p>
 <main class="wrap main">
 ${opts.body}
 </main>
@@ -153,7 +179,7 @@ function linkifyEmail(escaped: string): string {
 function keptGuideLinks(g: GuideDoc): Array<{ label: string; href: string }> {
   return g.relatedLinks.filter((l) => {
     const m = /^\/guide\/(.+)$/.exec(l.href)
-    return m !== null && m[1] in GUIDES
+    return m !== null && m[1] in ARCHIVE_GUIDES
   })
 }
 
@@ -179,7 +205,7 @@ ${
 </article>`
   return layout({
     path: p,
-    title: `${g.title}${LEGACY_TITLE_SUFFIX}`,
+    title: `${g.title}${TITLE_SUFFIX}`,
     description: g.description,
     ogType: 'article',
     body,
@@ -211,7 +237,7 @@ ${
 
 function guideCards(slugs: readonly string[]): string {
   return `<ul class="cards">${slugs
-    .map((s) => GUIDES[s])
+    .map((s) => ARCHIVE_GUIDES[s])
     .filter((g): g is GuideDoc => g !== undefined)
     .map(
       (g) =>
@@ -222,7 +248,7 @@ function guideCards(slugs: readonly string[]): string {
 
 function renderGuideIndex(): string {
   const listed = new Set<string>(GUIDE_INDEX.groups.flatMap((g) => [...g.slugs]))
-  const rest = Object.keys(GUIDES).filter((s) => !listed.has(s))
+  const rest = Object.keys(ARCHIVE_GUIDES).filter((s) => !listed.has(s))
   const groups = GUIDE_INDEX.groups
     .map((g) => `<section>\n<h2>${esc(g.title)}</h2>\n<p class="muted">${esc(g.description)}</p>\n${guideCards(g.slugs)}\n</section>`)
     .join('\n')
@@ -232,7 +258,7 @@ function renderGuideIndex(): string {
 ${groups}${rest.length > 0 ? `\n<section><h2>그 밖의 가이드</h2>${guideCards(rest)}</section>` : ''}`
   return layout({
     path: GUIDE_INDEX.path,
-    title: `${GUIDE_INDEX.title}${LEGACY_TITLE_SUFFIX}`,
+    title: `${GUIDE_INDEX.title}${TITLE_SUFFIX}`,
     description: GUIDE_INDEX.description,
     body,
     jsonLds: [breadcrumb([{ name: '홈', path: '/' }, { name: '생활 가이드', path: '/guide' }])],
@@ -264,7 +290,7 @@ const render404 = (): string =>
     noindex: true,
     body: `<h1>페이지를 찾을 수 없어요</h1>
 <p class="lead">우나어는 운영을 마쳐서 회원 글·일자리·검색 같은 페이지는 더 이상 제공하지 않아요.</p>
-<p><a class="button-link" href="/">기록 보관소 홈으로</a></p>`,
+<p><a class="button-link" href="/">홈으로</a></p>`,
   })
 
 const SITE_CSS = `:root{--coral:#FF6F61;--coral-text:#C7493D;--ink:#1C2333;--muted:#5A6170;--line:#E6E8EC;--bg:#FAFAFB;--warm:#F9F5F0}
@@ -278,7 +304,6 @@ a{color:var(--coral-text)}
 .brand{display:inline-flex;align-items:center;min-height:52px;font-weight:800;font-size:19px;color:var(--ink);text-decoration:none}
 .nav{display:flex;gap:4px}
 .nav a,.footer-row a{display:inline-flex;align-items:center;min-height:52px;padding:0 12px;color:var(--ink);text-decoration:none;font-weight:600}
-.notice{margin:0;background:var(--warm);border-bottom:1px solid var(--line);color:var(--muted);font-size:16px;padding:10px 0}
 .main{padding-top:24px;padding-bottom:48px}
 h1{font-size:28px;line-height:1.4;margin:8px 0 12px}
 h2{font-size:21px;line-height:1.45;margin:32px 0 10px}
@@ -313,9 +338,9 @@ const HEADERS = `/*
   Cache-Control: public, max-age=86400
 `
 
-export function buildAll(outDir: string): BuiltPage[] {
-  fs.rmSync(outDir, { recursive: true, force: true })
-  fs.mkdirSync(outDir, { recursive: true })
+export function buildAll(outDirArg: string): BuiltPage[] {
+  const outDir = assertSafeOutDir(outDirArg)
+  fs.mkdirSync(outDir) // 비재귀 — 이미 있으면 EEXIST 로 실패한다
   const pages: Array<BuiltPage & { html: string }> = []
   const add = (p: string, title: string, description: string, html: string): void => {
     pages.push({ path: p, file: fileForPath(p), title, description, html })
@@ -325,9 +350,9 @@ export function buildAll(outDir: string): BuiltPage[] {
   for (const p of [ABOUT, PRIVACY, TERMS]) {
     add(p.path, p.title, p.description, layout({ path: p.path, title: p.title, description: p.description, body: renderArchivePage(p) }))
   }
-  add(GUIDE_INDEX.path, `${GUIDE_INDEX.title}${LEGACY_TITLE_SUFFIX}`, GUIDE_INDEX.description, renderGuideIndex())
-  for (const g of Object.values(GUIDES)) {
-    add(guidePath(g.slug), `${g.title}${LEGACY_TITLE_SUFFIX}`, g.description, renderGuide(g))
+  add(GUIDE_INDEX.path, `${GUIDE_INDEX.title}${TITLE_SUFFIX}`, GUIDE_INDEX.description, renderGuideIndex())
+  for (const g of Object.values(ARCHIVE_GUIDES)) {
+    add(guidePath(g.slug), `${g.title}${TITLE_SUFFIX}`, g.description, renderGuide(g))
   }
 
   for (const pg of pages) {
@@ -359,16 +384,17 @@ function argOut(): string {
     console.error('usage: tsx scripts/static-archive/build.ts --out <dir>')
     process.exit(2)
   }
-  const out = path.resolve(process.argv[i + 1])
-  if (out.startsWith(REPO_ROOT + path.sep)) {
-    console.error(`--out 는 저장소 밖이어야 한다 (공개 저장소): ${out}`)
-    process.exit(2)
-  }
-  return out
+  return path.resolve(process.argv[i + 1])
 }
 
 if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
   const out = argOut()
-  const built = buildAll(out)
+  let built: BuiltPage[]
+  try {
+    built = buildAll(out)
+  } catch (e) {
+    console.error(e instanceof Error ? e.message : String(e))
+    process.exit(2)
+  }
   console.log(JSON.stringify({ out, pages: built.length, urls: built.map((b) => b.path) }, null, 2))
 }
