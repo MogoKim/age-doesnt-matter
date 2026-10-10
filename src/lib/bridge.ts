@@ -26,6 +26,7 @@ export type BridgeSlot =
   | 'listad'     // 목록 배너 (어드민 설정)
   | 'detailad'   // 글 상세 배너 (어드민 설정)
   | 'notice'     // 공지 게시글
+  | 'notfound'   // 정적 기록관 404 — 사라진 옛 글·일자리 주소로 검색 유입된 사람 (2026-10 기록관 전환 후)
 
 /** 소란소란 유도 URL. utm_source·utm_campaign 은 고정, utm_medium 만 구좌별로 바뀐다. */
 export function bridgeUrl(slot: BridgeSlot): string {

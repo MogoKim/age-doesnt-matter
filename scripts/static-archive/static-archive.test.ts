@@ -15,6 +15,7 @@ import { GUIDES } from '../../src/lib/guides'
 import { REPO_ROOT, assertSafeOutDir, buildAll } from './build'
 import { ALLOWLIST, PHANTOM_COMMUNITY, loadExpectedManifest, verify } from './verify'
 import { GUIDE_TEXT_OVERRIDES } from './guide-overrides'
+import { bridgeUrl, type BridgeSlot } from '../../src/lib/bridge'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const expected = loadExpectedManifest()
@@ -180,4 +181,63 @@ test('정상 경로: 링크 없는 임시 부모 아래 새 이름은 허용', (
 test('override 는 검증 안 된 효능·일반화 단정을 새로 만들지 않는다', () => {
   const STRONG = [/잘 어울려요/, /오래가는 편이에요/, /도움이 됩니다/, /비결이 되기 쉬워요/, /붙기 쉬워요/, /차이가 꽤 납니다/, /가장 정확합니다/, /시작할 수 있어요/]
   for (const [, to] of GUIDE_TEXT_OVERRIDES) for (const re of STRONG) assert.doesNotMatch(to, re, `단정형 치환: ${to}`)
+})
+
+// ── Project BRIDGE: 남은 방문자를 소란소란으로 — 모든 링크는 bridgeUrl(slot) 정확값이어야 한다 ──
+const BRIDGE_EXPECT: Array<[string, BridgeSlot[]]> = [
+  ['index.html', ['topbanner', 'homecard', 'footer']],
+  ['about.html', ['topbanner', 'footer']],
+  ['privacy.html', ['topbanner', 'footer']],
+  ['terms.html', ['topbanner', 'footer']],
+  ['guide.html', ['topbanner', 'footer']],
+  ['404.html', ['topbanner', 'notfound', 'footer']],
+  ...Object.keys(GUIDES).map((s): [string, BridgeSlot[]] => [`guide/${s}.html`, ['topbanner', 'postdetail', 'footer']]),
+]
+
+test('BRIDGE: 모든 페이지에 정해진 구좌의 소란소란 링크가 정확한 UTM 으로 있다', () => {
+  const out = freshBuild()
+  for (const [file, slots] of BRIDGE_EXPECT) {
+    const s = fs.readFileSync(path.join(out, file), 'utf8')
+    for (const slot of slots) {
+      const href = bridgeUrl(slot).replace(/&/g, '&amp;')
+      assert.ok(s.includes(`href="${href}"`), `${file}: ${slot} 링크 없음`)
+    }
+  }
+})
+
+test('BRIDGE: 소란소란 외 외부 링크는 0, 소란소란 링크도 허용 구좌만', () => {
+  const out = freshBuild()
+  const allowed = new Set((['topbanner', 'homecard', 'postdetail', 'notfound', 'footer'] as BridgeSlot[]).map((x) => bridgeUrl(x)))
+  for (const f of fs.readdirSync(out, { recursive: true }) as string[]) {
+    if (!f.endsWith('.html')) continue
+    const s = fs.readFileSync(path.join(out, f), 'utf8')
+    for (const m of s.matchAll(/href="(https?:\/\/[^"]+)"/g)) {
+      const u = m[1].replace(/&amp;/g, '&')
+      if (u.startsWith('https://age-doesnt-matter.com')) continue
+      assert.ok(allowed.has(u), `${f}: 허용 안 된 외부 링크 ${u}`)
+    }
+  }
+})
+
+test('BRIDGE: verify 게이트는 UTM 없는 소란소란 링크·임의 외부 링크를 FAIL 로 잡는다', () => {
+  for (const bad of ['https://soransoran.com/', 'https://soransoran.com/?utm_source=unao&amp;utm_medium=popup&amp;utm_campaign=bridge', 'https://example.com/']) {
+    const out = freshBuild()
+    rewrite(out, 'about.html', (s) => s.replace('</main>', `<a href="${bad}">x</a></main>`))
+    assert.ok(verify(out).issues.some((i) => i.gate === 'G3-external'), `통과하면 안 됨: ${bad}`)
+  }
+})
+
+test('BRIDGE: verify 게이트는 구좌 링크가 빠지면 FAIL 로 잡는다', () => {
+  const out = freshBuild()
+  rewrite(out, '404.html', (s) => s.split(bridgeUrl('notfound').replace(/&/g, '&amp;')).join('/'))
+  assert.ok(verify(out).issues.some((i) => i.gate === 'G12-bridge'))
+})
+
+test('BRIDGE: 금지 표현이 산출물에 없다 ("변경되었습니다"·"광고 없")', () => {
+  const out = freshBuild()
+  for (const f of fs.readdirSync(out, { recursive: true }) as string[]) {
+    if (!f.endsWith('.html')) continue
+    const s = fs.readFileSync(path.join(out, f), 'utf8')
+    assert.doesNotMatch(s, /변경되었습니다|광고\s*없/, f)
+  }
 })

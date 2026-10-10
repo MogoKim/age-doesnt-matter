@@ -11,6 +11,7 @@ import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { GUIDES } from '../../src/lib/guides'
 import { BASE_URL, ROBOTS_TXT, encodePath, fileForPath } from './build'
+import { bridgeUrl, type BridgeSlot } from '../../src/lib/bridge'
 
 /** KEEP_PUBLIC 허용 목록 — 빌더 출력이 아니라 원천(가이드 상수 + 고정 4쪽)에서 독립 산출 */
 export const ALLOWLIST: string[] = ['/', '/about', '/privacy', '/terms', '/guide', ...Object.keys(GUIDES).map((s) => `/guide/${s}`)]
@@ -44,6 +45,18 @@ export const PHANTOM_COMMUNITY: RegExp[] = [
 
 /** 브랜드 금지 표현 (CLAUDE.md) */
 const BANNED_WORDS = /시니어|어르신|노인|실버/
+
+/** Project BRIDGE — 기록관에서 허용하는 외부 링크는 이 구좌들의 bridgeUrl 정확값뿐이다 */
+export const ARCHIVE_BRIDGE_SLOTS: readonly BridgeSlot[] = ['topbanner', 'homecard', 'postdetail', 'notfound', 'footer']
+const ALLOWED_EXTERNAL = new Set(ARCHIVE_BRIDGE_SLOTS.map((s) => bridgeUrl(s)))
+
+/** 페이지 종류별 필수 구좌 */
+function requiredBridgeSlots(file: string): BridgeSlot[] {
+  if (file === 'index.html') return ['topbanner', 'homecard', 'footer']
+  if (file === '404.html') return ['topbanner', 'notfound', 'footer']
+  if (file.startsWith('guide/')) return ['topbanner', 'postdetail', 'footer']
+  return ['topbanner', 'footer']
+}
 
 const PAGES_MAX_FILES = 20_000
 const PAGES_MAX_FILE_BYTES = 25 * 1024 * 1024
@@ -129,6 +142,7 @@ export function verify(out: string): { issues: Issue[]; summary: { manifestMatch
         if (m[1] === 'href' && !resolveHref(out, v.slice(BASE_URL.length) || '/')) issues.push({ gate: 'G3-links', file: f, detail: `절대 URL 대상 없음: ${v}` })
         continue
       }
+      if (ALLOWED_EXTERNAL.has(v.replace(/&amp;/g, '&'))) continue
       if (/^https?:|^\/\//.test(v)) {
         issues.push({ gate: 'G3-external', file: f, detail: `외부 참조: ${v}` })
         continue
@@ -139,6 +153,14 @@ export function verify(out: string): { issues: Issue[]; summary: { manifestMatch
       imageRefs++
       images.add(m[1])
       if (!m[1].startsWith('/')) issues.push({ gate: 'G4-images', file: f, detail: `로컬 아닌 이미지: ${m[1]}` })
+    }
+  }
+
+  // G12 Project BRIDGE — 페이지마다 필수 구좌 링크가 정확한 UTM 으로 있다
+  for (const f of htmlFiles) {
+    const s = fs.readFileSync(path.join(out, f), 'utf8')
+    for (const slot of requiredBridgeSlots(f)) {
+      if (!s.includes(`href="${bridgeUrl(slot).replace(/&/g, '&amp;')}"`)) issues.push({ gate: 'G12-bridge', file: f, detail: `소란소란 ${slot} 링크 없음` })
     }
   }
 

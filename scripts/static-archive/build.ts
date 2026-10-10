@@ -17,6 +17,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { GUIDES, type GuideDoc } from '../../src/lib/guides'
 import { ABOUT, CONTACT_EMAIL, GUIDE_INDEX, HOME, PRIVACY, SITE_NAME, TERMS, TITLE_SUFFIX, type ArchivePage } from './content'
 import { applyGuideOverrides } from './guide-overrides'
+import { BRIDGE_COPY, bridgeUrl, type BridgeSlot } from '../../src/lib/bridge'
 
 export const BASE_URL = 'https://age-doesnt-matter.com'
 export const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
@@ -102,6 +103,18 @@ export const fileForPath = (p: string): string => (p === '/' ? 'index.html' : `$
 
 const guidePath = (slug: string): string => `/guide/${slug}`
 
+/**
+ * Project BRIDGE — 기록관에 남은 방문자를 소란소란으로 보낸다. 링크는 반드시 bridgeUrl(slot) (UTM 고정).
+ * 정적 페이지라 팝업(JS) 대신 상단 띠·카드·푸터 링크로 둔다. 같은 탭 이동.
+ */
+const bridgeHref = (slot: BridgeSlot): string => esc(bridgeUrl(slot))
+
+function bridgeCard(slot: BridgeSlot, title: string, lines: readonly string[], cta: string): string {
+  return `<a class="bridge-card" href="${bridgeHref(slot)}"><strong>${esc(title)}</strong>${lines
+    .map((l) => `<span>${esc(l)}</span>`)
+    .join('')}<span class="bridge-cta">${esc(cta)} →</span></a>`
+}
+
 function jsonLd(data: object): string {
   // </script> 탈출 방지
   return `<script type="application/ld+json">${JSON.stringify(data).replace(/</g, '\\u003c')}</script>`
@@ -158,6 +171,7 @@ ${(opts.jsonLds ?? []).map(jsonLd).join('\n')}
     </nav>
   </div>
 </header>
+<a class="bridge-top" href="${bridgeHref('topbanner')}"><span class="wrap"><strong>${esc(BRIDGE_COPY.title)}</strong> <span>${esc(BRIDGE_COPY.hook)}</span> <span class="bridge-go">${esc(BRIDGE_COPY.ctaShort)} →</span></span></a>
 <main class="wrap main">
 ${opts.body}
 </main>
@@ -166,6 +180,7 @@ ${opts.body}
     <a href="/privacy">개인정보 안내</a>
     <a href="/terms">이용 안내</a>
     <a href="mailto:${CONTACT_EMAIL}">문의 메일</a>
+    <a href="${bridgeHref('footer')}">${esc(BRIDGE_COPY.post.cta)}</a>
   </div>
   <p class="wrap copy">© ${SITE_NAME}</p>
 </footer>
@@ -210,6 +225,7 @@ ${g.sections.map((s) => `<section>\n<h2>${esc(s.heading)}</h2>\n${s.paragraphs.m
 <h2>자주 묻는 질문</h2>
 ${g.faqs.map((f) => `<h3>${esc(f.q)}</h3>\n<p>${esc(f.a)}</p>`).join('\n')}
 </section>
+${bridgeCard('postdetail', BRIDGE_COPY.post.title, [BRIDGE_COPY.post.body, BRIDGE_COPY.post.hook], BRIDGE_COPY.post.cta)}
 ${
   related.length > 0
     ? `<section class="card">\n<h2>함께 보면 좋은 가이드</h2>\n<ul class="links">${related.map((l) => `<li><a href="${encodePath(l.href)}">${esc(l.label)}</a></li>`).join('')}</ul>\n</section>`
@@ -281,6 +297,7 @@ ${groups}${rest.length > 0 ? `\n<section><h2>그 밖의 가이드</h2>${guideCar
 function renderHome(): string {
   const all = GUIDE_INDEX.groups.flatMap((g) => [...g.slugs])
   const body = `${renderArchivePage(HOME)}
+${bridgeCard('homecard', BRIDGE_COPY.title, [BRIDGE_COPY.bodyKnown, BRIDGE_COPY.bodySub, BRIDGE_COPY.hook], BRIDGE_COPY.cta)}
 <section>
 <h2>생활 가이드</h2>
 ${guideCards(all)}
@@ -303,6 +320,7 @@ const render404 = (): string =>
     noindex: true,
     body: `<h1>페이지를 찾을 수 없어요</h1>
 <p class="lead">우나어는 운영을 마쳐서 회원 글·일자리·검색 같은 페이지는 더 이상 제공하지 않아요.</p>
+${bridgeCard('notfound', BRIDGE_COPY.title, [BRIDGE_COPY.bodyKnown, BRIDGE_COPY.hook], BRIDGE_COPY.cta)}
 <p><a class="button-link" href="/">홈으로</a></p>`,
   })
 
@@ -337,6 +355,13 @@ h3{font-size:18px;margin:20px 0 6px}
 .site-footer{border-top:1px solid var(--line);background:#fff;padding:8px 0 24px}
 .footer-row{display:flex;flex-wrap:wrap;gap:4px}
 .copy{color:var(--muted);font-size:14px;margin:8px auto 0}
+.bridge-top{display:block;background:var(--coral);color:#fff;text-decoration:none;font-size:16px;line-height:1.5}
+.bridge-top .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;min-height:52px;padding-top:8px;padding-bottom:8px}
+.bridge-go{font-weight:700;text-decoration:underline}
+.bridge-card{display:block;min-height:52px;margin:24px 0;padding:18px;border-radius:14px;background:#FFF4F2;border:2px solid var(--coral);color:var(--ink);text-decoration:none}
+.bridge-card strong{display:block;font-size:20px;margin-bottom:6px}
+.bridge-card span{display:block;color:var(--ink);font-size:17px}
+.bridge-card .bridge-cta{display:inline-flex;align-items:center;min-height:52px;margin-top:10px;padding:0 20px;border-radius:12px;background:var(--coral);color:#fff;font-weight:700}
 @media (min-width:768px){body{font-size:18px}h1{font-size:32px}}
 `
 
